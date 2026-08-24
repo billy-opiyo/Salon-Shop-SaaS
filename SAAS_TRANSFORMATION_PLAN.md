@@ -20,6 +20,39 @@ Moving existing Firebase data is optional and depends on whether the current
 data is reference content or live business data. No Firebase production
 cutover is implied by this plan.
 
+## 1A. Implementation status — 24 August 2026
+
+Completed in the isolated SaaS workspace:
+
+- Next.js 16.3.2 App Router foundation with strict TypeScript and root-managed
+  build commands.
+- Platform homepage with Starter, Business, and Enterprise plan presentation,
+  splash experience, onboarding CTA, and preserved demo tenant route.
+- Typed tenant storefront contract with server-side tenant lookup and mobile
+  action links.
+- Prisma 6.12 schema covering tenants, memberships, plans, subscriptions,
+  bookings, waitlists, reviews, media, notifications, security telemetry, and
+  audit history. The booking/waitlist relationship is constrained as a true
+  optional one-to-one link.
+- Auth.js credentials foundation with database sessions, bcrypt password
+  verification, verified-email gating, protected `/manage` and `/onboarding`
+  routes, and server-side Turnstile verification boundary.
+- Transactional tenant provisioning: owner membership, tenant settings, plan,
+  trial subscription, and default service categories are created atomically.
+- Root `package.json`, `.env.example`, project rules, and isolated-reference
+  guardrails. The Firebase project remains unchanged.
+- Production Next.js build and Prisma format/validate/generate checks pass with
+  a non-secret pooled-Neon placeholder URL.
+
+Still gated or in progress:
+
+- Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
+  Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
+  billing configuration require operator-owned credentials and approvals.
+- Full salon storefront/admin feature parity remains the next implementation
+  stream. Reference pages and CSS are preserved under `reference/` until each
+  module has a typed Next.js parity implementation and acceptance test.
+
 ## 2. Audit baseline
 
 The reference implementation is a static Firebase Hosting site with a

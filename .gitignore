@@ -11,6 +11,8 @@ playwright-report/
 .env
 .env.*
 !.env.example
+.env.production
+.env.local
 *.pem
 admin-auth-export.json
 

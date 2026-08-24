@@ -13,6 +13,33 @@ export interface TenantActionLinks {
   readonly directionsUrl: string;
 }
 
+export interface TenantService {
+  readonly name: string;
+  readonly description: string;
+  readonly durationMinutes: number;
+  readonly priceLabel: string;
+  readonly category: string;
+  readonly isCosmeticProduct?: boolean;
+}
+
+export interface TenantGalleryItem {
+  readonly title: string;
+  readonly category: string;
+  readonly tone: string;
+}
+
+export interface TenantReview {
+  readonly author: string;
+  readonly rating: number;
+  readonly text: string;
+}
+
+export interface TenantBlogPost {
+  readonly title: string;
+  readonly excerpt: string;
+  readonly category: string;
+}
+
 export interface TenantStorefront {
   readonly id: string;
   readonly slug: string;
@@ -22,4 +49,8 @@ export interface TenantStorefront {
   readonly planTier: PlanTier;
   readonly theme: TenantTheme;
   readonly actionLinks: TenantActionLinks;
+  readonly services: readonly TenantService[];
+  readonly gallery: readonly TenantGalleryItem[];
+  readonly reviews: readonly TenantReview[];
+  readonly blogPosts: readonly TenantBlogPost[];
 }
