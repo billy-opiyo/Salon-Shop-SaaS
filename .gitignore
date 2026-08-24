@@ -1,0 +1,28 @@
+# Root project tooling
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+admin-auth-export.json
+
+# Firebase/runtime artifacts must never become part of the SaaS app
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+debug.log
+
+# Local editor/system files
+.DS_Store
+.vscode/
+
+# Vercel
+.vercel/
