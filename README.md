@@ -3,11 +3,12 @@
 This folder is the isolated home for the planned multi-tenant Next.js rewrite
 of the Salon Shop project.
 
-The transformation is being implemented incrementally. The current foundation
-includes the platform homepage, preserved demo storefront, Auth.js credentials
-flow, Prisma tenant schema, transactional store provisioning, protected
-merchant workspace, plan entitlements, and the initial server-side Turnstile
-boundary.
+The transformation is being implemented incrementally. The tenant storefront now
+renders the copied reference HTML/CSS/runtime contract, with typed Next.js
+booking and waitlist adapters. The workspace also includes the platform homepage,
+Auth.js credentials flow, Prisma tenant schema, transactional store provisioning,
+protected merchant workspace, plan entitlements, and the initial server-side
+Turnstile boundary.
 
 - [PROJECT_RULES.md](PROJECT_RULES.md)
 - [SAAS_TRANSFORMATION_PLAN.md](SAAS_TRANSFORMATION_PLAN.md)

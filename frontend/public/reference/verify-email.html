@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" data-client-config-preserve-head="true">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="description" content="Secure email verification for your salon account." />
+		<title>Verify your email | Royal Braids</title>
+		<script>
+			;(function () {
+				try {
+					var theme = localStorage.getItem("theme")
+					var isLight = theme === "light"
+					document.documentElement.classList.toggle("light-mode", isLight)
+					document.documentElement.dataset.colorMode = isLight ? "light" : "dark"
+					document.documentElement.style.colorScheme = isLight ? "light" : "dark"
+				} catch (error) {
+					document.documentElement.style.colorScheme = "dark"
+				}
+			})()
+		</script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
+		<link rel="icon" type="image/x-icon" href="/IMG/Royal Braids logo.png" />
+		<link rel="stylesheet" href="/CSS/style.css" />
+		<script src="/client-config.js" defer></script>
+		<script src="/JS/apply-client-config.js" defer></script>
+		<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+		<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+		<style>
+			.verify-page {
+				min-height: 100vh;
+				min-height: 100dvh;
+				padding: clamp(24px, 5vw, 72px) 20px;
+				display: grid;
+				place-items: center;
+				position: relative;
+				isolation: isolate;
+				overflow: hidden;
+				background: var(--gradient-dark, linear-gradient(180deg, #0a0a0a, #111111));
+				color: var(--text-primary, #f5f0eb);
+			}
+
+			.verify-page::before,
+			.verify-page::after {
+				content: "";
+				position: fixed;
+				z-index: -1;
+				border-radius: 50%;
+				filter: blur(8px);
+				pointer-events: none;
+			}
+
+			.verify-page::before {
+				width: min(70vw, 760px);
+				aspect-ratio: 1;
+				top: -34%;
+				right: -18%;
+				background: radial-gradient(circle, var(--primary-soft-strong, rgba(200, 150, 62, .22)), transparent 68%);
+			}
+
+			.verify-page::after {
+				width: min(58vw, 620px);
+				aspect-ratio: 1;
+				bottom: -30%;
+				left: -14%;
+				background: radial-gradient(circle, color-mix(in srgb, var(--accent-purple, #6b2e7a) 28%, transparent), transparent 70%);
+			}
+
+			.verify-shell { width: min(100%, 820px); }
+
+			.verify-card {
+				position: relative;
+				overflow: hidden;
+				padding: clamp(26px, 5vw, 54px);
+				border: 1px solid var(--primary-border-strong, rgba(200, 150, 62, .55));
+				border-radius: 28px;
+				background: color-mix(in srgb, var(--bg-card, #1a1a1a) 92%, transparent);
+				box-shadow: 0 28px 80px rgba(0, 0, 0, .42), 0 0 0 1px rgba(255, 255, 255, .03) inset, 0 0 44px var(--primary-soft, rgba(200, 150, 62, .12));
+				backdrop-filter: blur(18px);
+				text-align: center;
+			}
+
+			.verify-card::before {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 12%;
+				right: 12%;
+				height: 2px;
+				background: var(--gradient-gold, linear-gradient(135deg, #c8963e, #e8c27a, #c8963e));
+			}
+
+			.brand-link { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+			.brand-logo { width: 54px; height: 54px; padding: 3px; border: 1px solid var(--primary-border-strong); border-radius: 50%; background: var(--primary-soft); object-fit: contain; }
+			.brand-copy { display: grid; gap: 2px; text-align: left; }
+			.brand-name { color: var(--text-primary); font-family: var(--font-heading, Georgia, serif); font-size: 1.05rem; font-weight: 800; line-height: 1; }
+			.brand-tagline { color: var(--primary-light); font-size: .67rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+
+			.verify-icon { width: 84px; height: 84px; margin: clamp(28px, 5vw, 42px) auto 20px; display: grid; place-items: center; border: 1px solid var(--primary-border-strong); border-radius: 50%; color: var(--primary-light); background: radial-gradient(circle at 35% 25%, var(--primary-soft-strong), var(--primary-soft)); box-shadow: 0 0 36px var(--primary-soft); }
+			.verify-icon svg { width: 41px; height: 41px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+			.verify-eyebrow { margin: 0 0 8px; color: var(--primary-light); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+			.verify-title { margin: 0; font-family: var(--font-heading, Georgia, serif); font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.06; }
+			.verify-title span { color: var(--primary-light); }
+			.verify-message { max-width: 530px; min-height: 3.2em; margin: 18px auto 0; color: var(--text-secondary, #c8bba9); font-size: 1rem; line-height: 1.65; }
+			.verify-message.error { color: #ffb6ad; }
+			.verify-message.success { color: #aee9c6; }
+
+			.verify-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+			.verify-button, .verify-home { min-height: 48px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border-radius: 999px; font: inherit; font-weight: 800; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+			.verify-button { border: 0; color: var(--primary-contrast, #0a0a0a); background: var(--gradient-gold, linear-gradient(135deg, #c8963e, #e8c27a, #c8963e)); box-shadow: 0 14px 30px var(--primary-soft-strong); cursor: pointer; }
+			.verify-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 18px 36px var(--primary-soft-strong); }
+			.verify-button:disabled { cursor: wait; opacity: .72; }
+			.verify-home { border: 1px solid var(--primary-border); color: var(--primary-light); background: var(--primary-soft); }
+			.verify-home:hover { transform: translateY(-2px); border-color: var(--primary-border-strong); background: var(--primary-soft-strong); }
+			.verify-button:focus-visible, .verify-home:focus-visible, .brand-link:focus-visible { outline: 3px solid var(--primary-border-strong); outline-offset: 4px; }
+			.verify-button[hidden] { display: none; }
+			.verify-note { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--border, #2a2520); color: var(--text-muted, #8d8375); font-size: .79rem; line-height: 1.6; }
+			.verify-spinner { width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: verify-spin .75s linear infinite; }
+			@keyframes verify-spin { to { transform: rotate(360deg); } }
+
+			body.light-mode .verify-page { background: linear-gradient(145deg, #fffaf4, color-mix(in srgb, var(--primary-light) 35%, #f5ecdf)); }
+			body.light-mode .verify-card { background: color-mix(in srgb, #ffffff 90%, var(--primary-light)); box-shadow: 0 28px 80px rgba(85, 58, 20, .16), 0 0 30px var(--primary-soft); }
+			body.light-mode .verify-message { color: var(--text-secondary, #61584e); }
+			body.light-mode .verify-note { color: var(--text-muted, #776d61); }
+
+			@media (max-width: 560px) { .verify-card { border-radius: 22px; } .verify-actions { flex-direction: column; } .verify-button, .verify-home { width: 100%; } }
+			@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+		</style>
+	</head>
+	<body>
+		<main class="verify-page" aria-labelledby="verifyTitle">
+			<div class="verify-shell">
+				<section class="verify-card" aria-live="polite">
+					<a class="brand-link" href="/" aria-label="Return to Royal Braids home page">
+						<img class="brand-logo" src="/IMG/logo.png" alt="Royal Braids logo" data-client-attr="alt:brand.logoAlt" />
+						<span class="brand-copy"><span class="brand-name" data-client-text="brand.businessName">Royal Braids</span><span class="brand-tagline">Luxury salon experience</span></span>
+					</a>
+					<div class="verify-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 6.5 12 13l8.5-6.5" /><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m8.5 17 2 2 5-5" /></svg></div>
+					<p class="verify-eyebrow">Account security</p>
+					<h1 class="verify-title" id="verifyTitle">Verify your <span>email</span></h1>
+					<p class="verify-message" id="verificationMessage">Loading your secure verification request…</p>
+					<div class="verify-actions">
+						<button class="verify-button" id="verifyEmailButton" type="button" disabled>Verify email</button>
+						<a class="verify-home" href="/">Return to website <span aria-hidden="true">→</span></a>
+					</div>
+					<p class="verify-note">For your protection, verification only happens after you confirm this request.</p>
+				</section>
+			</div>
+		</main>
+		<script>
+			window.addEventListener("DOMContentLoaded", () => {
+				const message = document.getElementById("verificationMessage")
+				const button = document.getElementById("verifyEmailButton")
+				const params = new URLSearchParams(window.location.search)
+				const oobCode = String(params.get("oobCode") || "").trim()
+				const mode = String(params.get("mode") || "").trim()
+				const setMessage = (text, className = "") => { message.textContent = text; message.className = `verify-message ${className}` }
+
+				if (mode !== "verifyEmail" || !oobCode) { setMessage("This verification link is incomplete. Request a new email and try again.", "error"); return }
+				const firebaseConfig = window.APP_CONFIG?.firebase
+				if (!firebaseConfig || !window.firebase) { setMessage("Verification is temporarily unavailable. Please try again shortly.", "error"); return }
+
+				let verificationAuth
+				try {
+					const app = firebase.apps?.length ? firebase.apps[0] : firebase.initializeApp(firebaseConfig)
+					verificationAuth = firebase.auth(app)
+					button.disabled = false
+					setMessage("Confirm that you want to verify this email address.")
+				} catch (error) { setMessage("Verification is temporarily unavailable. Please try again shortly.", "error"); return }
+
+				button.addEventListener("click", async () => {
+					button.disabled = true
+					button.innerHTML = '<span class="verify-spinner" aria-hidden="true"></span> Verifying…'
+					try {
+						await verificationAuth.applyActionCode(oobCode)
+						setMessage("Your email has been verified. You can now return to the website and sign in.", "success")
+						button.hidden = true
+					} catch (error) {
+						setMessage("This verification link has expired or was already used. Request a new verification email and try again.", "error")
+						button.textContent = "Verify email"
+						button.disabled = false
+					}
+				})
+			})
+		</script>
+	</body>
+</html>

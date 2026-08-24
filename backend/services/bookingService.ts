@@ -82,45 +82,46 @@ export async function createPublicBooking(
 
   try {
     return await prisma.$transaction(async (transaction) => {
-      const slot = await transaction.bookingSlot.create({
+      const booking = await transaction.booking.create({
+        data: {
+          tenantId: tenant.id,
+          serviceId: service?.id,
+          stylistId: input.stylistId,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email.toLowerCase(),
+          phone: input.phone,
+          serviceName: service?.name ?? input.serviceName,
+          customService: input.customService,
+          appointmentDate,
+          timeLabel: input.timeLabel,
+          status: BookingStatus.PENDING,
+          specialRequests: input.specialRequests,
+        },
+        select: { id: true, status: true },
+      });
+
+      await transaction.bookingSlot.create({
         data: {
           tenantId: tenant.id,
           slotKey,
           date: appointmentDate,
           timeLabel: input.timeLabel,
-          booking: {
-            create: {
-              tenantId: tenant.id,
-              serviceId: service?.id,
-              stylistId: input.stylistId,
-              firstName: input.firstName,
-              lastName: input.lastName,
-              email: input.email.toLowerCase(),
-              phone: input.phone,
-              serviceName: service?.name ?? input.serviceName,
-              customService: input.customService,
-              appointmentDate,
-              timeLabel: input.timeLabel,
-              status: BookingStatus.PENDING,
-              specialRequests: input.specialRequests,
-            },
-          },
+          bookingId: booking.id,
         },
-        select: { booking: { select: { id: true, status: true } } },
       });
 
-      if (!slot.booking) throw new BookingRequestError("The booking could not be created.");
       await transaction.notificationDelivery.create({
         data: {
           tenantId: tenant.id,
-          bookingId: slot.booking.id,
+          bookingId: booking.id,
           channel: "EMAIL",
           templateKey: "booking.pending",
           destination: input.email.toLowerCase(),
-          idempotencyKey: `booking-pending:${slot.booking.id}`,
+          idempotencyKey: `booking-pending:${booking.id}`,
         },
       });
-      return slot.booking;
+      return booking;
     });
   } catch (error) {
     if (error instanceof BookingRequestError) throw error;

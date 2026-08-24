@@ -43,15 +43,29 @@ Completed in the isolated SaaS workspace:
   guardrails. The Firebase project remains unchanged.
 - Production Next.js build and Prisma format/validate/generate checks pass with
   a non-secret pooled-Neon placeholder URL.
+- Reference parity foundation now renders the copied index.html body contract
+  at /{tenantSlug} with the original 255 KB stylesheet, 290 KB runtime,
+  image assets, splash, navigation, gallery, services, booking, waitlist,
+  dashboard, reviews, blog, contact, footer, and mobile action markup.
+- Reference-backed /verify-email, not-found, and protected
+  /manage/[tenantSlug] shells now use the original page contracts; the admin
+  shell requires active tenant membership with all management permissions.
+- Booking and waitlist submissions are intercepted at the preserved reference
+  controls and sent to typed Next.js APIs with server-side validation,
+  rate limiting, transaction boundaries, and Turnstile enforcement.
 
 Still gated or in progress:
 
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
-- Full salon storefront/admin feature parity remains the next implementation
-  stream. Reference pages and CSS are preserved under `reference/` until each
-  module has a typed Next.js parity implementation and acceptance test.
+- Remaining parity work is the full admin CRUD/action migration, Auth.js client
+  verification flows, client dashboard data adapters, contact/review/favorites
+  APIs, and provider-backed media/email/WhatsApp workflows.
+- The copied reference assets are authoritative for storefront/admin UI. No
+  tenant storefront redesign should be introduced; future work must preserve
+  the original selectors, spacing, typography, colors, shadows, animations,
+  responsiveness, and navigation behavior.
 
 ## 2. Audit baseline
 

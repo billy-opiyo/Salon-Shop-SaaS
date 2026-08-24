@@ -53,6 +53,9 @@ export async function getTenantStorefront(slug: string): Promise<TenantStorefron
   const normalizedSlug = slug.trim().toLowerCase();
   const fixture = tenantFixtures[normalizedSlug];
 
+
+  if (!process.env.DATABASE_URL) return fixture ?? null;
+
   try {
     const tenant = await prisma.tenant.findUnique({
       where: { slug: normalizedSlug },
@@ -65,6 +68,29 @@ export async function getTenantStorefront(slug: string): Promise<TenantStorefron
         status: true,
         subscription: { select: { plan: { select: { tier: true } } } },
         settings: { select: { themePreset: true, themeMode: true, phonePrimary: true, whatsappUrl: true } },
+        services: {
+          where: { enabled: true },
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, name: true, description: true, durationLabel: true, priceLabel: true, orderOnly: true, category: { select: { label: true } } },
+        },
+        galleryStyles: {
+          where: { published: true },
+          orderBy: { updatedAt: "desc" },
+          take: 24,
+          select: { id: true, styleName: true, imageUrl: true, category: { select: { label: true } } },
+        },
+        reviews: {
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+          select: { name: true, rating: true, text: true },
+        },
+        blogPosts: {
+          where: { published: true },
+          orderBy: { publishDate: "desc" },
+          take: 6,
+          select: { slug: true, title: true, excerpt: true },
+        },
       },
     });
 
@@ -91,10 +117,24 @@ export async function getTenantStorefront(slug: string): Promise<TenantStorefron
         phoneUrl: `tel:${phone}`,
         directionsUrl: "#visit",
       },
-      services: [],
-      gallery: [],
-      reviews: [],
-      blogPosts: [],
+      services: tenant.services.map((service) => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        durationMinutes: Number.parseInt(service.durationLabel, 10) || 0,
+        priceLabel: service.orderOnly ? "Order on WhatsApp" : service.priceLabel,
+        category: service.category.label,
+        isCosmeticProduct: service.orderOnly,
+      })),
+      gallery: tenant.galleryStyles.map((item, index) => ({
+        id: item.id,
+        title: item.styleName,
+        category: item.category?.label ?? "Gallery",
+        tone: `gallery-tone--${["gold", "rose", "plum", "sand"][index % 4]}`,
+        imageUrl: item.imageUrl,
+      })),
+      reviews: tenant.reviews.map((review) => ({ author: review.name, rating: review.rating, text: review.text })),
+      blogPosts: tenant.blogPosts.map((post) => ({ slug: post.slug, title: post.title, excerpt: post.excerpt, category: "Journal" })),
     };
   } catch {
     return fixture ?? null;

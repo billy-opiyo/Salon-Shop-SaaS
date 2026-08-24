@@ -14,6 +14,7 @@ export interface TenantActionLinks {
 }
 
 export interface TenantService {
+  readonly id?: string;
   readonly name: string;
   readonly description: string;
   readonly durationMinutes: number;
@@ -23,6 +24,8 @@ export interface TenantService {
 }
 
 export interface TenantGalleryItem {
+  readonly id?: string;
+  readonly imageUrl?: string;
   readonly title: string;
   readonly category: string;
   readonly tone: string;
@@ -35,6 +38,7 @@ export interface TenantReview {
 }
 
 export interface TenantBlogPost {
+  readonly slug?: string;
   readonly title: string;
   readonly excerpt: string;
   readonly category: string;

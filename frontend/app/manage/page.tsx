@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listTenantsForUser } from "@backend/services/tenantProvisioning";
 
+import { publishStore } from "./actions";
+
 export default async function ManagePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -20,7 +22,7 @@ export default async function ManagePage() {
       </header>
       <section className="manage-stores" aria-labelledby="stores-title">
         <div className="section-heading"><p className="eyebrow">Your stores</p><h2 id="stores-title">Tenant workspaces</h2></div>
-        {tenants.length === 0 ? <p className="manage-empty">You have not created a store yet. Start with a plan and your first public address.</p> : <div className="manage-store-list">{tenants.map((tenant) => <article className="manage-store" key={tenant.id}><div><p className="eyebrow">{tenant.subscription?.plan.displayName ?? "Starter"} · {tenant.status}</p><h3>{tenant.businessName}</h3><p>/{tenant.slug}</p></div><Link className="button button--outline button--small" href={`/${tenant.slug}`}>Open storefront</Link></article>)}</div>}
+        {tenants.length === 0 ? <p className="manage-empty">You have not created a store yet. Start with a plan and your first public address.</p> : <div className="manage-store-list">{tenants.map((tenant) => <article className="manage-store" key={tenant.id}><div><p className="eyebrow">{tenant.subscription?.plan.displayName ?? "Starter"} · {tenant.status}</p><h3>{tenant.businessName}</h3><p>/{tenant.slug}</p></div><div className="manage-store__actions">{tenant.status === "DRAFT" && <form action={publishStore}><input type="hidden" name="tenantId" value={tenant.id} /><button className="button button--primary button--small" type="submit">Publish store</button></form>}{tenant.status === "ACTIVE" && <Link className="button button--outline button--small" href={`/${tenant.slug}`}>Open storefront</Link>}</div></article>)}</div>}
       </section>
       <section className="manage-grid" aria-label="Merchant management areas">
         {[

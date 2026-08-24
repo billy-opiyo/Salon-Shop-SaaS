@@ -32,11 +32,12 @@ export async function consumeRateLimit({
 }): Promise<void> {
   const now = new Date();
   const availableAt = new Date(now.getTime() + intervalMs);
+  const scopeKey = `${tenantId ?? "global"}:${subjectKey}:${kind}`;
 
   try {
     await prisma.$transaction(async (transaction) => {
       const existing = await transaction.rateLimitRecord.findUnique({
-        where: { tenantId_subjectKey_kind: { tenantId: tenantId ?? null, subjectKey, kind } },
+        where: { scopeKey },
         select: { id: true, availableAt: true },
       });
 
@@ -45,7 +46,7 @@ export async function consumeRateLimit({
       }
 
       if (!existing) {
-        await transaction.rateLimitRecord.create({ data: { tenantId, subjectKey, kind, availableAt } });
+        await transaction.rateLimitRecord.create({ data: { tenantId, scopeKey, subjectKey, kind, availableAt } });
         return;
       }
 

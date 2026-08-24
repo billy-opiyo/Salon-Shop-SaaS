@@ -17,3 +17,17 @@ export const bookingRequestSchema = z.object({
 });
 
 export type BookingRequestInput = z.infer<typeof bookingRequestSchema>;
+
+export const waitlistRequestSchema = z.object({
+  tenantSlug: z.string().trim().min(3).max(48),
+  name: z.string().trim().min(2).max(160),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().min(7).max(32),
+  serviceName: z.string().trim().min(1).max(160),
+  preferredDate: z.string().date().optional(),
+  preferredTime: z.string().trim().max(40).optional(),
+  preferredStylist: z.string().trim().max(120).optional(),
+  turnstileToken: z.string().trim().min(1).max(2048),
+});
+
+export type WaitlistRequestInput = z.infer<typeof waitlistRequestSchema>;

@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma, TenantStatus } from "@prisma/client";
 
 import { prisma } from "@backend/db/prisma";
+import { assertTenantMembership, assertTenantPermission } from "@backend/services/authorization";
 import { PLAN_ENTITLEMENTS } from "@shared/constants/plans";
 import {
   createTenantSchema,
@@ -104,4 +105,17 @@ export async function listTenantsForUser(userId: string) {
     },
     orderBy: { createdAt: "asc" },
   });
+}
+
+export async function publishTenantForUser(userId: string, tenantId: string) {
+  const membership = await prisma.membership.findUnique({
+    where: { tenantId_userId: { tenantId, userId } },
+    select: { tenantId: true, userId: true, role: true, status: true, canManageContent: true, canManageAdmins: true, canManageBookings: true, canManageSecurity: true },
+  });
+  assertTenantPermission(assertTenantMembership(membership, tenantId), "canManageContent");
+  const result = await prisma.tenant.updateMany({
+    where: { id: tenantId, status: "DRAFT" },
+    data: { status: "ACTIVE" },
+  });
+  if (result.count !== 1) throw new TenantProvisioningError("This store is already published or unavailable.");
 }

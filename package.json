@@ -6,7 +6,7 @@
     "dev": "node node_modules/next/dist/bin/next dev frontend",
     "build": "node node_modules/next/dist/bin/next build frontend",
     "start": "node node_modules/next/dist/bin/next start frontend",
-    "lint": "node node_modules/eslint/bin/eslint.js frontend",
+    "lint": "node node_modules/eslint/bin/eslint.js frontend --config frontend/eslint.config.mjs",
     "db:format": "node node_modules/prisma/build/index.js format --schema prisma/schema.prisma",
     "db:validate": "node node_modules/prisma/build/index.js validate --schema prisma/schema.prisma",
     "db:generate": "node node_modules/prisma/build/index.js generate --schema prisma/schema.prisma"

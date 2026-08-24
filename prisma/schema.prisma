@@ -561,6 +561,7 @@ model NotificationDelivery {
 model RateLimitRecord {
   id          String   @id @default(cuid())
   tenantId    String?
+  scopeKey    String   @unique
   subjectKey  String
   kind        String
   availableAt DateTime
