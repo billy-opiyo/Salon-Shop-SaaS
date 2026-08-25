@@ -921,6 +921,10 @@ const fallbackGalleryData = [
 ]
 
 let galleryData = [...fallbackGalleryData]
+const configuredGalleryData = getClientCatalogArray("gallery")
+let galleryData = configuredGalleryData.length
+	? configuredGalleryData
+	: [...fallbackGalleryData]
 let filteredGalleryData = [...galleryData]
 let showAllGallery = false
 let currentLightboxIndex = 0
@@ -1204,6 +1208,10 @@ const fallbackBlogsData = [
 const BLOG_CARD_IMAGE_FALLBACK = "IMG/Kids-Small Single Braids after.jpg"
 
 let blogsData = [...fallbackBlogsData]
+const configuredBlogsData = getClientCatalogArray("blogs")
+let blogsData = configuredBlogsData.length
+	? configuredBlogsData
+	: [...fallbackBlogsData]
 let blogsRealtimeUnsubscribe = null
 const DEFAULT_VISIBLE_BLOGS = 3
 let showAllBlogs = false
@@ -1261,6 +1269,10 @@ const fallbackTestimonialsData = [
 ]
 
 let testimonialsData = [...fallbackTestimonialsData]
+const configuredTestimonialsData = getClientCatalogArray("testimonials")
+let testimonialsData = configuredTestimonialsData.length
+	? configuredTestimonialsData
+	: [...fallbackTestimonialsData]
 let testimonialsRealtimeUnsubscribe = null
 const DEFAULT_VISIBLE_REVIEWS = 6
 let showAllReviews = false
@@ -2557,11 +2569,16 @@ function getVisibleServicesData() {
 }
 
 function getServiceByName(serviceName = "") {
-	const normalizedName = String(serviceName || "").trim().toLowerCase()
+	const normalizedName = String(serviceName || "")
+		.trim()
+		.toLowerCase()
 	if (!normalizedName) return null
 	return (
 		getVisibleServicesData().find(
-			(service) => String(service.name || "").trim().toLowerCase() === normalizedName,
+			(service) =>
+				String(service.name || "")
+					.trim()
+					.toLowerCase() === normalizedName,
 		) || null
 	)
 }
@@ -2569,8 +2586,8 @@ function getServiceByName(serviceName = "") {
 function getWhatsAppBaseUrl() {
 	const configuredUrl = String(
 		clientConfig?.social?.whatsapp ||
-		clientConfig?.integrations?.whatsappPublicUrl ||
-		"",
+			clientConfig?.integrations?.whatsappPublicUrl ||
+			"",
 	).trim()
 	return configuredUrl || "https://wa.me/"
 }
@@ -2582,7 +2599,9 @@ function buildWhatsAppUrl({
 	messageType = "booking",
 } = {}) {
 	const businessName = String(
-		clientConfig?.client?.name || clientConfig?.brand?.businessName || "the salon",
+		clientConfig?.client?.name ||
+			clientConfig?.brand?.businessName ||
+			"the salon",
 	).trim()
 	const safeServiceName = String(serviceName || "[Service name]").trim()
 	const safePrice = String(price || "[Price]").trim()
@@ -2598,7 +2617,11 @@ function buildWhatsAppUrl({
 	return `${getWhatsAppBaseUrl()}${separator}text=${encodeURIComponent(text)}`
 }
 
-function openWhatsAppForService(serviceName = "", price = "", messageType = "booking") {
+function openWhatsAppForService(
+	serviceName = "",
+	price = "",
+	messageType = "booking",
+) {
 	const url = buildWhatsAppUrl({ serviceName, price, messageType })
 	window.location.href = url
 }
@@ -9533,7 +9556,8 @@ function updateLightbox() {
 		}
 	}
 
-	const isOrderOnly = getServiceByName(item.serviceName || item.styleName)?.orderOnly === true
+	const isOrderOnly =
+		getServiceByName(item.serviceName || item.styleName)?.orderOnly === true
 	if (lightboxBookNow) {
 		lightboxBookNow.textContent = isOrderOnly ? "Order Product" : "Book Now"
 		lightboxBookNow.onclick = () => {
@@ -9544,7 +9568,9 @@ function updateLightbox() {
 				)
 				return
 			}
-			setBookingServiceValue(item.serviceName || item.styleName || item.styleType || "")
+			setBookingServiceValue(
+				item.serviceName || item.styleName || item.styleType || "",
+			)
 			if (lightbox) lightbox.classList.remove("active")
 			document.body.style.overflow = ""
 		}

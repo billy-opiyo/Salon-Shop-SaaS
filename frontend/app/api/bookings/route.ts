@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { auth } from "@/auth";
+
 import {
   BookingRequestError,
   BookingSlotUnavailableError,
@@ -28,7 +30,8 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const booking = await createPublicBooking(parsed.data, getRemoteAddress(request));
+    const session = await auth();
+    const booking = await createPublicBooking(parsed.data, getRemoteAddress(request), session?.user?.id);
     return NextResponse.json({ bookingId: booking.id, status: booking.status }, { status: 201 });
   } catch (error) {
     if (error instanceof BookingSlotUnavailableError) {

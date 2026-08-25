@@ -21,7 +21,7 @@ function toUtcDate(date: string | undefined): Date | undefined {
   return date ? new Date(`${date}T00:00:00.000Z`) : undefined;
 }
 
-export async function createPublicWaitlistEntry(input: WaitlistRequestInput, remoteAddress?: string) {
+export async function createPublicWaitlistEntry(input: WaitlistRequestInput, remoteAddress?: string, userId?: string) {
   if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
     throw new WaitlistRequestError("Security verification failed. Please try again.");
   }
@@ -58,6 +58,7 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
       const entry = await transaction.waitlistEntry.create({
         data: {
           tenantId: tenant.id,
+          userId,
           serviceName: input.serviceName,
           preferredDate,
           preferredTime: input.preferredTime,
@@ -72,6 +73,7 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
       await transaction.notificationDelivery.create({
         data: {
           tenantId: tenant.id,
+          userId,
           channel: "EMAIL",
           templateKey: "waitlist.created",
           destination: input.email.toLowerCase(),

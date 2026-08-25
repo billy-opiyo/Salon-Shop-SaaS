@@ -32,6 +32,7 @@ function toUtcDate(date: string): Date {
 export async function createPublicBooking(
   input: BookingRequestInput,
   remoteAddress?: string,
+  userId?: string,
 ): Promise<{ readonly id: string; readonly status: BookingStatus }> {
   if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
     throw new BookingRequestError("Security verification failed. Please try again.");
@@ -85,6 +86,7 @@ export async function createPublicBooking(
       const booking = await transaction.booking.create({
         data: {
           tenantId: tenant.id,
+          userId,
           serviceId: service?.id,
           stylistId: input.stylistId,
           firstName: input.firstName,

@@ -54,6 +54,41 @@ Completed in the isolated SaaS workspace:
   controls and sent to typed Next.js APIs with server-side validation,
   rate limiting, transaction boundaries, and Turnstile enforcement.
 
+Phase D gate status — 25 August 2026:
+
+- **Incomplete.** The tenant route preserves the copied reference markup,
+  stylesheet, image assets, and classic scripts, and the expected storefront
+  section anchors render successfully.
+- Desktop and mobile screenshot/interaction parity has not yet been accepted.
+  The first mobile smoke check found horizontal overflow caused by the Next.js
+  shell's `body` minimum width; that shell constraint has now been removed.
+- Authenticated interaction parity remains blocked in local development until
+  an operator provides `AUTH_SECRET`; `/api/auth/session` currently returns
+  Auth.js `MissingSecret`.
+- Phase E must not be treated as complete until the reference and tenant
+  routes pass the required desktop, 490px, 390px, and 360px visual and
+  interaction checks.
+- Source-level parity work has now removed additional hardcoded storefront
+- The copied Next.js reference runtime now consumes tenant gallery, review,
+  and blog arrays through its existing catalog configuration boundary; empty
+  arrays retain the reference fallback datasets.
+- Source-level Phase E public APIs now cover contact submission, verified-client
+  review submission with moderation status, and tenant-scoped favorite save/
+  remove operations; provider delivery remains deferred to the final
+  environment stage.
+- Phase F source work has started with a protected merchant bookings page at
+  `/manage/[tenantSlug]/bookings`, using the existing authorized service and
+  lifecycle-safe status actions while preserving the reference admin styling
+  vocabulary.
+- Phase F waitlist source work now provides tenant-authorized queue listing,
+  status transitions, and audit records at `/manage/[tenantSlug]/waitlist`;
+  provider notifications and automatic slot conversion remain deferred.
+- The merchant shell now follows permission-scoped access semantics: an active
+  member with any management permission may enter the shell, while each
+  protected workflow still enforces its specific permission server-side.
+  contact and branding values from the tenant adapter; those values resolve
+  from the tenant settings DTO with reference-safe fallbacks.
+
 Still gated or in progress:
 
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
@@ -72,18 +107,18 @@ Still gated or in progress:
 The reference implementation is a static Firebase Hosting site with a
 DOM-driven JavaScript frontend and Firebase Functions backend:
 
-| Area | Current reference | Rewrite implication |
-|---|---|---|
-| Public site | `public/index.html`, `public/JS/script.js`, `public/CSS/style.css` | Rebuild as typed App Router components while preserving layout, copy, selectors, interactions, and responsive behavior. |
-| Splash | `public/JS/splash.js` plus splash CSS/markup | Preserve the branded salon splash and its progress, reduced-motion, completion event, and reveal behavior for tenant stores. |
-| Admin | `public/admin.html`, `public/JS/admin.js` | Split into protected merchant management routes with server-enforced membership permissions. |
-| Configuration | `public/client-config.js`, `functions/client-config.js` | Replace per-copy configuration with tenant-scoped database settings and validated public configuration DTOs. |
-| Data | Firestore collections and `firestore.rules` | Recreate the business model in Neon/PostgreSQL with Prisma, tenant foreign keys, constraints, indexes, and transactional workflows. Import existing data only if it must be preserved. |
-| Backend | `functions/index.js` | Move callable, trigger, and scheduled behavior into server services, Route Handlers/Server Actions, and scheduled jobs. |
-| Media | Cloudinary signed uploads | Replace with server-authorized, presigned Cloudflare R2 uploads and tenant-isolated object keys. |
-| Email | Resend through Functions | Move to server-only Resend services with delivery records and retries. |
-| WhatsApp | WhatsApp Cloud API through Functions | Move to a server-only integration with tenant/provider configuration and delivery tracking. |
-| QA | Playwright, Vitest, rules emulator, Jest | Preserve behavioral coverage and add tenant isolation, API, Prisma, and entitlement tests. |
+| Area          | Current reference                                                  | Rewrite implication                                                                                                                                                                    |
+| ------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public site   | `public/index.html`, `public/JS/script.js`, `public/CSS/style.css` | Rebuild as typed App Router components while preserving layout, copy, selectors, interactions, and responsive behavior.                                                                |
+| Splash        | `public/JS/splash.js` plus splash CSS/markup                       | Preserve the branded salon splash and its progress, reduced-motion, completion event, and reveal behavior for tenant stores.                                                           |
+| Admin         | `public/admin.html`, `public/JS/admin.js`                          | Split into protected merchant management routes with server-enforced membership permissions.                                                                                           |
+| Configuration | `public/client-config.js`, `functions/client-config.js`            | Replace per-copy configuration with tenant-scoped database settings and validated public configuration DTOs.                                                                           |
+| Data          | Firestore collections and `firestore.rules`                        | Recreate the business model in Neon/PostgreSQL with Prisma, tenant foreign keys, constraints, indexes, and transactional workflows. Import existing data only if it must be preserved. |
+| Backend       | `functions/index.js`                                               | Move callable, trigger, and scheduled behavior into server services, Route Handlers/Server Actions, and scheduled jobs.                                                                |
+| Media         | Cloudinary signed uploads                                          | Replace with server-authorized, presigned Cloudflare R2 uploads and tenant-isolated object keys.                                                                                       |
+| Email         | Resend through Functions                                           | Move to server-only Resend services with delivery records and retries.                                                                                                                 |
+| WhatsApp      | WhatsApp Cloud API through Functions                               | Move to a server-only integration with tenant/provider configuration and delivery tracking.                                                                                            |
+| QA            | Playwright, Vitest, rules emulator, Jest                           | Preserve behavioral coverage and add tenant isolation, API, Prisma, and entitlement tests.                                                                                             |
 
 The authoritative feature inventory is `public/FEATURES.md`. Booking and slot
 semantics are defined in `public/BOOKING_WAITLIST_SCHEDULE_LOGIC.md`. Admin
@@ -189,11 +224,11 @@ Plan names are fixed as requested; prices, taxes, billing provider, trial
 length, and currency remain configuration decisions and must not be invented in
 code.
 
-| Plan | Intended baseline entitlements |
-|---|---|
-| Starter | One salon store, core branding, services, gallery, blog, contact, booking, basic reviews, owner dashboard, basic notifications, platform subdomain, and capped usage. |
-| Business | Starter plus expanded staff/admin permissions, advanced schedule/waitlist, richer gallery/blog/reviews, customer/security insights, additional media/usage, WhatsApp/email automation, and custom-domain readiness. |
-| Enterprise | Business plus negotiated usage, multiple locations or workspaces if approved, advanced roles/security/audit, custom domains, priority support, data/export controls, and enterprise onboarding. |
+| Plan       | Intended baseline entitlements                                                                                                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Starter    | One salon store, core branding, services, gallery, blog, contact, booking, basic reviews, owner dashboard, basic notifications, platform subdomain, and capped usage.                                               |
+| Business   | Starter plus expanded staff/admin permissions, advanced schedule/waitlist, richer gallery/blog/reviews, customer/security insights, additional media/usage, WhatsApp/email automation, and custom-domain readiness. |
+| Enterprise | Business plus negotiated usage, multiple locations or workspaces if approved, advanced roles/security/audit, custom domains, priority support, data/export controls, and enterprise onboarding.                     |
 
 Every feature is enforced by a server-side entitlement service. Hiding a UI
 button is never the enforcement mechanism. Plan limits must be checked in

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { auth } from "@/auth";
+
 import { WaitlistRequestError, createPublicWaitlistEntry } from "@backend/services/waitlistService";
 import { waitlistRequestSchema } from "@shared/validation/booking";
 
@@ -20,7 +22,8 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!parsed.success) return NextResponse.json({ error: "Please complete the waitlist details correctly." }, { status: 400 });
 
   try {
-    const entry = await createPublicWaitlistEntry(parsed.data, getRemoteAddress(request));
+    const session = await auth();
+    const entry = await createPublicWaitlistEntry(parsed.data, getRemoteAddress(request), session?.user?.id);
     return NextResponse.json({ waitlistId: entry.id, queuePosition: entry.queuePosition, status: entry.status }, { status: 201 });
   } catch (error) {
     if (error instanceof WaitlistRequestError) {
