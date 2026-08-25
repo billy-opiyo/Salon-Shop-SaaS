@@ -49,7 +49,7 @@ Completed in the isolated SaaS workspace:
   dashboard, reviews, blog, contact, footer, and mobile action markup.
 - Reference-backed /verify-email, not-found, and protected
   /manage/[tenantSlug] shells now use the original page contracts; the admin
-  shell requires active tenant membership with all management permissions.
+  shell requires active tenant membership and section-level permissions.
 - Booking and waitlist submissions are intercepted at the preserved reference
   controls and sent to typed Next.js APIs with server-side validation,
   rate limiting, transaction boundaries, and Turnstile enforcement.
@@ -68,7 +68,6 @@ Phase D gate status — 25 August 2026:
 - Phase E must not be treated as complete until the reference and tenant
   routes pass the required desktop, 490px, 390px, and 360px visual and
   interaction checks.
-- Source-level parity work has now removed additional hardcoded storefront
 - The copied Next.js reference runtime now consumes tenant gallery, review,
   and blog arrays through its existing catalog configuration boundary; empty
   arrays retain the reference fallback datasets.
@@ -83,11 +82,54 @@ Phase D gate status — 25 August 2026:
 - Phase F waitlist source work now provides tenant-authorized queue listing,
   status transitions, and audit records at `/manage/[tenantSlug]/waitlist`;
   provider notifications and automatic slot conversion remain deferred.
+- Signup no longer submits a development placeholder token; it now uses the
+  shared Turnstile widget and server verification boundary.
 - The merchant shell now follows permission-scoped access semantics: an active
   member with any management permission may enter the shell, while each
   protected workflow still enforces its specific permission server-side.
-  contact and branding values from the tenant adapter; those values resolve
-  from the tenant settings DTO with reference-safe fallbacks.
+- Client booking cancellation now has a tenant- and owner-scoped transaction,
+  slot release, audit timeline record, API route, and preserved dashboard-row
+  action. Client rescheduling now has the same ownership boundary, atomic slot
+  replacement, collision protection, audit record, API route, and preserved
+  dashboard modal connection.
+- Phase F service catalog source work now provides tenant-authorized category
+  visibility controls, audit records, and a management page that controls the
+  same enabled categories consumed by storefront queries.
+- Phase F gallery source work now provides tenant-authorized gallery listing,
+  publish/unpublish, deletion, and audit records; media upload signing remains
+  deferred until the R2 environment stage.
+- Phase F review source work now provides tenant-authorized moderation listing,
+  approve/reject/feature/delete actions, and audited updates; public review
+  edits and provider notifications remain separate follow-up work.
+- Phase F message source work now provides tenant-authorized contact inbox
+  listing, status counters, read/resolve/delete actions, and audit records.
+- Phase F blog source work now provides tenant-authorized listing,
+  publish/unpublish, deletion, and audit records; image upload remains pending
+  on the final R2 media stage.
+- Phase F team and security source work now provides tenant-authorized team
+  membership visibility and security activity snapshots for logins, alerts,
+  and account changes. Invitation mutations and incident-response controls
+  remain blocked on absent schema/provider decisions.
+- Phase F schedule source work now provides a tenant-authorized upcoming
+  appointment view using the existing booking records. Full day/week calendar
+  navigation and event detail interactions remain a follow-up source gap.
+
+Source implementation checkpoint — 25 August 2026:
+
+- Build and TypeScript validation pass after the current source batch.
+- Implemented route/service coverage includes public booking, waitlist,
+  contact, reviews, favorites, client cancellation/rescheduling, merchant
+  bookings, waitlist, schedule, gallery publication, blog publication, review
+  moderation, messages, service visibility, team visibility, and security
+  monitoring.
+- Remaining source work before environment configuration includes full CRUD
+  create/edit forms for merchant content, full day/week schedule interactions,
+  client profile/preferences/password/account deletion flows, public review
+  edit/report flows, media upload signing/storage adapters, notification job
+  code, and platform billing/domain lifecycle code.
+- These remaining items are not marked complete merely because their database
+  models or read-only pages exist; each still needs implementation and focused
+  acceptance coverage under the parity contract.
 
 Still gated or in progress:
 
