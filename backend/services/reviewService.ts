@@ -8,7 +8,11 @@ import {
 	hashRateLimitSubject,
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
-import type { ReviewRequestInput } from "@shared/validation/review"
+import type {
+	ReviewEditInput,
+	ReviewReportInput,
+	ReviewRequestInput,
+} from "@shared/validation/review"
 
 export class ReviewRequestError extends Error {
 	readonly code = "REVIEW_REQUEST_FAILED" as const
@@ -67,4 +71,61 @@ export async function createClientReview(
 		select: { id: true, status: true },
 	})
 	return { id: review.id, status: review.status.toLowerCase() }
+}
+
+export async function editClientReview(
+	userId: string,
+	input: ReviewEditInput,
+): Promise<void> {
+	const review = await prisma.review.findFirst({
+		where: {
+			id: input.id,
+			userId,
+			tenant: { slug: input.tenantSlug.toLowerCase(), status: "ACTIVE" },
+		},
+		select: { id: true },
+	})
+	if (!review) throw new ReviewRequestError("Review not found.")
+	await prisma.review.update({
+		where: { id: review.id },
+		data: {
+			rating: input.rating,
+			serviceName: input.serviceName,
+			text: input.text,
+			status: ReviewStatus.PENDING,
+			editedAt: new Date(),
+		},
+	})
+}
+
+export async function reportClientReview(
+	userId: string,
+	input: ReviewReportInput,
+	remoteAddress?: string,
+): Promise<void> {
+	if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress)))
+		throw new ReviewRequestError(
+			"Security verification failed. Please try again.",
+		)
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: input.tenantSlug.toLowerCase() },
+		select: { id: true, status: true },
+	})
+	if (!tenant || tenant.status !== "ACTIVE")
+		throw new ReviewRequestError("This salon is not currently available.")
+	const review = await prisma.review.findFirst({
+		where: { id: input.id, tenantId: tenant.id, status: ReviewStatus.APPROVED },
+		select: { id: true },
+	})
+	if (!review) throw new ReviewRequestError("Review not found.")
+	await consumeRateLimit({
+		tenantId: tenant.id,
+		subjectKey: hashRateLimitSubject(`${userId}:${input.id}`),
+		kind: "review-report",
+		intervalMs: 86_400_000,
+	})
+	await prisma.review.update({
+		where: { id: review.id },
+		data: { reportsCount: { increment: 1 } },
+	})
 }

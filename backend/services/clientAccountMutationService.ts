@@ -5,6 +5,7 @@ import { hash, compare } from "bcryptjs"
 import { prisma } from "@backend/db/prisma"
 import {
 	passwordChangeSchema,
+	preferencesSchema,
 	profileUpdateSchema,
 } from "@shared/validation/auth"
 
@@ -71,4 +72,16 @@ export async function deleteClientAccount(userId: string): Promise<void> {
 			"Transfer or remove your salon workspace before deleting this account.",
 		)
 	await prisma.user.delete({ where: { id: userId } })
+}
+
+export async function updateClientPreferences(
+	userId: string,
+	rawInput: unknown,
+): Promise<void> {
+	const input = preferencesSchema.parse(rawInput)
+	await prisma.userPreferences.upsert({
+		where: { userId },
+		create: { userId, ...input },
+		update: input,
+	})
 }

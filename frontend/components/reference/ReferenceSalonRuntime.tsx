@@ -846,6 +846,9 @@ function bindAccountMutationAdapter(): () => void {
 		"manageAccountChangePasswordBtn",
 	)
 	const deleteButton = document.getElementById("manageAccountDeleteBtn")
+	const preferencesButton = document.getElementById(
+		"manageAccountSavePreferencesBtn",
+	)
 	const confirmDeleteButton = document.getElementById("confirmDeleteAccountBtn")
 	const closeDeleteButton = document.getElementById(
 		"deleteAccountConfirmCloseBtn",
@@ -904,6 +907,37 @@ function bindAccountMutationAdapter(): () => void {
 			next.value = ""
 		}
 	}
+	const savePreferences = async (): Promise<void> => {
+		const theme = document.getElementById("manageAccountThemeSelect")
+		const fontSize = document.getElementById("manageAccountFontSizeSelect")
+		const highContrast = document.getElementById("manageAccountHighContrast")
+		const reducedMotion = document.getElementById("manageAccountReducedMotion")
+		const notifyEmail = document.getElementById("manageAccountNotifEmail")
+		const notifySms = document.getElementById("manageAccountNotifSms")
+		const notifyPush = document.getElementById("manageAccountNotifPush")
+		if (
+			!(theme instanceof HTMLSelectElement) ||
+			!(fontSize instanceof HTMLSelectElement) ||
+			!(highContrast instanceof HTMLInputElement) ||
+			!(reducedMotion instanceof HTMLInputElement) ||
+			!(notifyEmail instanceof HTMLInputElement) ||
+			!(notifySms instanceof HTMLInputElement) ||
+			!(notifyPush instanceof HTMLInputElement)
+		)
+			return
+		if (
+			await patchAccount({
+				theme: theme.value,
+				fontSize: fontSize.value,
+				highContrast: highContrast.checked,
+				reducedMotion: reducedMotion.checked,
+				notifyEmail: notifyEmail.checked,
+				notifySms: notifySms.checked,
+				notifyPush: notifyPush.checked,
+			})
+		)
+			setMessage("Preferences saved.")
+	}
 	const openDelete = (): void =>
 		document
 			.getElementById("deleteAccountConfirmModal")
@@ -925,6 +959,7 @@ function bindAccountMutationAdapter(): () => void {
 	}
 	profileButton?.addEventListener("click", saveProfile)
 	passwordButton?.addEventListener("click", changePassword)
+	preferencesButton?.addEventListener("click", savePreferences)
 	deleteButton?.addEventListener("click", openDelete)
 	confirmDeleteButton?.addEventListener("click", confirmDelete)
 	closeDeleteButton?.addEventListener("click", closeDelete)
@@ -933,6 +968,7 @@ function bindAccountMutationAdapter(): () => void {
 	return () => {
 		profileButton?.removeEventListener("click", saveProfile)
 		passwordButton?.removeEventListener("click", changePassword)
+		preferencesButton?.removeEventListener("click", savePreferences)
 		deleteButton?.removeEventListener("click", openDelete)
 		confirmDeleteButton?.removeEventListener("click", confirmDelete)
 		closeDeleteButton?.removeEventListener("click", closeDelete)

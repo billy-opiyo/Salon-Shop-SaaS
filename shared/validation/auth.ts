@@ -21,3 +21,13 @@ export const passwordChangeSchema = z.object({
 	currentPassword: z.string().min(12).max(128),
 	newPassword: z.string().min(12).max(128),
 })
+
+export const preferencesSchema = z.object({
+	theme: z.enum(["dark", "light"]),
+	fontSize: z.enum(["small", "medium", "large"]),
+	highContrast: z.boolean(),
+	reducedMotion: z.boolean(),
+	notifyEmail: z.boolean(),
+	notifySms: z.boolean(),
+	notifyPush: z.boolean(),
+})

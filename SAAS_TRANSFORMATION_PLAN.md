@@ -79,6 +79,12 @@ Phase D gate status — 25 August 2026:
   `/manage/[tenantSlug]/bookings`, using the existing authorized service and
   lifecycle-safe status actions while preserving the reference admin styling
   vocabulary.
+- Public review source workflows now include owner-scoped edits that return to
+  moderation and authenticated, rate-limited abuse reports using the existing
+  review report counter.
+- Client preference persistence now has a dedicated user-owned schema model,
+  validated API mutation, and preserved Manage Account control bridge. Avatar
+  upload remains deferred to the media provider stage.
 - Phase F waitlist source work now provides tenant-authorized queue listing,
   status transitions, and audit records at `/manage/[tenantSlug]/waitlist`;
   provider notifications and automatic slot conversion remain deferred.
@@ -148,14 +154,16 @@ Source implementation checkpoint — 25 August 2026:
   bookings, waitlist, schedule, gallery publication, blog publication, review
   moderation, messages, service visibility, team visibility, and security
   monitoring.
-- Remaining source work before environment configuration includes full CRUD
-  create/edit forms for merchant content, full day/week schedule interactions,
-  client profile/preferences/password/account deletion flows, public review
-  edit/report flows, media upload signing/storage adapters, notification job
-  code, and platform billing/domain lifecycle code.
-- These remaining items are not marked complete merely because their database
-  models or read-only pages exist; each still needs implementation and focused
-  acceptance coverage under the parity contract.
+- Remaining source work before environment configuration is limited to full
+  day/week schedule interactions, avatar/media upload adapters, provider-backed
+  notification delivery jobs, billing lifecycle code, custom-domain lifecycle
+  code, and focused parity acceptance coverage.
+- Client profile/password/account deletion, preference persistence, public review
+  edit/report APIs, merchant CRUD forms, and tenant-authorized management views
+  are now implemented at source level and validated by the production build.
+- Media signing, delivery, billing, domain verification, and migrations are
+  intentionally not marked complete until their provider contracts and
+  operator-owned environment values are available.
 
 Still gated or in progress:
 

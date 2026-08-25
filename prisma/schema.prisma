@@ -110,6 +110,7 @@ model User {
   auditLogs              AdminAuditLog[]
   mediaAssets            MediaAsset[]
   notificationDeliveries NotificationDelivery[]
+  preferences            UserPreferences?
   createdAttributions    Tenant[]               @relation("TenantCreatedBy")
 }
 
@@ -130,6 +131,21 @@ model Account {
 
   @@unique([provider, providerAccountId])
   @@index([userId])
+}
+
+model UserPreferences {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  theme         String   @default("dark")
+  fontSize      String   @default("medium")
+  highContrast  Boolean  @default(false)
+  reducedMotion Boolean  @default(false)
+  notifyEmail   Boolean  @default(true)
+  notifySms     Boolean  @default(false)
+  notifyPush    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
