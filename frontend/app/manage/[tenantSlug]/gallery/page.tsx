@@ -6,7 +6,12 @@ import {
 	MerchantGalleryError,
 } from "@backend/services/merchantGalleryService"
 
-import { removeGalleryStyle, updateGalleryStatus } from "./actions"
+import {
+	addGalleryStyle,
+	editGalleryStyle,
+	removeGalleryStyle,
+	updateGalleryStatus,
+} from "./actions"
 
 interface GalleryPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -58,6 +63,65 @@ export default async function MerchantGalleryPage({
 								</p>
 							</div>
 							<div className="manage-store__actions">
+								<details>
+									<summary>Edit</summary>
+									<form className="onboarding-form" action={editGalleryStyle}>
+										<input type="hidden" name="tenantSlug" value={tenantSlug} />
+										<input
+											type="hidden"
+											name="galleryStyleId"
+											value={style.id}
+										/>
+										<label>
+											Style name
+											<input
+												name="styleName"
+												defaultValue={style.styleName}
+												required
+											/>
+										</label>
+										<label>
+											Image URL
+											<input
+												name="imageUrl"
+												type="url"
+												defaultValue={style.imageUrl}
+												required
+											/>
+										</label>
+										<label>
+											Before image URL
+											<input
+												name="beforeImageUrl"
+												type="url"
+												defaultValue={style.beforeImageUrl ?? ""}
+											/>
+										</label>
+										<label>
+											Style type
+											<input
+												name="styleType"
+												defaultValue={style.styleType ?? ""}
+											/>
+										</label>
+										<label>
+											Published
+											<select
+												name="published"
+												defaultValue={String(style.published)}
+											>
+												<option value="true">Yes</option>
+												<option value="false">No</option>
+											</select>
+										</label>
+										<button
+											className="button button--outline button--small"
+											type="submit"
+										>
+											Save changes
+										</button>
+									</form>
+								</details>
 								<form action={updateGalleryStatus}>
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="galleryStyleId" value={style.id} />
@@ -88,6 +152,40 @@ export default async function MerchantGalleryPage({
 					))
 				)}
 			</section>
+			<form
+				className="onboarding-form"
+				action={addGalleryStyle}
+				aria-label="Add gallery style"
+			>
+				<h2>Add gallery style</h2>
+				<input type="hidden" name="tenantSlug" value={tenantSlug} />
+				<label>
+					Style name
+					<input name="styleName" required minLength={2} maxLength={160} />
+				</label>
+				<label>
+					Image URL
+					<input name="imageUrl" type="url" required />
+				</label>
+				<label>
+					Before image URL
+					<input name="beforeImageUrl" type="url" />
+				</label>
+				<label>
+					Style type
+					<input name="styleType" maxLength={120} />
+				</label>
+				<label>
+					Publish now
+					<select name="published" defaultValue="true">
+						<option value="true">Yes</option>
+						<option value="false">No</option>
+					</select>
+				</label>
+				<button className="button button--primary" type="submit">
+					Add gallery style
+				</button>
+			</form>
 		</main>
 	)
 }

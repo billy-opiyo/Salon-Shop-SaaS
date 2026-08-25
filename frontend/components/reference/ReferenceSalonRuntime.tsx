@@ -353,6 +353,82 @@ function bindPublicParityAdapters(
 		rescheduleBookingId = ""
 	}
 
+	const saveProfile = async (): Promise<void> => {
+		const name = document.getElementById("manageAccountName")
+		const phone = document.getElementById("manageAccountPhone")
+		if (
+			!(name instanceof HTMLInputElement) ||
+			!(phone instanceof HTMLInputElement)
+		)
+			return
+		const response = await fetch("/api/account", {
+			method: "PATCH",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ name: name.value, phone: phone.value }),
+		})
+		const result = await readReferenceJson(response)
+		setReferenceFormMessage(
+			"manageAccountMessage",
+			response.ok
+				? "Profile saved."
+				: (result.error ?? "Profile could not be saved."),
+			response.ok ? "success" : "error",
+		)
+		if (response.ok) await refreshReferenceAuthUi(tenantSlug)
+	}
+
+	const changePassword = async (): Promise<void> => {
+		const current = document.getElementById("manageAccountCurrentPassword")
+		const next = document.getElementById("manageAccountNewPassword")
+		if (
+			!(current instanceof HTMLInputElement) ||
+			!(next instanceof HTMLInputElement)
+		)
+			return
+		const response = await fetch("/api/account", {
+			method: "PATCH",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				currentPassword: current.value,
+				newPassword: next.value,
+			}),
+		})
+		const result = await readReferenceJson(response)
+		setReferenceFormMessage(
+			"manageAccountMessage",
+			response.ok
+				? "Password changed."
+				: (result.error ?? "Password could not be changed."),
+			response.ok ? "success" : "error",
+		)
+		if (response.ok) {
+			current.value = ""
+			next.value = ""
+		}
+	}
+
+	const deleteAccount = async (): Promise<void> => {
+		const response = await fetch("/api/account", { method: "DELETE" })
+		const result = await readReferenceJson(response)
+		const message = document.getElementById("deleteAccountConfirmMessage")
+		if (!response.ok) {
+			if (message)
+				message.textContent = result.error ?? "Account could not be deleted."
+			return
+		}
+		await signOut({ redirect: false })
+		window.location.assign("/")
+	}
+
+	const openDeleteAccount = (): void =>
+		document
+			.getElementById("deleteAccountConfirmModal")
+			?.setAttribute("aria-hidden", "false")
+	const closeDeleteAccount = (): void =>
+		document
+			.getElementById("deleteAccountConfirmModal")
+			?.setAttribute("aria-hidden", "true")
+
 	contactForm?.addEventListener("submit", submitContact, true)
 	reviewForm?.addEventListener("submit", submitReview, true)
 	document.addEventListener("click", toggleFavorite, true)
@@ -370,6 +446,27 @@ function bindPublicParityAdapters(
 	document
 		.getElementById("dashboardRescheduleBackdrop")
 		?.addEventListener("click", closeReschedule)
+	document
+		.getElementById("manageAccountSaveProfileBtn")
+		?.addEventListener("click", saveProfile)
+	document
+		.getElementById("manageAccountChangePasswordBtn")
+		?.addEventListener("click", changePassword)
+	document
+		.getElementById("manageAccountDeleteBtn")
+		?.addEventListener("click", openDeleteAccount)
+	document
+		.getElementById("deleteAccountConfirmBtn")
+		?.addEventListener("click", deleteAccount)
+	document
+		.getElementById("deleteAccountConfirmCloseBtn")
+		?.addEventListener("click", closeDeleteAccount)
+	document
+		.getElementById("deleteAccountConfirmCancelBtn")
+		?.addEventListener("click", closeDeleteAccount)
+	document
+		.getElementById("deleteAccountConfirmBackdrop")
+		?.addEventListener("click", closeDeleteAccount)
 	return () => {
 		contactForm?.removeEventListener("submit", submitContact, true)
 		reviewForm?.removeEventListener("submit", submitReview, true)
@@ -388,6 +485,27 @@ function bindPublicParityAdapters(
 		document
 			.getElementById("dashboardRescheduleBackdrop")
 			?.removeEventListener("click", closeReschedule)
+		document
+			.getElementById("manageAccountSaveProfileBtn")
+			?.removeEventListener("click", saveProfile)
+		document
+			.getElementById("manageAccountChangePasswordBtn")
+			?.removeEventListener("click", changePassword)
+		document
+			.getElementById("manageAccountDeleteBtn")
+			?.removeEventListener("click", openDeleteAccount)
+		document
+			.getElementById("deleteAccountConfirmBtn")
+			?.removeEventListener("click", deleteAccount)
+		document
+			.getElementById("deleteAccountConfirmCloseBtn")
+			?.removeEventListener("click", closeDeleteAccount)
+		document
+			.getElementById("deleteAccountConfirmCancelBtn")
+			?.removeEventListener("click", closeDeleteAccount)
+		document
+			.getElementById("deleteAccountConfirmBackdrop")
+			?.removeEventListener("click", closeDeleteAccount)
 	}
 }
 
@@ -721,6 +839,107 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 		setDashboardMessage("Your dashboard data could not be loaded.", "error")
 	}
 }
+
+function bindAccountMutationAdapter(): () => void {
+	const profileButton = document.getElementById("manageAccountSaveProfileBtn")
+	const passwordButton = document.getElementById(
+		"manageAccountChangePasswordBtn",
+	)
+	const deleteButton = document.getElementById("manageAccountDeleteBtn")
+	const confirmDeleteButton = document.getElementById("confirmDeleteAccountBtn")
+	const closeDeleteButton = document.getElementById(
+		"deleteAccountConfirmCloseBtn",
+	)
+	const cancelDeleteButton = document.getElementById(
+		"deleteAccountConfirmCancelBtn",
+	)
+	const backdrop = document.getElementById("deleteAccountConfirmBackdrop")
+	const message = document.getElementById("manageAccountMessage")
+	const setMessage = (text: string, error = false): void => {
+		if (!message) return
+		message.textContent = text
+		message.classList.toggle("error", error)
+		message.classList.toggle("success", !error)
+	}
+	const patchAccount = async (
+		payload: Record<string, unknown>,
+	): Promise<boolean> => {
+		const response = await fetch("/api/account", {
+			method: "PATCH",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+		})
+		const result = await readReferenceJson(response)
+		if (!response.ok)
+			setMessage(result.error ?? "Account changes could not be saved.", true)
+		return response.ok
+	}
+	const saveProfile = async (): Promise<void> => {
+		const name = document.getElementById("manageAccountName")
+		const phone = document.getElementById("manageAccountPhone")
+		if (
+			!(name instanceof HTMLInputElement) ||
+			!(phone instanceof HTMLInputElement)
+		)
+			return
+		if (await patchAccount({ name: name.value, phone: phone.value }))
+			setMessage("Profile saved.")
+	}
+	const changePassword = async (): Promise<void> => {
+		const current = document.getElementById("manageAccountCurrentPassword")
+		const next = document.getElementById("manageAccountNewPassword")
+		if (
+			!(current instanceof HTMLInputElement) ||
+			!(next instanceof HTMLInputElement)
+		)
+			return
+		if (
+			await patchAccount({
+				currentPassword: current.value,
+				newPassword: next.value,
+			})
+		) {
+			setMessage("Password changed.")
+			current.value = ""
+			next.value = ""
+		}
+	}
+	const openDelete = (): void =>
+		document
+			.getElementById("deleteAccountConfirmModal")
+			?.setAttribute("aria-hidden", "false")
+	const closeDelete = (): void =>
+		document
+			.getElementById("deleteAccountConfirmModal")
+			?.setAttribute("aria-hidden", "true")
+	const confirmDelete = async (): Promise<void> => {
+		const response = await fetch("/api/account", { method: "DELETE" })
+		const result = await readReferenceJson(response)
+		if (!response.ok) {
+			setMessage(result.error ?? "Account could not be deleted.", true)
+			closeDelete()
+			return
+		}
+		await signOut({ redirect: false })
+		window.location.reload()
+	}
+	profileButton?.addEventListener("click", saveProfile)
+	passwordButton?.addEventListener("click", changePassword)
+	deleteButton?.addEventListener("click", openDelete)
+	confirmDeleteButton?.addEventListener("click", confirmDelete)
+	closeDeleteButton?.addEventListener("click", closeDelete)
+	cancelDeleteButton?.addEventListener("click", closeDelete)
+	backdrop?.addEventListener("click", closeDelete)
+	return () => {
+		profileButton?.removeEventListener("click", saveProfile)
+		passwordButton?.removeEventListener("click", changePassword)
+		deleteButton?.removeEventListener("click", openDelete)
+		confirmDeleteButton?.removeEventListener("click", confirmDelete)
+		closeDeleteButton?.removeEventListener("click", closeDelete)
+		cancelDeleteButton?.removeEventListener("click", closeDelete)
+		backdrop?.removeEventListener("click", closeDelete)
+	}
+}
 function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const form = document.getElementById("emailAuthForm")
 	const logoutButton = document.getElementById("logoutBtn")
@@ -1048,6 +1267,7 @@ export function ReferenceSalonRuntime({
 		window.__referenceSalonRuntimeLoaded = true
 		let removeBookingAdapter: () => void = () => undefined
 		let removePublicParityAdapters: () => void = () => undefined
+		let removeAccountMutationAdapter: () => void = () => undefined
 
 		const runtimeScripts =
 			activeRuntime === "admin"
@@ -1081,6 +1301,7 @@ export function ReferenceSalonRuntime({
 						tenantSlug ?? "",
 						turnstileSiteKey ?? "",
 					)
+					removeAccountMutationAdapter = bindAccountMutationAdapter()
 				}
 			})
 			.catch((error: unknown) => {
@@ -1090,6 +1311,7 @@ export function ReferenceSalonRuntime({
 		return () => {
 			removeBookingAdapter()
 			removePublicParityAdapters()
+			removeAccountMutationAdapter()
 			document.body.className = originalBodyClassName
 		}
 	}, [

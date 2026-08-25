@@ -7,6 +7,7 @@ import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
+import type { GalleryMutationInput } from "@shared/validation/merchant"
 
 export class MerchantGalleryError extends Error {
 	readonly code = "MERCHANT_GALLERY_FAILED" as const
@@ -113,5 +114,60 @@ export async function deleteGalleryStyle(
 				resourceId: galleryStyleId,
 			},
 		})
+	})
+}
+
+export async function createGalleryStyle(
+	userId: string,
+	input: GalleryMutationInput,
+): Promise<void> {
+	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const style = await prisma.galleryStyle.create({
+		data: {
+			tenantId,
+			styleName: input.styleName,
+			imageUrl: input.imageUrl,
+			beforeImageUrl: input.beforeImageUrl || null,
+			styleType: input.styleType || null,
+			published: input.published,
+		},
+		select: { id: true },
+	})
+	await prisma.adminAuditLog.create({
+		data: {
+			tenantId,
+			actorUserId: userId,
+			action: "gallery.created",
+			resourceType: "gallery-style",
+			resourceId: style.id,
+		},
+	})
+}
+
+export async function updateGalleryStyle(
+	userId: string,
+	input: GalleryMutationInput & { id: string },
+): Promise<void> {
+	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const result = await prisma.galleryStyle.updateMany({
+		where: { id: input.id, tenantId },
+		data: {
+			styleName: input.styleName,
+			imageUrl: input.imageUrl,
+			beforeImageUrl: input.beforeImageUrl || null,
+			styleType: input.styleType || null,
+			published: input.published,
+		},
+	})
+	if (result.count !== 1)
+		throw new MerchantGalleryError("Gallery style not found.")
+	await prisma.adminAuditLog.create({
+		data: {
+			tenantId,
+			actorUserId: userId,
+			action: "gallery.updated",
+			resourceType: "gallery-style",
+			resourceId: input.id,
+		},
 	})
 }

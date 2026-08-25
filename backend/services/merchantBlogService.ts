@@ -7,6 +7,7 @@ import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
+import type { BlogMutationInput } from "@shared/validation/merchant"
 
 export class MerchantBlogError extends Error {
 	readonly code = "MERCHANT_BLOG_FAILED" as const
@@ -100,4 +101,64 @@ export async function deleteBlog(
 		where: { id: blogId, tenantId },
 	})
 	if (result.count !== 1) throw new MerchantBlogError("Blog post not found.")
+}
+
+export async function createBlogForUser(
+	userId: string,
+	input: BlogMutationInput,
+): Promise<void> {
+	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const post = await prisma.blogPost.create({
+		data: {
+			tenantId,
+			title: input.title,
+			slug: input.slug,
+			excerpt: input.excerpt,
+			imageUrl: input.imageUrl || null,
+			readTime: input.readTime || null,
+			publishDate: new Date(`${input.publishDate}T00:00:00.000Z`),
+			readMoreUrl: input.readMoreUrl || null,
+			published: input.published,
+		},
+		select: { id: true },
+	})
+	await prisma.adminAuditLog.create({
+		data: {
+			tenantId,
+			actorUserId: userId,
+			action: "blog.created",
+			resourceType: "blog-post",
+			resourceId: post.id,
+		},
+	})
+}
+
+export async function updateBlogForUser(
+	userId: string,
+	input: BlogMutationInput & { id: string },
+): Promise<void> {
+	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const result = await prisma.blogPost.updateMany({
+		where: { id: input.id, tenantId },
+		data: {
+			title: input.title,
+			slug: input.slug,
+			excerpt: input.excerpt,
+			imageUrl: input.imageUrl || null,
+			readTime: input.readTime || null,
+			publishDate: new Date(`${input.publishDate}T00:00:00.000Z`),
+			readMoreUrl: input.readMoreUrl || null,
+			published: input.published,
+		},
+	})
+	if (result.count !== 1) throw new MerchantBlogError("Blog post not found.")
+	await prisma.adminAuditLog.create({
+		data: {
+			tenantId,
+			actorUserId: userId,
+			action: "blog.updated",
+			resourceType: "blog-post",
+			resourceId: input.id,
+		},
+	})
 }

@@ -106,6 +106,19 @@ Phase D gate status — 25 August 2026:
 - Phase F blog source work now provides tenant-authorized listing,
   publish/unpublish, deletion, and audit records; image upload remains pending
   on the final R2 media stage.
+- Phase F gallery and blog creation source work now provides validated
+  management forms using image URL fields; external media upload signing and
+  quota enforcement remain deferred to R2 configuration.
+- Gallery and blog management now also have validated edit operations and
+  forms, completing database-level create/read/update/delete lifecycle except
+  provider-backed media upload.
+- The interrupted service CRUD work has resumed: service creation and
+  deletion are exposed in the management page, with validated update service
+  logic and explicit order-only handling for cosmetics.
+- The interrupted source batch also completed validated gallery and blog
+  creation/edit forms and tenant-scoped audit-backed update operations.
+- Phase F staff source work now provides tenant-authorized stylist listing,
+  creation, activation/deactivation, and booking-compatible active state.
 - Phase F team and security source work now provides tenant-authorized team
   membership visibility and security activity snapshots for logins, alerts,
   and account changes. Invitation mutations and incident-response controls
@@ -113,6 +126,19 @@ Phase D gate status — 25 August 2026:
 - Phase F schedule source work now provides a tenant-authorized upcoming
   appointment view using the existing booking records. Full day/week calendar
   navigation and event detail interactions remain a follow-up source gap.
+- Phase F service catalog now includes validated service creation, update
+  service primitives, and deletion plus a management create form; edit UI and
+  full catalog availability controls remain follow-up work.
+- Stabilization fixed duplicate tenant dataset declarations in the copied
+  runtime and added the root service-worker entry required by the preserved
+  registration contract; the Firebase reference source remains unchanged.
+- Client account source work now supports authenticated profile updates,
+  password changes, and guarded account deletion through `/api/account`;
+  preferences and avatar storage remain dependent on additional schema/media
+  decisions.
+- Public tenant queries now enforce category visibility for both services and
+  gallery styles, so merchant category controls affect the preserved storefront
+  filters and booking catalog at the data boundary.
 
 Source implementation checkpoint — 25 August 2026:
 

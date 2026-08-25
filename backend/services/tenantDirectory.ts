@@ -142,7 +142,7 @@ export async function getTenantStorefront(
 					},
 				},
 				services: {
-					where: { enabled: true },
+					where: { enabled: true, category: { enabled: true } },
 					orderBy: { sortOrder: "asc" },
 					select: {
 						id: true,
@@ -155,7 +155,7 @@ export async function getTenantStorefront(
 					},
 				},
 				galleryStyles: {
-					where: { published: true },
+					where: { published: true, category: { enabled: true } },
 					orderBy: { updatedAt: "desc" },
 					take: 24,
 					select: {

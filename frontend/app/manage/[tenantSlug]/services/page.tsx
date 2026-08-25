@@ -6,7 +6,12 @@ import {
 	MerchantServiceCatalogError,
 } from "@backend/services/merchantServiceCatalog"
 
-import { updateCategoryVisibility } from "./actions"
+import {
+	createService,
+	deleteService,
+	updateCategoryVisibility,
+	updateService,
+} from "./actions"
 
 interface ServicesPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -69,6 +74,78 @@ export default async function MerchantServicesPage({
 						</form>
 					</article>
 				))}
+			</section>
+			<section
+				className="manage-store-list"
+				aria-labelledby="service-catalog-title"
+			>
+				<h2 id="service-catalog-title">Service catalog</h2>
+				{categories.flatMap((category) =>
+					category.services.map((service) => (
+						<article className="manage-store" key={service.id}>
+							<div>
+								<p className="eyebrow">
+									{category.label} · {service.enabled ? "Active" : "Inactive"}
+								</p>
+								<h3>{service.name}</h3>
+								<p>
+									{service.priceLabel} · {service.durationLabel}
+									{service.orderOnly ? " · WhatsApp order only" : ""}
+								</p>
+							</div>
+							<form action={deleteService}>
+								<input type="hidden" name="tenantSlug" value={tenantSlug} />
+								<input type="hidden" name="serviceId" value={service.id} />
+								<button
+									className="button button--outline button--small"
+									type="submit"
+								>
+									Delete
+								</button>
+							</form>
+						</article>
+					)),
+				)}
+				<form className="onboarding-form" action={createService}>
+					<label>
+						Category
+						<select name="categoryId" required>
+							{categories.map((category) => (
+								<option key={category.id} value={category.id}>
+									{category.label}
+								</option>
+							))}
+						</select>
+					</label>
+					<label>
+						Name
+						<input name="name" required minLength={2} maxLength={160} />
+					</label>
+					<label>
+						Slug
+						<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
+					</label>
+					<label>
+						Description
+						<textarea name="description" required maxLength={3000} />
+					</label>
+					<label>
+						Price label
+						<input name="priceLabel" required maxLength={120} />
+					</label>
+					<label>
+						Duration label
+						<input name="durationLabel" required maxLength={80} />
+					</label>
+					<label>
+						<input name="orderOnly" type="checkbox" value="true" /> WhatsApp
+						order only
+					</label>
+					<input type="hidden" name="tenantSlug" value={tenantSlug} />
+					<button className="button button--primary" type="submit">
+						Add service
+					</button>
+				</form>
 			</section>
 		</main>
 	)

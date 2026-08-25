@@ -920,7 +920,6 @@ const fallbackGalleryData = [
 	},
 ]
 
-let galleryData = [...fallbackGalleryData]
 const configuredGalleryData = getClientCatalogArray("gallery")
 let galleryData = configuredGalleryData.length
 	? configuredGalleryData
@@ -1207,7 +1206,6 @@ const fallbackBlogsData = [
 
 const BLOG_CARD_IMAGE_FALLBACK = "IMG/Kids-Small Single Braids after.jpg"
 
-let blogsData = [...fallbackBlogsData]
 const configuredBlogsData = getClientCatalogArray("blogs")
 let blogsData = configuredBlogsData.length
 	? configuredBlogsData
@@ -1268,7 +1266,6 @@ const fallbackTestimonialsData = [
 	},
 ]
 
-let testimonialsData = [...fallbackTestimonialsData]
 const configuredTestimonialsData = getClientCatalogArray("testimonials")
 let testimonialsData = configuredTestimonialsData.length
 	? configuredTestimonialsData
