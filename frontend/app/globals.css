@@ -88,6 +88,213 @@ main {
   text-transform: uppercase;
 }
 
+.platform-mobile-actions,
+.saas-tenant-mobile-actions {
+  display: none;
+}
+
+.browse-store-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.browse-store {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface);
+  transition: border-color .2s ease, transform .2s ease;
+}
+
+.browse-store:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+
+.browse-store__image {
+  min-height: 220px;
+  background: url("/reference/IMG/4-african-knotless-braids-with-beads.webp") center/cover;
+}
+
+.browse-store__content {
+  display: grid;
+  align-content: center;
+  gap: .8rem;
+  padding: 2rem;
+}
+
+.browse-store__content strong {
+  font: 2.4rem/1 var(--serif);
+}
+
+.browse-store__content>span:not(.eyebrow):not(.browse-store__link) {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.browse-store__link {
+  color: var(--gold-soft);
+  font-weight: 700;
+}
+
+.policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .8rem;
+  margin-top: 2rem;
+}
+
+.policy-links a,
+.policy-page {
+  color: var(--muted);
+}
+
+.policy-links a {
+  padding: .75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+}
+
+.policy-links a:hover {
+  border-color: var(--gold);
+  color: var(--foreground);
+}
+
+.policy-page {
+  width: min(760px, calc(100% - 3rem));
+  margin: auto;
+  padding: 5rem 0;
+  line-height: 1.75;
+}
+
+.policy-page h1,
+.policy-page h2 {
+  color: var(--foreground);
+  font-family: var(--serif);
+}
+
+.legal-consent {
+  display: grid;
+  gap: .65rem;
+  margin: .5rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+}
+
+.legal-consent legend {
+  padding: 0 .35rem;
+  color: var(--gold-soft);
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.legal-consent label {
+  display: block;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.legal-consent a {
+  color: var(--gold-soft);
+}
+
+.policy-page h1 {
+  margin: 1rem 0;
+  font-size: clamp(2.8rem, 8vw, 5rem);
+  line-height: 1;
+}
+
+.policy-page h2 {
+  margin-top: 2.5rem;
+}
+
+.saas-platform-home-link {
+  display: block;
+  margin-top: 1.5rem;
+  color: var(--gold-soft);
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .platform-nav {
+    display: none;
+  }
+
+  .platform-mobile-actions,
+  .saas-tenant-mobile-actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .25rem;
+    padding: .5rem max(.5rem, env(safe-area-inset-left)) max(.5rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: rgba(10, 10, 10, .94);
+    backdrop-filter: blur(14px);
+  }
+
+  .saas-tenant-mobile-actions {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .platform-mobile-actions a,
+  .saas-tenant-mobile-actions a {
+    display: grid;
+    justify-items: center;
+    gap: .15rem;
+    min-width: 0;
+    padding: .45rem .15rem;
+    color: var(--muted);
+    font-size: 1.15rem;
+  }
+
+  .platform-mobile-actions a:hover,
+  .saas-tenant-mobile-actions a:hover,
+  .platform-mobile-actions a:focus-visible,
+  .saas-tenant-mobile-actions a:focus-visible {
+    color: var(--gold-soft);
+  }
+
+  .platform-mobile-actions small,
+  .saas-tenant-mobile-actions small {
+    overflow: hidden;
+    max-width: 100%;
+    color: inherit;
+    font-size: .62rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .browse-store {
+    grid-template-columns: 1fr;
+  }
+
+  .browse-store__image {
+    min-height: 170px;
+  }
+
+  .browse-store__content {
+    padding: 1.35rem;
+  }
+
+  .policy-page {
+    width: min(100% - 2rem, 760px);
+    padding: 3rem 0 6rem;
+  }
+
+  main {
+    padding-bottom: 4.5rem;
+  }
+}
+
 @keyframes splash-progress {
   from {
     transform: scaleX(0);

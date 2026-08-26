@@ -703,6 +703,42 @@ function getConfiguredWhatsAppUrl(): string {
 	return "https://wa.me/254740470381"
 }
 
+function addTenantNavigationLinks(tenantSlug: string): () => void {
+	const root = document.querySelector<HTMLElement>(".reference-salon-root")
+	if (!root) return () => undefined
+	const actionBar = document.createElement("nav")
+	actionBar.className = "saas-tenant-mobile-actions"
+	actionBar.setAttribute("aria-label", "Salon mobile navigation")
+	const actions = [
+		["#home", "⌂", "Home"],
+		["#gallery", "▧", "Gallery"],
+		["#booking", "✦", "Book"],
+		["#clientDashboard", "♡", "Favorites"],
+		["#clientDashboard", "◉", "Account"],
+	] as const
+	actions.forEach(([href, icon, label]) => {
+		const link = document.createElement("a")
+		link.href = href
+		link.setAttribute("aria-label", label)
+		link.innerHTML = `<span aria-hidden="true">${icon}</span><small>${label}</small>`
+		actionBar.append(link)
+	})
+	document.body.append(actionBar)
+
+	const footer = root.querySelector<HTMLElement>("footer.footer")
+	const footerLink = document.createElement("a")
+	footerLink.href = "/"
+	footerLink.textContent = "Platform Home page"
+	footerLink.className = "saas-platform-home-link"
+	footerLink.setAttribute("data-saas-platform-link", tenantSlug)
+	if (footer) footer.append(footerLink)
+
+	return () => {
+		actionBar.remove()
+		footerLink.remove()
+	}
+}
+
 function openReferenceWhatsAppOrder(serviceName: string, price: string): void {
 	const text =
 		"Hello, I would like to order " +
@@ -1904,6 +1940,7 @@ export function ReferenceSalonRuntime({
 		let removeBookingAdapter: () => void = () => undefined
 		let removePublicParityAdapters: () => void = () => undefined
 		let removeAccountMutationAdapter: () => void = () => undefined
+		let removeTenantNavigationLinks: () => void = () => undefined
 
 		const runtimeScripts =
 			activeRuntime === "admin"
@@ -1937,6 +1974,9 @@ export function ReferenceSalonRuntime({
 						turnstileSiteKey ?? "",
 					)
 					removeAccountMutationAdapter = bindAccountMutationAdapter()
+					removeTenantNavigationLinks = addTenantNavigationLinks(
+						tenantSlug ?? "",
+					)
 				} else if (activeRuntime === "admin") {
 					removeAccountMutationAdapter = bindAdminSnapshotAdapter(
 						tenantSlug ?? "",
@@ -1951,6 +1991,7 @@ export function ReferenceSalonRuntime({
 			removeBookingAdapter()
 			removePublicParityAdapters()
 			removeAccountMutationAdapter()
+			removeTenantNavigationLinks()
 			document.body.className = originalBodyClassName
 		}
 	}, [

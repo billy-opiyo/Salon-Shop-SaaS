@@ -120,6 +120,7 @@ model User {
   preferences            UserPreferences?
   createdAttributions    Tenant[]               @relation("TenantCreatedBy")
   sentTeamInvitations    TeamInvitation[]       @relation("TeamInvitationSender")
+  legalAcceptances       LegalAcceptance[]
 }
 
 model Account {
@@ -175,45 +176,46 @@ model VerificationToken {
 }
 
 model Tenant {
-  id              String                 @id @default(cuid())
-  slug            String                 @unique
-  businessName    String
-  status          TenantStatus           @default(DRAFT)
-  country         String                 @default("Kenya")
-  city            String?
-  timezone        String                 @default("Africa/Nairobi")
-  locale          String                 @default("en-KE")
-  currency        String                 @default("KES")
-  ownerUserId     String
-  createdByUserId String?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  owner           User                   @relation("TenantOwner", fields: [ownerUserId], references: [id])
-  createdBy       User?                  @relation("TenantCreatedBy", fields: [createdByUserId], references: [id])
-  domains         TenantDomain[]
-  settings        TenantSettings?
-  memberships     Membership[]
-  subscription    Subscription?
-  categories      ServiceCategory[]
-  services        Service[]
-  stylists        Stylist[]
-  galleryStyles   GalleryStyle[]
-  blogPosts       BlogPost[]
-  bookingSlots    BookingSlot[]
-  bookings        Booking[]
-  waitlistEntries WaitlistEntry[]
-  reviews         Review[]
-  favorites       Favorite[]
-  contactMessages ContactMessage[]
-  mediaAssets     MediaAsset[]
-  notifications   NotificationDelivery[]
-  rateLimits      RateLimitRecord[]
-  loginActivities LoginActivity[]
-  alerts          SecurityAlert[]
-  accountChanges  AccountChangeHistory[]
-  timeline        ActivityTimeline[]
-  auditLogs       AdminAuditLog[]
-  teamInvitations TeamInvitation[]
+  id               String                 @id @default(cuid())
+  slug             String                 @unique
+  businessName     String
+  status           TenantStatus           @default(DRAFT)
+  country          String                 @default("Kenya")
+  city             String?
+  timezone         String                 @default("Africa/Nairobi")
+  locale           String                 @default("en-KE")
+  currency         String                 @default("KES")
+  ownerUserId      String
+  createdByUserId  String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  owner            User                   @relation("TenantOwner", fields: [ownerUserId], references: [id])
+  createdBy        User?                  @relation("TenantCreatedBy", fields: [createdByUserId], references: [id])
+  domains          TenantDomain[]
+  settings         TenantSettings?
+  memberships      Membership[]
+  subscription     Subscription?
+  categories       ServiceCategory[]
+  services         Service[]
+  stylists         Stylist[]
+  galleryStyles    GalleryStyle[]
+  blogPosts        BlogPost[]
+  bookingSlots     BookingSlot[]
+  bookings         Booking[]
+  waitlistEntries  WaitlistEntry[]
+  reviews          Review[]
+  favorites        Favorite[]
+  contactMessages  ContactMessage[]
+  mediaAssets      MediaAsset[]
+  notifications    NotificationDelivery[]
+  rateLimits       RateLimitRecord[]
+  loginActivities  LoginActivity[]
+  alerts           SecurityAlert[]
+  accountChanges   AccountChangeHistory[]
+  timeline         ActivityTimeline[]
+  auditLogs        AdminAuditLog[]
+  teamInvitations  TeamInvitation[]
+  legalAcceptances LegalAcceptance[]
 
   @@index([ownerUserId])
   @@index([status])
@@ -252,6 +254,23 @@ model TenantSettings {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model LegalAcceptance {
+  id             String   @id @default(cuid())
+  userId         String
+  tenantId       String
+  termsVersion   String
+  privacyVersion String
+  cookiesVersion String
+  acceptedAt     DateTime @default(now())
+  ipHash         String?
+  userAgent      String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, acceptedAt])
 }
 
 model Plan {

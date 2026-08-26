@@ -169,6 +169,17 @@ Phase D gate status — 25 August 2026:
 - The preserved admin controls now have source-level tab navigation, snapshot
   counters/lists, safe action buttons, service-category toggles, and schedule
   day/week navigation over the existing booking records.
+- Platform navigation now includes Home, Browse Stores, Plans, and Create
+  Store; Browse Stores contains the clickable Royal Braids demo tenant.
+- Platform and tenant mobile action bars are implemented with accessible
+  Home/Browse/Plans/Create Store and Home/Gallery/Book/Favorites/Account links.
+- Tenant storefront footers now receive a Platform Home page quick link without
+  changing the copied Firebase reference source.
+- Platform Terms of Service, Privacy Policy, and Cookie Policy pages are now
+  available, and onboarding requires all three policy acknowledgements before
+  the tenant provisioning transaction records a versioned `LegalAcceptance`.
+- Platform splash lifecycle cleanup now removes stale splash classes during
+  route transitions, preventing the onboarding/store loading glitch.
 - Admin detail panels now support inline review replies and team permission
   updates through the tenant-authorized mutation route.
 - Waitlist conversion now atomically verifies the preferred slot, creates or
@@ -183,6 +194,9 @@ Phase D gate status — 25 August 2026:
   configured.
 - Auth.js credentials now use the compatible JWT session strategy, preserving
   authenticated user IDs through JWT/session callbacks.
+- Playwright and Vitest acceptance tooling is installed and configured with a
+  fresh test server, test Auth.js secret, Chromium desktop/mobile projects,
+  and a reference asset contract test.
 - Playwright and Vitest are installed at the root. The acceptance suite covers
   Royal Braids image health, mobile overflow, protected admin redirects, and
   unauthenticated admin mutations; all 8 desktop/mobile Playwright tests pass.
