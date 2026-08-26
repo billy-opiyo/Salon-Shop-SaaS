@@ -4,14 +4,14 @@ export default function TermsPage() {
 	return (
 		<main className="policy-page">
 			<Link className="brand-mark" href="/">
-				Salon Store Platform
+				Beauty Sphia
 			</Link>
 			<p className="eyebrow">Platform policy</p>
 			<h1>Terms of Service</h1>
 			<p>
 				These terms govern salon workspace creation, storefront publishing,
 				bookings, customer communication, and responsible use of the Salon Store
-				Platform.
+				Beauty Sphia.
 			</p>
 			<h2>Workspace responsibility</h2>
 			<p>

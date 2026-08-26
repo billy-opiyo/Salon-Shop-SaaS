@@ -4,7 +4,7 @@ export default function PrivacyPage() {
 	return (
 		<main className="policy-page">
 			<Link className="brand-mark" href="/">
-				Salon Store Platform
+				Beauty Sphia
 			</Link>
 			<p className="eyebrow">Platform policy</p>
 			<h1>Privacy Policy</h1>

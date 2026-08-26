@@ -41,18 +41,14 @@ export default function PlatformHome() {
 		<>
 			<ExperienceSplash
 				eyebrow="The salon operating platform"
-				brandName="Salon Store Platform"
+				brandName="Beauty Sphia"
 				description="Preparing your workspace experience"
 			/>
 			<main>
 				<header className="platform-header">
-					<Link
-						className="brand-mark"
-						href="/"
-						aria-label="Salon Store Platform home"
-					>
+					<Link className="brand-mark" href="/" aria-label="Beauty Sphia home">
 						<span className="brand-mark__dot" aria-hidden="true" />
-						Salon Store Platform
+						Beauty Sphia
 					</Link>
 					<nav className="platform-nav" aria-label="Platform navigation">
 						<Link href="#home">Home</Link>
