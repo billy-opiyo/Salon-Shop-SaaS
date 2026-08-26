@@ -381,7 +381,7 @@ main {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(210, 170, 95, .18);
   border-radius: 1rem;
   background: linear-gradient(145deg, rgba(74, 53, 24, .62), rgba(23, 18, 11, .7));
   box-shadow: var(--glass-shadow);
@@ -395,8 +395,12 @@ main {
 }
 
 .browse-store__image {
+  width: 100%;
   min-height: 220px;
-  background: url("/reference/IMG/4-african-knotless-braids-with-beads.webp") center/cover;
+  padding: 0;
+  border: 0;
+  background: url("/reference/IMG/Royal Braids logo.png") center/contain no-repeat;
+  background-color: transparent;
 }
 
 .browse-store__content {
