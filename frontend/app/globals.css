@@ -124,6 +124,19 @@ main {
   paint-order: stroke;
 }
 
+.splash-handwriting-fill {
+  opacity: 0;
+  animation: platform-splash-handwriting-fill 1.25s ease 3.65s forwards;
+}
+
+.splash-handwriting-letter {
+  opacity: 0;
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation: platform-splash-write-letter 1.08s cubic-bezier(.45, 0, .22, 1) forwards;
+  animation-delay: calc(var(--letter-index, 0) * .28s);
+}
+
 .splash-content {
   position: relative;
   z-index: 1;
@@ -192,36 +205,137 @@ main {
 }
 
 .splash-progress {
-  height: 4px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .12);
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
-.splash-progress span {
-  display: block;
-  width: 0;
-  height: 100%;
-  transform-origin: left;
-  background: linear-gradient(90deg, #c8963e, #fff3cf);
-  animation: platform-splash-progress 5s linear forwards;
-}
-
-.splash-description {
-  margin: 16px 0 0;
+.splash-progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
   color: #b5aea3;
   font-size: .8rem;
+  font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-@keyframes platform-splash-progress {
+.splash-progress-percent {
+  color: #f1d59b;
+  font-variant-numeric: tabular-nums;
+}
+
+.splash-progress-track {
+  position: relative;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(215, 168, 79, .42);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+}
+
+.splash-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  min-width: 8px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c8963e, #fff3cf);
+  transition: width .12s linear;
+}
+
+.splash-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent);
+  animation: platform-splash-shimmer 1.45s linear infinite;
+}
+
+.splash-loading-text {
+  margin: 16px 0 0;
+  color: #b5aea3;
+  font-size: .85rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.splash-loading-dots {
+  display: inline-flex;
+  width: 1.35em;
+  margin-left: 2px;
+  justify-content: flex-start;
+  vertical-align: baseline;
+}
+
+.splash-loading-dots span {
+  opacity: 0;
+  animation: platform-splash-dot 1.35s ease-in-out infinite;
+}
+
+.splash-loading-dots span:nth-child(2) {
+  animation-delay: .18s;
+}
+
+.splash-loading-dots span:nth-child(3) {
+  animation-delay: .36s;
+}
+
+@keyframes platform-splash-dot {
+
+  0%,
+  18%,
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  42%,
+  72% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes platform-splash-write-letter {
+  0% {
+    opacity: 1;
+    stroke-dashoffset: 1600;
+    filter: blur(.6px);
+  }
+
+  72% {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+    filter: blur(0);
+  }
+}
+
+@keyframes platform-splash-handwriting-fill {
   from {
-    width: 0;
+    opacity: 0;
+    filter: blur(.8px);
   }
 
   to {
-    width: 100%;
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes platform-splash-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
   }
 }
 

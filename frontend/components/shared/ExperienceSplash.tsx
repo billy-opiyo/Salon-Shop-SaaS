@@ -18,6 +18,7 @@ export function ExperienceSplash({
 }: ExperienceSplashProps) {
 	const [isExiting, setIsExiting] = useState(false)
 	const [isVisible, setIsVisible] = useState(true)
+	const [progress, setProgress] = useState(1)
 
 	useEffect(() => {
 		document.documentElement.classList.add("splash-active")
@@ -25,6 +26,18 @@ export function ExperienceSplash({
 		const exitTimeoutId = window.setTimeout(() => {
 			setIsExiting(true)
 		}, SPLASH_DURATION_MS)
+		const progressStart = performance.now()
+		let progressFrameId = 0
+		const updateProgress = (now: number) => {
+			const nextProgress = Math.min(
+				100,
+				Math.round(1 + ((now - progressStart) / SPLASH_DURATION_MS) * 99),
+			)
+			setProgress(nextProgress)
+			if (nextProgress < 100)
+				progressFrameId = window.requestAnimationFrame(updateProgress)
+		}
+		progressFrameId = window.requestAnimationFrame(updateProgress)
 		const revealTimeoutId = window.setTimeout(() => {
 			document.documentElement.classList.remove("splash-active")
 			document.body.classList.remove("splash-active")
@@ -36,6 +49,7 @@ export function ExperienceSplash({
 		return () => {
 			window.clearTimeout(exitTimeoutId)
 			window.clearTimeout(revealTimeoutId)
+			window.cancelAnimationFrame(progressFrameId)
 			document.documentElement.classList.remove(
 				"splash-active",
 				"splash-complete",
@@ -48,7 +62,7 @@ export function ExperienceSplash({
 
 	return (
 		<div
-			className={`splash-screen${isExiting ? " splash-hide" : ""}`}
+			className={`splash-screen splash-animations-ready${isExiting ? " splash-hide" : ""}`}
 			role="status"
 			aria-live="polite"
 		>
@@ -106,6 +120,7 @@ export function ExperienceSplash({
 							{Array.from(brandName).map((letter, index) => (
 								<tspan
 									className="splash-handwriting-letter"
+									style={{ "--letter-index": index } as React.CSSProperties}
 									key={`${letter}-${index}`}
 								>
 									{letter === " " ? "\u00a0" : letter}
@@ -120,11 +135,27 @@ export function ExperienceSplash({
 					aria-label={`Loading ${brandName}`}
 					aria-valuemin={1}
 					aria-valuemax={100}
-					aria-valuenow={100}
+					aria-valuenow={progress}
 				>
-					<span />
+					<div className="splash-progress-header">
+						<span className="splash-progress-label">Loading</span>
+						<span className="splash-progress-percent">{progress}%</span>
+					</div>
+					<div className="splash-progress-track">
+						<div
+							className="splash-progress-fill"
+							style={{ width: `${progress}%` }}
+						/>
+					</div>
 				</div>
-				<p className="splash-description">{description}</p>
+				<p className="splash-loading-text">
+					{description}
+					<span className="splash-loading-dots" aria-hidden="true">
+						<span>.</span>
+						<span>.</span>
+						<span>.</span>
+					</span>
+				</p>
 			</div>
 		</div>
 	)
