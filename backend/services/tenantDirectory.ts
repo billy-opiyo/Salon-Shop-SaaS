@@ -67,10 +67,26 @@ const fixtureTenant: TenantStorefront = {
 			title: "Golden knotless",
 			category: "Braids",
 			tone: "gallery-tone--gold",
+			imageUrl: "/reference/IMG/knotless braids.jpg",
 		},
-		{ title: "Soft silk finish", category: "Hair", tone: "gallery-tone--rose" },
-		{ title: "Weekend glow", category: "Beauty", tone: "gallery-tone--plum" },
-		{ title: "Classic crown", category: "Braids", tone: "gallery-tone--sand" },
+		{
+			title: "Soft silk finish",
+			category: "Hair",
+			tone: "gallery-tone--rose",
+			imageUrl: "/reference/IMG/box-braids-hairstyles-1x1-1.jpg",
+		},
+		{
+			title: "Weekend glow",
+			category: "Beauty",
+			tone: "gallery-tone--plum",
+			imageUrl: "/reference/IMG/goddess-braids.webp",
+		},
+		{
+			title: "Classic crown",
+			category: "Braids",
+			tone: "gallery-tone--sand",
+			imageUrl: "/reference/IMG/fulan-braids.jpg",
+		},
 	],
 	reviews: [
 		{

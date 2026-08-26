@@ -755,7 +755,7 @@ const servicesData = configuredServicesData.length
 
 const fallbackGalleryData = [
 	{
-		imageUrl: "IMG/box-braids-hairstyles-1x1-1.jpg",
+		imageUrl: "/reference/IMG/box-braids-hairstyles-1x1-1.jpg",
 		styleName: "Box Braids",
 		styleType: "Classic Box",
 		stylistName: "Fatima Hassan",
@@ -768,8 +768,8 @@ const fallbackGalleryData = [
 		featuredMostBooked: true,
 	},
 	{
-		imageUrl: "IMG/knotless braids.jpg",
-		beforeImageUrl: "IMG/keeping box braids.jpg",
+		imageUrl: "/reference/IMG/knotless braids.jpg",
+		beforeImageUrl: "/reference/IMG/keeping box braids.jpg",
 		hasBeforeAfter: true,
 		styleName: "Knotless Braids",
 		styleType: "Knotless",
@@ -782,7 +782,7 @@ const fallbackGalleryData = [
 		featuredTrending: true,
 	},
 	{
-		imageUrl: "IMG/black-cornrows.webp",
+		imageUrl: "/reference/IMG/black-cornrows.webp",
 		styleName: "Cornrows Design",
 		styleType: "Cornrows",
 		stylistName: "Grace Wanjiku",
@@ -793,7 +793,7 @@ const fallbackGalleryData = [
 		hairType: "Natural hair",
 	},
 	{
-		imageUrl: "IMG/fulan-braids.jpg",
+		imageUrl: "/reference/IMG/fulan-braids.jpg",
 		styleName: "Fulani Braids",
 		styleType: "Fulani",
 		stylistName: "Amina Diallo",
@@ -805,7 +805,7 @@ const fallbackGalleryData = [
 		featuredMostBooked: true,
 	},
 	{
-		imageUrl: "IMG/Senegalese_Twist.webp",
+		imageUrl: "/reference/IMG/Senegalese_Twist.webp",
 		styleName: "Senegalese Twists",
 		styleType: "Twists",
 		stylistName: "Fatima Hassan",
@@ -816,8 +816,8 @@ const fallbackGalleryData = [
 		hairType: "24-inch twist fiber",
 	},
 	{
-		imageUrl: "IMG/passion-twists.webp",
-		beforeImageUrl: "IMG/natural hair care.webp",
+		imageUrl: "/reference/IMG/passion-twists.webp",
+		beforeImageUrl: "/reference/IMG/natural hair care.webp",
 		hasBeforeAfter: true,
 		styleName: "Passion Twists",
 		styleType: "Twists",
@@ -829,7 +829,7 @@ const fallbackGalleryData = [
 		hairType: "Boho curl fiber",
 	},
 	{
-		imageUrl: "IMG/goddess-braids.webp",
+		imageUrl: "/reference/IMG/goddess-braids.webp",
 		styleName: "Goddess Braids",
 		styleType: "Goddess",
 		stylistName: "Grace Wanjiku",
@@ -840,7 +840,7 @@ const fallbackGalleryData = [
 		hairType: "20-inch fiber",
 	},
 	{
-		imageUrl: "IMG/Lemonade_Braids.webp",
+		imageUrl: "/reference/IMG/Lemonade_Braids.webp",
 		styleName: "Lemonade Braids",
 		styleType: "Side Cornrows",
 		stylistName: "Amina Diallo",
@@ -852,7 +852,7 @@ const fallbackGalleryData = [
 		featuredTrending: true,
 	},
 	{
-		imageUrl: "IMG/braiding trends.jpg",
+		imageUrl: "/reference/IMG/braiding trends.jpg",
 		styleName: "Braiding Trends",
 		styleType: "Creative Mix",
 		stylistName: "Fatima Hassan",
@@ -863,7 +863,7 @@ const fallbackGalleryData = [
 		hairType: "Mixed extensions",
 	},
 	{
-		imageUrl: "IMG/keeping box braids.jpg",
+		imageUrl: "/reference/IMG/keeping box braids.jpg",
 		styleName: "Box Braids Care",
 		styleType: "Maintenance",
 		stylistName: "Zainab Mohamed",
@@ -874,7 +874,7 @@ const fallbackGalleryData = [
 		hairType: "Retouch service",
 	},
 	{
-		imageUrl: "IMG/natural hair care.webp",
+		imageUrl: "/reference/IMG/natural hair care.webp",
 		styleName: "Natural Hair Care",
 		styleType: "Protective Prep",
 		stylistName: "Grace Wanjiku",
@@ -885,7 +885,7 @@ const fallbackGalleryData = [
 		hairType: "Natural afro texture",
 	},
 	{
-		imageUrl: "IMG/twist-braids.jpg",
+		imageUrl: "/reference/IMG/twist-braids.jpg",
 		styleName: "Twist Braids",
 		styleType: "Two Strand Twists",
 		stylistName: "Amina Diallo",
@@ -897,7 +897,7 @@ const fallbackGalleryData = [
 		featuredMostBooked: true,
 	},
 	{
-		imageUrl: "IMG/natural hair care.webp",
+		imageUrl: "/reference/IMG/natural hair care.webp",
 		styleName: "Nourish & Shine Hair Oil",
 		serviceName: "Nourish & Shine Hair Oil",
 		serviceCategory: "cosmetics-products",
@@ -908,7 +908,7 @@ const fallbackGalleryData = [
 		hairType: "Scalp and hair care",
 	},
 	{
-		imageUrl: "IMG/maintaining box braids.webp",
+		imageUrl: "/reference/IMG/maintaining box braids.webp",
 		styleName: "Crown Edge Control",
 		serviceName: "Crown Edge Control",
 		serviceCategory: "cosmetics-products",
