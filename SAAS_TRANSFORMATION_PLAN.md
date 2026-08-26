@@ -20,7 +20,7 @@ Moving existing Firebase data is optional and depends on whether the current
 data is reference content or live business data. No Firebase production
 cutover is implied by this plan.
 
-## 1A. Implementation status — 24 August 2026
+## 1A. Implementation status — 26 August 2026
 
 Completed in the isolated SaaS workspace:
 
@@ -130,23 +130,41 @@ Phase D gate status — 25 August 2026:
   and account changes. Invitation mutations and incident-response controls
   remain blocked on absent schema/provider decisions.
 - Phase F schedule source work now provides a tenant-authorized upcoming
-  appointment view using the existing booking records. Full day/week calendar
-  navigation and event detail interactions remain a follow-up source gap.
+  appointment view using the existing booking records, and the preserved admin
+  schedule now has source-level day/week navigation over those records. Rich
+  event detail and quick-action parity remains a follow-up source gap.
 - Phase F service catalog now includes validated service creation, update
-  service primitives, and deletion plus a management create form; edit UI and
-  full catalog availability controls remain follow-up work.
+  service primitives, deletion, a management create form, and category
+  visibility controls; richer inline edit controls remain a follow-up gap.
 - Stabilization fixed duplicate tenant dataset declarations in the copied
   runtime and added the root service-worker entry required by the preserved
   registration contract; the Firebase reference source remains unchanged.
 - Client account source work now supports authenticated profile updates,
   password changes, and guarded account deletion through `/api/account`;
-  preferences and avatar storage remain dependent on additional schema/media
-  decisions.
+  validated preference persistence is also complete through `/api/account`;
+  avatar storage remains dependent on the media provider stage.
 - Public tenant queries now enforce category visibility for both services and
   gallery styles, so merchant category controls affect the preserved storefront
   filters and booking catalog at the data boundary.
+- Royal Braids storefront image paths were repaired: copied reference gallery
+  fallbacks now use absolute `/reference/IMG/...` URLs, all local fallback asset
+  references were verified, and the Royal Braids fixture gallery now supplies
+  valid local images instead of empty image sources.
+- The protected admin shell now uses the NextAuth session and a Prisma-backed
+  admin snapshot route at `/api/manage/[tenantSlug]/snapshot`; the legacy
+  Firebase `admin.js` runtime is no longer loaded by the Next.js admin route.
+- The admin snapshot is permission-scoped and loads existing Prisma-backed
+  bookings, waitlist entries, gallery, blogs, reviews, messages, services,
+  stylists, team membership, and security activity.
+- A validated admin mutation route at `/api/manage/[tenantSlug]/actions` now
+  dispatches tenant-authorized booking lifecycle, waitlist status, message,
+  review moderation, gallery/blog publication, deletion, and service-category
+  visibility actions to the existing merchant services with audit behavior.
+- The preserved admin controls now have source-level tab navigation, snapshot
+  counters/lists, safe action buttons, service-category toggles, and schedule
+  day/week navigation over the existing booking records.
 
-Source implementation checkpoint — 25 August 2026:
+Source implementation checkpoint — 26 August 2026:
 
 - Build and TypeScript validation pass after the current source batch.
 - Implemented route/service coverage includes public booking, waitlist,
@@ -154,15 +172,17 @@ Source implementation checkpoint — 25 August 2026:
   bookings, waitlist, schedule, gallery publication, blog publication, review
   moderation, messages, service visibility, team visibility, and security
   monitoring.
-- Remaining source work before environment configuration is limited to full
-  day/week schedule interactions, avatar/media upload adapters, provider-backed
-  notification delivery jobs, billing lifecycle code, custom-domain lifecycle
-  code, and focused parity acceptance coverage.
+- Remaining source work before environment configuration is limited to richer
+  admin detail panels, complete admin-user/invitation mutations, security
+  incident actions/exports, safe waitlist-to-booking conversion, and focused
+  parity acceptance coverage.
 - Client profile/password/account deletion, preference persistence, public review
   edit/report APIs, merchant CRUD forms, and tenant-authorized management views
   are now implemented at source level and validated by the production build.
-- Media signing, delivery, billing, domain verification, and migrations are
-  intentionally not marked complete until their provider contracts and
+- Media upload routes now validate files and enforce tenant permissions, but the
+  default storage adapter truthfully returns provider-unconfigured responses;
+  media signing/storage, delivery, billing, domain verification, and migrations
+  remain intentionally incomplete until their provider contracts and
   operator-owned environment values are available.
 
 Still gated or in progress:
@@ -170,9 +190,9 @@ Still gated or in progress:
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
-- Remaining parity work is the full admin CRUD/action migration, Auth.js client
-  verification flows, client dashboard data adapters, contact/review/favorites
-  APIs, and provider-backed media/email/WhatsApp workflows.
+- Remaining parity work is admin detail/edit parity, Auth.js client verification
+  and reset flows, richer client dashboard adapters, provider-backed media,
+  email/WhatsApp delivery, and focused responsive/admin acceptance tests.
 - The copied reference assets are authoritative for storefront/admin UI. No
   tenant storefront redesign should be introduced; future work must preserve
   the original selectors, spacing, typography, colors, shadows, animations,

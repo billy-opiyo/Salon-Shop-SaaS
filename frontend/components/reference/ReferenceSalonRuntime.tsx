@@ -62,6 +62,460 @@ function loadClassicScript(source: string): Promise<void> {
 	})
 }
 
+type AdminSnapshotRecord = Record<string, unknown>
+
+function renderAdminSnapshotList(
+	elementId: string,
+	items: readonly unknown[] | undefined,
+	emptyMessage: string,
+): void {
+	const element = document.getElementById(elementId)
+	if (!element) return
+	element.replaceChildren()
+	if (!items?.length) {
+		const empty = document.createElement("p")
+		empty.className = "admin-empty-state"
+		empty.textContent = emptyMessage
+		element.append(empty)
+		return
+	}
+
+	items.forEach((item) => {
+		const record =
+			typeof item === "object" && item !== null
+				? (item as AdminSnapshotRecord)
+				: { value: item }
+		const row = document.createElement("article")
+		row.className = "admin-snapshot-row"
+		const title = document.createElement("strong")
+		title.textContent = String(
+			record.serviceName ??
+				record.styleName ??
+				record.title ??
+				record.subject ??
+				record.name ??
+				record.email ??
+				record.changeType ??
+				record.value ??
+				"Record",
+		)
+		row.append(title)
+		const details = document.createElement("p")
+		details.textContent = Object.entries(record)
+			.filter(
+				([key]) =>
+					![
+						"serviceName",
+						"styleName",
+						"title",
+						"subject",
+						"name",
+						"email",
+						"value",
+					].includes(key),
+			)
+			.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
+			.join(" · ")
+		row.append(details)
+		const recordId = typeof record.id === "string" ? record.id : ""
+		const status = typeof record.status === "string" ? record.status : ""
+		const actionGroup = document.createElement("div")
+		actionGroup.className = "admin-platform-actions"
+		const addAction = (
+			action: string,
+			label: string,
+			extra: Record<string, string> = {},
+		) => {
+			if (!recordId) return
+			const button = document.createElement("button")
+			button.type = "button"
+			button.className = "btn btn-outline admin-platform-action"
+			button.dataset.adminAction = action
+			button.dataset.adminId = recordId
+			Object.entries(extra).forEach(([key, value]) => {
+				button.dataset[key] = value
+			})
+			button.textContent = label
+			actionGroup.append(button)
+		}
+		if (elementId === "adminBookingsList") {
+			if (status === "PENDING" || status === "WAITLISTED")
+				addAction("booking-status", "Confirm", { status: "CONFIRMED" })
+			if (
+				status === "PENDING" ||
+				status === "CONFIRMED" ||
+				status === "WAITLISTED"
+			)
+				addAction("booking-status", "Cancel", { status: "CANCELLED" })
+			if (status === "CONFIRMED")
+				addAction("booking-status", "Complete", { status: "COMPLETED" })
+		}
+		if (elementId === "adminWaitlistList") {
+			if (status === "WAITING")
+				addAction("waitlist-status", "Contact", { status: "CONTACTED" })
+			if (status === "WAITING" || status === "CONTACTED")
+				addAction("waitlist-status", "Book", { status: "BOOKED" })
+			if (status !== "CANCELLED")
+				addAction("waitlist-status", "Cancel", { status: "CANCELLED" })
+		}
+		if (elementId === "adminContactList") {
+			if (status === "NEW")
+				addAction("message-status", "Mark read", { status: "READ" })
+			if (status !== "RESOLVED")
+				addAction("message-status", "Resolve", { status: "RESOLVED" })
+			addAction("message-delete", "Delete")
+		}
+		if (elementId === "adminReviewsList") {
+			if (status === "PENDING")
+				addAction("review-update", "Approve", { status: "APPROVED" })
+			if (status === "PENDING")
+				addAction("review-update", "Reject", { status: "REJECTED" })
+			addAction("review-delete", "Delete")
+		}
+		if (elementId === "adminGalleryList") {
+			addAction(
+				"gallery-publication",
+				record.published === true ? "Unpublish" : "Publish",
+				{ published: String(record.published !== true) },
+			)
+			addAction("gallery-delete", "Delete")
+		}
+		if (elementId === "adminBlogsList") {
+			addAction(
+				"blog-publication",
+				record.published === true ? "Unpublish" : "Publish",
+				{ published: String(record.published !== true) },
+			)
+			addAction("blog-delete", "Delete")
+		}
+		row.append(actionGroup)
+		element.append(row)
+	})
+}
+
+function formatAdminSnapshotValue(value: unknown): string {
+	if (value === null || value === undefined) return ""
+	if (
+		typeof value === "string" ||
+		typeof value === "number" ||
+		typeof value === "boolean"
+	)
+		return String(value)
+	if (Array.isArray(value))
+		return value.map(formatAdminSnapshotValue).join(", ")
+	return JSON.stringify(value)
+}
+
+function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
+	const loginForm = document.getElementById("adminLoginForm")
+	const panel = document.getElementById("adminPanel")
+	const userState = document.getElementById("adminUserState")
+	const authMessage = document.getElementById("adminAuthMessage")
+	if (loginForm instanceof HTMLElement) loginForm.style.display = "none"
+	if (panel instanceof HTMLElement) panel.style.display = "block"
+	if (userState) userState.textContent = "Signed in with platform account"
+	if (authMessage) authMessage.textContent = ""
+
+	const removeTabHandlers: Array<() => void> = []
+	const actionHandler = (event: Event) => {
+		const target = event.target
+		if (!(target instanceof HTMLElement)) return
+		const button = target.closest<HTMLButtonElement>(".admin-platform-action")
+		if (!button) return
+		const action = button.dataset.adminAction
+		const id = button.dataset.adminId
+		if (!action || !id) return
+		button.disabled = true
+		const payload: Record<string, unknown> = { action, id }
+		if (button.dataset.status) payload.status = button.dataset.status
+		if (button.dataset.published)
+			payload.published = button.dataset.published === "true"
+		void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+		})
+			.then((response) => {
+				if (!response.ok)
+					throw new Error("The admin action could not be completed.")
+				window.location.reload()
+			})
+			.catch((error: unknown) => {
+				button.disabled = false
+				const message = document.getElementById("adminActionMessage")
+				if (message) {
+					message.textContent =
+						error instanceof Error
+							? error.message
+							: "The admin action could not be completed."
+					message.style.display = "block"
+				}
+			})
+	}
+	document.addEventListener("click", actionHandler)
+	removeTabHandlers.push(() =>
+		document.removeEventListener("click", actionHandler),
+	)
+	document
+		.querySelectorAll<HTMLElement>("[data-admin-section-tab]")
+		.forEach((tab) => {
+			const handler = () => {
+				const section = tab.dataset.adminSectionTab
+				if (!section) return
+				document
+					.querySelectorAll<HTMLElement>("[data-admin-section-tab]")
+					.forEach((item) => item.classList.toggle("active", item === tab))
+				document
+					.querySelectorAll<HTMLElement>("[data-admin-section]")
+					.forEach((item) =>
+						item.classList.toggle(
+							"active",
+							item.dataset.adminSection === section,
+						),
+					)
+			}
+			tab.addEventListener("click", handler)
+			removeTabHandlers.push(() => tab.removeEventListener("click", handler))
+		})
+
+	let cancelled = false
+	let scheduleDate = new Date()
+	let scheduleMode: "day" | "week" = "week"
+	let scheduleBookings: unknown[] = []
+	const renderSchedule = () => {
+		const grid = document.getElementById("adminScheduleGrid")
+		if (!grid) return
+		const start = new Date(scheduleDate)
+		if (scheduleMode === "week") {
+			const day = start.getDay()
+			start.setDate(start.getDate() - day)
+		}
+		const days = scheduleMode === "day" ? 1 : 7
+		grid.replaceChildren()
+		for (let offset = 0; offset < days; offset += 1) {
+			const date = new Date(start)
+			date.setDate(start.getDate() + offset)
+			const key = date.toISOString().slice(0, 10)
+			const column = document.createElement("div")
+			column.className = "admin-schedule-day"
+			const heading = document.createElement("h3")
+			heading.textContent = date.toLocaleDateString(undefined, {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			})
+			column.append(heading)
+			const dayItems = scheduleBookings.filter((item) => {
+				const record = item as AdminSnapshotRecord
+				return String(record.appointmentDate ?? "").slice(0, 10) === key
+			})
+			if (!dayItems.length) {
+				const empty = document.createElement("p")
+				empty.className = "admin-empty-state"
+				empty.textContent = "No appointments"
+				column.append(empty)
+			}
+			dayItems.forEach((item) => {
+				const record = item as AdminSnapshotRecord
+				const event = document.createElement("button")
+				event.type = "button"
+				event.className = "admin-schedule-event"
+				event.textContent = `${String(record.timeLabel ?? "Time")} - ${String(record.serviceName ?? "Appointment")}`
+				event.title = `${String(record.firstName ?? "")} ${String(record.lastName ?? "")} (${String(record.status ?? "")})`
+				column.append(event)
+			})
+			grid.append(column)
+		}
+		const label = document.getElementById("adminScheduleRangeLabel")
+		if (label)
+			label.textContent =
+				scheduleMode === "day"
+					? start.toLocaleDateString()
+					: `${start.toLocaleDateString()} - ${new Date(start.getTime() + 6 * 86400000).toLocaleDateString()}`
+	}
+	const scheduleHandler = (event: Event) => {
+		const target = event.target
+		if (!(target instanceof HTMLElement)) return
+		if (target.id === "adminScheduleToday") scheduleDate = new Date()
+		if (target.id === "adminSchedulePrev")
+			scheduleDate.setDate(
+				scheduleDate.getDate() - (scheduleMode === "day" ? 1 : 7),
+			)
+		if (target.id === "adminScheduleNext")
+			scheduleDate.setDate(
+				scheduleDate.getDate() + (scheduleMode === "day" ? 1 : 7),
+			)
+		const view = target.closest<HTMLElement>("[data-schedule-view]")?.dataset
+			.scheduleView
+		if (view === "day" || view === "week") scheduleMode = view
+		if (
+			target.id === "adminScheduleToday" ||
+			target.id === "adminSchedulePrev" ||
+			target.id === "adminScheduleNext" ||
+			view
+		)
+			renderSchedule()
+	}
+	document.addEventListener("click", scheduleHandler)
+	removeTabHandlers.push(() =>
+		document.removeEventListener("click", scheduleHandler),
+	)
+	void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`, {
+		credentials: "same-origin",
+		cache: "no-store",
+	})
+		.then(async (response) => {
+			if (!response.ok) throw new Error("Admin data could not be loaded.")
+			return (await response.json()) as AdminSnapshotRecord
+		})
+		.then((snapshot) => {
+			if (cancelled) return
+			const bookings = Array.isArray(snapshot.bookings) ? snapshot.bookings : []
+			const waitlist = Array.isArray(snapshot.waitlist) ? snapshot.waitlist : []
+			const reviews = Array.isArray(snapshot.reviews) ? snapshot.reviews : []
+			const messages = Array.isArray(snapshot.messages) ? snapshot.messages : []
+			const gallery = Array.isArray(snapshot.gallery) ? snapshot.gallery : []
+			const blogs = Array.isArray(snapshot.blogs) ? snapshot.blogs : []
+			const services = Array.isArray(snapshot.services) ? snapshot.services : []
+			const categoryMount = document.getElementById(
+				"adminServiceCategoryToggles",
+			)
+			if (categoryMount) {
+				categoryMount.replaceChildren()
+				services.forEach((item) => {
+					const category = item as AdminSnapshotRecord
+					if (typeof category.id !== "string") return
+					const label = document.createElement("label")
+					label.className = "admin-service-toggle"
+					const input = document.createElement("input")
+					input.type = "checkbox"
+					input.checked = category.enabled === true
+					input.addEventListener("change", () => {
+						void fetch(
+							`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+							{
+								method: "POST",
+								credentials: "same-origin",
+								headers: { "content-type": "application/json" },
+								body: JSON.stringify({
+									action: "category-visibility",
+									id: category.id,
+									enabled: input.checked,
+								}),
+							},
+						).catch(() => {
+							input.checked = !input.checked
+						})
+					})
+					label.append(
+						input,
+						document.createTextNode(
+							String(category.label ?? "Service category"),
+						),
+					)
+					categoryMount.append(label)
+				})
+			}
+			scheduleBookings = bookings
+			renderSchedule()
+			const stylists = Array.isArray(snapshot.stylists) ? snapshot.stylists : []
+			const team = Array.isArray(snapshot.team) ? snapshot.team : []
+			const security = snapshot.security as AdminSnapshotRecord | undefined
+			const securityLogins = Array.isArray(security?.logins)
+				? security.logins
+				: []
+			renderAdminSnapshotList(
+				"adminBookingsList",
+				bookings,
+				"No bookings found.",
+			)
+			renderAdminSnapshotList(
+				"adminWaitlistList",
+				waitlist,
+				"No waitlist entries found.",
+			)
+			renderAdminSnapshotList("adminReviewsList", reviews, "No reviews found.")
+			renderAdminSnapshotList(
+				"adminContactList",
+				messages,
+				"No messages found.",
+			)
+			renderAdminSnapshotList(
+				"adminGalleryList",
+				gallery,
+				"No gallery styles found.",
+			)
+			renderAdminSnapshotList("adminBlogsList", blogs, "No blog posts found.")
+			renderAdminSnapshotList(
+				"adminServicesList",
+				services,
+				"No services found.",
+			)
+			renderAdminSnapshotList("adminAdminsList", team, "No team members found.")
+			renderAdminSnapshotList(
+				"adminSecurityActivityList",
+				securityLogins,
+				"No security activity found.",
+			)
+			const counts: Record<string, number> = {
+				adminTotalCount: bookings.length,
+				adminPendingCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "PENDING",
+				).length,
+				adminConfirmedCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "CONFIRMED",
+				).length,
+				adminWaitlistedBookingCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "WAITLISTED",
+				).length,
+				adminCompletedCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "COMPLETED",
+				).length,
+				adminCancelledCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "CANCELLED",
+				).length,
+				adminReviewsTotalCount: reviews.length,
+				adminReviewsPendingCount: reviews.filter(
+					(item) => (item as AdminSnapshotRecord).status === "PENDING",
+				).length,
+				adminReviewsApprovedCount: reviews.filter(
+					(item) => (item as AdminSnapshotRecord).status === "APPROVED",
+				).length,
+				adminMessagesTotalCount: messages.length,
+				adminMessagesNewCount: messages.filter(
+					(item) => (item as AdminSnapshotRecord).status === "NEW",
+				).length,
+				adminWaitlistTotalCount: waitlist.length,
+				adminWaitlistWaitingCount: waitlist.filter(
+					(item) => (item as AdminSnapshotRecord).status === "WAITING",
+				).length,
+				adminAdminsTotalCount: team.length,
+				adminSecurityTotalCount: securityLogins.length,
+			}
+			Object.entries(counts).forEach(([id, count]) => {
+				const element = document.getElementById(id)
+				if (element) element.textContent = String(count)
+			})
+			const actionMessage = document.getElementById("adminActionMessage")
+			if (actionMessage)
+				actionMessage.textContent =
+					"Admin data loaded from the platform database."
+		})
+		.catch((error: unknown) => {
+			if (!cancelled && authMessage)
+				authMessage.textContent =
+					error instanceof Error
+						? error.message
+						: "Admin data could not be loaded."
+		})
+
+	return () => {
+		cancelled = true
+		removeTabHandlers.forEach((remove) => remove())
+	}
+}
+
 function getFormValue(form: HTMLFormElement, name: string): string {
 	const value = new FormData(form).get(name)
 	return typeof value === "string" ? value.trim() : ""
@@ -1310,7 +1764,6 @@ export function ReferenceSalonRuntime({
 				? [
 						"/reference/JS/apply-client-config.js",
 						"/reference/JS/theme-preset-preview.js",
-						"/reference/JS/admin.js",
 					]
 				: REFERENCE_SCRIPTS
 
@@ -1338,6 +1791,10 @@ export function ReferenceSalonRuntime({
 						turnstileSiteKey ?? "",
 					)
 					removeAccountMutationAdapter = bindAccountMutationAdapter()
+				} else if (activeRuntime === "admin") {
+					removeAccountMutationAdapter = bindAdminSnapshotAdapter(
+						tenantSlug ?? "",
+					)
 				}
 			})
 			.catch((error: unknown) => {
