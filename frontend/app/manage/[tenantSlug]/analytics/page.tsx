@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import {
+	assertAnalyticsAccess,
 	getTenantAnalytics,
 	getBookingAnalytics,
 	getReviewAnalytics,
@@ -24,6 +25,11 @@ export default async function MerchantAnalyticsPage({
 		select: { id: true },
 	})
 	if (!tenant) redirect(`/manage`)
+	try {
+		await assertAnalyticsAccess(session.user.id, tenant.id)
+	} catch {
+		redirect(`/manage/${tenantSlug}`)
+	}
 
 	const [analytics, bookingAnalytics, reviewAnalytics] = await Promise.all([
 		getTenantAnalytics(tenant.id),

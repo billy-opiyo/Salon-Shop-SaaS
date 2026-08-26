@@ -1,6 +1,10 @@
 import "server-only"
 
 import { prisma } from "@backend/db/prisma"
+import {
+	assertTenantMembership,
+	assertTenantPermission,
+} from "@backend/services/authorization"
 
 export class AnalyticsError extends Error {
 	readonly code = "ANALYTICS_FAILED" as const
@@ -8,6 +12,29 @@ export class AnalyticsError extends Error {
 		super(message)
 		this.name = "AnalyticsError"
 	}
+}
+
+export async function assertAnalyticsAccess(
+	userId: string,
+	tenantId: string,
+): Promise<void> {
+	const membership = await prisma.membership.findUnique({
+		where: { tenantId_userId: { tenantId, userId } },
+		select: {
+			tenantId: true,
+			userId: true,
+			role: true,
+			status: true,
+			canManageAdmins: true,
+			canManageBookings: true,
+			canManageContent: true,
+			canManageSecurity: true,
+		},
+	})
+	assertTenantPermission(
+		assertTenantMembership(membership, tenantId),
+		"canManageBookings",
+	)
 }
 
 export interface TenantAnalytics {
@@ -31,10 +58,14 @@ export async function getTenantAnalytics(
 ): Promise<TenantAnalytics> {
 	const baseFilters = {
 		tenantId,
-		...(dateFrom &&
-			dateTo && {
-				createdAt: { gte: dateFrom, lte: dateTo },
-			}),
+		...(dateFrom || dateTo
+			? {
+					createdAt: {
+						...(dateFrom ? { gte: dateFrom } : {}),
+						...(dateTo ? { lte: dateTo } : {}),
+					},
+				}
+			: {}),
 	}
 
 	const [
@@ -119,10 +150,14 @@ export async function getBookingAnalytics(
 ): Promise<BookingAnalytics> {
 	const baseFilters = {
 		tenantId,
-		...(dateFrom &&
-			dateTo && {
-				createdAt: { gte: dateFrom, lte: dateTo },
-			}),
+		...(dateFrom || dateTo
+			? {
+					createdAt: {
+						...(dateFrom ? { gte: dateFrom } : {}),
+						...(dateTo ? { lte: dateTo } : {}),
+					},
+				}
+			: {}),
 	}
 
 	const bookings = await prisma.booking.findMany({

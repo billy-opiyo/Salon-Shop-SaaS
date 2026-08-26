@@ -1,11 +1,15 @@
 import "server-only"
 
 export class MediaUploadError extends Error {
-	readonly code = "MEDIA_UPLOAD_FAILED" as const
+	readonly code: string = "MEDIA_UPLOAD_FAILED"
 	constructor(message: string) {
 		super(message)
 		this.name = "MediaUploadError"
 	}
+}
+
+export class MediaProviderConfigurationError extends MediaUploadError {
+	readonly code = "MEDIA_PROVIDER_UNCONFIGURED" as const
 }
 
 export type MediaType = "image" | "document" | "video"
@@ -37,24 +41,25 @@ class LocalStorageBackend implements StorageBackend {
 		file: Buffer,
 		metadata: MediaMetadata,
 	): Promise<MediaUploadResult> {
-		// Placeholder: implement after provider stage with actual filesystem or S3/R2
-		const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-			b.toString(16).padStart(2, "0"),
-		).join("")
-
-		return {
-			id,
-			url: `/media/${id}`,
-			metadata,
-		}
+		void file
+		void metadata
+		throw new MediaProviderConfigurationError(
+			"Media storage is not configured.",
+		)
 	}
 
 	async delete(id: string): Promise<void> {
-		// Placeholder: implement after provider stage
+		void id
+		throw new MediaProviderConfigurationError(
+			"Media storage is not configured.",
+		)
 	}
 
 	getUrl(id: string): string {
-		return `/media/${id}`
+		void id
+		throw new MediaProviderConfigurationError(
+			"Media storage is not configured.",
+		)
 	}
 }
 

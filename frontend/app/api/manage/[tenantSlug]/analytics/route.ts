@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
+	assertAnalyticsAccess,
 	getTenantAnalytics,
 	getBookingAnalytics,
 	getReviewAnalytics,
@@ -29,6 +30,7 @@ export async function GET(
 		if (!tenant) {
 			return NextResponse.json({ error: "Store not found" }, { status: 404 })
 		}
+		await assertAnalyticsAccess(session.user.id, tenant.id)
 
 		if (reportType === "bookings") {
 			const data = await getBookingAnalytics(tenant.id)
@@ -43,6 +45,9 @@ export async function GET(
 		const data = await getTenantAnalytics(tenant.id)
 		return NextResponse.json(data)
 	} catch (error) {
+		if (error instanceof Error && error.name === "AuthorizationError") {
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+		}
 		console.error("Analytics fetch failed:", error)
 		return NextResponse.json({ error: "Failed to fetch" }, { status: 500 })
 	}

@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import {
 	uploadUserAvatar,
 	MediaUploadError,
+	MediaProviderConfigurationError,
 } from "@backend/services/mediaService"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -12,8 +13,8 @@ export async function POST(request: NextRequest) {
 
 	try {
 		const formData = await request.formData()
-		const file = formData.get("file") as File | null
-		if (!file) {
+		const file = formData.get("file")
+		if (!(file instanceof File) || file.size === 0) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 })
 		}
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json(result, { status: 201 })
 	} catch (error) {
+		if (error instanceof MediaProviderConfigurationError) {
+			return NextResponse.json({ error: error.message }, { status: 503 })
+		}
 		if (error instanceof MediaUploadError) {
 			return NextResponse.json({ error: error.message }, { status: 400 })
 		}
