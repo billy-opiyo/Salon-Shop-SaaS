@@ -93,6 +93,11 @@ export default async function ManagePage() {
 						"Account activity, alerts, and audit history.",
 						"/manage",
 					],
+					[
+						"Analytics",
+						"Key metrics, trends, and business insights.",
+						"/manage",
+					],
 				].map(([title, description]) => (
 					<article className="manage-card" key={title}>
 						<p className="eyebrow">Management area</p>
@@ -101,7 +106,15 @@ export default async function ManagePage() {
 						{tenants[0] && (
 							<Link
 								className="button button--outline button--small"
-								href={`${title === "Bookings" ? `/manage/${tenants[0].slug}/bookings` : title === "Waitlist" ? `/manage/${tenants[0].slug}/waitlist` : "/manage"}`}
+								href={`${
+									title === "Bookings"
+										? `/manage/${tenants[0].slug}/bookings`
+										: title === "Waitlist"
+											? `/manage/${tenants[0].slug}/waitlist`
+											: title === "Analytics"
+												? `/manage/${tenants[0].slug}/analytics`
+												: "/manage"
+								}`}
 							>
 								Open area
 							</Link>
