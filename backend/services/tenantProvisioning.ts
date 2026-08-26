@@ -73,7 +73,14 @@ export async function provisionTenant(
 					status: TenantStatus.DRAFT,
 					ownerUserId: userId,
 					createdByUserId: userId,
-					settings: { create: { themePreset: "gold", themeMode: "dark" } },
+					settings: {
+						create: {
+							themePreset: "gold",
+							themeMode: "dark",
+							heroTitle: input.heroTitle,
+							heroSubtitle: input.heroSubtitle,
+						},
+					},
 					memberships: {
 						create: {
 							userId,

@@ -155,6 +155,8 @@ export async function getTenantStorefront(
 						address: true,
 						logoUrl: true,
 						heroImageUrl: true,
+						heroTitle: true,
+						heroSubtitle: true,
 					},
 				},
 				services: {
@@ -214,7 +216,7 @@ export async function getTenantStorefront(
 			slug: tenant.slug,
 			businessName: tenant.businessName,
 			shortDescription:
-				"A salon storefront shaped around your services, clients, and signature work.",
+				"A welcoming beauty experience shaped around your services, clients, and signature work.",
 			locationLabel: [tenant.city, tenant.country].filter(Boolean).join(", "),
 			planTier: resolvedPlan,
 			theme: {
@@ -238,6 +240,8 @@ export async function getTenantStorefront(
 			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,
 			heroImageUrl: tenant.settings?.heroImageUrl ?? undefined,
+			heroTitle: tenant.settings?.heroTitle ?? undefined,
+			heroSubtitle: tenant.settings?.heroSubtitle ?? undefined,
 			services: tenant.services.map((service) => ({
 				id: service.id,
 				name: service.name,

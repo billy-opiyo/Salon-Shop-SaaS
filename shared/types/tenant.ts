@@ -64,6 +64,8 @@ export interface TenantStorefront {
 	readonly contact?: TenantContactDetails
 	readonly logoUrl?: string
 	readonly heroImageUrl?: string
+	readonly heroTitle?: string
+	readonly heroSubtitle?: string
 	readonly services: readonly TenantService[]
 	readonly gallery: readonly TenantGalleryItem[]
 	readonly reviews: readonly TenantReview[]

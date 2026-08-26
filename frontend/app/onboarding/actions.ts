@@ -23,6 +23,8 @@ export async function createStore(
 
 	const parsed = createTenantSchema.safeParse({
 		businessName: formData.get("businessName"),
+		heroTitle: formData.get("heroTitle") || undefined,
+		heroSubtitle: formData.get("heroSubtitle") || undefined,
 		slug: formData.get("slug"),
 		planTier: formData.get("planTier"),
 		country: formData.get("country"),

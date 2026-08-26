@@ -11,6 +11,8 @@
 	let scrollBehaviorRestoreTimer = null
 	let savedScrollBehavior = null
 	let progressAnimationFrameId = null
+	let splashTimerId = null
+	let transitionEndHandler = null
 
 	function getConfiguredDuration(splashElement) {
 		const overrideDuration = Number(window.ROYAL_BRAIDS_SPLASH_DURATION_MS)
@@ -306,15 +308,29 @@
 				completeReveal()
 			}
 
+			transitionEndHandler = handleTransitionEnd
 			splash.addEventListener("transitionend", handleTransitionEnd)
 			fallbackTimerId = window.setTimeout(completeReveal, REVEAL_FALLBACK_MS)
+		}
+
+		const destroySplash = () => {
+			if (splashTimerId) window.clearTimeout(splashTimerId)
+			if (fallbackTimerId) window.clearTimeout(fallbackTimerId)
+			if (progressAnimationFrameId)
+				window.cancelAnimationFrame(progressAnimationFrameId)
+			if (transitionEndHandler)
+				splash.removeEventListener("transitionend", transitionEndHandler)
+			progressAnimationFrameId = null
+			fallbackTimerId = null
+			transitionEndHandler = null
 		}
 
 		window.royalBraidsSplash = Object.freeze({
 			complete: completeReveal,
 			reveal: startReveal,
+			destroy: destroySplash,
 		})
 
-		window.setTimeout(startReveal, splashDurationMs)
+		splashTimerId = window.setTimeout(startReveal, splashDurationMs)
 	})
 })()

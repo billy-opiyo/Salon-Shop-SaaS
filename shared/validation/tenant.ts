@@ -13,6 +13,8 @@ export const tenantSlugSchema = z
 
 export const createTenantSchema = z.object({
 	businessName: z.string().trim().min(2).max(120),
+	heroTitle: z.string().trim().min(2).max(140).optional(),
+	heroSubtitle: z.string().trim().min(2).max(160).optional(),
 	slug: tenantSlugSchema,
 	planTier: z.enum(["starter", "business", "enterprise"]).default("starter"),
 	country: z.string().trim().min(2).max(80).default("Kenya"),

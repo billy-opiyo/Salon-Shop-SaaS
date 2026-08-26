@@ -21,6 +21,11 @@ declare global {
 		APP_CONFIG?: Record<string, unknown>
 		CLIENT_CONFIG?: Record<string, unknown>
 		__referenceSalonRuntimeLoaded?: boolean
+		royalBraidsSplash?: {
+			complete: () => void
+			reveal: () => void
+			destroy: () => void
+		}
 		turnstile?: {
 			render: (
 				element: HTMLElement,
@@ -1941,6 +1946,7 @@ export function ReferenceSalonRuntime({
 		let removePublicParityAdapters: () => void = () => undefined
 		let removeAccountMutationAdapter: () => void = () => undefined
 		let removeTenantNavigationLinks: () => void = () => undefined
+		let isDisposed = false
 
 		const runtimeScripts =
 			activeRuntime === "admin"
@@ -1956,6 +1962,7 @@ export function ReferenceSalonRuntime({
 				Promise.resolve(),
 			)
 			.then(() => {
+				if (isDisposed) return
 				if (activeRuntime === "salon") {
 					const removeBooking = bindBookingAdapter(
 						tenantSlug ?? "",
@@ -1988,11 +1995,18 @@ export function ReferenceSalonRuntime({
 			})
 
 		return () => {
+			isDisposed = true
+			window.royalBraidsSplash?.destroy()
+			window.royalBraidsSplash = undefined
+			window.__referenceSalonRuntimeLoaded = false
 			removeBookingAdapter()
 			removePublicParityAdapters()
 			removeAccountMutationAdapter()
 			removeTenantNavigationLinks()
 			document.body.className = originalBodyClassName
+			document
+				.querySelectorAll<HTMLScriptElement>("script[data-reference-src]")
+				.forEach((script) => script.remove())
 		}
 	}, [
 		bodyClassName,

@@ -98,8 +98,10 @@ function buildReferenceClientConfig(
 			logoAlt: tenant.businessName + " logo",
 			heroImage,
 			heroImageAlt: tenant.businessName + " salon",
-			heroSubtitle: "Premium African Hair Braiding & Beauty",
-			heroTitleHtml: "Celebrate Your Crown with <span>Beautiful Braids</span>",
+			heroSubtitle:
+				tenant.heroSubtitle ?? "Hair, beauty, and self-care made personal",
+			heroTitleHtml:
+				tenant.heroTitle ?? "Feel confident in your signature look",
 			heroDescription: tenant.shortDescription,
 			favicon: tenant.logoUrl ?? "/reference/IMG/Royal Braids logo.png",
 		},

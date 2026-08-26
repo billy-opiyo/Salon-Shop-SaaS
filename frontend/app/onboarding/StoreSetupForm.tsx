@@ -31,6 +31,24 @@ export function StoreSetupForm() {
 				<input name="businessName" type="text" required maxLength={120} />
 			</label>
 			<label>
+				Homepage headline
+				<input
+					name="heroTitle"
+					type="text"
+					maxLength={140}
+					placeholder="Feel confident in your signature look"
+				/>
+			</label>
+			<label>
+				Homepage supporting line
+				<input
+					name="heroSubtitle"
+					type="text"
+					maxLength={160}
+					placeholder="Hair, beauty, and self-care made personal"
+				/>
+			</label>
+			<label>
 				Store address
 				<input
 					name="slug"
