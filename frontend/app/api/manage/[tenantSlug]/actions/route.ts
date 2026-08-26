@@ -9,6 +9,7 @@ import {
 
 import { updateBookingStatusForUser } from "@backend/services/merchantBookingService"
 import { updateWaitlistStatusForUser } from "@backend/services/merchantWaitlistService"
+import { convertWaitlistEntryToBooking } from "@backend/services/merchantWaitlistConversionService"
 import {
 	updateMessageStatus,
 	deleteMessage,
@@ -26,6 +27,17 @@ import {
 	deleteBlog,
 } from "@backend/services/merchantBlogService"
 import { updateServiceCategoryVisibility } from "@backend/services/merchantServiceCatalog"
+import {
+	removeTeamMemberForUser,
+	updateTeamMemberPermissionsForUser,
+} from "@backend/services/merchantTeamService"
+import {
+	clearTenantUserRestriction,
+	forceTenantUserLogout,
+	forceTenantUserPasswordReset,
+	restrictTenantUser,
+	resolveSecurityAlert,
+} from "@backend/services/merchantSecurityActionsService"
 import { bookingStatusUpdateSchema } from "@shared/validation/merchant"
 
 const statusValues = <T extends string>(
@@ -80,6 +92,14 @@ export async function POST(
 					id,
 					input.status,
 				)
+				break
+			case "waitlist-convert":
+				if (!id)
+					return NextResponse.json(
+						{ error: "Waitlist entry id is required" },
+						{ status: 400 },
+					)
+				await convertWaitlistEntryToBooking(session.user.id, tenantSlug, id)
 				break
 			case "message-status":
 				if (!id || !statusValues(Object.values(MessageStatus), input.status))
@@ -174,6 +194,85 @@ export async function POST(
 					tenantSlug,
 					id,
 					input.enabled,
+				)
+				break
+			case "security-resolve-alert":
+				if (!id)
+					return NextResponse.json(
+						{ error: "Alert id is required" },
+						{ status: 400 },
+					)
+				await resolveSecurityAlert(session.user.id, tenantSlug, id)
+				break
+			case "security-restrict-user":
+				if (!id || typeof input.durationMinutes !== "number")
+					return NextResponse.json(
+						{ error: "User and duration are required" },
+						{ status: 400 },
+					)
+				await restrictTenantUser(
+					session.user.id,
+					tenantSlug,
+					id,
+					input.durationMinutes,
+				)
+				break
+			case "security-clear-restriction":
+				if (!id)
+					return NextResponse.json(
+						{ error: "User id is required" },
+						{ status: 400 },
+					)
+				await clearTenantUserRestriction(session.user.id, tenantSlug, id)
+				break
+			case "security-force-logout":
+				if (!id)
+					return NextResponse.json(
+						{ error: "User id is required" },
+						{ status: 400 },
+					)
+				await forceTenantUserLogout(session.user.id, tenantSlug, id)
+				break
+			case "security-force-password-reset":
+				if (!id)
+					return NextResponse.json(
+						{ error: "User id is required" },
+						{ status: 400 },
+					)
+				await forceTenantUserPasswordReset(session.user.id, tenantSlug, id)
+				break
+			case "team-member-remove":
+				if (!id)
+					return NextResponse.json(
+						{ error: "Member id is required" },
+						{ status: 400 },
+					)
+				await removeTeamMemberForUser(session.user.id, tenantSlug, id)
+				break
+			case "team-member-permissions":
+				if (!id)
+					return NextResponse.json(
+						{ error: "Member id is required" },
+						{ status: 400 },
+					)
+				await updateTeamMemberPermissionsForUser(
+					session.user.id,
+					tenantSlug,
+					id,
+					{
+						canManageBookings:
+							typeof input.canManageBookings === "boolean"
+								? input.canManageBookings
+								: undefined,
+						canManageContent:
+							typeof input.canManageContent === "boolean"
+								? input.canManageContent
+								: undefined,
+						canManageSecurity:
+							typeof input.canManageSecurity === "boolean"
+								? input.canManageSecurity
+								: undefined,
+					},
 				)
 				break
 			default:

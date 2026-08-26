@@ -126,16 +126,19 @@ Phase D gate status — 25 August 2026:
 - Phase F staff source work now provides tenant-authorized stylist listing,
   creation, activation/deactivation, and booking-compatible active state.
 - Phase F team and security source work now provides tenant-authorized team
-  membership visibility and security activity snapshots for logins, alerts,
-  and account changes. Invitation mutations and incident-response controls
-  remain blocked on absent schema/provider decisions.
+  membership visibility, owner-protected member removal/permission updates,
+  security activity snapshots, alert resolution, temporary user restrictions,
+  forced logout/password-reset actions, and CSV export. Invitation creation
+  is now backed by the Prisma `TeamInvitation` model with secure token
+  generation, expiry, duplicate protection, resend/cancel, email matching,
+  atomic membership acceptance, and audit records. Email delivery remains
+  provider-dependent.
 - Phase F schedule source work now provides a tenant-authorized upcoming
-  appointment view using the existing booking records, and the preserved admin
-  schedule now has source-level day/week navigation over those records. Rich
-  event detail and quick-action parity remains a follow-up source gap.
+  appointment view, preserved admin day/week navigation, record detail panels,
+  and booking quick actions over existing booking records.
 - Phase F service catalog now includes validated service creation, update
-  service primitives, deletion, a management create form, and category
-  visibility controls; richer inline edit controls remain a follow-up gap.
+  service primitives, deletion, a management create form, category visibility
+  controls, and preserved admin category-toggle controls.
 - Stabilization fixed duplicate tenant dataset declarations in the copied
   runtime and added the root service-worker entry required by the preserved
   registration contract; the Firebase reference source remains unchanged.
@@ -150,6 +153,9 @@ Phase D gate status — 25 August 2026:
   fallbacks now use absolute `/reference/IMG/...` URLs, all local fallback asset
   references were verified, and the Royal Braids fixture gallery now supplies
   valid local images instead of empty image sources.
+- The remaining rotating-header-logo fallback paths were also normalized to
+  `/reference/IMG/...`; the Playwright image-health check now reports no failed
+  image requests across desktop and mobile runs.
 - The protected admin shell now uses the NextAuth session and a Prisma-backed
   admin snapshot route at `/api/manage/[tenantSlug]/snapshot`; the legacy
   Firebase `admin.js` runtime is no longer loaded by the Next.js admin route.
@@ -163,6 +169,27 @@ Phase D gate status — 25 August 2026:
 - The preserved admin controls now have source-level tab navigation, snapshot
   counters/lists, safe action buttons, service-category toggles, and schedule
   day/week navigation over the existing booking records.
+- Admin detail panels now support inline review replies and team permission
+  updates through the tenant-authorized mutation route.
+- Waitlist conversion now atomically verifies the preferred slot, creates or
+  confirms the booking, links the booking slot, closes the queue entry,
+  repositions remaining queue entries, and records an audit event.
+- Auth.js source parity now includes Prisma verification-token creation and
+  consumption for email verification and password reset, session invalidation
+  after reset, and enforcement of administrator-required password resets.
+- Team invitation source parity now includes admin create/list/resend/cancel
+  APIs, authenticated code acceptance, and a protected team-page invitation
+  panel. Invitation codes are surfaced for delivery until an email provider is
+  configured.
+- Auth.js credentials now use the compatible JWT session strategy, preserving
+  authenticated user IDs through JWT/session callbacks.
+- Playwright and Vitest are installed at the root. The acceptance suite covers
+  Royal Braids image health, mobile overflow, protected admin redirects, and
+  unauthenticated admin mutations; all 8 desktop/mobile Playwright tests pass.
+  The Vitest reference-asset contract test also passes.
+- The test runner now uses a fresh local Next.js server, a test-only Auth.js
+  secret, and Chromium for both desktop and mobile projects; this avoids stale
+  development-server and unavailable-WebKit false failures.
 
 Source implementation checkpoint — 26 August 2026:
 
@@ -173,9 +200,9 @@ Source implementation checkpoint — 26 August 2026:
   moderation, messages, service visibility, team visibility, and security
   monitoring.
 - Remaining source work before environment configuration is limited to richer
-  admin detail panels, complete admin-user/invitation mutations, security
-  incident actions/exports, safe waitlist-to-booking conversion, and focused
-  parity acceptance coverage.
+  admin edit forms, client verification/reset UI polish, deeper client
+  dashboard behavior, and broader acceptance scenarios for authenticated
+  mutations and tenant isolation.
 - Client profile/password/account deletion, preference persistence, public review
   edit/report APIs, merchant CRUD forms, and tenant-authorized management views
   are now implemented at source level and validated by the production build.
@@ -184,15 +211,18 @@ Source implementation checkpoint — 26 August 2026:
   media signing/storage, delivery, billing, domain verification, and migrations
   remain intentionally incomplete until their provider contracts and
   operator-owned environment values are available.
+- Build, Vitest, and the Playwright desktop/mobile acceptance suite are green.
+  Broader authenticated database-backed acceptance coverage requires a
+  configured test database and seeded test users.
 
 Still gated or in progress:
 
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
-- Remaining parity work is admin detail/edit parity, Auth.js client verification
-  and reset flows, richer client dashboard adapters, provider-backed media,
-  email/WhatsApp delivery, and focused responsive/admin acceptance tests.
+- Remaining parity work is richer admin editing, verification/reset UI polish,
+  richer client dashboard adapters, broader authenticated/tenant-isolation
+  acceptance tests, provider-backed media, and email/WhatsApp delivery.
 - The copied reference assets are authoritative for storefront/admin UI. No
   tenant storefront redesign should be introduced; future work must preserve
   the original selectors, spacing, typography, colors, shadows, animations,

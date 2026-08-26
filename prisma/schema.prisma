@@ -33,6 +33,13 @@ enum MembershipStatus {
   REMOVED
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+}
+
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -112,6 +119,7 @@ model User {
   notificationDeliveries NotificationDelivery[]
   preferences            UserPreferences?
   createdAttributions    Tenant[]               @relation("TenantCreatedBy")
+  sentTeamInvitations    TeamInvitation[]       @relation("TeamInvitationSender")
 }
 
 model Account {
@@ -205,6 +213,7 @@ model Tenant {
   accountChanges  AccountChangeHistory[]
   timeline        ActivityTimeline[]
   auditLogs       AdminAuditLog[]
+  teamInvitations TeamInvitation[]
 
   @@index([ownerUserId])
   @@index([status])
@@ -293,6 +302,27 @@ model Membership {
   @@unique([tenantId, userId])
   @@index([userId, status])
   @@index([tenantId, status])
+}
+
+model TeamInvitation {
+  id              String           @id @default(cuid())
+  tenantId        String
+  invitedByUserId String
+  inviteeEmail    String
+  role            MembershipRole   @default(STAFF)
+  status          InvitationStatus @default(PENDING)
+  invitationCode  String           @unique
+  permissions     Json?
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy       User             @relation("TeamInvitationSender", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, createdAt])
+  @@index([inviteeEmail, status])
 }
 
 model ServiceCategory {

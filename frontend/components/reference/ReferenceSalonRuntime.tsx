@@ -117,10 +117,23 @@ function renderAdminSnapshotList(
 			.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
 			.join(" · ")
 		row.append(details)
-		const recordId = typeof record.id === "string" ? record.id : ""
+		const recordId =
+			elementId === "adminAdminsList" && typeof record.userId === "string"
+				? record.userId
+				: typeof record.id === "string"
+					? record.id
+					: ""
 		const status = typeof record.status === "string" ? record.status : ""
 		const actionGroup = document.createElement("div")
 		actionGroup.className = "admin-platform-actions"
+		if (recordId) {
+			const detailButton = document.createElement("button")
+			detailButton.type = "button"
+			detailButton.className = "btn btn-outline admin-platform-detail"
+			detailButton.dataset.adminDetail = JSON.stringify(record)
+			detailButton.textContent = "Details"
+			actionGroup.append(detailButton)
+		}
 		const addAction = (
 			action: string,
 			label: string,
@@ -154,7 +167,7 @@ function renderAdminSnapshotList(
 			if (status === "WAITING")
 				addAction("waitlist-status", "Contact", { status: "CONTACTED" })
 			if (status === "WAITING" || status === "CONTACTED")
-				addAction("waitlist-status", "Book", { status: "BOOKED" })
+				addAction("waitlist-convert", "Book")
 			if (status !== "CANCELLED")
 				addAction("waitlist-status", "Cancel", { status: "CANCELLED" })
 		}
@@ -188,6 +201,10 @@ function renderAdminSnapshotList(
 			)
 			addAction("blog-delete", "Delete")
 		}
+		if (elementId === "adminAdminsList")
+			addAction("team-member-remove", "Remove")
+		if (elementId === "adminSecurityAlertsList" && !record.resolvedAt)
+			addAction("security-resolve-alert", "Resolve")
 		row.append(actionGroup)
 		element.append(row)
 	})
@@ -256,6 +273,113 @@ function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	document.addEventListener("click", actionHandler)
 	removeTabHandlers.push(() =>
 		document.removeEventListener("click", actionHandler),
+	)
+	const detailHandler = (event: Event) => {
+		const target = event.target
+		if (!(target instanceof HTMLElement)) return
+		const button = target.closest<HTMLButtonElement>(".admin-platform-detail")
+		if (!button?.dataset.adminDetail) return
+		const panel = document.getElementById("adminScheduleDetails")
+		if (!panel) return
+		panel.replaceChildren()
+		const heading = document.createElement("h3")
+		heading.textContent = "Record details"
+		panel.append(heading)
+		try {
+			const record = JSON.parse(
+				button.dataset.adminDetail,
+			) as AdminSnapshotRecord
+			Object.entries(record).forEach(([key, value]) => {
+				if (key === "text" || key === "replyText") return
+				const line = document.createElement("p")
+				line.textContent = `${key}: ${formatAdminSnapshotValue(value)}`
+				panel.append(line)
+			})
+			if (typeof record.replyText === "string" || "replyText" in record) {
+				const reply = document.createElement("textarea")
+				reply.value =
+					typeof record.replyText === "string" ? record.replyText : ""
+				reply.placeholder = "Reply to this review"
+				reply.rows = 3
+				const save = document.createElement("button")
+				save.type = "button"
+				save.className = "btn btn-primary"
+				save.textContent = "Save review reply"
+				save.onclick = () => {
+					if (typeof record.id !== "string") return
+					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({
+							action: "review-update",
+							id: record.id,
+							replyText: reply.value,
+						}),
+					}).then((response) => {
+						if (!response.ok)
+							throw new Error("Review reply could not be saved.")
+						window.location.reload()
+					})
+				}
+				panel.append(reply, save)
+			}
+			if (typeof record.userId === "string") {
+				const permissions = [
+					"canManageBookings",
+					"canManageContent",
+					"canManageSecurity",
+				]
+				const permissionWrap = document.createElement("div")
+				permissions.forEach((permission) => {
+					const label = document.createElement("label")
+					const input = document.createElement("input")
+					input.type = "checkbox"
+					input.checked = record[permission] === true
+					input.dataset.permission = permission
+					label.append(
+						input,
+						document.createTextNode(` ${permission.replace("canManage", "")}`),
+					)
+					permissionWrap.append(label)
+				})
+				const savePermissions = document.createElement("button")
+				savePermissions.type = "button"
+				savePermissions.className = "btn btn-primary"
+				savePermissions.textContent = "Save permissions"
+				savePermissions.onclick = () => {
+					const payload: Record<string, unknown> = {
+						action: "team-member-permissions",
+						id: record.userId,
+					}
+					permissionWrap
+						.querySelectorAll<HTMLInputElement>("[data-permission]")
+						.forEach((input) => {
+							if (input.dataset.permission)
+								payload[input.dataset.permission] = input.checked
+						})
+					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify(payload),
+					}).then((response) => {
+						if (!response.ok)
+							throw new Error("Team permissions could not be saved.")
+						window.location.reload()
+					})
+				}
+				panel.append(permissionWrap, savePermissions)
+			}
+		} catch {
+			const error = document.createElement("p")
+			error.textContent = "Details could not be displayed."
+			panel.append(error)
+		}
+	}
+	document.addEventListener("click", detailHandler)
+	removeTabHandlers.push(() =>
+		document.removeEventListener("click", detailHandler),
 	)
 	document
 		.querySelectorAll<HTMLElement>("[data-admin-section-tab]")
@@ -425,6 +549,12 @@ function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const securityLogins = Array.isArray(security?.logins)
 				? security.logins
 				: []
+			const securityAlerts = Array.isArray(security?.alerts)
+				? security.alerts
+				: []
+			const accountChanges = Array.isArray(security?.changes)
+				? security.changes
+				: []
 			renderAdminSnapshotList(
 				"adminBookingsList",
 				bookings,
@@ -458,6 +588,22 @@ function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				securityLogins,
 				"No security activity found.",
 			)
+			renderAdminSnapshotList(
+				"adminSecurityAlertsList",
+				securityAlerts,
+				"No security alerts found.",
+			)
+			renderAdminSnapshotList(
+				"adminAccountHistoryList",
+				accountChanges,
+				"No account changes found.",
+			)
+			const exportButton = document.getElementById("adminSecurityExportCsvBtn")
+			if (exportButton instanceof HTMLButtonElement) {
+				exportButton.onclick = () => {
+					window.location.href = `/api/manage/${encodeURIComponent(tenantSlug)}/security/export`
+				}
+			}
 			const counts: Record<string, number> = {
 				adminTotalCount: bookings.length,
 				adminPendingCount: bookings.filter(

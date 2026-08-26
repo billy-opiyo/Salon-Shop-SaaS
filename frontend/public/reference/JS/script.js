@@ -1152,7 +1152,7 @@ const fallbackBlogsData = [
 		title: "How to Keep Knotless Braids Fresh for Weeks",
 		excerpt:
 			"Discover simple daily and nightly habits that keep your knotless braids neat, moisturized, and long-lasting.",
-		imageUrl: "IMG/knotless braids.jpg",
+		imageUrl: "/reference/IMG/knotless braids.jpg",
 		publishDate: "2026-04-16",
 		readTime: "5 min read",
 		readMoreUrl: "#blog",
@@ -1161,7 +1161,7 @@ const fallbackBlogsData = [
 		title: "Scalp Care Tips for Protective Styles",
 		excerpt:
 			"Healthy braids start with a healthy scalp. Learn the products and routines our stylists recommend for itch-free comfort.",
-		imageUrl: "IMG/natural hair care.webp",
+		imageUrl: "/reference/IMG/natural hair care.webp",
 		publishDate: "2026-03-28",
 		readTime: "6 min read",
 		readMoreUrl: "#blog",
@@ -1170,7 +1170,7 @@ const fallbackBlogsData = [
 		title: "Top Bridal Braids for Nairobi Brides",
 		excerpt:
 			"From elegant up-dos to crown-inspired braid patterns, explore timeless bridal options for your big day.",
-		imageUrl: "IMG/goddess-braids.webp",
+		imageUrl: "/reference/IMG/goddess-braids.webp",
 		publishDate: "2026-03-08",
 		readTime: "4 min read",
 		readMoreUrl: "#blog",
@@ -1179,7 +1179,7 @@ const fallbackBlogsData = [
 		title: "Before-and-After Transformations We Love",
 		excerpt:
 			"See how the right braid pattern, parting, and finish can transform your entire look while protecting natural hair.",
-		imageUrl: "IMG/box-braids-hairstyles-1x1-1.jpg",
+		imageUrl: "/reference/IMG/box-braids-hairstyles-1x1-1.jpg",
 		publishDate: "2026-02-14",
 		readTime: "5 min read",
 		readMoreUrl: "#blog",
@@ -1188,7 +1188,7 @@ const fallbackBlogsData = [
 		title: "Braids for Busy Professionals",
 		excerpt:
 			"Need a low-maintenance style that still looks polished? These braid options are ideal for packed work schedules.",
-		imageUrl: "IMG/Lemonade_Braids.webp",
+		imageUrl: "/reference/IMG/Lemonade_Braids.webp",
 		publishDate: "2026-01-30",
 		readTime: "4 min read",
 		readMoreUrl: "#blog",
@@ -1197,7 +1197,7 @@ const fallbackBlogsData = [
 		title: "Kids Braiding: Comfort-First Styling Guide",
 		excerpt:
 			"Our gentle approach to kids braiding keeps little ones comfortable while delivering neat and durable protective styles.",
-		imageUrl: "IMG/Kids-Small Single Braids after.jpg",
+		imageUrl: "/reference/IMG/Kids-Small Single Braids after.jpg",
 		publishDate: "2026-01-12",
 		readTime: "5 min read",
 		readMoreUrl: "#blog",
@@ -9831,13 +9831,13 @@ mutationObserver.observe(document.body, { childList: true, subtree: true })
 
 // ============ HEADER LOGO SIMPLE ROTATION ============
 const DEFAULT_HEADER_LOGO_IMAGES = [
-	"IMG/logo.png",
-	"IMG/logo 1.png",
-	"IMG/logo 2.jpg",
-	"IMG/logo 3.png",
-	"IMG/logo 4.png",
-	"IMG/logo 5.png",
-	"IMG/logo 6.jpg",
+	"/reference/IMG/logo.png",
+	"/reference/IMG/logo 1.png",
+	"/reference/IMG/logo 2.jpg",
+	"/reference/IMG/logo 3.png",
+	"/reference/IMG/logo 4.png",
+	"/reference/IMG/logo 5.png",
+	"/reference/IMG/logo 6.jpg",
 ]
 
 function normalizeHeaderLogoImageSource(item = "") {

@@ -4,6 +4,17 @@ import {
 	listTeamForUser,
 	MerchantTeamError,
 } from "@backend/services/merchantTeamService"
+import { listTeamInvitationsForUser } from "@backend/services/teamInvitationService"
+import { prisma } from "@backend/db/prisma"
+import { TeamInvitationPanel } from "./TeamInvitationPanel"
+
+interface TeamInvitationSummary {
+	readonly id: string
+	readonly inviteeEmail: string
+	readonly role: string
+	readonly status: string
+	readonly expiresAt: Date
+}
 
 interface TeamPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -20,6 +31,17 @@ export default async function MerchantTeamPage({ params }: TeamPageProps) {
 		if (error instanceof MerchantTeamError) redirect(`/manage/${tenantSlug}`)
 		throw error
 	}
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: tenantSlug.trim().toLowerCase() },
+		select: { id: true },
+	})
+	if (!tenant) redirect(`/manage`)
+	let invitations: TeamInvitationSummary[] = []
+	try {
+		invitations = await listTeamInvitationsForUser(session.user.id, tenant.id)
+	} catch {
+		invitations = []
+	}
 	return (
 		<main className="manage-page">
 			<header className="manage-header">
@@ -32,6 +54,13 @@ export default async function MerchantTeamPage({ params }: TeamPageProps) {
 					</p>
 				</div>
 			</header>
+			<TeamInvitationPanel
+				tenantSlug={tenantSlug}
+				initialInvitations={invitations.map((invitation) => ({
+					...invitation,
+					expiresAt: invitation.expiresAt.toISOString(),
+				}))}
+			/>
 			<section className="manage-store-list" aria-label="Team members">
 				{members.map((member) => (
 					<article className="manage-store" key={member.id}>
