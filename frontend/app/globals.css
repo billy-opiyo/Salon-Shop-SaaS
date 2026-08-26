@@ -1,11 +1,14 @@
 :root {
-  --background: #0b0b0b;
-  --surface: #141414;
-  --foreground: #f7f2e9;
-  --muted: #b5aea3;
-  --line: rgba(247, 242, 233, 0.14);
+  --background: #0c0a07;
+  --surface: rgba(34, 27, 17, .72);
+  --foreground: #fff8e8;
+  --muted: #c8bda8;
+  --line: rgba(241, 213, 155, .2);
   --gold: #d7a84f;
   --gold-soft: #f1d59b;
+  --gold-glow: rgba(215, 168, 79, .2);
+  --glass-border: rgba(241, 213, 155, .28);
+  --glass-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .24), 0 1px 0 rgba(255, 248, 232, .08) inset;
   --serif: Georgia, "Times New Roman", serif;
   --sans: Arial, Helvetica, sans-serif;
 }
@@ -16,11 +19,35 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) rgba(24, 18, 10, .86);
+}
+
+html::-webkit-scrollbar {
+  width: 11px;
+}
+
+html::-webkit-scrollbar-track {
+  background: rgba(24, 18, 10, .86);
+}
+
+html::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(24, 18, 10, .86);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: #ffe3a2;
 }
 
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(215, 168, 79, .17), transparent 32rem),
+    radial-gradient(circle at 92% 68%, rgba(169, 111, 35, .12), transparent 34rem),
+    linear-gradient(135deg, #0c0a07 0%, #191208 48%, #0d0b08 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--sans);
 }
@@ -356,7 +383,9 @@ main {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 1rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(74, 53, 24, .62), rgba(23, 18, 11, .7));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
   transition: border-color .2s ease, transform .2s ease;
 }
 
@@ -418,7 +447,13 @@ main {
   width: min(760px, calc(100% - 3rem));
   margin: auto;
   padding: 5rem 0;
+  padding-inline: clamp(1.5rem, 5vw, 3rem);
   line-height: 1.75;
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, rgba(58, 43, 20, .62), rgba(19, 15, 9, .7));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .policy-page h1,
@@ -567,6 +602,16 @@ main {
   padding: 1.5rem 0;
 }
 
+.platform-header {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  background: rgba(35, 27, 16, .56);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .18);
+  backdrop-filter: blur(18px);
+}
+
 .platform-nav,
 .tenant-nav {
   display: flex;
@@ -695,8 +740,9 @@ main {
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 1.5rem;
-  background: linear-gradient(145deg, #25221c, #111);
+  background: linear-gradient(145deg, rgba(80, 59, 25, .68), rgba(24, 18, 10, .72));
   box-shadow: 0 2rem 6rem rgba(0, 0, 0, .32);
+  backdrop-filter: blur(18px);
   transform: rotate(2deg);
 }
 
@@ -717,7 +763,9 @@ main {
   min-height: 350px;
   padding: 2rem;
   border-radius: 1rem;
-  background: radial-gradient(circle at top right, rgba(215, 168, 79, .2), transparent 40%), #181715;
+  background: radial-gradient(circle at top right, rgba(215, 168, 79, .24), transparent 40%), rgba(20, 15, 9, .78);
+  border: 1px solid rgba(241, 213, 155, .14);
+  backdrop-filter: blur(14px);
 }
 
 .preview-window__body h2 {
@@ -835,12 +883,14 @@ main {
   padding: 1.6rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(55, 41, 20, .62), rgba(24, 18, 10, .7));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .plan-card--featured {
   border-color: var(--gold);
-  background: linear-gradient(145deg, #2b2418, var(--surface));
+  background: linear-gradient(145deg, rgba(104, 73, 26, .7), rgba(32, 23, 11, .76));
 }
 
 .plan-card__badge {
@@ -1153,7 +1203,7 @@ main {
   min-height: 100vh;
   place-items: center;
   padding: 2rem;
-  background: radial-gradient(circle at center, rgba(215, 168, 79, .16), transparent 45%), var(--background);
+  background: transparent;
 }
 
 .onboarding-card {
@@ -1161,7 +1211,9 @@ main {
   padding: clamp(2rem, 6vw, 4rem);
   border: 1px solid var(--line);
   border-radius: 1.25rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(62, 45, 21, .68), rgba(21, 16, 9, .76));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .onboarding-card h1 {
@@ -1193,7 +1245,9 @@ main {
   padding: clamp(2rem, 6vw, 4rem);
   border: 1px solid var(--line);
   border-radius: 1.25rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(62, 45, 21, .68), rgba(21, 16, 9, .76));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .auth-card h1,
@@ -1227,7 +1281,8 @@ main {
   padding: .85rem 1rem;
   border: 1px solid var(--line);
   border-radius: .6rem;
-  background: #0f0f0f;
+  background: rgba(10, 8, 5, .62);
+  box-shadow: 0 1px 0 rgba(255, 248, 232, .05) inset;
   color: var(--foreground);
   font: inherit;
 }
@@ -1278,7 +1333,9 @@ main {
   padding: 1.4rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(55, 41, 20, .62), rgba(24, 18, 10, .7));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .manage-card h2 {
@@ -1321,7 +1378,9 @@ main {
   padding: 1.2rem 1.4rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(55, 41, 20, .62), rgba(24, 18, 10, .7));
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .18);
+  backdrop-filter: blur(18px);
 }
 
 .manage-store h3 {
@@ -1344,7 +1403,7 @@ main {
   padding: .85rem 1rem;
   border: 1px solid var(--line);
   border-radius: .6rem;
-  background: #0f0f0f;
+  background: rgba(10, 8, 5, .62);
   color: var(--foreground);
   font: inherit;
 }
