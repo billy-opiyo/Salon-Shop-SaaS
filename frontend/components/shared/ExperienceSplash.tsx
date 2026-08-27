@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { CSSProperties } from "react"
 
 interface ExperienceSplashProps {
 	readonly brandName: string
@@ -12,17 +13,6 @@ const SPLASH_DURATION_MS = 7000
 const REDUCED_MOTION_DURATION_MS = 700
 const POST_PROGRESS_DELAY_MS = 2000
 const SPLASH_EXIT_TRANSITION_MS = 900
-const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
-const PLATFORM_SPLASH_DOCUMENT_KEY =
-	"beauty-sphia-platform-splash-document"
-
-function isDocumentReload(): boolean {
-	const navigation = performance.getEntriesByType("navigation")[0]
-	return (
-		navigation instanceof PerformanceNavigationTiming &&
-		navigation.type === "reload"
-	)
-}
 
 export function ExperienceSplash({
 	brandName,
@@ -31,35 +21,9 @@ export function ExperienceSplash({
 }: ExperienceSplashProps) {
 	const [isExiting, setIsExiting] = useState(false)
 	const [isVisible, setIsVisible] = useState(true)
-	const [isAnimationReady, setIsAnimationReady] = useState(false)
 	const [progress, setProgress] = useState(1)
 
 	useEffect(() => {
-		let hasSeenSplash = false
-		try {
-			hasSeenSplash = sessionStorage.getItem(PLATFORM_SPLASH_SEEN_KEY) === "1"
-			const documentIdentity = String(performance.timeOrigin)
-			const isNewHardReload =
-				isDocumentReload() &&
-				sessionStorage.getItem(PLATFORM_SPLASH_DOCUMENT_KEY) !== documentIdentity
-			sessionStorage.setItem(PLATFORM_SPLASH_DOCUMENT_KEY, documentIdentity)
-			if (!hasSeenSplash || isNewHardReload) {
-				sessionStorage.setItem(PLATFORM_SPLASH_SEEN_KEY, "1")
-			} else {
-				document.documentElement.classList.remove("splash-active")
-				document.body.classList.remove("splash-active")
-				document.documentElement.classList.add("splash-complete")
-				document.body.classList.add("splash-complete")
-				const hideSplashTimeoutId = window.setTimeout(
-					() => setIsVisible(false),
-					0,
-				)
-				return () => window.clearTimeout(hideSplashTimeoutId)
-			}
-		} catch {
-			// Private browsing or blocked storage should not prevent the splash.
-		}
-
 		const prefersReducedMotion = window.matchMedia?.(
 			"(prefers-reduced-motion: reduce)",
 		).matches
@@ -68,21 +32,18 @@ export function ExperienceSplash({
 			: SPLASH_DURATION_MS
 		document.documentElement.classList.add("splash-active")
 		document.body.classList.add("splash-active")
-		const animationReadyFrameId = window.requestAnimationFrame(() => {
-			setIsAnimationReady(true)
-		})
 		const progressStart = performance.now()
-		let progressFrameId = 0
-		const updateProgress = (now: number) => {
+		const progressTickMs = Math.max(4, Math.floor(splashDurationMs / 100))
+		const progressIntervalId = window.setInterval(() => {
+			const elapsedMs = performance.now() - progressStart
 			const nextProgress = Math.min(
 				100,
-				Math.round(1 + ((now - progressStart) / splashDurationMs) * 99),
+				Math.floor((elapsedMs / splashDurationMs) * 100) + 1,
 			)
 			setProgress(nextProgress)
-			if (nextProgress < 100)
-				progressFrameId = window.requestAnimationFrame(updateProgress)
-		}
-		progressFrameId = window.requestAnimationFrame(updateProgress)
+			if (nextProgress >= 100) window.clearInterval(progressIntervalId)
+		}, progressTickMs)
+		setProgress(1)
 		const completeTimeoutId = window.setTimeout(() => {
 			setProgress(100)
 			setIsExiting(true)
@@ -98,8 +59,7 @@ export function ExperienceSplash({
 		return () => {
 			window.clearTimeout(completeTimeoutId)
 			window.clearTimeout(removeSplashTimeoutId)
-			window.cancelAnimationFrame(animationReadyFrameId)
-			window.cancelAnimationFrame(progressFrameId)
+			window.clearInterval(progressIntervalId)
 			document.documentElement.classList.remove(
 				"splash-active",
 				"splash-complete",
@@ -135,12 +95,12 @@ export function ExperienceSplash({
 
 	return (
 		<div
-			className={`splash-screen${isAnimationReady ? " splash-animations-ready" : ""}${isExiting ? " splash-hide" : ""}`}
+			className={`splash-screen${isExiting ? " splash-hide" : ""}`}
 			style={{
 				"--splash-write-letter-duration": `${writeLetterDurationMs}ms`,
 				"--splash-handwriting-fill-duration": `${fillDurationMs}ms`,
 				"--splash-handwriting-fill-delay": `${Math.max(0, SPLASH_DURATION_MS - fillDurationMs)}ms`,
-			} as React.CSSProperties}
+			} as CSSProperties}
 			role="status"
 			aria-live="polite"
 		>
@@ -200,7 +160,7 @@ export function ExperienceSplash({
 									className="splash-handwriting-letter"
 									style={{
 										"--splash-write-delay": `${writeStartDelayMs + writeLetterStaggerMs * index}ms`,
-									} as React.CSSProperties}
+									} as CSSProperties}
 									key={`${letter}-${index}`}
 								>
 									{letter === " " ? "\u00a0" : letter}

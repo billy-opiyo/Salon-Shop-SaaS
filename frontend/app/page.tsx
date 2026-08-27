@@ -74,8 +74,8 @@ export default function PlatformHome() {
 				brandName="Beauty Sphia"
 				description="Preparing your workspace experience"
 			/>
-			<main className="platform-home-shell">
-				<header className="platform-header" id="home">
+			<main id="home" className="platform-home-shell">
+				<header className="platform-header">
 					<Link className="brand-mark" href="#home" aria-label="Beauty Sphia home">
 						<Image
 							className="brand-mark__image"
