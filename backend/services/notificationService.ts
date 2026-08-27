@@ -1,8 +1,12 @@
-import "server-only";
+import "server-only"
 
-import { NotificationChannel, NotificationStatus, WaitlistStatus } from "@prisma/client";
+import {
+	NotificationChannel,
+	NotificationStatus,
+	WaitlistStatus,
+} from "@prisma/client"
 
-import { prisma } from "@backend/db/prisma";
+import { prisma } from "@backend/db/prisma"
 
 /**
  * Notification dispatch service (server-only).
@@ -16,20 +20,20 @@ import { prisma } from "@backend/db/prisma";
  * so booking/waitlist flows never break due to missing keys.
  */
 
-const RESEND_API_URL = "https://api.resend.com/emails";
-const WHATSAPP_API_VERSION = "v20.0";
-const WHATSAPP_MESSAGES_URL = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/`;
+const RESEND_API_URL = "https://api.resend.com/emails"
+const WHATSAPP_API_VERSION = "v20.0"
+const WHATSAPP_MESSAGES_URL = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/`
 
-export type NotificationSubject = { [key: string]: unknown };
+export type NotificationSubject = { [key: string]: unknown }
 
 type DeliveryResult = {
-	readonly ok: boolean;
-	readonly providerMessageId?: string;
-	readonly error?: string;
-};
+	readonly ok: boolean
+	readonly providerMessageId?: string
+	readonly error?: string
+}
 
 function env(name: string): string {
-	return (process.env[name] ?? "").trim();
+	return (process.env[name] ?? "").trim()
 }
 
 function escapeHtml(value: unknown): string {
@@ -38,19 +42,19 @@ function escapeHtml(value: unknown): string {
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
-		.replaceAll("'", "&#039;");
+		.replaceAll("'", "&#039;")
 }
 
 /** Normalizes a phone to the E.164-style form required by WhatsApp Cloud API. */
 export function normalizePhoneForWhatsApp(value: string): string {
-	const digits = String(value ?? "").replace(/\D/g, "");
+	const digits = String(value ?? "").replace(/\D/g, "")
 	if (digits.startsWith("0")) {
-		const rest = digits.slice(1);
-		if (rest.length === 9) return "254" + rest;
+		const rest = digits.slice(1)
+		if (rest.length === 9) return "254" + rest
 	}
-	if (digits.startsWith("7") && digits.length === 9) return "254" + digits;
-	if (digits.startsWith("254") && digits.length === 12) return digits;
-	return digits;
+	if (digits.startsWith("7") && digits.length === 9) return "254" + digits
+	if (digits.startsWith("254") && digits.length === 12) return digits
+	return digits
 }
 
 /* -------------------------------------------------------------------------- */
@@ -62,10 +66,10 @@ async function sendResendEmail(
 	subject: string,
 	html: string,
 ): Promise<DeliveryResult> {
-	const apiKey = env("RESEND_API_KEY");
-	const from = env("RESEND_FROM_EMAIL");
+	const apiKey = env("RESEND_API_KEY")
+	const from = env("RESEND_FROM_EMAIL")
 	if (!apiKey || !from) {
-		return { ok: false, error: "Resend is not configured." };
+		return { ok: false, error: "Resend is not configured." }
 	}
 	try {
 		const response = await fetch(RESEND_API_URL, {
@@ -75,22 +79,22 @@ async function sendResendEmail(
 				"content-type": "application/json",
 			},
 			body: JSON.stringify({ from, to: [to], subject, html }),
-		});
+		})
 		if (!response.ok) {
 			return {
 				ok: false,
 				error: `Email provider rejected the message (${response.status}).`,
-			};
+			}
 		}
 		const data = (await response.json().catch(() => null)) as {
-			id?: string;
-		} | null;
-		return { ok: true, providerMessageId: data?.id };
+			id?: string
+		} | null
+		return { ok: true, providerMessageId: data?.id }
 	} catch (error) {
 		return {
 			ok: false,
 			error: error instanceof Error ? error.message : "Email send failed.",
-		};
+		}
 	}
 }
 
@@ -98,11 +102,11 @@ async function sendWhatsAppText(
 	to: string,
 	text: string,
 ): Promise<DeliveryResult> {
-	const token = env("WHATSAPP_CLOUD_ACCESS_TOKEN");
-	const phoneNumberId = env("WHATSAPP_CLOUD_PHONE_NUMBER_ID");
-	const phone = normalizePhoneForWhatsApp(to);
+	const token = env("WHATSAPP_CLOUD_ACCESS_TOKEN")
+	const phoneNumberId = env("WHATSAPP_CLOUD_PHONE_NUMBER_ID")
+	const phone = normalizePhoneForWhatsApp(to)
 	if (!token || !phoneNumberId || !phone) {
-		return { ok: false, error: "WhatsApp is not configured." };
+		return { ok: false, error: "WhatsApp is not configured." }
 	}
 	try {
 		const response = await fetch(
@@ -120,38 +124,37 @@ async function sendWhatsAppText(
 					text: { body: text },
 				}),
 			},
-		);
+		)
 		if (!response.ok) {
 			return {
 				ok: false,
 				error: `WhatsApp provider rejected the message (${response.status}).`,
-			};
+			}
 		}
-		return { ok: true, providerMessageId: phone };
+		return { ok: true, providerMessageId: phone }
 	} catch (error) {
 		return {
 			ok: false,
-			error:
-				error instanceof Error ? error.message : "WhatsApp send failed.",
-		};
+			error: error instanceof Error ? error.message : "WhatsApp send failed.",
+		}
 	}
 }
 /* -------------------------------------------------------------------------- */
 /* Template helpers                                                            */
 /* -------------------------------------------------------------------------- */
 
-type TemplateLike = NotificationSubject;
+type TemplateLike = NotificationSubject
 
 function stringValue(value: unknown, fallback = ""): string {
-	const text = String(value ?? "").trim();
-	return text || fallback;
+	const text = String(value ?? "").trim()
+	return text || fallback
 }
 
 function customerDisplayName(data: TemplateLike): string {
 	const full = [stringValue(data.firstName), stringValue(data.lastName)]
 		.filter(Boolean)
-		.join(" ");
-	return full || stringValue(data.customerName, "there");
+		.join(" ")
+	return full || stringValue(data.customerName, "there")
 }
 
 function appointmentLine(data: TemplateLike): string {
@@ -159,7 +162,7 @@ function appointmentLine(data: TemplateLike): string {
 		[stringValue(data.appointmentDate), stringValue(data.timeLabel)]
 			.filter(Boolean)
 			.join(" · ") || "your selected time"
-	);
+	)
 }
 
 function emailShell(
@@ -170,24 +173,24 @@ function emailShell(
 ): string {
 	const button = link
 		? `<p style="margin:24px 0;"><a href="${escapeHtml(link)}" style="display:inline-block;padding:12px 20px;background:#d7a84f;color:#111;border-radius:6px;font-weight:700;text-decoration:none;">Continue</a></p>`
-		: "";
-	return `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1c1917;"><div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;"><div style="padding:20px 28px;background:#1c1917;color:#d7a84f;font-size:20px;font-weight:800;">${escapeHtml(subject)}</div><div style="padding:28px;"><h2 style="margin:0 0 16px;">${escapeHtml(heading)}</h2>${bodyHtml}${button}</div><div style="padding:18px 28px;background:#f4f1ea;font-size:12px;color:#6b7280;">You are receiving this email because you interacted with a salon store on the Beauty Sphia platform.</div></div></body></html>`;
+		: ""
+	return `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f1ea;font-family:Arial,Helvetica,sans-serif;color:#1c1917;"><div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;"><div style="padding:20px 28px;background:#1c1917;color:#d7a84f;font-size:20px;font-weight:800;">${escapeHtml(subject)}</div><div style="padding:28px;"><h2 style="margin:0 0 16px;">${escapeHtml(heading)}</h2>${bodyHtml}${button}</div><div style="padding:18px 28px;background:#f4f1ea;font-size:12px;color:#6b7280;">You are receiving this email because you interacted with a salon store on the Beauty Sphia platform.</div></div></body></html>`
 }
 
 interface BuiltTemplate {
-	readonly subject: string;
-	readonly heading: string;
-	readonly bodyHtml: string;
-	readonly whatsapp: string;
-	readonly link?: string;
+	readonly subject: string
+	readonly heading: string
+	readonly bodyHtml: string
+	readonly whatsapp: string
+	readonly link?: string
 }
 
 function buildTemplate(templateKey: string, data: TemplateLike): BuiltTemplate {
-	const business = stringValue(data.businessName, "the salon");
-	const name = customerDisplayName(data);
-	const when = appointmentLine(data);
-	const service = stringValue(data.serviceName, "your selected service");
-	const contactName = stringValue(data.contactName, "Someone");
+	const business = stringValue(data.businessName, "the salon")
+	const name = customerDisplayName(data)
+	const when = appointmentLine(data)
+	const service = stringValue(data.serviceName, "your selected service")
+	const contactName = stringValue(data.contactName, "Someone")
 
 	switch (templateKey) {
 		case "booking.pending":
@@ -198,7 +201,7 @@ function buildTemplate(templateKey: string, data: TemplateLike): BuiltTemplate {
 				heading: `Thanks ${name}! We've received your request.`,
 				bodyHtml: `<p>We've noted your request for <strong>${escapeHtml(service)}</strong> at <strong>${escapeHtml(when)}</strong>. Our team will confirm your appointment and reach out if anything needs adjusting.</p><p>See you soon at <strong>${escapeHtml(business)}</strong>.</p>`,
 				whatsapp: `Hi ${name}, thank you for booking ${service} at ${business} for ${when}. We will confirm your appointment shortly.`,
-			};
+			}
 		case "booking.cancelled":
 			return {
 				subject: `Booking cancelled — ${business}`,
@@ -206,49 +209,49 @@ function buildTemplate(templateKey: string, data: TemplateLike): BuiltTemplate {
 				bodyHtml:
 					"<p>This booking has been cancelled. If that was a mistake, please reach out and we'll be happy to help rebook a time that suits you.</p>",
 				whatsapp: `Hi ${name}, your booking (${service}, ${when}) at ${business} has been cancelled.`,
-			};
+			}
 		case "booking.rescheduled":
 			return {
 				subject: `Booking updated — ${business}`,
 				heading: "Your appointment has been rescheduled.",
 				bodyHtml: `<p>Your <strong>${escapeHtml(service)}</strong> appointment at <strong>${escapeHtml(business)}</strong> is now set for <strong>${escapeHtml(when)}</strong>.</p>`,
 				whatsapp: `Hi ${name}, your ${service} at ${business} has been moved to ${when}.`,
-			};
+			}
 		case "booking.reminder":
 			return {
 				subject: `Reminder: your appointment at ${business}`,
 				heading: `See you soon, ${name}!`,
 				bodyHtml: `<p>Just a friendly reminder that your <strong>${escapeHtml(service)}</strong> appointment at <strong>${escapeHtml(business)}</strong> is booked for <strong>${escapeHtml(when)}</strong>.</p>`,
 				whatsapp: `Hi ${name}, a reminder that your ${service} at ${business} is coming up on ${when}. We can't wait to see you!`,
-			};
+			}
 		case "booking.completed":
 			return {
 				subject: `Thanks for visiting ${business}!`,
 				heading: "We hope you loved your appointment.",
 				bodyHtml: `<p>${escapeHtml(name)}, your <strong>${escapeHtml(service)}</strong> appointment at <strong>${escapeHtml(business)}</strong> is complete. We would love to see you again soon!</p>`,
 				whatsapp: `Hi ${name}, thank you for visiting ${business}! Your ${service} appointment is complete. We hope to see you again soon.`,
-			};
+			}
 		case "waitlist.created":
 			return {
 				subject: `You're on the ${business} waitlist`,
 				heading: "You're on the list!",
 				bodyHtml: `<p>We'll notify you as soon as an opening is available for <strong>${escapeHtml(service)}</strong>.</p>`,
 				whatsapp: `Hi ${name}, you're on the ${business} waitlist for ${service}. We'll let you know the moment a spot opens.`,
-			};
-case "waitlist.available":
+			}
+		case "waitlist.available":
 			return {
 				subject: `A spot opened at ${business}!`,
 				heading: "Your spot is ready!",
 				bodyHtml: `<p>Great news ${name} — an opening for <strong>${escapeHtml(service)}</strong> at <strong>${escapeHtml(business)}</strong> just became available. Reach out soon to claim it.</p>`,
 				whatsapp: `Hi ${name}, a spot for ${service} at ${business} just opened up. Reach out to claim it!`,
-			};
+			}
 		case "contact.alert":
 			return {
 				subject: `New message from ${contactName}`,
 				heading: "New contact message",
 				bodyHtml: `<p><strong>From:</strong> ${escapeHtml(contactName)} (${escapeHtml(stringValue(data.contactEmail))})</p><p><strong>Subject:</strong> ${escapeHtml(stringValue(data.contactSubject))}</p><p style="white-space:pre-wrap;">${escapeHtml(stringValue(data.message))}</p>`,
 				whatsapp: "",
-			};
+			}
 		case "verify.address":
 			return {
 				subject: `Verify your email — ${business}`,
@@ -256,7 +259,7 @@ case "waitlist.available":
 				bodyHtml: `<p>Hello ${name}, please confirm your email address to finish creating your account. The link will expire in 30 minutes.</p>`,
 				whatsapp: "",
 				link: stringValue(data.link),
-			};
+			}
 		case "reset.password":
 			return {
 				subject: `Password reset — ${business}`,
@@ -264,14 +267,28 @@ case "waitlist.available":
 				bodyHtml: `<p>We received a request to reset the password for <strong>${escapeHtml(stringValue(data.email))}</strong>. Use the link below (valid for 30 minutes) to choose a new password.</p>`,
 				whatsapp: "",
 				link: stringValue(data.link),
-			};
+			}
+		case "billing.receipt":
+			return {
+				subject: `Payment receipt — Beauty Sphia`,
+				heading: "Your Beauty Sphia payment was received",
+				bodyHtml: `<p>Hello ${escapeHtml(name)}, your payment of <strong>${escapeHtml(stringValue(data.amount))}</strong> for <strong>${escapeHtml(stringValue(data.businessName, "your salon"))}</strong> was received.</p><p>Receipt number: <strong>${escapeHtml(stringValue(data.receiptNumber, "pending"))}</strong></p>`,
+				whatsapp: `Hi ${name}, Beauty Sphia received your payment of ${stringValue(data.amount)}. Receipt: ${stringValue(data.receiptNumber, "pending")}.`,
+			}
+		case "billing.payment_failed":
+			return {
+				subject: "Payment reminder — Beauty Sphia",
+				heading: "Your Beauty Sphia payment needs attention",
+				bodyHtml: `<p>Hello ${escapeHtml(name)}, your payment for <strong>${escapeHtml(stringValue(data.businessName, "your salon"))}</strong> was not completed.</p><p>Please sign in and approve the next M-Pesa STK Push before your store is suspended.</p>`,
+				whatsapp: `Hi ${name}, your Beauty Sphia payment for ${stringValue(data.businessName, "your salon")} was not completed. Please approve the next M-Pesa prompt.`,
+			}
 		default:
 			return {
 				subject: "Notification",
 				heading: "Notification",
 				bodyHtml: "<p>You have a new update.</p>",
 				whatsapp: "",
-			};
+			}
 	}
 }
 /* -------------------------------------------------------------------------- */
@@ -279,20 +296,18 @@ case "waitlist.available":
 /* -------------------------------------------------------------------------- */
 
 export interface DispatchNotificationInput {
-	readonly tenantId: string;
-	readonly userId?: string | null;
-	readonly bookingId?: string | null;
-	readonly channel: NotificationChannel;
-	readonly templateKey: string;
-	readonly destination: string;
-	readonly subject?: NotificationSubject;
+	readonly tenantId: string
+	readonly userId?: string | null
+	readonly bookingId?: string | null
+	readonly channel: NotificationChannel
+	readonly templateKey: string
+	readonly destination: string
+	readonly subject?: NotificationSubject
 	/** Optional extra uniqueness scoping (e.g. booking id) for repeatable sends. */
-	readonly idempotencyKeySuffix?: string;
+	readonly idempotencyKeySuffix?: string
 	/** When true, an already SENT delivery short-circuits without re-sending. */
-	readonly skipIfAlreadySent?: boolean;
+	readonly skipIfAlreadySent?: boolean
 }
-
-
 
 /**
  * Sends a single notification for a subject and records its delivery outcome.
@@ -311,11 +326,11 @@ export async function dispatchNotification(
 		input.idempotencyKeySuffix ?? "",
 	]
 		.filter((part) => part.length > 0)
-		.join(":");
+		.join(":")
 	let delivery = await prisma.notificationDelivery.findUnique({
 		where: { idempotencyKey },
 		select: { id: true, status: true },
-	});
+	})
 
 	if (!delivery) {
 		try {
@@ -330,12 +345,12 @@ export async function dispatchNotification(
 					idempotencyKey,
 				},
 				select: { id: true, status: true },
-			});
+			})
 		} catch {
 			delivery = await prisma.notificationDelivery.findUnique({
 				where: { idempotencyKey },
 				select: { id: true, status: true },
-			});
+			})
 		}
 	}
 	if (!delivery) {
@@ -343,41 +358,43 @@ export async function dispatchNotification(
 		return {
 			id: "",
 			status: NotificationStatus.FAILED,
-		};
+		}
 	}
 
 	if (input.skipIfAlreadySent && delivery.status === NotificationStatus.SENT) {
 		// Repeatable notifications (e.g. cron reminders) must fire only once.
-		return { id: delivery.id, status: delivery.status };
+		return { id: delivery.id, status: delivery.status }
 	}
 
-	const built = buildTemplate(input.templateKey, input.subject ?? {});
-	let result: DeliveryResult;
+	const built = buildTemplate(input.templateKey, input.subject ?? {})
+	let result: DeliveryResult
 	if (input.channel === NotificationChannel.EMAIL) {
 		result = await sendResendEmail(
 			input.destination,
 			built.subject,
 			emailShell(built.subject, built.heading, built.bodyHtml, built.link),
-		);
+		)
 	} else {
-		result = await sendWhatsAppText(input.destination, built.whatsapp);
+		result = await sendWhatsAppText(input.destination, built.whatsapp)
 	}
 
 	const nextStatus = result.ok
 		? NotificationStatus.SENT
-		: NotificationStatus.FAILED;
-	await prisma.notificationDelivery.update({
-		where: { id: delivery.id },
-		data: {
-			status: nextStatus,
-			providerMessageId: result.providerMessageId ?? null,
-			errorMessage: result.error ?? null,
-			sentAt: result.ok ? new Date() : null,
-		},
-	}).catch(() => {
-		// Status bookkeeping must never break the caller.
-	});
-	return { id: delivery.id, status: nextStatus };
+		: NotificationStatus.FAILED
+	await prisma.notificationDelivery
+		.update({
+			where: { id: delivery.id },
+			data: {
+				status: nextStatus,
+				providerMessageId: result.providerMessageId ?? null,
+				errorMessage: result.error ?? null,
+				sentAt: result.ok ? new Date() : null,
+			},
+		})
+		.catch(() => {
+			// Status bookkeeping must never break the caller.
+		})
+	return { id: delivery.id, status: nextStatus }
 }
 
 /**
@@ -391,8 +408,8 @@ export function isNotificationProviderConfigured(
 		? Boolean(env("RESEND_API_KEY") && env("RESEND_FROM_EMAIL"))
 		: Boolean(
 				env("WHATSAPP_CLOUD_ACCESS_TOKEN") &&
-					env("WHATSAPP_CLOUD_PHONE_NUMBER_ID"),
-			);
+				env("WHATSAPP_CLOUD_PHONE_NUMBER_ID"),
+			)
 }
 /**
  * Sends a non-tenant platform email (email verification, password reset) that
@@ -400,17 +417,17 @@ export function isNotificationProviderConfigured(
  * accepted the message. Used by account workflows where no tenant context exists.
  */
 export async function sendPlatformEmail(input: {
-	readonly templateKey: string;
-	readonly destination: string;
-	readonly subject?: NotificationSubject;
+	readonly templateKey: string
+	readonly destination: string
+	readonly subject?: NotificationSubject
 }): Promise<{ readonly ok: boolean; readonly error?: string }> {
-	const built = buildTemplate(input.templateKey, input.subject ?? {});
+	const built = buildTemplate(input.templateKey, input.subject ?? {})
 	const result = await sendResendEmail(
 		input.destination,
 		built.subject,
 		emailShell(built.subject, built.heading, built.bodyHtml, built.link),
-	);
-	return { ok: result.ok, error: result.error };
+	)
+	return { ok: result.ok, error: result.error }
 }
 
 /**
@@ -421,15 +438,15 @@ export function platformBaseUrl(): string {
 		env("NEXT_PUBLIC_APP_URL") ||
 		env("APP_URL") ||
 		"http://localhost:3000"
-	).replace(/\/+$/, "");
+	).replace(/\/+$/, "")
 }
 
 type BookingCustomerDetails = {
-	readonly firstName: string;
-	readonly lastName: string;
-	readonly email: string;
-	readonly phone: string | null;
-};
+	readonly firstName: string
+	readonly lastName: string
+	readonly email: string
+	readonly phone: string | null
+}
 
 /**
  * Sends the customer-facing email + WhatsApp pair for a booking lifecycle
@@ -438,16 +455,16 @@ type BookingCustomerDetails = {
  * as FAILED deliveries and never break the booking flow itself.
  */
 export async function notifyBookingCustomer(input: {
-	readonly tenantId: string;
-	readonly bookingId: string;
-	readonly businessName: string;
-	readonly templateKey: string;
-	readonly customer: BookingCustomerDetails;
-	readonly serviceName?: string | null;
-	readonly appointmentDate: Date;
-	readonly timeLabel: string;
+	readonly tenantId: string
+	readonly bookingId: string
+	readonly businessName: string
+	readonly templateKey: string
+	readonly customer: BookingCustomerDetails
+	readonly serviceName?: string | null
+	readonly appointmentDate: Date
+	readonly timeLabel: string
 }): Promise<void> {
-	if (!input.customer.email || !input.bookingId) return;
+	if (!input.customer.email || !input.bookingId) return
 
 	const subject: NotificationSubject = {
 		businessName: input.businessName,
@@ -456,7 +473,7 @@ export async function notifyBookingCustomer(input: {
 		serviceName: input.serviceName ?? "",
 		appointmentDate: input.appointmentDate.toISOString().slice(0, 10),
 		timeLabel: input.timeLabel,
-	};
+	}
 
 	const jobs: Promise<unknown>[] = [
 		dispatchNotification({
@@ -467,7 +484,7 @@ export async function notifyBookingCustomer(input: {
 			destination: input.customer.email.toLowerCase(),
 			subject,
 		}),
-	];
+	]
 	if (input.customer.phone) {
 		jobs.push(
 			dispatchNotification({
@@ -478,9 +495,9 @@ export async function notifyBookingCustomer(input: {
 				destination: input.customer.phone,
 				subject,
 			}),
-		);
+		)
 	}
-	await Promise.allSettled(jobs);
+	await Promise.allSettled(jobs)
 }
 
 /**
@@ -493,8 +510,8 @@ export async function notifyNextWaitlistedCustomer(
 	const tenant = await prisma.tenant.findUnique({
 		where: { id: tenantId },
 		select: { businessName: true },
-	});
-	if (!tenant) return;
+	})
+	if (!tenant) return
 	const entry = await prisma.waitlistEntry.findFirst({
 		where: { tenantId, status: WaitlistStatus.WAITING },
 		orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],
@@ -505,8 +522,8 @@ export async function notifyNextWaitlistedCustomer(
 			preferredDate: true,
 			preferredTime: true,
 		},
-	});
-	if (!entry?.email) return;
+	})
+	if (!entry?.email) return
 
 	const subject: NotificationSubject = {
 		businessName: tenant.businessName,
@@ -514,7 +531,7 @@ export async function notifyNextWaitlistedCustomer(
 		serviceName: entry.serviceName,
 		appointmentDate: entry.preferredDate?.toISOString().slice(0, 10) ?? "",
 		timeLabel: entry.preferredTime ?? "",
-	};
+	}
 
 	const jobs: Promise<unknown>[] = [
 		dispatchNotification({
@@ -524,7 +541,7 @@ export async function notifyNextWaitlistedCustomer(
 			destination: entry.email,
 			subject,
 		}),
-	];
+	]
 	if (entry.phone) {
 		jobs.push(
 			dispatchNotification({
@@ -534,7 +551,7 @@ export async function notifyNextWaitlistedCustomer(
 				destination: entry.phone,
 				subject,
 			}),
-		);
+		)
 	}
-	await Promise.allSettled(jobs);
+	await Promise.allSettled(jobs)
 }

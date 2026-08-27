@@ -6,6 +6,7 @@ import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 import { ContactForm } from "@/components/shared/ContactForm"
+import { PLAN_PRICING } from "@shared/constants/plans"
 
 type PlatformIconName = "home" | "store" | "plans" | "create" | "contact"
 
@@ -22,11 +23,40 @@ function PlatformIcon({ name }: { readonly name: PlatformIconName }) {
 			aria-hidden="true"
 			focusable="false"
 		>
-			{ name === "home" && <><path d="m3 10 9-7 9 7" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></> }
-			{ name === "store" && <><path d="M4 10h16v10H4z" /><path d="M3 10 5 4h14l2 6" /><path d="M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /><path d="M8 20v-5h8v5" /></> }
-			{ name === "plans" && <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /><path d="M7 15h3" /></> }
-			{ name === "contact" && <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></> }
-			{ name === "create" && <><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M12 8v8M8 12h8" /></> }
+			{name === "home" && (
+				<>
+					<path d="m3 10 9-7 9 7" />
+					<path d="M5 9.5V21h14V9.5" />
+					<path d="M9 21v-6h6v6" />
+				</>
+			)}
+			{name === "store" && (
+				<>
+					<path d="M4 10h16v10H4z" />
+					<path d="M3 10 5 4h14l2 6" />
+					<path d="M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" />
+					<path d="M8 20v-5h8v5" />
+				</>
+			)}
+			{name === "plans" && (
+				<>
+					<rect x="3" y="5" width="18" height="14" rx="2" />
+					<path d="M3 10h18" />
+					<path d="M7 15h3" />
+				</>
+			)}
+			{name === "contact" && (
+				<>
+					<rect x="3" y="5" width="18" height="14" rx="2" />
+					<path d="m3 7 9 6 9-6" />
+				</>
+			)}
+			{name === "create" && (
+				<>
+					<rect x="4" y="4" width="16" height="16" rx="3" />
+					<path d="M12 8v8M8 12h8" />
+				</>
+			)}
 		</svg>
 	)
 }
@@ -34,6 +64,7 @@ function PlatformIcon({ name }: { readonly name: PlatformIconName }) {
 const plans = [
 	{
 		name: "Starter",
+		tier: "starter",
 		description: "Launch a polished salon storefront with the essentials.",
 		features: [
 			"One salon store",
@@ -44,6 +75,7 @@ const plans = [
 	},
 	{
 		name: "Business",
+		tier: "business",
 		description: "Run daily salon operations with deeper customer workflows.",
 		features: [
 			"Advanced schedule",
@@ -54,6 +86,7 @@ const plans = [
 	},
 	{
 		name: "Enterprise",
+		tier: "enterprise",
 		description:
 			"Scale multiple teams, locations, and operational requirements.",
 		features: [
@@ -107,15 +140,14 @@ export default function PlatformHome() {
 					<p className="eyebrow">A calmer way to run your business</p>
 					<div className="showcase-copy">
 						<h2 id="showcase-title">
-							Where every salon finds its people — and every crown
-							finds its craft.
+							Where every salon finds its people — and every crown finds its
+							craft.
 						</h2>
 						<p>
-							From glossy knotless braids to evenings that glow, the
-							talent on Beauty Sphia turns appointments into rituals
-							and clients into regulars. Step into a directory of
-							independent salons, each one ready to welcome you the
-							moment you arrive.
+							From glossy knotless braids to evenings that glow, the talent on
+							Beauty Sphia turns appointments into rituals and clients into
+							regulars. Step into a directory of independent salons, each one
+							ready to welcome you the moment you arrive.
 						</p>
 						<div className="platform-hero__actions">
 							<Link className="button button--primary" href="/stores">
@@ -192,10 +224,7 @@ export default function PlatformHome() {
 					<div className="section-heading">
 						<p className="eyebrow">Choose your operating level</p>
 						<h2 id="plans-title">Plans that grow with your salon.</h2>
-						<p>
-							Pricing and final limits will be confirmed before billing is
-							implemented.
-						</p>
+						<p>Simple monthly pricing in KSh, with a one-time setup fee.</p>
 					</div>
 					<div className="plans-grid">
 						{plans.map((plan) => (
@@ -207,6 +236,13 @@ export default function PlatformHome() {
 									<span className="plan-card__badge">Recommended</span>
 								)}
 								<h3>{plan.name}</h3>
+								<p>
+									<strong>
+										KSh {PLAN_PRICING[plan.tier].monthlyAmountMinor / 100}
+									</strong>{" "}
+									/month · KSh {PLAN_PRICING[plan.tier].setupFeeMinor / 100}{" "}
+									setup
+								</p>
 								<p>{plan.description}</p>
 								<ul>
 									{plan.features.map((feature) => (
@@ -232,19 +268,16 @@ export default function PlatformHome() {
 					<div className="contact-grid">
 						<div className="section-heading">
 							<p className="eyebrow">Get in touch</p>
-							<h2 id="contact-title">
-								Let’s talk about your salon.
-							</h2>
+							<h2 id="contact-title">Let’s talk about your salon.</h2>
 							<p>
-								Questions about the platform, ready to open a store,
-								or just want to say hello? Drop us a message and the
-								Beauty Sphia team will get right back to you.
+								Questions about the platform, ready to open a store, or just
+								want to say hello? Drop us a message and the Beauty Sphia team
+								will get right back to you.
 							</p>
 						</div>
 						<ContactForm />
 					</div>
 				</section>
-
 			</main>
 			<PlatformFooter />
 			<nav

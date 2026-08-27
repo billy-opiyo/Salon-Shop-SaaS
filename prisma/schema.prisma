@@ -216,6 +216,7 @@ model Tenant {
   auditLogs        AdminAuditLog[]
   teamInvitations  TeamInvitation[]
   legalAcceptances LegalAcceptance[]
+  invoices         BillingInvoice[]
 
   @@index([ownerUserId])
   @@index([status])
@@ -293,14 +294,68 @@ model Subscription {
   externalCustomerId     String?
   externalSubscriptionId String?   @unique
   currentPeriodEnd       DateTime?
+  trialStartsAt          DateTime?
+  trialEndsAt            DateTime?
+  activatedAt            DateTime?
+  billingPhoneNumber     String?
+  pendingPlanTier        PlanTier?
+  failedPaymentAttempts  Int       @default(0)
+  gracePeriodEndsAt      DateTime?
+  lastPaymentAt          DateTime?
+  cancelledAt            DateTime?
+  dataRetentionUntil     DateTime?
   cancelAtPeriodEnd      Boolean   @default(false)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   plan                   Plan      @relation(fields: [planId], references: [id])
+  invoices               BillingInvoice[]
 
   @@index([planId])
   @@index([status])
+}
+
+model BillingInvoice {
+  id                    String           @id @default(cuid())
+  tenantId              String
+  subscriptionId        String?
+  invoiceNumber         String           @unique
+  kind                  String
+  status                String           @default("pending")
+  amountMinor           Int
+  currency              String           @default("KES")
+  description           String
+  dueAt                 DateTime?
+  paidAt                DateTime?
+  receiptNumber         String?
+  retryCount            Int              @default(0)
+  lastAttemptAt         DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  tenant                Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription          Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  paymentAttempts       PaymentAttempt[]
+
+  @@index([tenantId, status, createdAt])
+  @@index([subscriptionId])
+}
+
+model PaymentAttempt {
+  id                  String         @id @default(cuid())
+  invoiceId           String
+  phoneNumber         String
+  status              String         @default("pending")
+  merchantRequestId   String?
+  checkoutRequestId   String?        @unique
+  mpesaReceiptNumber  String?
+  resultDescription   String?
+  requestedAt         DateTime       @default(now())
+  completedAt         DateTime?
+  rawCallback         Json?
+  invoice             BillingInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, status])
+  @@index([merchantRequestId])
 }
 
 model Membership {
@@ -313,6 +368,7 @@ model Membership {
   canManageBookings Boolean          @default(false)
   canManageContent  Boolean          @default(false)
   canManageSecurity Boolean          @default(false)
+  canManageBilling  Boolean          @default(false)
   invitedAt         DateTime?
   joinedAt          DateTime?
   createdAt         DateTime         @default(now())

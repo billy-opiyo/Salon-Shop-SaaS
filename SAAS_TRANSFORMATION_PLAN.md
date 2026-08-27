@@ -38,7 +38,8 @@ Completed in the isolated SaaS workspace:
   verification, verified-email gating, protected `/manage` and `/onboarding`
   routes, and server-side Turnstile verification boundary.
 - Transactional tenant provisioning: owner membership, tenant settings, plan,
-  trial subscription, and default service categories are created atomically.
+  setup invoice, and default service categories are created atomically. The
+  subscription remains setup-payment-required until the setup fee is paid.
 - Root `package.json`, `.env.example`, project rules, and isolated-reference
   guardrails. The Firebase project remains unchanged.
 - Production Next.js build and Prisma format/validate/generate checks pass with
@@ -360,9 +361,20 @@ identity.
 
 ### Plans and entitlements
 
-Plan names are fixed as requested; prices, taxes, billing provider, trial
-length, and currency remain configuration decisions and must not be invented in
-code.
+Beauty Sphia launches in Kenya with KES pricing. These are the current
+configuration values and may change in the future with at least 30 days' notice
+before an existing owner's next renewal. The setup fee is paid before store
+setup; the 14-day subscription trial begins only after the store is activated.
+
+| Plan       | Monthly price | One-time setup fee |
+| ---------- | ------------: | -----------------: |
+| Starter    |     KSh 1,300 |          KSh 5,000 |
+| Business   |     KSh 3,300 |          KSh 5,000 |
+| Enterprise |     KSh 8,000 |          KSh 2,000 |
+
+Enterprise uses KSh 8,000/month as the standard price, with custom pricing
+available for special requirements. Prices are final advertised amounts; the
+salon owner, as the M-Pesa sender, pays the transaction fee separately.
 
 | Plan       | Intended baseline entitlements                                                                                                                                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -632,9 +644,21 @@ service, not just a frontend conditional.
 
 ### Phase G: platform monetization and lifecycle
 
-- Finalize pricing, billing provider, tax/legal wording, trials, grace periods,
-  cancellation, refunds, failed-payment handling, and plan-change policy.
-- Implement subscription state and entitlement snapshots server-side.
+- Implement the agreed subscription lifecycle: setup fee before setup, a
+  14-day trial after activation, 3-day failed-payment grace period, two payment
+  retries, suspension after unresolved failure, and reactivation without an
+  extra fee. Billing pauses while suspended.
+- The billing source foundation now includes plan pricing constants, setup and
+  monthly invoices, payment attempts, Daraja STK Push, callback
+  reconciliation, receipt and failure notifications, an hourly idempotent
+  renewal sweep, retry/grace-period handling, suspension/reactivation, owner
+  cancellation, scheduled downgrades, immediate upgrades, and manual review
+  support for duplicate/refund cases.
+- Remaining work in this phase is operational hardening: database migration
+  deployment, provider sandbox/live verification, selection/configuration of an
+  SMS provider, and legally reviewed tax/terms wording. Downloadable invoice
+  rendering, receipt/failure email delivery, and the server-side billing
+  lifecycle are implemented in source.
 - Gate quotas and paid features in actions, APIs, uploads, cron jobs, and UI.
 - Implement publish/unpublish, custom domain workflow, usage reporting, and
   upgrade/downgrade state transitions.
@@ -719,12 +743,36 @@ No rewrite slice is complete until:
 
 ## 13. Operational, legal, and data decisions still required
 
-These are decisions for confirmation, not assumptions to encode:
+The following decisions are confirmed for the initial Kenya launch:
 
-- platform public name/domain and whether this is part of Nurava Tech;
-- exact Starter/Business/Enterprise pricing, limits, trial, billing currency,
-  taxes, refunds, and merchant-of-record position;
-- billing provider and webhook authority;
+- platform public name: **Beauty Sphia**;
+- billing model: salon owners pay a one-time setup fee and recurring monthly
+  subscription; SalonSaaS does not process salon-customer service payments;
+- billing currency and prices: KES, using the Starter/Business/Enterprise table
+  above;
+- billing provider and flow: SalonSaaS's own M-Pesa Paybill/Till through the
+  Safaricom Daraja API and STK Push;
+- setup fee is paid first; setup targets 1-3 business days, with the timeline
+  paused when owner-provided information is missing;
+- one 14-day subscription trial per salon, beginning after activation;
+- monthly billing follows the activation date and requires a new STK Push;
+- the sender pays the M-Pesa transaction fee; admins may make payments but only
+  the owner may change plans;
+- failed payments receive two retries and a 3-day grace period before store
+  suspension; the owner retains billing access while suspended;
+- cancellation requires confirmation, takes effect immediately during trial or
+  at the end of the paid period, and retains data for 90 days;
+- refunds and duplicate payments are handled manually for verified exceptions;
+- billing notices use email and dashboard notifications, with optional SMS;
+- receipts/invoices include salon name, owner name, email, and optional business
+  registration number, but never request a KRA PIN;
+- Kenyan law governs the initial subscription terms.
+
+The following items remain subject to legal, tax, or operational confirmation:
+
+- applicable taxes and merchant-of-record wording;
+- subscription terms, privacy notice, data processing wording, and retention
+  exceptions required by law;
 - whether one subscription covers one location or multiple locations;
 - custom domain availability and enterprise support commitments;
 - retained guest bookings versus mandatory customer accounts;
@@ -734,8 +782,9 @@ These are decisions for confirmation, not assumptions to encode:
 - provider accounts, sender domains, WhatsApp templates, R2 lifecycle rules,
   WAF policy, Turnstile site keys, and incident contacts.
 
-Until these are decided, the implementation must use explicit configuration and
-feature gates rather than fabricated prices, provider states, or legal claims.
+Until the remaining items are decided, the implementation must use explicit
+configuration and feature gates rather than fabricated tax values, provider
+states, or legal claims.
 
 ## 14. Current risks and mitigations
 

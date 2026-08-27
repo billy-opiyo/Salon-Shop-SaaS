@@ -98,6 +98,11 @@ export default async function ManagePage() {
 						"Key metrics, trends, and business insights.",
 						"/manage",
 					],
+					[
+						"Billing",
+						"Subscription, setup payment, invoices, and payment status.",
+						"/manage",
+					],
 				].map(([title, description]) => (
 					<article className="manage-card" key={title}>
 						<p className="eyebrow">Management area</p>
@@ -113,7 +118,9 @@ export default async function ManagePage() {
 											? `/manage/${tenants[0].slug}/waitlist`
 											: title === "Analytics"
 												? `/manage/${tenants[0].slug}/analytics`
-												: "/manage"
+												: title === "Billing"
+													? `/manage/${tenants[0].slug}/billing`
+													: "/manage"
 								}`}
 							>
 								Open area

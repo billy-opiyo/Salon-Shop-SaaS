@@ -8,6 +8,7 @@ import {
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import { PLAN_ENTITLEMENTS } from "@shared/constants/plans"
+import { PLAN_PRICING } from "@shared/constants/plans"
 import {
 	createTenantSchema,
 	type CreateTenantInput,
@@ -38,6 +39,7 @@ export async function provisionTenant(
 
 	try {
 		return await prisma.$transaction(async (transaction) => {
+			const now = new Date()
 			const plan = await transaction.plan.upsert({
 				where: {
 					tier: input.planTier.toUpperCase() as
@@ -90,13 +92,14 @@ export async function provisionTenant(
 							canManageBookings: true,
 							canManageContent: true,
 							canManageSecurity: true,
+							canManageBilling: true,
 							joinedAt: new Date(),
 						},
 					},
 					subscription: {
 						create: {
 							planId: plan.id,
-							status: "trialing",
+							status: "setup_payment_required",
 						},
 					},
 					categories: { create: [...DEFAULT_CATEGORIES] },
@@ -106,6 +109,15 @@ export async function provisionTenant(
 							termsVersion: "2026-08-26",
 							privacyVersion: "2026-08-26",
 							cookiesVersion: "2026-08-26",
+						},
+					},
+					invoices: {
+						create: {
+							invoiceNumber: `BS-${now.getTime()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+							kind: "setup",
+							amountMinor: PLAN_PRICING[input.planTier].setupFeeMinor,
+							currency: input.currency,
+							description: "Beauty Sphia salon store setup fee",
 						},
 					},
 				},
@@ -163,11 +175,34 @@ export async function publishTenantForUser(userId: string, tenantId: string) {
 		assertTenantMembership(membership, tenantId),
 		"canManageContent",
 	)
-	const result = await prisma.tenant.updateMany({
-		where: { id: tenantId, status: "DRAFT" },
-		data: { status: "ACTIVE" },
+	const subscription = await prisma.subscription.findUnique({
+		where: { tenantId },
+		select: { status: true },
 	})
-	if (result.count !== 1)
+	if (subscription?.status !== "setup_paid_pending_activation")
+		throw new TenantProvisioningError(
+			"The setup fee must be paid before this store can be activated.",
+		)
+	const now = new Date()
+	const result = await prisma.$transaction(async (transaction) => {
+		const tenantUpdate = await transaction.tenant.updateMany({
+			where: { id: tenantId, status: "DRAFT" },
+			data: { status: "ACTIVE" },
+		})
+		if (tenantUpdate.count !== 1) return false
+		await transaction.subscription.update({
+			where: { tenantId },
+			data: {
+				status: "trialing",
+				trialStartsAt: now,
+				trialEndsAt: new Date(now.getTime() + 14 * 86400000),
+				activatedAt: now,
+				currentPeriodEnd: new Date(now.getTime() + 14 * 86400000),
+			},
+		})
+		return true
+	})
+	if (!result)
 		throw new TenantProvisioningError(
 			"This store is already published or unavailable.",
 		)
