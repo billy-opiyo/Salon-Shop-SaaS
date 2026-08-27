@@ -7139,37 +7139,21 @@ function renderServices(filter = "all") {
   `
 	}
 
-	if (normalizedFilter !== "all") {
+	if (normalizedFilter === "all") {
+		// Show every service as a single responsive grid of cards (mirrors the
+		// gallery layout) rather than vertically-stacked category groups.
 		grid.classList.remove("is-grouped")
-		const filtered = visibleServices.filter(
-			(s) => s.category === normalizedFilter,
-		)
-		grid.innerHTML = filtered.map((s, i) => renderServiceCard(s, i)).join("")
+		grid.innerHTML = visibleServices
+			.map((service, index) => renderServiceCard(service, index))
+			.join("")
 		return
 	}
 
-	grid.classList.add("is-grouped")
-	const categoryOrder = [...new Set(visibleServices.map((s) => s.category))]
-	grid.innerHTML = categoryOrder
-		.map((categoryKey) => {
-			const categoryServices = visibleServices.filter(
-				(service) => service.category === categoryKey,
-			)
-			if (!categoryServices.length) return ""
-
-			return `
-      <section class="services-category-group" data-category="${categoryKey}">
-        <header class="services-category-header">
-          <h3 class="services-category-title">${getCategoryLabel(categoryKey)}</h3>
-          <p class="services-category-count">${categoryServices.length} service${categoryServices.length === 1 ? "" : "s"}</p>
-        </header>
-        <div class="services-category-grid">
-          ${categoryServices.map((service, index) => renderServiceCard(service, index)).join("")}
-        </div>
-      </section>
-    `
-		})
-		.join("")
+	grid.classList.remove("is-grouped")
+	const filtered = visibleServices.filter(
+		(s) => s.category === normalizedFilter,
+	)
+	grid.innerHTML = filtered.map((s, i) => renderServiceCard(s, i)).join("")
 }
 
 function normalizeGalleryItem(item = {}) {

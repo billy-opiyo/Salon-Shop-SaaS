@@ -42,14 +42,27 @@ declare global {
 }
 
 const REFERENCE_SCRIPTS = [
-	"/reference/JS/splash.js?v=20260602-splash-controller",
 	"/reference/JS/apply-client-config.js",
 	"/reference/JS/theme-preset-preview.js",
 	"/reference/JS/script.js?v=20260531-waitlist-joined-feedback-mobile-time-picker-fix",
 ] as const
 
+/**
+ * Classic scripts must run exactly once per page load: they declare top-level
+ * `const`/`let` bindings (e.g. `lightboxPriceRange` inside script.js), so
+ * executing the same file twice in the global scope throws
+ * "Identifier 'X' has already been declared". The reference runtime effect can
+ * legitimately run more than once (React StrictMode in dev, cross-tenant
+ * navigation), so we memoize the load promise at module scope rather than
+ * relying on the DOM node existing (which the unmount cleanup removes).
+ */
+const referenceScriptLoadPromises = new Map<string, Promise<void>>()
+
 function loadClassicScript(source: string): Promise<void> {
-	return new Promise((resolve, reject) => {
+	const cached = referenceScriptLoadPromises.get(source)
+	if (cached) return cached
+
+	const promise = new Promise<void>((resolve, reject) => {
 		const selector = 'script[data-reference-src="' + source + '"]'
 		if (document.querySelector(selector)) {
 			resolve()
@@ -65,6 +78,9 @@ function loadClassicScript(source: string): Promise<void> {
 			reject(new Error("Reference script failed to load: " + source))
 		document.head.appendChild(script)
 	})
+
+	referenceScriptLoadPromises.set(source, promise)
+	return promise
 }
 
 type AdminSnapshotRecord = Record<string, unknown>
@@ -726,17 +742,41 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 	actionBar.className = "saas-tenant-mobile-actions"
 	actionBar.setAttribute("aria-label", "Salon mobile navigation")
 	const actions = [
-		["#home", "home", "Home"],
-		["#gallery", "gallery", "Gallery"],
-		["#booking", "book", "Book"],
-		["#clientDashboard", "favorite", "Favorites"],
-		["#clientDashboard", "account", "Account"],
+		[null, "#home", "home", "Home"],
+		[null, "#gallery", "gallery", "Gallery"],
+		[null, "#booking", "book", "Book"],
+		["dashboardFavoritesCard", "#clientDashboard", "favorite", "Favorites"],
+		["dashboardProfileCard", "#clientDashboard", "account", "Account"],
 	] as const
-	actions.forEach(([href, icon, label]) => {
+
+	// The dashboard section ships hidden (display:none) so anchors alone can't
+	// reveal it. For the Favorites/Account mobile tabs we reveal the section,
+	// then smooth-scroll to the targeted dashboard card. The other tabs remain
+	// plain hash links.
+	const revealAndFocusDashboardCard = (cardId: string): boolean => {
+		const section = document.getElementById("clientDashboard")
+		if (section?.classList.contains("hidden")) {
+			section.classList.remove("hidden")
+		}
+		const target = document.getElementById(cardId)
+		if (!target) return false
+		target.scrollIntoView({ behavior: "smooth", block: "center" })
+		target.setAttribute("tabindex", "-1")
+		target.focus({ preventScroll: true })
+		return true
+	}
+
+	actions.forEach(([cardId, href, icon, label]) => {
 		const link = document.createElement("a")
 		link.href = href
 		link.setAttribute("aria-label", label)
 		link.innerHTML = `${getMobileActionIconSvg(icon)}<small>${label}</small>`
+		if (cardId) {
+			link.addEventListener("click", (event) => {
+				event.preventDefault()
+				revealAndFocusDashboardCard(cardId)
+			})
+		}
 		actionBar.append(link)
 	})
 	document.body.append(actionBar)
@@ -1967,8 +2007,28 @@ export function ReferenceSalonRuntime({
 		const originalBodyClassName = document.body.className
 		bodyClassName
 			.split(/\s+/)
+			.map((className) => className.trim())
 			.filter(Boolean)
+			// The reference markup ships with the legacy splash controller body
+			// state. Inside the Next.js runtime the splash overlay is suppressed,
+			// so we drop the "hidden" tokens and force "complete" so the salon
+			// storefront shell is visible immediately on load.
+			.filter(
+				(className) =>
+					className !== "splash-active" && className !== "splash-revealing",
+			)
 			.forEach((className) => document.body.classList.add(className))
+		document.body.classList.add("splash-complete")
+
+		// The reference markup still contains the splash overlay markup. It is
+		// never revealed (splash.js is not loaded), but hide it defensively so it
+		// can never cover the store, and release its background image eagerly.
+		const injectedSplash = document.getElementById("siteSplash")
+		if (injectedSplash) {
+			injectedSplash.hidden = true
+			injectedSplash.classList.add("splash-hide")
+			injectedSplash.setAttribute("aria-hidden", "true")
+		}
 
 		const activeRuntime =
 			runtimeKind ?? (loadSalonRuntime === false ? "none" : "salon")

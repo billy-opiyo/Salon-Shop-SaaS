@@ -58,14 +58,9 @@ body.splash-active .platform-home-shell {
 }
 
 .platform-home-shell {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-}
-
-body.splash-complete .platform-home-shell {
   opacity: 1;
   pointer-events: auto;
+  transition: opacity .25s ease;
 }
 
 body.splash-complete .splash-screen {
