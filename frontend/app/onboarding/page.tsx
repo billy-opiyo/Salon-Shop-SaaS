@@ -18,7 +18,7 @@ export default async function OnboardingPage() {
         <StoreSetupForm />
         <div className="platform-hero__actions">
           <Link className="button button--ghost" href="/">Back to platform home</Link>
-          <Link className="button button--ghost" href="/royal-braids">View the demo store</Link>
+          <Link className="button button--ghost" href="/royal-braids">View the Royal Braids store</Link>
         </div>
       </section>
     </main>

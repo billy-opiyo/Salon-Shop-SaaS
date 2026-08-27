@@ -2086,7 +2086,10 @@ export function ReferenceSalonRuntime({
 				rel="stylesheet"
 				href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 			/>
-			<link rel="stylesheet" href="/reference/CSS/style.css" />
+			<link
+				rel="stylesheet"
+				href="/reference/CSS/style.css?v=20260627-splash-fouc-fix"
+			/>
 			<div
 				className="reference-salon-root"
 				dangerouslySetInnerHTML={{ __html: markup }}
