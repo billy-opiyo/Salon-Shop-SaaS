@@ -1,11 +1,14 @@
 import "server-only"
 
+import { NotificationChannel } from "@prisma/client"
+
 import { prisma } from "@backend/db/prisma"
 import {
 	consumeRateLimit,
 	hashRateLimitSubject,
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
+import { dispatchNotification } from "@backend/services/notificationService"
 import type { ContactRequestInput } from "@shared/validation/contact"
 
 export class ContactRequestError extends Error {
@@ -30,7 +33,12 @@ export async function createPublicContactMessage(
 
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: input.tenantSlug.toLowerCase() },
-		select: { id: true, status: true },
+		select: {
+			id: true,
+			status: true,
+			businessName: true,
+			settings: { select: { emailPrimary: true, emailBookings: true } },
+		},
 	})
 	if (!tenant || tenant.status !== "ACTIVE") {
 		throw new ContactRequestError("This salon is not currently available.")
@@ -56,5 +64,25 @@ export async function createPublicContactMessage(
 		},
 		select: { id: true, status: true },
 	})
+
+	// Notify the salon owner, matching the legacy contact-message email.
+	const salonEmail = tenant.settings?.emailBookings || tenant.settings?.emailPrimary
+	if (salonEmail) {
+		await dispatchNotification({
+			tenantId: tenant.id,
+			userId,
+			channel: NotificationChannel.EMAIL,
+			templateKey: "contact.alert",
+			destination: salonEmail,
+			subject: {
+				businessName: tenant.businessName,
+				contactName: input.name,
+				contactEmail: input.email.toLowerCase(),
+				contactSubject: input.subject,
+				message: input.message,
+			},
+		}).catch(() => {})
+	}
+
 	return { id: message.id, status: message.status.toLowerCase() }
 }

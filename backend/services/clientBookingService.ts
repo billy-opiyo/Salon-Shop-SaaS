@@ -3,6 +3,10 @@ import "server-only"
 import { BookingStatus, Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import {
+	notifyBookingCustomer,
+	notifyNextWaitlistedCustomer,
+} from "@backend/services/notificationService"
 
 export class ClientBookingError extends Error {
 	readonly code = "CLIENT_BOOKING_FAILED" as const
@@ -16,7 +20,7 @@ export class ClientBookingError extends Error {
 async function resolveTenant(userId: string, tenantSlug: string) {
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: tenantSlug.trim().toLowerCase() },
-		select: { id: true, status: true },
+		select: { id: true, status: true, businessName: true },
 	})
 	if (!tenant || tenant.status !== "ACTIVE")
 		throw new ClientBookingError("This salon is not currently available.")
@@ -80,4 +84,37 @@ export async function cancelClientBooking(
 			},
 		})
 	})
+
+	// Legacy parity: after the commit, send the customer cancellation notice
+	// and alert the next waiting customer that a spot opened up.
+	const detail = await prisma.booking.findUnique({
+		where: { id: bookingId },
+		select: {
+			email: true,
+			phone: true,
+			firstName: true,
+			lastName: true,
+			serviceName: true,
+			appointmentDate: true,
+			timeLabel: true,
+		},
+	})
+	if (detail?.email) {
+		await notifyBookingCustomer({
+			tenantId: tenant.id,
+			bookingId,
+			businessName: tenant.businessName,
+			templateKey: "booking.cancelled",
+			customer: {
+				firstName: detail.firstName,
+				lastName: detail.lastName,
+				email: detail.email,
+				phone: detail.phone,
+			},
+			serviceName: detail.serviceName,
+			appointmentDate: detail.appointmentDate,
+			timeLabel: detail.timeLabel,
+		})
+	}
+	await notifyNextWaitlistedCustomer(tenant.id)
 }

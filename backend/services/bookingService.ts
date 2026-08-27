@@ -1,10 +1,11 @@
 import "server-only";
 
-import { BookingStatus, Prisma } from "@prisma/client";
+import { BookingStatus, NotificationChannel, Prisma } from "@prisma/client";
 
 import { prisma } from "@backend/db/prisma";
 import { consumeRateLimit, hashRateLimitSubject } from "@backend/services/rateLimit";
 import { verifyTurnstileToken } from "@backend/services/turnstile";
+import { dispatchNotification } from "@backend/services/notificationService";
 import type { BookingRequestInput } from "@shared/validation/booking";
 
 export class BookingRequestError extends Error {
@@ -43,6 +44,8 @@ export async function createPublicBooking(
     select: {
       id: true,
       status: true,
+      businessName: true,
+      settings: { select: { emailPrimary: true, emailBookings: true } },
       services: {
         where: input.serviceId ? { id: input.serviceId, enabled: true } : undefined,
         select: { id: true, name: true, orderOnly: true },
@@ -81,9 +84,10 @@ export async function createPublicBooking(
 
   const slotKey = `${input.appointmentDate}:${input.timeLabel}:${input.stylistId ?? "general"}`;
 
+  let booking: { id: string; status: BookingStatus };
   try {
-    return await prisma.$transaction(async (transaction) => {
-      const booking = await transaction.booking.create({
+    booking = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.booking.create({
         data: {
           tenantId: tenant.id,
           userId,
@@ -109,21 +113,21 @@ export async function createPublicBooking(
           slotKey,
           date: appointmentDate,
           timeLabel: input.timeLabel,
-          bookingId: booking.id,
+          bookingId: created.id,
         },
       });
 
       await transaction.notificationDelivery.create({
         data: {
           tenantId: tenant.id,
-          bookingId: booking.id,
-          channel: "EMAIL",
+          bookingId: created.id,
+          channel: "EMAIL" as NotificationChannel,
           templateKey: "booking.pending",
           destination: input.email.toLowerCase(),
-          idempotencyKey: `booking-pending:${booking.id}`,
+          idempotencyKey: `manual:${tenant.id}:booking.pending:${input.email.toLowerCase()}`,
         },
       });
-      return booking;
+      return created;
     });
   } catch (error) {
     if (error instanceof BookingRequestError) throw error;
@@ -132,4 +136,59 @@ export async function createPublicBooking(
     }
     throw new BookingRequestError("The booking could not be created. Please try again.");
   }
+
+  // Notify the customer (email is queued in the transaction above and now sent)
+  // and the salon, matching the legacy Firebase booking automation.
+  const subject = {
+    businessName: tenant.businessName,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    serviceName: service?.name ?? input.serviceName,
+    appointmentDate: input.appointmentDate,
+    timeLabel: input.timeLabel,
+    phone: input.phone,
+  };
+
+  await Promise.allSettled([
+    dispatchNotification({
+      tenantId: tenant.id,
+      userId,
+      bookingId: booking.id,
+      channel: NotificationChannel.EMAIL,
+      templateKey: "booking.pending",
+      destination: input.email.toLowerCase(),
+      subject,
+    }),
+    ...(input.phone
+      ? [
+          dispatchNotification({
+            tenantId: tenant.id,
+            userId,
+            bookingId: booking.id,
+            channel: NotificationChannel.WHATSAPP,
+            templateKey: "booking.pending",
+            destination: input.phone,
+            subject,
+          }),
+        ]
+      : []),
+  ]);
+
+  const salonEmail = tenant.settings?.emailBookings || tenant.settings?.emailPrimary;
+  if (salonEmail) {
+    await dispatchNotification({
+      tenantId: tenant.id,
+      bookingId: booking.id,
+      channel: NotificationChannel.EMAIL,
+      templateKey: "booking.enquiry",
+      destination: salonEmail,
+      subject: {
+        ...subject,
+        contactName: `${input.firstName} ${input.lastName}`.trim(),
+        contactEmail: input.email.toLowerCase(),
+      },
+    }).catch(() => {});
+  }
+
+  return { id: booking.id, status: booking.status };
 }

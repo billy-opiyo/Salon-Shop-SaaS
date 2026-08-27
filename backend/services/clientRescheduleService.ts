@@ -3,6 +3,7 @@ import "server-only"
 import { BookingStatus, Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { notifyBookingCustomer } from "@backend/services/notificationService"
 
 export class ClientRescheduleError extends Error {
 	readonly code = "CLIENT_RESCHEDULE_FAILED" as const
@@ -25,7 +26,7 @@ export async function rescheduleClientBooking(
 ): Promise<void> {
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: tenantSlug.trim().toLowerCase() },
-		select: { id: true, status: true },
+		select: { id: true, status: true, businessName: true },
 	})
 	if (!tenant || tenant.status !== "ACTIVE")
 		throw new ClientRescheduleError("This salon is not currently available.")
@@ -118,4 +119,33 @@ export async function rescheduleClientBooking(
 				)
 			throw new ClientRescheduleError("The booking could not be rescheduled.")
 		})
+
+	// Legacy parity: after the commit, email/WhatsApp the confirmed new time.
+	const detail = await prisma.booking.findUnique({
+		where: { id: input.bookingId },
+		select: {
+			email: true,
+			phone: true,
+			firstName: true,
+			lastName: true,
+			serviceName: true,
+		},
+	})
+	if (detail?.email) {
+		await notifyBookingCustomer({
+			tenantId: tenant.id,
+			bookingId: input.bookingId,
+			businessName: tenant.businessName,
+			templateKey: "booking.rescheduled",
+			customer: {
+				firstName: detail.firstName,
+				lastName: detail.lastName,
+				email: detail.email,
+				phone: detail.phone,
+			},
+			serviceName: detail.serviceName,
+			appointmentDate: new Date(`${input.appointmentDate}T00:00:00.000Z`),
+			timeLabel: input.timeLabel,
+		})
+	}
 }

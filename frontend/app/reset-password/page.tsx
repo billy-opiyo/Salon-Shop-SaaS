@@ -1,12 +1,12 @@
-import { VerifyEmailClient } from "./VerifyEmailClient"
+import { ResetPasswordForm } from "./ResetPasswordForm"
 
-interface VerifyEmailPageProps {
+interface ResetPasswordPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function VerifyEmailPage({
+export default async function ResetPasswordPage({
   searchParams,
-}: VerifyEmailPageProps) {
+}: ResetPasswordPageProps) {
   const params = searchParams ? await searchParams : {}
   const rawToken = params.token
   const initialToken =
@@ -18,9 +18,11 @@ export default async function VerifyEmailPage({
 
   return (
     <main className="auth-page">
-      <section className="auth-card" aria-label="Email verification">
+      <section className="auth-card" aria-label="Password reset">
         <span className="brand-mark">Beauty Sphia</span>
-        <VerifyEmailClient initialToken={initialToken} />
+        <p className="eyebrow">Account recovery</p>
+        <h1>Reset your password.</h1>
+        <ResetPasswordForm initialToken={initialToken} />
       </section>
     </main>
   )

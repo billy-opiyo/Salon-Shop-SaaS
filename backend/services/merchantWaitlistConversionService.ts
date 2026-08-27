@@ -3,6 +3,7 @@ import "server-only"
 import { BookingStatus, Prisma, WaitlistStatus } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { notifyBookingCustomer } from "@backend/services/notificationService"
 import {
 	assertTenantMembership,
 	assertTenantPermission,
@@ -42,6 +43,50 @@ async function getMembership(
 	return assertTenantMembership(membership, tenant.id)
 }
 
+/**
+ * Legacy parity: converting a waitlist entry into a booking confirms it
+ * immediately, so the customer receives the confirmation email + WhatsApp.
+ */
+async function sendConvertedBookingNotifications(
+	tenantId: string,
+	bookingId: string,
+): Promise<void> {
+	const [booking, tenant] = await Promise.all([
+		prisma.booking.findUnique({
+			where: { id: bookingId },
+			select: {
+				email: true,
+				phone: true,
+				firstName: true,
+				lastName: true,
+				serviceName: true,
+				appointmentDate: true,
+				timeLabel: true,
+			},
+		}),
+		prisma.tenant.findUnique({
+			where: { id: tenantId },
+			select: { businessName: true },
+		}),
+	])
+	if (!tenant || !booking?.email) return
+	await notifyBookingCustomer({
+		tenantId,
+		bookingId,
+		businessName: tenant.businessName,
+		templateKey: "booking.confirmed",
+		customer: {
+			firstName: booking.firstName,
+			lastName: booking.lastName,
+			email: booking.email,
+			phone: booking.phone,
+		},
+		serviceName: booking.serviceName,
+		appointmentDate: booking.appointmentDate,
+		timeLabel: booking.timeLabel,
+	})
+}
+
 export async function convertWaitlistEntryToBooking(
 	userId: string,
 	tenantSlug: string,
@@ -50,8 +95,10 @@ export async function convertWaitlistEntryToBooking(
 	const membership = await getMembership(userId, tenantSlug)
 	assertTenantPermission(membership, "canManageBookings")
 
+	let converted: { readonly bookingId: string }
+
 	try {
-		return await prisma.$transaction(async (transaction) => {
+		converted = await prisma.$transaction(async (transaction) => {
 			const entry = await transaction.waitlistEntry.findFirst({
 				where: { id: entryId, tenantId: membership.tenantId },
 				select: {
@@ -211,6 +258,12 @@ export async function convertWaitlistEntryToBooking(
 			})
 			return { bookingId: bookingId as string }
 		})
+
+		await sendConvertedBookingNotifications(
+			membership.tenantId,
+			converted.bookingId,
+		)
+		return converted
 	} catch (error) {
 		if (error instanceof MerchantWaitlistConversionError) throw error
 		if (

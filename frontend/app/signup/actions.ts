@@ -5,6 +5,10 @@ import { hash } from "bcryptjs"
 import { prisma } from "@backend/db/prisma"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { createEmailVerificationToken } from "@backend/services/authTokenService"
+import {
+	platformBaseUrl,
+	sendPlatformEmail,
+} from "@backend/services/notificationService"
 import { signupSchema } from "@shared/validation/auth"
 
 export type SignupResult =
@@ -45,7 +49,24 @@ export async function registerAccount(
 	await prisma.user.create({
 		data: { name: parsed.data.name, email, passwordHash },
 	})
-	await createEmailVerificationToken(email)
+
+	// Legacy parity: every new account receives an email verification link.
+	// Provider outages must never block account creation itself.
+	try {
+		const { token } = await createEmailVerificationToken(email)
+		await sendPlatformEmail({
+			templateKey: "verify.address",
+			destination: email,
+			subject: {
+				businessName: "Beauty Sphia",
+				firstName: parsed.data.name,
+				email,
+				link: `${platformBaseUrl()}/verify-email?token=${token}`,
+			},
+		})
+	} catch {
+		// Account creation still succeeds even if verification delivery fails.
+	}
 
 	return { ok: true }
 }

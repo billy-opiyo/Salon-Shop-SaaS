@@ -52,7 +52,10 @@ export function LoginForm() {
       <label>Password<input name="password" type="password" autoComplete="current-password" minLength={12} required /></label>
       <button className="button button--primary" type="submit" disabled={isSubmitting}>{isSubmitting ? "Signing in…" : "Sign in"}</button>
       {message && <p className="form-message" role="alert">{message}</p>}
-      <p className="auth-form__switch">New here? <Link href="/signup">Create an account</Link></p>
+      <p className="auth-form__switch">
+        New here? <Link href="/signup">Create an account</Link> ·{" "}
+        <Link href="/reset-password">Forgot your password?</Link>
+      </p>
     </form>
   );
 }

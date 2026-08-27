@@ -3,6 +3,10 @@ import "server-only";
 import { BookingStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "@backend/db/prisma";
+import {
+	notifyBookingCustomer,
+	notifyNextWaitlistedCustomer,
+} from "@backend/services/notificationService";
 import { assertTenantMembership, assertTenantPermission, type TenantMembershipContext } from "@backend/services/authorization";
 import type { BookingStatusUpdateInput } from "@shared/validation/merchant";
 
@@ -77,4 +81,57 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
       },
     });
   });
+
+  // Legacy parity: confirmations/completions/cancellations reach the customer
+  // by email + WhatsApp, and a cancelled slot notifies the waitlist.
+  if (
+    input.status === BookingStatus.CONFIRMED ||
+    input.status === BookingStatus.COMPLETED ||
+    input.status === BookingStatus.CANCELLED
+  ) {
+    const [booking, tenant] = await Promise.all([
+      prisma.booking.findUnique({
+        where: { id: input.bookingId },
+        select: {
+          email: true,
+          phone: true,
+          firstName: true,
+          lastName: true,
+          serviceName: true,
+          appointmentDate: true,
+          timeLabel: true,
+        },
+      }),
+      prisma.tenant.findUnique({
+        where: { id: membership.tenantId },
+        select: { businessName: true },
+      }),
+    ]);
+    if (tenant && booking?.email) {
+      const templateKey =
+        input.status === BookingStatus.CONFIRMED
+          ? "booking.confirmed"
+          : input.status === BookingStatus.CANCELLED
+            ? "booking.cancelled"
+            : "booking.completed";
+      await notifyBookingCustomer({
+        tenantId: membership.tenantId,
+        bookingId: input.bookingId,
+        businessName: tenant.businessName,
+        templateKey,
+        customer: {
+          firstName: booking.firstName,
+          lastName: booking.lastName,
+          email: booking.email,
+          phone: booking.phone,
+        },
+        serviceName: booking.serviceName,
+        appointmentDate: booking.appointmentDate,
+        timeLabel: booking.timeLabel,
+      });
+    }
+    if (input.status === BookingStatus.CANCELLED) {
+      await notifyNextWaitlistedCustomer(membership.tenantId);
+    }
+  }
 }

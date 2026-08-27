@@ -1,11 +1,12 @@
 import "server-only";
 
-import { Prisma, WaitlistStatus } from "@prisma/client";
+import { NotificationChannel, Prisma, WaitlistStatus } from "@prisma/client";
 
 import { prisma } from "@backend/db/prisma";
 import { consumeRateLimit, hashRateLimitSubject } from "@backend/services/rateLimit";
 import { verifyTurnstileToken } from "@backend/services/turnstile";
 import { hasEntitlement } from "@shared/constants/plans";
+import { dispatchNotification } from "@backend/services/notificationService";
 import type { WaitlistRequestInput } from "@shared/validation/booking";
 
 export class WaitlistRequestError extends Error {
@@ -28,7 +29,12 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
 
   const tenant = await prisma.tenant.findUnique({
     where: { slug: input.tenantSlug.toLowerCase() },
-    select: { id: true, status: true, subscription: { select: { plan: { select: { tier: true } } } } },
+    select: {
+      id: true,
+      status: true,
+      businessName: true,
+      subscription: { select: { plan: { select: { tier: true } } } },
+    },
   });
   if (!tenant || tenant.status !== "ACTIVE") throw new WaitlistRequestError("This salon is not currently accepting requests.");
 
@@ -50,12 +56,13 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
     throw new WaitlistRequestError("Please choose a current or future preferred date.");
   }
 
+  let entry: { id: string; queuePosition: number; status: WaitlistStatus };
   try {
-    return await prisma.$transaction(async (transaction) => {
+    entry = await prisma.$transaction(async (transaction) => {
       const queuePosition = (await transaction.waitlistEntry.count({
         where: { tenantId: tenant.id, status: { in: [WaitlistStatus.WAITING, WaitlistStatus.CONTACTED] } },
       })) + 1;
-      const entry = await transaction.waitlistEntry.create({
+      const created = await transaction.waitlistEntry.create({
         data: {
           tenantId: tenant.id,
           userId,
@@ -74,13 +81,13 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
         data: {
           tenantId: tenant.id,
           userId,
-          channel: "EMAIL",
+          channel: "EMAIL" as NotificationChannel,
           templateKey: "waitlist.created",
           destination: input.email.toLowerCase(),
-          idempotencyKey: `waitlist-created:${entry.id}`,
+          idempotencyKey: `manual:${tenant.id}:waitlist.created:${input.email.toLowerCase()}`,
         },
       });
-      return entry;
+      return created;
     });
   } catch (error) {
     if (error instanceof WaitlistRequestError) throw error;
@@ -89,4 +96,41 @@ export async function createPublicWaitlistEntry(input: WaitlistRequestInput, rem
     }
     throw new WaitlistRequestError("The waitlist request could not be created. Please try again.");
   }
+
+  // Notify the customer, matching the legacy waitlist join automation.
+  const subject = {
+    businessName: tenant.businessName,
+    customerName: input.name,
+    preferredStylist: input.preferredStylist ?? null,
+    serviceName: input.serviceName,
+    appointmentDate: input.preferredDate,
+    timeLabel: input.preferredTime,
+    phone: input.phone,
+    queuePosition: entry.queuePosition,
+  };
+
+  await Promise.allSettled([
+    dispatchNotification({
+      tenantId: tenant.id,
+      userId,
+      channel: NotificationChannel.EMAIL,
+      templateKey: "waitlist.created",
+      destination: input.email.toLowerCase(),
+      subject,
+    }),
+    ...(input.phone
+      ? [
+          dispatchNotification({
+            tenantId: tenant.id,
+            userId,
+            channel: NotificationChannel.WHATSAPP,
+            templateKey: "waitlist.created",
+            destination: input.phone,
+            subject,
+          }),
+        ]
+      : []),
+  ]);
+
+  return { id: entry.id, queuePosition: entry.queuePosition, status: entry.status };
 }
