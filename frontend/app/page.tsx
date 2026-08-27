@@ -1,5 +1,10 @@
 import Link from "next/link"
 import Image from "next/image"
+import { headers } from "next/headers"
+
+import { getRequestHost } from "@backend/services/tenantDomainService"
+import { getTenantStorefrontByHost } from "@backend/services/tenantDirectory"
+import { renderTenantStorefront } from "@/app/[tenantSlug]/page"
 
 import { ExperienceSplash } from "@/components/shared/ExperienceSplash"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
@@ -98,7 +103,12 @@ const plans = [
 	},
 ] as const
 
-export default function PlatformHome() {
+export default async function PlatformHome() {
+	const requestHost = getRequestHost(await headers())
+	if (requestHost) {
+		const customTenant = await getTenantStorefrontByHost(requestHost)
+		if (customTenant) return renderTenantStorefront(customTenant.slug)
+	}
 	return (
 		<>
 			<ExperienceSplash

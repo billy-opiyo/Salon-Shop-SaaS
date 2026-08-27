@@ -1,6 +1,7 @@
 import "server-only"
 
 import { prisma } from "@backend/db/prisma"
+import { resolveTenantSlugByHost } from "@backend/services/tenantDomainService"
 import type { TenantStorefront } from "@shared/types/tenant"
 
 const ROYAL_BRAIDS_HERO_SUBTITLE = "Premium African Hair Braiding & Beauty"
@@ -288,4 +289,12 @@ export async function getTenantStorefront(
 	} catch {
 		return fixture ?? null
 	}
+}
+
+export async function getTenantStorefrontByHost(
+	host: string | null | undefined,
+) {
+	if (!process.env.DATABASE_URL) return null
+	const slug = await resolveTenantSlugByHost(host)
+	return slug ? getTenantStorefront(slug) : null
 }

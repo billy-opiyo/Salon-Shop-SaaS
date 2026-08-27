@@ -20,6 +20,14 @@ enum TenantStatus {
   ARCHIVED
 }
 
+enum TenantDomainStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  ACTIVE
+  DISABLED
+  REMOVED
+}
+
 enum MembershipRole {
   OWNER
   ADMIN
@@ -223,14 +231,22 @@ model Tenant {
 }
 
 model TenantDomain {
-  id         String    @id @default(cuid())
-  tenantId   String
-  host       String    @unique
-  verifiedAt DateTime?
-  createdAt  DateTime  @default(now())
-  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                         String             @id @default(cuid())
+  tenantId                   String
+  host                       String             @unique
+  status                     TenantDomainStatus @default(PENDING_VERIFICATION)
+  isPrimary                  Boolean            @default(false)
+  verifiedAt                 DateTime?
+  verificationTokenHash      String?
+  verificationTokenExpiresAt DateTime?
+  verificationAttempts       Int                @default(0)
+  lastVerificationAt         DateTime?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  tenant                     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([host, status])
 }
 
 model TenantSettings {
@@ -287,28 +303,28 @@ model Plan {
 }
 
 model Subscription {
-  id                     String    @id @default(cuid())
-  tenantId               String    @unique
+  id                     String           @id @default(cuid())
+  tenantId               String           @unique
   planId                 String
-  status                 String    @default("trialing")
+  status                 String           @default("trialing")
   externalCustomerId     String?
-  externalSubscriptionId String?   @unique
+  externalSubscriptionId String?          @unique
   currentPeriodEnd       DateTime?
   trialStartsAt          DateTime?
   trialEndsAt            DateTime?
   activatedAt            DateTime?
   billingPhoneNumber     String?
   pendingPlanTier        PlanTier?
-  failedPaymentAttempts  Int       @default(0)
+  failedPaymentAttempts  Int              @default(0)
   gracePeriodEndsAt      DateTime?
   lastPaymentAt          DateTime?
   cancelledAt            DateTime?
   dataRetentionUntil     DateTime?
-  cancelAtPeriodEnd      Boolean   @default(false)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan                   Plan      @relation(fields: [planId], references: [id])
+  cancelAtPeriodEnd      Boolean          @default(false)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  tenant                 Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan                   Plan             @relation(fields: [planId], references: [id])
   invoices               BillingInvoice[]
 
   @@index([planId])
@@ -316,43 +332,43 @@ model Subscription {
 }
 
 model BillingInvoice {
-  id                    String           @id @default(cuid())
-  tenantId              String
-  subscriptionId        String?
-  invoiceNumber         String           @unique
-  kind                  String
-  status                String           @default("pending")
-  amountMinor           Int
-  currency              String           @default("KES")
-  description           String
-  dueAt                 DateTime?
-  paidAt                DateTime?
-  receiptNumber         String?
-  retryCount            Int              @default(0)
-  lastAttemptAt         DateTime?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  tenant                Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subscription          Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  paymentAttempts       PaymentAttempt[]
+  id              String           @id @default(cuid())
+  tenantId        String
+  subscriptionId  String?
+  invoiceNumber   String           @unique
+  kind            String
+  status          String           @default("pending")
+  amountMinor     Int
+  currency        String           @default("KES")
+  description     String
+  dueAt           DateTime?
+  paidAt          DateTime?
+  receiptNumber   String?
+  retryCount      Int              @default(0)
+  lastAttemptAt   DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription    Subscription?    @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  paymentAttempts PaymentAttempt[]
 
   @@index([tenantId, status, createdAt])
   @@index([subscriptionId])
 }
 
 model PaymentAttempt {
-  id                  String         @id @default(cuid())
-  invoiceId           String
-  phoneNumber         String
-  status              String         @default("pending")
-  merchantRequestId   String?
-  checkoutRequestId   String?        @unique
-  mpesaReceiptNumber  String?
-  resultDescription   String?
-  requestedAt         DateTime       @default(now())
-  completedAt         DateTime?
-  rawCallback         Json?
-  invoice             BillingInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id                 String         @id @default(cuid())
+  invoiceId          String
+  phoneNumber        String
+  status             String         @default("pending")
+  merchantRequestId  String?
+  checkoutRequestId  String?        @unique
+  mpesaReceiptNumber String?
+  resultDescription  String?
+  requestedAt        DateTime       @default(now())
+  completedAt        DateTime?
+  rawCallback        Json?
+  invoice            BillingInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId, status])
   @@index([merchantRequestId])

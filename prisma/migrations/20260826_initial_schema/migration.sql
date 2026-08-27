@@ -5,6 +5,9 @@ CREATE TYPE "PlanTier" AS ENUM ('STARTER', 'BUSINESS', 'ENTERPRISE');
 CREATE TYPE "TenantStatus" AS ENUM ('DRAFT', 'ACTIVE', 'SUSPENDED', 'ARCHIVED');
 
 -- CreateEnum
+CREATE TYPE "TenantDomainStatus" AS ENUM ('PENDING_VERIFICATION', 'VERIFIED', 'ACTIVE', 'DISABLED', 'REMOVED');
+
+-- CreateEnum
 CREATE TYPE "MembershipRole" AS ENUM ('OWNER', 'ADMIN', 'STAFF');
 
 -- CreateEnum
@@ -127,8 +130,15 @@ CREATE TABLE "TenantDomain" (
     "id" TEXT NOT NULL,
     "tenantId" TEXT NOT NULL,
     "host" TEXT NOT NULL,
+    "status" "TenantDomainStatus" NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
     "verifiedAt" TIMESTAMP(3),
+    "verificationTokenHash" TEXT,
+    "verificationTokenExpiresAt" TIMESTAMP(3),
+    "verificationAttempts" INTEGER NOT NULL DEFAULT 0,
+    "lastVerificationAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "TenantDomain_pkey" PRIMARY KEY ("id")
 );
@@ -666,6 +676,9 @@ CREATE UNIQUE INDEX "TenantDomain_host_key" ON "TenantDomain"("host");
 
 -- CreateIndex
 CREATE INDEX "TenantDomain_tenantId_idx" ON "TenantDomain"("tenantId");
+
+-- CreateIndex
+CREATE INDEX "TenantDomain_host_status_idx" ON "TenantDomain"("host", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "TenantSettings_tenantId_key" ON "TenantSettings"("tenantId");

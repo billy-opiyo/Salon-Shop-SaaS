@@ -145,8 +145,7 @@ export async function generateMetadata({
 	}
 }
 
-export default async function TenantStorefront({ params }: TenantPageProps) {
-	const { tenantSlug } = await params
+export async function renderTenantStorefront(tenantSlug: string) {
 	const tenant = await getTenantStorefront(tenantSlug)
 	if (!tenant) notFound()
 
@@ -161,4 +160,9 @@ export default async function TenantStorefront({ params }: TenantPageProps) {
 			clientConfig={buildReferenceClientConfig(tenant)}
 		/>
 	)
+}
+
+export default async function TenantStorefront({ params }: TenantPageProps) {
+	const { tenantSlug } = await params
+	return renderTenantStorefront(tenantSlug)
 }

@@ -20,7 +20,7 @@ Moving existing Firebase data is optional and depends on whether the current
 data is reference content or live business data. No Firebase production
 cutover is implied by this plan.
 
-## 1A. Implementation status — 26 August 2026
+## 1A. Implementation status — 27 August 2026
 
 Completed in the isolated SaaS workspace:
 
@@ -205,6 +205,16 @@ Phase D gate status — 25 August 2026:
 - The test runner now uses a fresh local Next.js server, a test-only Auth.js
   secret, and Chromium for both desktop and mobile projects; this avoids stale
   development-server and unavailable-WebKit false failures.
+- Custom-domain source implementation is now complete for the current schema:
+  normalized hostname registration, Business/Enterprise entitlement checks,
+  hashed expiring DNS TXT challenges, five-attempt verification limits,
+  verified/active/disabled/removed domain states, primary-domain selection,
+  verified-host tenant resolution, forwarded-host mismatch rejection,
+  Vercel domain add/remove hooks, and disable-first removal rollback behavior
+  are implemented in server-only services and authenticated management APIs.
+- Custom-domain source tests now cover hostname normalization and rejection of
+  URLs, IP addresses, wildcards, and malformed hostnames. Live DNS, Vercel,
+  Cloudflare, SSL, and Neon migration behavior remain environment checks.
 
 Source implementation checkpoint — 26 August 2026:
 
@@ -223,9 +233,10 @@ Source implementation checkpoint — 26 August 2026:
   are now implemented at source level and validated by the production build.
 - Media upload routes now validate files and enforce tenant permissions, but the
   default storage adapter truthfully returns provider-unconfigured responses;
-  media signing/storage, delivery, billing, domain verification, and migrations
-  remain intentionally incomplete until their provider contracts and
-  operator-owned environment values are available.
+  media signing/storage, delivery, and migrations remain intentionally
+  incomplete until their provider contracts and operator-owned environment
+  values are available. Domain verification source work is complete; live DNS,
+  Vercel, Cloudflare, SSL, and migration checks remain gated configuration.
 - Build, Vitest, and the Playwright desktop/mobile acceptance suite are green.
   Broader authenticated database-backed acceptance coverage requires a
   configured test database and seeded test users.
@@ -235,9 +246,15 @@ Still gated or in progress:
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
-- Remaining parity work is richer admin editing, verification/reset UI polish,
+- Remaining source work is richer admin editing, verification/reset UI polish,
   richer client dashboard adapters, broader authenticated/tenant-isolation
   acceptance tests, provider-backed media, and email/WhatsApp delivery.
+- **Next pending implementation phase: Phase G operational hardening.** The
+  source workflows for billing and custom domains now exist, so the next phase
+  is to apply and verify migrations against isolated Neon, run billing and
+  custom-domain provider smoke tests, select/configure SMS delivery, and finish
+  legally reviewed tax and subscription wording. Phase H is conditional and
+  should only begin if live Firebase data must be imported.
 - The copied reference assets are authoritative for storefront/admin UI. No
   tenant storefront redesign should be introduced; future work must preserve
   the original selectors, spacing, typography, colors, shadows, animations,
@@ -656,12 +673,15 @@ service, not just a frontend conditional.
   support for duplicate/refund cases.
 - Remaining work in this phase is operational hardening: database migration
   deployment, provider sandbox/live verification, selection/configuration of an
-  SMS provider, and legally reviewed tax/terms wording. Downloadable invoice
-  rendering, receipt/failure email delivery, and the server-side billing
-  lifecycle are implemented in source.
+  SMS provider, legally reviewed tax/terms wording, and live custom-domain
+  provider verification. Downloadable invoice rendering, receipt/failure email
+  delivery, the server-side billing lifecycle, and custom-domain source
+  workflows are implemented in source.
 - Gate quotas and paid features in actions, APIs, uploads, cron jobs, and UI.
-- Implement publish/unpublish, custom domain workflow, usage reporting, and
-  upgrade/downgrade state transitions.
+- Implement publish/unpublish, usage reporting, and upgrade/downgrade state
+  transitions. The custom-domain workflow is implemented in source; its live
+  provider configuration and smoke verification remain part of the Phase G
+  operational gate.
 
 ### Phase H: optional Firebase data import and dual-run validation
 

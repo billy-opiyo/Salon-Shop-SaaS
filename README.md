@@ -30,6 +30,18 @@ that does not prove a live database connection. Configure a real Neon pooled
 `DATABASE_URL`, `AUTH_SECRET`, Turnstile, Resend, R2, and WhatsApp credentials
 only in the deployment environment before enabling live workflows.
 
+## Custom domains
+
+Business and Enterprise tenants can register a hostname through
+`/api/manage/{tenantSlug}/domains`. The API returns a TXT challenge at
+`_beautysphia-verification.<hostname>`, allows five checks per 24-hour
+challenge, and routes traffic only after verification and activation. Set
+`VERCEL_API_TOKEN` and `VERCEL_PROJECT_ID` to enable automatic Vercel domain
+registration; SSL issuance is then handled by Vercel. Production setup still
+requires pointing the customer hostname at the Vercel project, publishing the
+returned TXT record, and configuring Cloudflare proxy/origin rules when
+Cloudflare is in front of Vercel.
+
 The Firebase application at the repository root remains the reference and
 fallback implementation. Do not delete, rename, or modify its files in place.
 Additional parity slices will be added incrementally after each rewrite slice
