@@ -413,10 +413,13 @@ main {
 .browse-store__image {
   width: 100%;
   min-height: 220px;
+  margin: .65rem;
   padding: 0;
   border: 0;
+  border-radius: .85rem;
+  overflow: hidden;
   background: url("/reference/IMG/Royal Braids logo.png") center/contain no-repeat;
-  background-color: transparent;
+  background-color: rgba(12, 10, 7, .28);
 }
 
 .browse-store__content {
@@ -710,12 +713,27 @@ main {
 }
 
 .splash-handwriting-fill {
+  animation-play-state: paused;
   animation-duration: var(--splash-handwriting-fill-duration, 1.25s);
-  animation-delay: var(--splash-handwriting-fill-delay, 3.65s);
+  animation-delay: var(--splash-handwriting-fill-delay, 8.75s);
 }
 
 .splash-handwriting-letter {
-  animation-delay: calc(var(--letter-index, 0) * var(--splash-letter-stagger, .28s));
+  animation-play-state: paused;
+  animation-delay: var(--splash-write-delay, .55s);
+}
+
+.splash-handwriting {
+  visibility: hidden;
+}
+
+.splash-screen.splash-animations-ready .splash-handwriting {
+  visibility: visible;
+}
+
+.splash-screen.splash-animations-ready .splash-handwriting-fill,
+.splash-screen.splash-animations-ready .splash-handwriting-letter {
+  animation-play-state: running;
 }
 
 @media (prefers-reduced-motion: reduce) {

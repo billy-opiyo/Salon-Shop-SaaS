@@ -13,6 +13,8 @@ const REDUCED_MOTION_DURATION_MS = 700
 const POST_PROGRESS_DELAY_MS = 2000
 const SPLASH_EXIT_TRANSITION_MS = 900
 const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
+const PLATFORM_SPLASH_DOCUMENT_KEY =
+	"beauty-sphia-platform-splash-document"
 
 function isDocumentReload(): boolean {
 	const navigation = performance.getEntriesByType("navigation")[0]
@@ -29,13 +31,19 @@ export function ExperienceSplash({
 }: ExperienceSplashProps) {
 	const [isExiting, setIsExiting] = useState(false)
 	const [isVisible, setIsVisible] = useState(true)
+	const [isAnimationReady, setIsAnimationReady] = useState(false)
 	const [progress, setProgress] = useState(1)
 
 	useEffect(() => {
 		let hasSeenSplash = false
 		try {
 			hasSeenSplash = sessionStorage.getItem(PLATFORM_SPLASH_SEEN_KEY) === "1"
-			if (!hasSeenSplash || isDocumentReload()) {
+			const documentIdentity = String(performance.timeOrigin)
+			const isNewHardReload =
+				isDocumentReload() &&
+				sessionStorage.getItem(PLATFORM_SPLASH_DOCUMENT_KEY) !== documentIdentity
+			sessionStorage.setItem(PLATFORM_SPLASH_DOCUMENT_KEY, documentIdentity)
+			if (!hasSeenSplash || isNewHardReload) {
 				sessionStorage.setItem(PLATFORM_SPLASH_SEEN_KEY, "1")
 			} else {
 				document.documentElement.classList.remove("splash-active")
@@ -60,6 +68,9 @@ export function ExperienceSplash({
 			: SPLASH_DURATION_MS
 		document.documentElement.classList.add("splash-active")
 		document.body.classList.add("splash-active")
+		const animationReadyFrameId = window.requestAnimationFrame(() => {
+			setIsAnimationReady(true)
+		})
 		const progressStart = performance.now()
 		let progressFrameId = 0
 		const updateProgress = (now: number) => {
@@ -87,6 +98,7 @@ export function ExperienceSplash({
 		return () => {
 			window.clearTimeout(completeTimeoutId)
 			window.clearTimeout(removeSplashTimeoutId)
+			window.cancelAnimationFrame(animationReadyFrameId)
 			window.cancelAnimationFrame(progressFrameId)
 			document.documentElement.classList.remove(
 				"splash-active",
@@ -98,13 +110,36 @@ export function ExperienceSplash({
 
 	if (!isVisible) return null
 
+	const splashLetters = Array.from(brandName)
+	const writeLetterDurationMs = Math.min(
+		1080,
+		Math.max(1, SPLASH_DURATION_MS * 0.108),
+	)
+	const writeStartDelayMs = Math.min(
+		550,
+		Math.max(0, SPLASH_DURATION_MS * 0.055),
+	)
+	const writeLastDelayMs = Math.max(
+		0,
+		SPLASH_DURATION_MS - writeLetterDurationMs,
+	)
+	const writeLetterStaggerMs =
+		splashLetters.length > 1
+			? (writeLastDelayMs - writeStartDelayMs) /
+				(splashLetters.length - 1)
+			: 0
+	const fillDurationMs = Math.min(
+		1250,
+		Math.max(1, SPLASH_DURATION_MS * 0.125),
+	)
+
 	return (
 		<div
-			className={`splash-screen splash-animations-ready${isExiting ? " splash-hide" : ""}`}
+			className={`splash-screen${isAnimationReady ? " splash-animations-ready" : ""}${isExiting ? " splash-hide" : ""}`}
 			style={{
-				"--splash-letter-stagger": `${Math.max(75, (SPLASH_DURATION_MS * 0.7) / Math.max(1, Array.from(brandName).length))}ms`,
-				"--splash-handwriting-fill-duration": `${Math.min(700, SPLASH_DURATION_MS * 0.24)}ms`,
-				"--splash-handwriting-fill-delay": `${SPLASH_DURATION_MS * 0.68}ms`,
+				"--splash-write-letter-duration": `${writeLetterDurationMs}ms`,
+				"--splash-handwriting-fill-duration": `${fillDurationMs}ms`,
+				"--splash-handwriting-fill-delay": `${Math.max(0, SPLASH_DURATION_MS - fillDurationMs)}ms`,
 			} as React.CSSProperties}
 			role="status"
 			aria-live="polite"
@@ -160,10 +195,12 @@ export function ExperienceSplash({
 							y="128"
 							textAnchor="middle"
 						>
-							{Array.from(brandName).map((letter, index) => (
+							{splashLetters.map((letter, index) => (
 								<tspan
 									className="splash-handwriting-letter"
-									style={{ "--letter-index": index } as React.CSSProperties}
+									style={{
+										"--splash-write-delay": `${writeStartDelayMs + writeLetterStaggerMs * index}ms`,
+									} as React.CSSProperties}
 									key={`${letter}-${index}`}
 								>
 									{letter === " " ? "\u00a0" : letter}

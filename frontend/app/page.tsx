@@ -75,8 +75,8 @@ export default function PlatformHome() {
 				description="Preparing your workspace experience"
 			/>
 			<main className="platform-home-shell">
-				<header className="platform-header">
-					<Link className="brand-mark" href="/" aria-label="Beauty Sphia home">
+				<header className="platform-header" id="home">
+					<Link className="brand-mark" href="#home" aria-label="Beauty Sphia home">
 						<Image
 							className="brand-mark__image"
 							src="/platform/Beauty Sphia logo.png"
@@ -107,17 +107,16 @@ export default function PlatformHome() {
 
 				<section
 					className="platform-hero platform-hero--image"
-					id="home"
 					aria-labelledby="platform-title"
 				>
 					<picture className="platform-hero__picture">
 						<source
 							media="(max-width: 1024px)"
-							srcSet="/platform/hero-mobile-beauty-sphia.png"
+							srcSet="/platform/hero-mobile-beauty-sphia-copy.png"
 						/>
 						<Image
 							className="platform-hero__image"
-							src="/platform/hero-desktop-beauty-sphia.png"
+							src="/platform/hero-desktop-beauty-sphia-copy.png"
 							alt="Beauty Sphia salon management platform"
 							width={1536}
 							height={880}
