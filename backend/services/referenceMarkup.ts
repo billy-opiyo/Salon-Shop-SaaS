@@ -28,6 +28,37 @@ function rewriteReferenceAssetPaths(markup: string): string {
   );
 }
 
+/** Splash-state tokens stripped from served body class names. */
+const SPLASH_BODY_CLASS_TOKENS = new Set([
+  "splash-active",
+  "splash-revealing",
+  "splash-complete",
+]);
+
+/**
+ * Tenant storefronts never run the legacy splash controller, but the shipped
+ * overlay uses position:fixed with z-index:99999 and stays visible until
+ * client JavaScript hides it — flashing for about a second before hydration.
+ * Stripping the section from the served markup guarantees tenants never
+ * render it at any point, while the standalone /reference site is unchanged.
+ */
+function stripSplashScreen(bodyHtml: string): string {
+  const start = bodyHtml.indexOf("<!-- ========== SPLASH SCREEN");
+  if (start === -1) return bodyHtml;
+  // The splash section ends exactly where the site shell begins.
+  const end = bodyHtml.indexOf('<div class="site-shell"', start);
+  if (end === -1) return bodyHtml;
+  return bodyHtml.slice(0, start) + bodyHtml.slice(end);
+}
+
+function getSanitizedBodyClassName(className = "") {
+  return className
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token !== "" && !SPLASH_BODY_CLASS_TOKENS.has(token))
+    .join(" ");
+}
+
 export async function getReferencePageMarkup(
   fileName: string,
 ): Promise<ReferencePageMarkup> {
@@ -43,8 +74,8 @@ export async function getReferencePageMarkup(
   const classMatch = bodyAttributes.match(/class=["']([^"']*)["']/i);
 
   return {
-    bodyClassName: classMatch?.[1] ?? "",
-    html: rewriteReferenceAssetPaths(bodyMatch[2] ?? ""),
+    bodyClassName: getSanitizedBodyClassName(classMatch?.[1] ?? ""),
+    html: rewriteReferenceAssetPaths(stripSplashScreen(bodyMatch[2] ?? "")),
     headStyles,
   };
 }

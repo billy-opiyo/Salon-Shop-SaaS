@@ -602,6 +602,17 @@ main {
   }
 }
 
+/* The fixed salon floating buttons (WhatsApp chat + back-to-top) sit in the
+   bottom corners at z-index 999, which covered the Home and Account icons of
+   the SaaS mobile action bar. Lift both above the bar whenever that bar is
+   visible; standalone usages without the bar are unaffected. */
+@media (max-width: 700px) {
+  .reference-salon-root .floating-whatsapp,
+  .reference-salon-root .back-to-top {
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .platform-footer {
   width: 100%;
   padding: 4rem max(1.5rem, calc((100% - 1180px) / 2)) 1.5rem;

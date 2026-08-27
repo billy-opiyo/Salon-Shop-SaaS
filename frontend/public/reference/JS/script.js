@@ -3736,7 +3736,7 @@ function setAuthMode(mode = "signin") {
 	setAuthPasswordVisibility(false)
 }
 
-const TERMS_ACCEPTED_STORAGE_KEY = "royal_braids_terms_accepted_v1"
+const TERMS_ACCEPTED_STORAGE_KEY = "royal_braids_terms_accepted_v2"
 
 function closeTermsModal() {
 	if (!authUi.termsModal) return

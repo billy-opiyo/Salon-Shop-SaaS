@@ -2148,7 +2148,7 @@ export function ReferenceSalonRuntime({
 			/>
 			<link
 				rel="stylesheet"
-				href="/reference/CSS/style.css?v=20260627-splash-fouc-fix"
+				href="/reference/CSS/style.css?v=20260827-lightmode-cta-mobilebar-fix"
 			/>
 			<div
 				className="reference-salon-root"

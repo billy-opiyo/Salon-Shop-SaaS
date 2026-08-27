@@ -11121,3 +11121,30 @@ body.reduced-motion .splash-loading-dots span {
         padding: 7px 8px;
     }
 }
+
+/* ============ LIGHT MODE — WHATSAPP CTA VISIBILITY FIX ============ */
+/* Tenant themes may set --primary to pale pastels. In light mode the
+   translucent mint washes derived from it made the green "Book/Order via
+   WhatsApp" CTAs nearly invisible against cream backgrounds, so pin them to
+   solid WhatsApp brand greens with high-contrast labels instead. */
+body.light-mode .service-whatsapp-btn,
+body.light-mode .gallery-whatsapp-btn {
+    background: #1eb45f;
+    color: #ffffff;
+    border-color: #189a4f;
+}
+
+body.light-mode .service-whatsapp-btn i,
+body.light-mode .gallery-whatsapp-btn i {
+    color: #ffffff;
+}
+
+body.light-mode .service-whatsapp-btn:hover,
+body.light-mode .service-whatsapp-btn:focus-visible,
+body.light-mode .gallery-whatsapp-btn:hover,
+body.light-mode .gallery-whatsapp-btn:focus-visible {
+    background: #17904b;
+    color: #ffffff;
+    border-color: #147a3f;
+}
+
