@@ -3,6 +3,7 @@ import Image from "next/image"
 
 import { ExperienceSplash } from "@/components/shared/ExperienceSplash"
 import { CurrentYear } from "@/components/shared/CurrentYear"
+import { PlatformBrandMark } from "@/components/shared/PlatformBrandMark"
 
 type PlatformIconName = "home" | "store" | "plans" | "create"
 type SocialIconName = "whatsapp" | "facebook" | "tiktok" | "instagram"
@@ -76,7 +77,7 @@ export default function PlatformHome() {
 			/>
 			<main id="home" className="platform-home-shell">
 				<header className="platform-header">
-					<Link className="brand-mark" href="#home" aria-label="Beauty Sphia home">
+					<PlatformBrandMark>
 						<Image
 							className="brand-mark__image"
 							src="/platform/Beauty Sphia logo.png"
@@ -96,7 +97,7 @@ export default function PlatformHome() {
 							</strong>
 							<span className="brand-mark__tagline">Manage · Book · Grow</span>
 						</span>
-					</Link>
+					</PlatformBrandMark>
 					<nav className="platform-nav" aria-label="Platform navigation">
 						<Link href="#home">Home</Link>
 						<Link href="#browse-stores">Browse Stores</Link>

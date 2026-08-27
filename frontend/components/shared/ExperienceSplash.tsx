@@ -12,18 +12,66 @@ interface ExperienceSplashProps {
 const SPLASH_DURATION_MS = 7000
 const REDUCED_MOTION_DURATION_MS = 700
 const POST_PROGRESS_DELAY_MS = 2000
-const SPLASH_EXIT_TRANSITION_MS = 900
+const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
+const PLATFORM_SPLASH_DOCUMENT_KEY =
+	"beauty-sphia-platform-splash-document"
+
+function isDocumentReload(): boolean {
+	const navigation = performance.getEntriesByType("navigation")[0]
+	return (
+		navigation instanceof PerformanceNavigationTiming &&
+		navigation.type === "reload"
+	)
+}
+
+function shouldShowSplashOnEntry(): boolean {
+	try {
+		const hasSeenSplash =
+			sessionStorage.getItem(PLATFORM_SPLASH_SEEN_KEY) === "1"
+		const documentIdentity = String(performance.timeOrigin)
+		const isNewHardReload =
+			isDocumentReload() &&
+			sessionStorage.getItem(PLATFORM_SPLASH_DOCUMENT_KEY) !==
+				documentIdentity
+		sessionStorage.setItem(PLATFORM_SPLASH_DOCUMENT_KEY, documentIdentity)
+
+		if (!hasSeenSplash || isNewHardReload) {
+			sessionStorage.setItem(PLATFORM_SPLASH_SEEN_KEY, "1")
+			return true
+		}
+		return false
+	} catch {
+		// Private browsing or blocked storage should still allow the splash once.
+		return true
+	}
+}
 
 export function ExperienceSplash({
 	brandName,
 	eyebrow,
 	description,
 }: ExperienceSplashProps) {
+	const [shouldShow] = useState<boolean>(() => {
+		// On the server we always render the splash; the real decision is made
+		// synchronously on the client before the first painted frame so the
+		// splash never replays after navigation back to the home page.
+		if (typeof window === "undefined") return true
+		return shouldShowSplashOnEntry()
+	})
 	const [isExiting, setIsExiting] = useState(false)
-	const [isVisible, setIsVisible] = useState(true)
 	const [progress, setProgress] = useState(1)
 
 	useEffect(() => {
+		if (!shouldShow) {
+			// Already seen this session (and it isn't a fresh hard refresh):
+			// reveal the home shell immediately without ever painting the splash.
+			document.documentElement.classList.remove("splash-active")
+			document.body.classList.remove("splash-active")
+			document.documentElement.classList.add("splash-complete")
+			document.body.classList.add("splash-complete")
+			return
+		}
+
 		const prefersReducedMotion = window.matchMedia?.(
 			"(prefers-reduced-motion: reduce)",
 		).matches
@@ -52,13 +100,9 @@ export function ExperienceSplash({
 			document.documentElement.classList.add("splash-complete")
 			document.body.classList.add("splash-complete")
 		}, splashDurationMs + POST_PROGRESS_DELAY_MS)
-		const removeSplashTimeoutId = window.setTimeout(() => {
-			setIsVisible(false)
-		}, splashDurationMs + POST_PROGRESS_DELAY_MS + SPLASH_EXIT_TRANSITION_MS)
 
 		return () => {
 			window.clearTimeout(completeTimeoutId)
-			window.clearTimeout(removeSplashTimeoutId)
 			window.clearInterval(progressIntervalId)
 			document.documentElement.classList.remove(
 				"splash-active",
@@ -66,9 +110,9 @@ export function ExperienceSplash({
 			)
 			document.body.classList.remove("splash-active", "splash-complete")
 		}
-	}, [])
+	}, [shouldShow])
 
-	if (!isVisible) return null
+	if (!shouldShow) return null
 
 	const splashLetters = Array.from(brandName)
 	const writeLetterDurationMs = Math.min(
