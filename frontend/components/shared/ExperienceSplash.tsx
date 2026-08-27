@@ -8,8 +8,19 @@ interface ExperienceSplashProps {
 	readonly description: string
 }
 
-const SPLASH_DURATION_MS = 5000
-const HOMEPAGE_REVEAL_DELAY_MS = 1000
+const SPLASH_DURATION_MS = 7000
+const REDUCED_MOTION_DURATION_MS = 700
+const POST_PROGRESS_DELAY_MS = 2000
+const SPLASH_EXIT_TRANSITION_MS = 900
+const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
+
+function isDocumentReload(): boolean {
+	const navigation = performance.getEntriesByType("navigation")[0]
+	return (
+		navigation instanceof PerformanceNavigationTiming &&
+		navigation.type === "reload"
+	)
+}
 
 export function ExperienceSplash({
 	brandName,
@@ -21,34 +32,61 @@ export function ExperienceSplash({
 	const [progress, setProgress] = useState(1)
 
 	useEffect(() => {
+		let hasSeenSplash = false
+		try {
+			hasSeenSplash = sessionStorage.getItem(PLATFORM_SPLASH_SEEN_KEY) === "1"
+			if (!hasSeenSplash || isDocumentReload()) {
+				sessionStorage.setItem(PLATFORM_SPLASH_SEEN_KEY, "1")
+			} else {
+				document.documentElement.classList.remove("splash-active")
+				document.body.classList.remove("splash-active")
+				document.documentElement.classList.add("splash-complete")
+				document.body.classList.add("splash-complete")
+				const hideSplashTimeoutId = window.setTimeout(
+					() => setIsVisible(false),
+					0,
+				)
+				return () => window.clearTimeout(hideSplashTimeoutId)
+			}
+		} catch {
+			// Private browsing or blocked storage should not prevent the splash.
+		}
+
+		const prefersReducedMotion = window.matchMedia?.(
+			"(prefers-reduced-motion: reduce)",
+		).matches
+		const splashDurationMs = prefersReducedMotion
+			? REDUCED_MOTION_DURATION_MS
+			: SPLASH_DURATION_MS
 		document.documentElement.classList.add("splash-active")
 		document.body.classList.add("splash-active")
-		const exitTimeoutId = window.setTimeout(() => {
-			setIsExiting(true)
-		}, SPLASH_DURATION_MS)
 		const progressStart = performance.now()
 		let progressFrameId = 0
 		const updateProgress = (now: number) => {
 			const nextProgress = Math.min(
 				100,
-				Math.round(1 + ((now - progressStart) / SPLASH_DURATION_MS) * 99),
+				Math.round(1 + ((now - progressStart) / splashDurationMs) * 99),
 			)
 			setProgress(nextProgress)
 			if (nextProgress < 100)
 				progressFrameId = window.requestAnimationFrame(updateProgress)
 		}
 		progressFrameId = window.requestAnimationFrame(updateProgress)
-		const revealTimeoutId = window.setTimeout(() => {
+		const completeTimeoutId = window.setTimeout(() => {
+			setProgress(100)
+			setIsExiting(true)
 			document.documentElement.classList.remove("splash-active")
 			document.body.classList.remove("splash-active")
 			document.documentElement.classList.add("splash-complete")
 			document.body.classList.add("splash-complete")
+		}, splashDurationMs + POST_PROGRESS_DELAY_MS)
+		const removeSplashTimeoutId = window.setTimeout(() => {
 			setIsVisible(false)
-		}, SPLASH_DURATION_MS + HOMEPAGE_REVEAL_DELAY_MS)
+		}, splashDurationMs + POST_PROGRESS_DELAY_MS + SPLASH_EXIT_TRANSITION_MS)
 
 		return () => {
-			window.clearTimeout(exitTimeoutId)
-			window.clearTimeout(revealTimeoutId)
+			window.clearTimeout(completeTimeoutId)
+			window.clearTimeout(removeSplashTimeoutId)
 			window.cancelAnimationFrame(progressFrameId)
 			document.documentElement.classList.remove(
 				"splash-active",
@@ -63,6 +101,11 @@ export function ExperienceSplash({
 	return (
 		<div
 			className={`splash-screen splash-animations-ready${isExiting ? " splash-hide" : ""}`}
+			style={{
+				"--splash-letter-stagger": `${Math.max(75, (SPLASH_DURATION_MS * 0.7) / Math.max(1, Array.from(brandName).length))}ms`,
+				"--splash-handwriting-fill-duration": `${Math.min(700, SPLASH_DURATION_MS * 0.24)}ms`,
+				"--splash-handwriting-fill-delay": `${SPLASH_DURATION_MS * 0.68}ms`,
+			} as React.CSSProperties}
 			role="status"
 			aria-live="polite"
 		>

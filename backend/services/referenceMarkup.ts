@@ -15,7 +15,10 @@ function getReferenceFilePath(fileName: string): string {
   if (!REFERENCE_FILES.has(fileName)) {
     throw new Error("Unsupported reference page.");
   }
-  return path.join(process.cwd(), "frontend", "public", "reference", fileName);
+  const workingDirectory = path.basename(process.cwd()).toLowerCase() === "frontend"
+    ? process.cwd()
+    : path.join(process.cwd(), "frontend");
+  return path.join(workingDirectory, "public", "reference", fileName);
 }
 
 function rewriteReferenceAssetPaths(markup: string): string {

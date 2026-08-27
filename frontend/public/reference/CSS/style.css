@@ -566,6 +566,14 @@ body.splash-complete .site-shell {
     dominant-baseline: alphabetic;
 }
 
+.splash-handwriting {
+    visibility: hidden;
+}
+
+.splash-screen.splash-font-ready .splash-handwriting {
+    visibility: visible;
+}
+
 .splash-handwriting-shadow {
     fill: none;
     stroke: color-mix(in srgb, var(--text-primary) 24%, transparent);
@@ -720,15 +728,23 @@ body.splash-complete .site-shell {
 
 .splash-loading-dots {
     display: inline-flex;
+    align-items: baseline;
     width: 1.35em;
     margin-left: 2px;
+    gap: 0.08em;
     justify-content: flex-start;
     vertical-align: baseline;
 }
 
 .splash-loading-dots span {
-    opacity: 0;
+    display: inline-block;
+    color: var(--primary-light);
+    font-size: 1.18em;
+    font-weight: 800;
+    line-height: 1;
+    opacity: 0.38;
     animation: splashEllipsisDot 1.35s ease-in-out infinite;
+    will-change: opacity, transform;
 }
 
 .splash-loading-dots span:nth-child(2) {
@@ -741,18 +757,16 @@ body.splash-complete .site-shell {
 
 @keyframes splashEllipsisDot {
 
-    0%,
-    18%,
-    100% {
-        opacity: 0;
-        transform: translateY(0);
-    }
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: translateY(0);
+  }
 
-    42%,
-    72% {
-        opacity: 1;
-        transform: translateY(-1px);
-    }
+  50% {
+    opacity: 1;
+    transform: translateY(-0.16em) scale(1.18);
+  }
 }
 
 @keyframes splashWriteLetter {
@@ -9019,6 +9033,34 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
     transform: translateY(-1px);
 }
 
+.footer-links .saas-platform-home-link {
+    display: inline;
+    margin-top: 0;
+}
+
+.auth-provider-btn--google {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.auth-provider-btn--google:hover,
+.auth-provider-btn--google:focus-visible {
+    background: var(--primary);
+    color: var(--primary-contrast);
+    border-color: var(--primary);
+}
+
+.auth-provider-btn--google .google-auth-icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+}
+
 .auth-provider-btn--muted {
     opacity: 0.65;
 }
@@ -9960,6 +10002,11 @@ body.reduced-motion *::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+}
+
+body.reduced-motion .splash-loading-dots span {
+    opacity: 0.9 !important;
+    transform: none !important;
 }
 
 .post-booking-auth-prompt {

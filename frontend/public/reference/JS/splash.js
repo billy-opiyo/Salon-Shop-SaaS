@@ -5,6 +5,8 @@
 	const COMPLETE_CLASS = "splash-complete"
 	const HIDE_CLASS = "splash-hide"
 	const ANIMATIONS_READY_CLASS = "splash-animations-ready"
+	const FONT_READY_CLASS = "splash-font-ready"
+	const SPLASH_SEEN_STORAGE_KEY = "royal-braids-splash-seen"
 	const DEFAULT_DURATION_MS = 10000
 	const REDUCED_MOTION_DURATION_MS = 700
 	const REVEAL_FALLBACK_MS = 1100
@@ -13,6 +15,35 @@
 	let progressAnimationFrameId = null
 	let splashTimerId = null
 	let transitionEndHandler = null
+
+	function isDocumentReload() {
+		const navigation = performance.getEntriesByType("navigation")[0]
+		return navigation?.type === "reload"
+	}
+
+	function hasSeenSplashForThisSession() {
+		try {
+			const hasSeen = sessionStorage.getItem(SPLASH_SEEN_STORAGE_KEY) === "1"
+			if (!hasSeen || isDocumentReload()) {
+				sessionStorage.setItem(SPLASH_SEEN_STORAGE_KEY, "1")
+				return false
+			}
+			return true
+		} catch (error) {
+			return false
+		}
+	}
+
+	function prepareSplashFont(splashElement) {
+		const fontReady = document.fonts?.load
+			? document.fonts.load('128px "Great Vibes"')
+			: Promise.resolve()
+		const timeout = new Promise((resolve) => window.setTimeout(resolve, 1200))
+
+		Promise.race([fontReady.catch(() => undefined), timeout]).then(() => {
+			splashElement.classList.add(FONT_READY_CLASS)
+		})
+	}
 
 	function getConfiguredDuration(splashElement) {
 		const overrideDuration = Number(window.ROYAL_BRAIDS_SPLASH_DURATION_MS)
@@ -239,10 +270,19 @@
 			return
 		}
 
+		if (hasSeenSplashForThisSession()) {
+			splash.hidden = true
+			splash.classList.add(HIDE_CLASS)
+			splash.setAttribute("aria-hidden", "true")
+			finishWithoutSplash()
+			return
+		}
+
 		const splashDurationMs = getConfiguredDuration(splash)
 		let didStartReveal = false
 		let didCompleteReveal = false
 		let fallbackTimerId = null
+		prepareSplashFont(splash)
 		syncSplashHandwriting(splash, splashDurationMs)
 		splash.classList.add(ANIMATIONS_READY_CLASS)
 		startSplashProgress(splash, splashDurationMs)

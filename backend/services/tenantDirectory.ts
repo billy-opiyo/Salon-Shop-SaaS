@@ -3,12 +3,19 @@ import "server-only"
 import { prisma } from "@backend/db/prisma"
 import type { TenantStorefront } from "@shared/types/tenant"
 
+const ROYAL_BRAIDS_HERO_SUBTITLE = "Premium African Hair Braiding & Beauty"
+const ROYAL_BRAIDS_HERO_TITLE =
+	"Celebrate Your Crown with <span>Beautiful Braids</span>"
+const ROYAL_BRAIDS_HERO_DESCRIPTION =
+	"From signature braids, hair services and flawless twists to glowing beauty spa rituals, precision nails, radiant makeup, barber grooming, eyebrows & lash enhancements, and bridal-ready glam—step into a full beauty experience crafted to make you shine."
+
 const fixtureTenant: TenantStorefront = {
 	id: "tenant_fixture_royal_braids",
 	slug: "royal-braids",
 	businessName: "Royal Braids",
-	shortDescription:
-		"A premium salon storefront fixture preserving the reference experience while the SaaS foundation is built.",
+	shortDescription: ROYAL_BRAIDS_HERO_DESCRIPTION,
+	heroTitle: ROYAL_BRAIDS_HERO_TITLE,
+	heroSubtitle: ROYAL_BRAIDS_HERO_SUBTITLE,
 	locationLabel: "Nairobi, Kenya",
 	planTier: "business",
 	theme: {
@@ -211,12 +218,14 @@ export async function getTenantStorefront(
 				? planTier
 				: "starter"
 		const phone = tenant.settings?.phonePrimary ?? "+254740470381"
+		const isRoyalBraids = normalizedSlug === "royal-braids"
 		return {
 			id: tenant.id,
 			slug: tenant.slug,
 			businessName: tenant.businessName,
-			shortDescription:
-				"A welcoming beauty experience shaped around your services, clients, and signature work.",
+			shortDescription: isRoyalBraids
+				? ROYAL_BRAIDS_HERO_DESCRIPTION
+				: "A welcoming beauty experience shaped around your services, clients, and signature work.",
 			locationLabel: [tenant.city, tenant.country].filter(Boolean).join(", "),
 			planTier: resolvedPlan,
 			theme: {
@@ -240,8 +249,12 @@ export async function getTenantStorefront(
 			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,
 			heroImageUrl: tenant.settings?.heroImageUrl ?? undefined,
-			heroTitle: tenant.settings?.heroTitle ?? undefined,
-			heroSubtitle: tenant.settings?.heroSubtitle ?? undefined,
+			heroTitle: isRoyalBraids
+				? ROYAL_BRAIDS_HERO_TITLE
+				: (tenant.settings?.heroTitle ?? undefined),
+			heroSubtitle: isRoyalBraids
+				? ROYAL_BRAIDS_HERO_SUBTITLE
+				: (tenant.settings?.heroSubtitle ?? undefined),
 			services: tenant.services.map((service) => ({
 				id: service.id,
 				name: service.name,

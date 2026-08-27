@@ -8305,6 +8305,18 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
     box-shadow: 0 12px 30px rgba(37, 211, 102, 0.38);
 }
 
+/* Keep quick actions above the SaaS mobile action bar on small screens. */
+@media (max-width: 767px) {
+    .site-shell {
+        padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .back-to-top,
+    .floating-whatsapp {
+        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 /* ============ LOADING / FORM STATES ============ */
 .loading {
     opacity: 0.6;

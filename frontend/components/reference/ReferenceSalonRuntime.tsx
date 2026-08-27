@@ -708,6 +708,17 @@ function getConfiguredWhatsAppUrl(): string {
 	return "https://wa.me/254740470381"
 }
 
+function getMobileActionIconSvg(name: "home" | "gallery" | "book" | "favorite" | "account"): string {
+	const paths = {
+		home: '<path d="m3 10 9-7 9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+		gallery: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.4"/><path d="m3 16 4.5-4.5 3.5 3.5 2.5-2.5L21 19"/>',
+		book: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h.01M12 13h.01M16 13h.01M8 16h.01M12 16h.01"/>',
+		favorite: '<path d="M20.8 8.6c0 5.5-8.8 10.4-8.8 10.4S3.2 14.1 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"/>',
+		account: '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+	} as const
+	return `<svg class="mobile-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name]}</svg>`
+}
+
 function addTenantNavigationLinks(tenantSlug: string): () => void {
 	const root = document.querySelector<HTMLElement>(".reference-salon-root")
 	if (!root) return () => undefined
@@ -715,17 +726,17 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 	actionBar.className = "saas-tenant-mobile-actions"
 	actionBar.setAttribute("aria-label", "Salon mobile navigation")
 	const actions = [
-		["#home", "⌂", "Home"],
-		["#gallery", "▧", "Gallery"],
-		["#booking", "✦", "Book"],
-		["#clientDashboard", "♡", "Favorites"],
-		["#clientDashboard", "◉", "Account"],
+		["#home", "home", "Home"],
+		["#gallery", "gallery", "Gallery"],
+		["#booking", "book", "Book"],
+		["#clientDashboard", "favorite", "Favorites"],
+		["#clientDashboard", "account", "Account"],
 	] as const
 	actions.forEach(([href, icon, label]) => {
 		const link = document.createElement("a")
 		link.href = href
 		link.setAttribute("aria-label", label)
-		link.innerHTML = `<span aria-hidden="true">${icon}</span><small>${label}</small>`
+		link.innerHTML = `${getMobileActionIconSvg(icon)}<small>${label}</small>`
 		actionBar.append(link)
 	})
 	document.body.append(actionBar)
@@ -733,10 +744,17 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 	const footer = root.querySelector<HTMLElement>("footer.footer")
 	const footerLink = document.createElement("a")
 	footerLink.href = "/"
-	footerLink.textContent = "Platform Home page"
+	footerLink.textContent = "Beauty Sphia Homepage"
 	footerLink.className = "saas-platform-home-link"
 	footerLink.setAttribute("data-saas-platform-link", tenantSlug)
-	if (footer) footer.append(footerLink)
+	const quickLinks = root.querySelector<HTMLElement>(".footer-links")
+	if (quickLinks) {
+		const quickLinkItem = document.createElement("li")
+		quickLinkItem.append(footerLink)
+		quickLinks.append(quickLinkItem)
+	} else if (footer) {
+		footer.append(footerLink)
+	}
 
 	return () => {
 		actionBar.remove()
@@ -1621,6 +1639,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const form = document.getElementById("emailAuthForm")
 	const logoutButton = document.getElementById("logoutBtn")
 	const guestButton = document.getElementById("continueAsGuestBtn")
+	const googleButton = document.getElementById("continueWithGoogleBtn")
 	if (!(form instanceof HTMLFormElement)) return () => undefined
 
 	ensureTurnstile(form, turnstileSiteKey)
@@ -1708,6 +1727,27 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 		updateReferenceAuthUi(null)
 	}
 
+	const continueWithGoogle = async (event: Event): Promise<void> => {
+		event.preventDefault()
+		event.stopImmediatePropagation()
+		if (!(googleButton instanceof HTMLButtonElement)) return
+		googleButton.disabled = true
+		googleButton.setAttribute("aria-busy", "true")
+		setAuthMessage("Redirecting to Google…", "success")
+		try {
+			await signIn("google", {
+				callbackUrl: window.location.href,
+			})
+		} catch {
+			googleButton.disabled = false
+			googleButton.removeAttribute("aria-busy")
+			setAuthMessage(
+				"Google sign-in is temporarily unavailable. Please try again.",
+				"error",
+			)
+		}
+	}
+
 	const continueAsGuest = (event: Event): void => {
 		event.preventDefault()
 		event.stopImmediatePropagation()
@@ -1718,12 +1758,14 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	form.addEventListener("submit", submit, true)
 	logoutButton?.addEventListener("click", logout, true)
 	guestButton?.addEventListener("click", continueAsGuest, true)
+	googleButton?.addEventListener("click", continueWithGoogle, true)
 	void refreshReferenceAuthUi(tenantSlug)
 
 	return () => {
 		form.removeEventListener("submit", submit, true)
 		logoutButton?.removeEventListener("click", logout, true)
 		guestButton?.removeEventListener("click", continueAsGuest, true)
+		googleButton?.removeEventListener("click", continueWithGoogle, true)
 	}
 }
 function bindBookingAdapter(
