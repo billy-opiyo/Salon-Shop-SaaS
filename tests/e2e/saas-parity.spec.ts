@@ -42,4 +42,25 @@ test.describe("Royal Braids SaaS parity", () => {
 		})
 		expect(response.status()).toBe(401)
 	})
+
+	test("domain management rejects unauthenticated registration", async ({
+		request,
+	}) => {
+		const response = await request.post("/api/manage/royal-braids/domains", {
+			data: { action: "register", host: "salon.example.com" },
+		})
+		expect(response.status()).toBe(401)
+	})
+
+	test("media signing rejects unauthenticated uploads", async ({ request }) => {
+		const response = await request.post("/api/manage/royal-braids/media", {
+			data: {
+				fileName: "gallery.jpg",
+				mimeType: "image/jpeg",
+				byteSize: 1024,
+				kind: "GALLERY",
+			},
+		})
+		expect(response.status()).toBe(401)
+	})
 })

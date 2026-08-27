@@ -215,6 +215,26 @@ Phase D gate status — 25 August 2026:
 - Custom-domain source tests now cover hostname normalization and rejection of
   URLs, IP addresses, wildcards, and malformed hostnames. Live DNS, Vercel,
   Cloudflare, SSL, and Neon migration behavior remain environment checks.
+- The custom-domain merchant screen is now available at
+  `/manage/[tenantSlug]/domains`, including registration, TXT challenge
+  display, DNS verification, primary-domain activation, and removal controls.
+- R2 media source work now provides AWS SDK SigV4 presigned uploads, opaque
+  tenant object keys, image metadata validation, plan storage quota checks,
+  persisted `MediaAsset` rows, upload finalization with R2 `HEAD` validation,
+  and tenant-authorized deletion. R2 credentials and bucket configuration
+  remain deployment requirements.
+- Resend and WhatsApp source delivery services now have provider REST calls,
+  templated email/WhatsApp messages, idempotent `NotificationDelivery` rows,
+  provider message IDs, failure recording, and safe provider-unconfigured
+  behavior. Provider credentials and live delivery tests remain deployment
+  requirements.
+- Merchant domain/media unauthenticated boundary tests were added to the
+  Playwright suite, and the email verification client now schedules automatic
+  token submission without synchronous effect state updates.
+- Tenant authorization unit tests now explicitly reject cross-tenant and
+  inactive memberships. The fresh SaaS starts from a new Neon database and
+  approved seed fixtures; no Firebase data import or dual-run implementation is
+  planned.
 
 Source implementation checkpoint — 26 August 2026:
 
@@ -246,9 +266,10 @@ Still gated or in progress:
 - Live Neon connection, migrations, seed execution, Auth.js secret, Turnstile,
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
-- Remaining source work is richer admin editing, verification/reset UI polish,
-  richer client dashboard adapters, broader authenticated/tenant-isolation
-  acceptance tests, provider-backed media, and email/WhatsApp delivery.
+- Remaining work is provider configuration, live migration/provider smoke
+  verification, richer optional admin/dashboard polish, and expanded production
+  release testing. The required source-level domain, media, notification,
+  account, dashboard, and tenant-boundary implementations are now present.
 - **Next pending implementation phase: Phase G operational hardening.** The
   source workflows for billing and custom domains now exist, so the next phase
   is to apply and verify migrations against isolated Neon, run billing and
@@ -687,23 +708,10 @@ service, not just a frontend conditional.
 
 This phase is conditional, not automatic.
 
-- If the Firebase records are reference/demo content, skip import and create a
-  clean Royal Braids seed tenant from approved fixtures.
-- If live customer, booking, content, or operational data must be preserved,
-  export only the approved Firestore collections without exposing credentials or
-  production data in the repository.
-- Build a versioned, idempotent import tool that maps the current salon into one
-  tenant and records source IDs for traceability.
-- Validate users, content, bookings, slots, waitlist, reviews, messages,
-  settings, media references, timestamps, and statuses.
-- Use a staging Neon database and isolated R2 bucket/prefix first.
-- Run read-only comparison and workflow reconciliation against the Firebase
-  reference. Do not write to production from import tests.
-- Decide whether existing Firebase Auth users can be safely invited/reset into
-  Auth.js; never copy password hashes unless compatibility and security are
-  proven.
-- Keep the original Firebase records unchanged until import reconciliation and
-  rollback checks pass.
+Firebase data migration is explicitly out of scope for this new SaaS. The
+application starts with a fresh Neon database and approved seed/reference
+fixtures only. Phase H is therefore skipped; the legacy Firebase application
+remains an unchanged visual and behavioral reference.
 
 ### Phase I: release and cutover
 

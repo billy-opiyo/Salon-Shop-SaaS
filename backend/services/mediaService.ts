@@ -1,5 +1,21 @@
 import "server-only"
 
+import { randomUUID } from "node:crypto"
+import {
+	DeleteObjectCommand,
+	HeadObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+
+import { prisma } from "@backend/db/prisma"
+import {
+	assertTenantMembership,
+	assertTenantPermission,
+} from "@backend/services/authorization"
+import { PLAN_ENTITLEMENTS } from "@shared/constants/plans"
+
 export class MediaUploadError extends Error {
 	readonly code: string = "MEDIA_UPLOAD_FAILED"
 	constructor(message: string) {
@@ -145,4 +161,232 @@ export async function deleteMediaFile(mediaId: string): Promise<void> {
 
 export function getMediaUrl(mediaId: string): string {
 	return storageBackend.getUrl(mediaId)
+}
+
+function r2Client(): S3Client {
+	const accountId = process.env.R2_ACCOUNT_ID?.trim()
+	const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim()
+	const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim()
+	if (!accountId || !accessKeyId || !secretAccessKey)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	return new S3Client({
+		region: "auto",
+		endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+		credentials: { accessKeyId, secretAccessKey },
+	})
+}
+
+function mediaKind(
+	value: string,
+): "GALLERY" | "BLOG" | "AVATAR" | "HERO" | "LOGO" {
+	if (
+		value === "BLOG" ||
+		value === "AVATAR" ||
+		value === "HERO" ||
+		value === "LOGO"
+	)
+		return value
+	return "GALLERY"
+}
+
+export async function createPresignedMediaUpload(input: {
+	readonly userId: string
+	readonly tenantSlug: string
+	readonly fileName: string
+	readonly mimeType: string
+	readonly byteSize: number
+	readonly kind: string
+}) {
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: input.tenantSlug.trim().toLowerCase() },
+		select: {
+			id: true,
+			subscription: { select: { plan: { select: { tier: true } } } },
+			memberships: {
+				where: { userId: input.userId, status: "ACTIVE" },
+				select: {
+					tenantId: true,
+					userId: true,
+					role: true,
+					status: true,
+					canManageContent: true,
+					canManageAdmins: true,
+					canManageBookings: true,
+					canManageSecurity: true,
+				},
+			},
+		},
+	})
+	if (!tenant) throw new MediaUploadError("Store not found.")
+	const membership = assertTenantMembership(
+		tenant.memberships[0] ?? null,
+		tenant.id,
+	)
+	assertTenantPermission(membership, "canManageContent")
+	const tier = (tenant.subscription?.plan.tier.toLowerCase() ??
+		"starter") as keyof typeof PLAN_ENTITLEMENTS
+	const kind = mediaKind(input.kind)
+	if (
+		!Number.isInteger(input.byteSize) ||
+		input.byteSize <= 0 ||
+		input.byteSize > ALLOWED_IMAGE_SIZE
+	)
+		throw new MediaUploadError("Image size must be between 1 byte and 5MB.")
+	if (!ALLOWED_IMAGE_TYPES.has(input.mimeType))
+		throw new MediaUploadError("Invalid image format.")
+	const used = await prisma.mediaAsset.aggregate({
+		where: { tenantId: tenant.id },
+		_sum: { byteSize: true },
+	})
+	const quota = PLAN_ENTITLEMENTS[tier].limits.storageMegabytes * 1024 * 1024
+	if ((used._sum.byteSize ?? 0) + input.byteSize > quota)
+		throw new MediaUploadError(
+			"This upload would exceed your plan storage quota.",
+		)
+	const safeName =
+		input.fileName
+			.toLowerCase()
+			.replace(/[^a-z0-9._-]+/g, "-")
+			.slice(-100) || "image"
+	const objectKey = `${tenant.id}/${kind.toLowerCase()}/${randomUUID()}-${safeName}`
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	const client = r2Client()
+	const command = new PutObjectCommand({
+		Bucket: bucket,
+		Key: objectKey,
+		ContentType: input.mimeType,
+		ContentLength: input.byteSize,
+	})
+	const uploadUrl = await getSignedUrl(client, command, { expiresIn: 900 })
+	const publicBase = process.env.R2_PUBLIC_BASE_URL?.trim().replace(/\/$/, "")
+	const asset = await prisma.mediaAsset.create({
+		data: {
+			tenantId: tenant.id,
+			uploadedById: input.userId,
+			kind,
+			objectKey,
+			publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
+			mimeType: input.mimeType,
+			byteSize: input.byteSize,
+		},
+	})
+	return {
+		assetId: asset.id,
+		objectKey,
+		uploadUrl,
+		expiresIn: 900,
+		publicUrl: asset.publicUrl,
+	}
+}
+
+export async function deleteTenantMedia(
+	userId: string,
+	tenantSlug: string,
+	assetId: string,
+) {
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: tenantSlug.trim().toLowerCase() },
+		select: {
+			id: true,
+			memberships: {
+				where: { userId, status: "ACTIVE" },
+				select: {
+					tenantId: true,
+					userId: true,
+					role: true,
+					status: true,
+					canManageContent: true,
+					canManageAdmins: true,
+					canManageBookings: true,
+					canManageSecurity: true,
+				},
+			},
+		},
+	})
+	if (!tenant) throw new MediaUploadError("Store not found.")
+	const membership = assertTenantMembership(
+		tenant.memberships[0] ?? null,
+		tenant.id,
+	)
+	assertTenantPermission(membership, "canManageContent")
+	const asset = await prisma.mediaAsset.findFirst({
+		where: { id: assetId, tenantId: tenant.id },
+	})
+	if (!asset) throw new MediaUploadError("Media asset not found.")
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	await r2Client().send(
+		new DeleteObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
+	)
+	await prisma.mediaAsset.delete({ where: { id: asset.id } })
+}
+
+export async function finalizeTenantMedia(
+	userId: string,
+	tenantSlug: string,
+	assetId: string,
+) {
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: tenantSlug.trim().toLowerCase() },
+		select: {
+			id: true,
+			memberships: {
+				where: { userId, status: "ACTIVE" },
+				select: {
+					tenantId: true,
+					userId: true,
+					role: true,
+					status: true,
+					canManageContent: true,
+					canManageAdmins: true,
+					canManageBookings: true,
+					canManageSecurity: true,
+				},
+			},
+		},
+	})
+	if (!tenant) throw new MediaUploadError("Store not found.")
+	const membership = assertTenantMembership(
+		tenant.memberships[0] ?? null,
+		tenant.id,
+	)
+	assertTenantPermission(membership, "canManageContent")
+	const asset = await prisma.mediaAsset.findFirst({
+		where: { id: assetId, tenantId: tenant.id },
+	})
+	if (!asset) throw new MediaUploadError("Media asset not found.")
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	const head = await r2Client().send(
+		new HeadObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
+	)
+	if (
+		head.ContentLength !== asset.byteSize ||
+		head.ContentType !== asset.mimeType
+	) {
+		await r2Client().send(
+			new DeleteObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
+		)
+		await prisma.mediaAsset.delete({ where: { id: asset.id } })
+		throw new MediaUploadError(
+			"Uploaded media did not match its declared metadata.",
+		)
+	}
+	return {
+		id: asset.id,
+		publicUrl: asset.publicUrl,
+		objectKey: asset.objectKey,
+	}
 }
