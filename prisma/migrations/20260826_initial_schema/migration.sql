@@ -32,7 +32,7 @@ CREATE TYPE "MessageStatus" AS ENUM ('NEW', 'READ', 'RESOLVED');
 CREATE TYPE "MediaKind" AS ENUM ('LOGO', 'HERO', 'GALLERY', 'BLOG', 'REVIEW', 'AVATAR', 'BOOKING_INSPIRATION');
 
 -- CreateEnum
-CREATE TYPE "NotificationChannel" AS ENUM ('EMAIL', 'WHATSAPP');
+CREATE TYPE "NotificationChannel" AS ENUM ('EMAIL', 'SMS', 'WHATSAPP', 'DASHBOARD');
 
 -- CreateEnum
 CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'SKIPPED', 'EXHAUSTED');
@@ -211,12 +211,11 @@ CREATE TABLE "Subscription" (
     "trialEndsAt" TIMESTAMP(3),
     "activatedAt" TIMESTAMP(3),
     "billingPhoneNumber" TEXT,
+    "trialConsumedAt" TIMESTAMP(3),
+    "agreedMonthlyAmountMinor" INTEGER,
+    "priceVersion" TEXT,
+    "priceChangeEffectiveAt" TIMESTAMP(3),
     "pendingPlanTier" "PlanTier",
-    "failedPaymentAttempts" INTEGER NOT NULL DEFAULT 0,
-    "gracePeriodEndsAt" TIMESTAMP(3),
-    "lastPaymentAt" TIMESTAMP(3),
-    "cancelledAt" TIMESTAMP(3),
-    "dataRetentionUntil" TIMESTAMP(3),
     "failedPaymentAttempts" INTEGER NOT NULL DEFAULT 0,
     "gracePeriodEndsAt" TIMESTAMP(3),
     "lastPaymentAt" TIMESTAMP(3),
@@ -245,8 +244,6 @@ CREATE TABLE "BillingInvoice" (
     "receiptNumber" TEXT,
     "retryCount" INTEGER NOT NULL DEFAULT 0,
     "lastAttemptAt" TIMESTAMP(3),
-    "retryCount" INTEGER NOT NULL DEFAULT 0,
-    "lastAttemptAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -263,6 +260,8 @@ CREATE TABLE "PaymentAttempt" (
     "checkoutRequestId" TEXT,
     "mpesaReceiptNumber" TEXT,
     "resultDescription" TEXT,
+    "resolutionType" TEXT,
+    "resolutionReference" TEXT,
     "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "completedAt" TIMESTAMP(3),
     "rawCallback" JSONB,

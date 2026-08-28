@@ -7,8 +7,11 @@ import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
-import { PLAN_ENTITLEMENTS } from "@shared/constants/plans"
-import { PLAN_PRICING } from "@shared/constants/plans"
+import {
+	CURRENT_PRICE_VERSION,
+	PLAN_ENTITLEMENTS,
+	PLAN_PRICING,
+} from "@shared/constants/plans"
 import {
 	createTenantSchema,
 	type CreateTenantInput,
@@ -100,6 +103,9 @@ export async function provisionTenant(
 						create: {
 							planId: plan.id,
 							status: "setup_payment_required",
+							agreedMonthlyAmountMinor:
+								PLAN_PRICING[input.planTier].monthlyAmountMinor,
+							priceVersion: CURRENT_PRICE_VERSION,
 						},
 					},
 					categories: { create: [...DEFAULT_CATEGORIES] },
@@ -194,6 +200,7 @@ export async function publishTenantForUser(userId: string, tenantId: string) {
 			where: { tenantId },
 			data: {
 				status: "trialing",
+				trialConsumedAt: now,
 				trialStartsAt: now,
 				trialEndsAt: new Date(now.getTime() + 14 * 86400000),
 				activatedAt: now,

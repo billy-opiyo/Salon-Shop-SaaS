@@ -149,6 +149,22 @@ export default async function MerchantBillingPage({
 					</div>
 				)}
 			</section>
+			<section className="manage-card" aria-labelledby="notifications-title">
+				<p className="eyebrow">Dashboard notifications</p>
+				<h2 id="notifications-title">Billing updates</h2>
+				{billing.notifications.length === 0 ? (
+					<p>No billing notifications yet.</p>
+				) : (
+					<ul>
+						{billing.notifications.map((notification) => (
+							<li key={notification.id}>
+								{notification.templateKey.replace("billing.", "")} ·{" "}
+								{formatDate(notification.createdAt)}
+							</li>
+						))}
+					</ul>
+				)}
+			</section>
 
 			<section className="manage-card" aria-labelledby="billing-actions-title">
 				<p className="eyebrow">Subscription controls</p>

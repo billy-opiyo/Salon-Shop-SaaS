@@ -57,6 +57,12 @@ export async function getBillingSnapshotForUser(
 					},
 				},
 			},
+			notifications: {
+				where: { userId, channel: "DASHBOARD" },
+				orderBy: { createdAt: "desc" },
+				take: 20,
+				select: { id: true, templateKey: true, status: true, createdAt: true },
+			},
 		},
 	})
 	if (!tenant || tenant.memberships.length === 0)

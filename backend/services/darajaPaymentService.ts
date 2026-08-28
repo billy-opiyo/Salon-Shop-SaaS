@@ -270,7 +270,7 @@ export async function handleDarajaCallback(payload: unknown) {
 						select: {
 							businessName: true,
 							ownerUserId: true,
-							owner: { select: { email: true } },
+							owner: { select: { email: true, phone: true } },
 						},
 					},
 				},
@@ -344,6 +344,21 @@ export async function handleDarajaCallback(payload: unknown) {
 			skipIfAlreadySent: true,
 		})
 	}
+	await dispatchNotification({
+		tenantId: attempt.invoice.tenantId,
+		userId: attempt.invoice.tenant.ownerUserId,
+		channel: "DASHBOARD",
+		templateKey: paid ? "billing.receipt" : "billing.payment_failed",
+		destination: attempt.invoice.tenant.ownerUserId,
+		subject: {
+			businessName: attempt.invoice.tenant.businessName,
+			amount: `KES ${(attempt.invoice.amountMinor / 100).toFixed(2)}`,
+			receiptNumber: receipt ? String(receipt) : "pending",
+			customerName: attempt.invoice.tenant.owner.email,
+		},
+		idempotencyKeySuffix: `dashboard-${attempt.invoiceId}-${attempt.id}`,
+		skipIfAlreadySent: true,
+	})
 	if (!paid && attempt.invoice.tenant.owner.email) {
 		await dispatchNotification({
 			tenantId: attempt.invoice.tenantId,
@@ -356,6 +371,22 @@ export async function handleDarajaCallback(payload: unknown) {
 				customerName: attempt.invoice.tenant.owner.email,
 			},
 			idempotencyKeySuffix: `${attempt.invoiceId}-${attempt.id}`,
+		})
+	}
+	if (attempt.invoice.tenant.owner.phone) {
+		await dispatchNotification({
+			tenantId: attempt.invoice.tenantId,
+			userId: attempt.invoice.tenant.ownerUserId,
+			channel: "SMS",
+			templateKey: paid ? "billing.receipt" : "billing.payment_failed",
+			destination: attempt.invoice.tenant.owner.phone,
+			subject: {
+				businessName: attempt.invoice.tenant.businessName,
+				amount: `KES ${(attempt.invoice.amountMinor / 100).toFixed(2)}`,
+				receiptNumber: receipt ? String(receipt) : "pending",
+				customerName: attempt.invoice.tenant.owner.email,
+			},
+			idempotencyKeySuffix: `sms-${attempt.invoiceId}-${attempt.id}`,
 		})
 	}
 }

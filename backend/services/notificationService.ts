@@ -141,6 +141,38 @@ async function sendWhatsAppText(
 		}
 	}
 }
+
+async function sendSmsText(to: string, text: string): Promise<DeliveryResult> {
+	const url = env("SMS_PROVIDER_URL")
+	const apiKey = env("SMS_PROVIDER_API_KEY")
+	if (!url || !apiKey || !to)
+		return { ok: false, error: "SMS provider is not configured." }
+	try {
+		const response = await fetch(url, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				to,
+				message: text,
+				sender: env("SMS_SENDER_ID") || "Beauty Sphia",
+			}),
+		})
+		if (!response.ok)
+			return {
+				ok: false,
+				error: `SMS provider rejected the message (${response.status}).`,
+			}
+		return { ok: true, providerMessageId: to }
+	} catch (error) {
+		return {
+			ok: false,
+			error: error instanceof Error ? error.message : "SMS send failed.",
+		}
+	}
+}
 /* -------------------------------------------------------------------------- */
 /* Template helpers                                                            */
 /* -------------------------------------------------------------------------- */
@@ -370,7 +402,8 @@ export async function dispatchNotification(
 		const optedOut =
 			(input.channel === NotificationChannel.EMAIL &&
 				preferences?.notifyEmail === false) ||
-			(input.channel === NotificationChannel.WHATSAPP &&
+			((input.channel === NotificationChannel.SMS ||
+				input.channel === NotificationChannel.WHATSAPP) &&
 				preferences?.notifySms === false)
 		if (optedOut) {
 			await prisma.notificationDelivery.update({
@@ -391,12 +424,16 @@ export async function dispatchNotification(
 	const built = buildTemplate(input.templateKey, input.subject ?? {})
 	const nextAttempt = delivery.attemptCount
 	let result: DeliveryResult
-	if (input.channel === NotificationChannel.EMAIL) {
+	if (input.channel === NotificationChannel.DASHBOARD) {
+		result = { ok: true, providerMessageId: "dashboard" }
+	} else if (input.channel === NotificationChannel.EMAIL) {
 		result = await sendResendEmail(
 			input.destination,
 			built.subject,
 			emailShell(built.subject, built.heading, built.bodyHtml, built.link),
 		)
+	} else if (input.channel === NotificationChannel.SMS) {
+		result = await sendSmsText(input.destination, built.whatsapp)
 	} else {
 		result = await sendWhatsAppText(input.destination, built.whatsapp)
 	}
@@ -468,6 +505,9 @@ export async function retryDueNotifications(limit = 50): Promise<number> {
 export function isNotificationProviderConfigured(
 	channel: NotificationChannel,
 ): boolean {
+	if (channel === NotificationChannel.DASHBOARD) return true
+	if (channel === NotificationChannel.SMS)
+		return Boolean(env("SMS_PROVIDER_URL") && env("SMS_PROVIDER_API_KEY"))
 	return channel === NotificationChannel.EMAIL
 		? Boolean(env("RESEND_API_KEY") && env("RESEND_FROM_EMAIL"))
 		: Boolean(

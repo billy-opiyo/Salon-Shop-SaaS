@@ -2,7 +2,11 @@ import "server-only"
 
 import { prisma } from "@backend/db/prisma"
 import { requestInvoicePayment } from "@backend/services/darajaPaymentService"
-import { PLAN_PRICING } from "@shared/constants/plans"
+import {
+	BILLING_POLICY,
+	CURRENT_PRICE_VERSION,
+	PLAN_PRICING,
+} from "@shared/constants/plans"
 import type { PlanTier } from "@shared/types/tenant"
 
 function invoiceNumber(subscriptionId: string, periodEnd: Date): string {
@@ -47,6 +51,9 @@ export async function createDueRenewalInvoices(now = new Date()) {
 			currentPeriodEnd: true,
 			billingPhoneNumber: true,
 			pendingPlanTier: true,
+			agreedMonthlyAmountMinor: true,
+			priceVersion: true,
+			priceChangeEffectiveAt: true,
 			plan: { select: { tier: true } },
 		},
 	})
@@ -59,6 +66,27 @@ export async function createDueRenewalInvoices(now = new Date()) {
 			subscription.pendingPlanTier ?? subscription.plan.tier
 		).toLowerCase() as PlanTier
 		const pricing = PLAN_PRICING[tier]
+		if (
+			subscription.agreedMonthlyAmountMinor !== null &&
+			subscription.agreedMonthlyAmountMinor !== pricing.monthlyAmountMinor &&
+			subscription.priceVersion !== CURRENT_PRICE_VERSION
+		) {
+			if (!subscription.priceChangeEffectiveAt) {
+				await prisma.subscription.update({
+					where: { id: subscription.id },
+					data: {
+						priceChangeEffectiveAt: new Date(
+							now.getTime() + BILLING_POLICY.priceChangeNoticeDays * 86400000,
+						),
+					},
+				})
+			}
+			if (
+				!subscription.priceChangeEffectiveAt ||
+				now < subscription.priceChangeEffectiveAt
+			)
+				continue
+		}
 		const number = invoiceNumber(subscription.id, periodEnd)
 		const existing = await prisma.billingInvoice.findUnique({
 			where: { invoiceNumber: number },
@@ -89,6 +117,9 @@ export async function createDueRenewalInvoices(now = new Date()) {
 					status: "payment_due",
 					planId: pendingPlan?.id,
 					pendingPlanTier: null,
+					agreedMonthlyAmountMinor: pricing.monthlyAmountMinor,
+					priceVersion: CURRENT_PRICE_VERSION,
+					priceChangeEffectiveAt: null,
 				},
 			})
 		})

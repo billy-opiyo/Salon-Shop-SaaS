@@ -52,6 +52,8 @@ export async function setTenantSuspension(
 export async function resolvePaymentAttempt(
 	actorUserId: string,
 	attemptId: string,
+	resolutionType: "credit" | "refund" | "verified_payment" = "verified_payment",
+	resolutionReference?: string,
 ): Promise<void> {
 	const attempt = await prisma.paymentAttempt.findUnique({
 		where: { id: attemptId },
@@ -68,7 +70,9 @@ export async function resolvePaymentAttempt(
 			data: {
 				status: "resolved",
 				completedAt: new Date(),
-				resultDescription: "Resolved by Beauty Sphia platform operator.",
+				resultDescription: `Resolved by Beauty Sphia platform operator as ${resolutionType}.`,
+				resolutionType,
+				resolutionReference: resolutionReference?.trim() || null,
 			},
 		}),
 		prisma.adminAuditLog.create({

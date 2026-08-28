@@ -87,7 +87,9 @@ enum MediaKind {
 
 enum NotificationChannel {
   EMAIL
+  SMS
   WHATSAPP
+  DASHBOARD
 }
 
 enum NotificationStatus {
@@ -315,6 +317,10 @@ model Subscription {
   trialEndsAt            DateTime?
   activatedAt            DateTime?
   billingPhoneNumber     String?
+  trialConsumedAt        DateTime?
+  agreedMonthlyAmountMinor Int?
+  priceVersion            String?
+  priceChangeEffectiveAt  DateTime?
   pendingPlanTier        PlanTier?
   failedPaymentAttempts  Int              @default(0)
   gracePeriodEndsAt      DateTime?
@@ -366,6 +372,8 @@ model PaymentAttempt {
   checkoutRequestId  String?        @unique
   mpesaReceiptNumber String?
   resultDescription  String?
+  resolutionType     String?
+  resolutionReference String?
   requestedAt        DateTime       @default(now())
   completedAt        DateTime?
   rawCallback        Json?

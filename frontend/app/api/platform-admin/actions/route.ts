@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
 	}
 
 	try {
-		const body = (await request.json()) as { action?: unknown; id?: unknown }
+		const body = (await request.json()) as {
+			action?: unknown
+			id?: unknown
+			resolutionType?: unknown
+			resolutionReference?: unknown
+		}
 		const action = typeof body.action === "string" ? body.action : ""
 		const id = typeof body.id === "string" ? body.id.trim() : ""
 		if (!id)
@@ -50,7 +55,18 @@ export async function POST(request: NextRequest) {
 				await setTenantSuspension(session.user.id, id, false)
 				break
 			case "resolve-payment":
-				await resolvePaymentAttempt(session.user.id, id)
+				await resolvePaymentAttempt(
+					session.user.id,
+					id,
+					body.resolutionType === "credit" ||
+						body.resolutionType === "refund" ||
+						body.resolutionType === "verified_payment"
+						? body.resolutionType
+						: undefined,
+					typeof body.resolutionReference === "string"
+						? body.resolutionReference
+						: undefined,
+				)
 				break
 			case "resolve-security-alert":
 				await resolvePlatformSecurityAlert(session.user.id, id)

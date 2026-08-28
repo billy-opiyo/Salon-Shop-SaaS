@@ -2,6 +2,7 @@ import type { PlanTier } from "@shared/types/tenant"
 
 export const BEAUTY_SPHIA_NAME = "Beauty Sphia"
 export const BEAUTY_SPHIA_CURRENCY = "KES" as const
+export const CURRENT_PRICE_VERSION = "2026-08-28"
 
 export interface PlanPricing {
 	readonly monthlyAmountMinor: number
