@@ -177,9 +177,11 @@ npm run build
 npm run lint
 npm run test:unit
 npm run test:e2e
+npm run check
 npm run db:format
 npm run db:validate
 npm run db:generate
+npm run db:migrate:deploy
 ```
 
 ## Environment Configuration
@@ -200,6 +202,12 @@ Copy `.env.example` into the deployment environment and configure:
 Provider credentials are never committed to the repository. Source validation
 does not prove that a live provider, DNS record, SSL certificate, or database
 has been configured.
+
+For the credential-free pre-launch check, run `npm run check`. The production
+database migration step is `npm run db:migrate:deploy`; it requires the
+production `DATABASE_URL` but does not require external provider credentials.
+Configure and smoke-test Daraja, Resend, WhatsApp, R2, and Turnstile only in
+the final deployment stage.
 
 ## Fresh Data Policy
 
