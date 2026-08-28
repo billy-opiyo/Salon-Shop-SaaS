@@ -300,7 +300,11 @@ export default async function PlatformHome() {
 											<span key={tier}>
 												{value === Number.MAX_SAFE_INTEGER
 													? "Negotiated"
-													: value.toLocaleString("en-KE")}
+													: limitKey === "storageMegabytes"
+														? value >= 1000
+															? `${value / 1000} GB`
+															: `${value.toLocaleString("en-KE")} MB`
+														: value.toLocaleString("en-KE")}
 											</span>
 										)
 									},
