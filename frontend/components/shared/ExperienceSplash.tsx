@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { CSSProperties } from "react"
 
 interface ExperienceSplashProps {
@@ -13,8 +13,7 @@ const SPLASH_DURATION_MS = 7000
 const REDUCED_MOTION_DURATION_MS = 700
 const POST_PROGRESS_DELAY_MS = 2000
 const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
-const PLATFORM_SPLASH_DOCUMENT_KEY =
-	"beauty-sphia-platform-splash-document"
+const PLATFORM_SPLASH_DOCUMENT_KEY = "beauty-sphia-platform-splash-document"
 
 function isDocumentReload(): boolean {
 	const navigation = performance.getEntriesByType("navigation")[0]
@@ -31,8 +30,7 @@ function shouldShowSplashOnEntry(): boolean {
 		const documentIdentity = String(performance.timeOrigin)
 		const isNewHardReload =
 			isDocumentReload() &&
-			sessionStorage.getItem(PLATFORM_SPLASH_DOCUMENT_KEY) !==
-				documentIdentity
+			sessionStorage.getItem(PLATFORM_SPLASH_DOCUMENT_KEY) !== documentIdentity
 		sessionStorage.setItem(PLATFORM_SPLASH_DOCUMENT_KEY, documentIdentity)
 
 		if (!hasSeenSplash || isNewHardReload) {
@@ -51,15 +49,16 @@ export function ExperienceSplash({
 	eyebrow,
 	description,
 }: ExperienceSplashProps) {
-	const [shouldShow] = useState<boolean>(() => {
-		// On the server we always render the splash; the real decision is made
-		// synchronously on the client before the first painted frame so the
-		// splash never replays after navigation back to the home page.
-		if (typeof window === "undefined") return true
-		return shouldShowSplashOnEntry()
-	})
+	const [shouldShow, setShouldShow] = useState(true)
+	const hasResolvedEntryRef = useRef(false)
 	const [isExiting, setIsExiting] = useState(false)
 	const [progress, setProgress] = useState(1)
+
+	useEffect(() => {
+		if (hasResolvedEntryRef.current) return
+		hasResolvedEntryRef.current = true
+		setShouldShow(shouldShowSplashOnEntry())
+	}, [])
 
 	useEffect(() => {
 		if (!shouldShow) {
@@ -91,7 +90,6 @@ export function ExperienceSplash({
 			setProgress(nextProgress)
 			if (nextProgress >= 100) window.clearInterval(progressIntervalId)
 		}, progressTickMs)
-		setProgress(1)
 		const completeTimeoutId = window.setTimeout(() => {
 			setProgress(100)
 			setIsExiting(true)
@@ -129,22 +127,20 @@ export function ExperienceSplash({
 	)
 	const writeLetterStaggerMs =
 		splashLetters.length > 1
-			? (writeLastDelayMs - writeStartDelayMs) /
-				(splashLetters.length - 1)
+			? (writeLastDelayMs - writeStartDelayMs) / (splashLetters.length - 1)
 			: 0
-	const fillDurationMs = Math.min(
-		1250,
-		Math.max(1, SPLASH_DURATION_MS * 0.125),
-	)
+	const fillDurationMs = Math.min(1250, Math.max(1, SPLASH_DURATION_MS * 0.125))
 
 	return (
 		<div
 			className={`splash-screen${isExiting ? " splash-hide" : ""}`}
-			style={{
-				"--splash-write-letter-duration": `${writeLetterDurationMs}ms`,
-				"--splash-handwriting-fill-duration": `${fillDurationMs}ms`,
-				"--splash-handwriting-fill-delay": `${Math.max(0, SPLASH_DURATION_MS - fillDurationMs)}ms`,
-			} as CSSProperties}
+			style={
+				{
+					"--splash-write-letter-duration": `${writeLetterDurationMs}ms`,
+					"--splash-handwriting-fill-duration": `${fillDurationMs}ms`,
+					"--splash-handwriting-fill-delay": `${Math.max(0, SPLASH_DURATION_MS - fillDurationMs)}ms`,
+				} as CSSProperties
+			}
 			role="status"
 			aria-live="polite"
 		>
@@ -202,9 +198,11 @@ export function ExperienceSplash({
 							{splashLetters.map((letter, index) => (
 								<tspan
 									className="splash-handwriting-letter"
-									style={{
-										"--splash-write-delay": `${writeStartDelayMs + writeLetterStaggerMs * index}ms`,
-									} as CSSProperties}
+									style={
+										{
+											"--splash-write-delay": `${writeStartDelayMs + writeLetterStaggerMs * index}ms`,
+										} as CSSProperties
+									}
 									key={`${letter}-${index}`}
 								>
 									{letter === " " ? "\u00a0" : letter}

@@ -85,6 +85,11 @@ enum MediaKind {
   BOOKING_INSPIRATION
 }
 
+enum MediaAssetStatus {
+  PENDING
+  READY
+}
+
 enum NotificationChannel {
   EMAIL
   SMS
@@ -306,33 +311,33 @@ model Plan {
 }
 
 model Subscription {
-  id                     String           @id @default(cuid())
-  tenantId               String           @unique
-  planId                 String
-  status                 String           @default("trialing")
-  externalCustomerId     String?
-  externalSubscriptionId String?          @unique
-  currentPeriodEnd       DateTime?
-  trialStartsAt          DateTime?
-  trialEndsAt            DateTime?
-  activatedAt            DateTime?
-  billingPhoneNumber     String?
-  trialConsumedAt        DateTime?
+  id                       String           @id @default(cuid())
+  tenantId                 String           @unique
+  planId                   String
+  status                   String           @default("trialing")
+  externalCustomerId       String?
+  externalSubscriptionId   String?          @unique
+  currentPeriodEnd         DateTime?
+  trialStartsAt            DateTime?
+  trialEndsAt              DateTime?
+  activatedAt              DateTime?
+  billingPhoneNumber       String?
+  trialConsumedAt          DateTime?
   agreedMonthlyAmountMinor Int?
-  priceVersion            String?
-  priceChangeEffectiveAt  DateTime?
-  pendingPlanTier        PlanTier?
-  failedPaymentAttempts  Int              @default(0)
-  gracePeriodEndsAt      DateTime?
-  lastPaymentAt          DateTime?
-  cancelledAt            DateTime?
-  dataRetentionUntil     DateTime?
-  cancelAtPeriodEnd      Boolean          @default(false)
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  tenant                 Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  plan                   Plan             @relation(fields: [planId], references: [id])
-  invoices               BillingInvoice[]
+  priceVersion             String?
+  priceChangeEffectiveAt   DateTime?
+  pendingPlanTier          PlanTier?
+  failedPaymentAttempts    Int              @default(0)
+  gracePeriodEndsAt        DateTime?
+  lastPaymentAt            DateTime?
+  cancelledAt              DateTime?
+  dataRetentionUntil       DateTime?
+  cancelAtPeriodEnd        Boolean          @default(false)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  tenant                   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan                     Plan             @relation(fields: [planId], references: [id])
+  invoices                 BillingInvoice[]
 
   @@index([planId])
   @@index([status])
@@ -364,20 +369,20 @@ model BillingInvoice {
 }
 
 model PaymentAttempt {
-  id                 String         @id @default(cuid())
-  invoiceId          String
-  phoneNumber        String
-  status             String         @default("pending")
-  merchantRequestId  String?
-  checkoutRequestId  String?        @unique
-  mpesaReceiptNumber String?
-  resultDescription  String?
-  resolutionType     String?
+  id                  String         @id @default(cuid())
+  invoiceId           String
+  phoneNumber         String
+  status              String         @default("pending")
+  merchantRequestId   String?
+  checkoutRequestId   String?        @unique
+  mpesaReceiptNumber  String?
+  resultDescription   String?
+  resolutionType      String?
   resolutionReference String?
-  requestedAt        DateTime       @default(now())
-  completedAt        DateTime?
-  rawCallback        Json?
-  invoice            BillingInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  requestedAt         DateTime       @default(now())
+  completedAt         DateTime?
+  rawCallback         Json?
+  invoice             BillingInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId, status])
   @@index([merchantRequestId])
@@ -665,22 +670,25 @@ model ContactMessage {
 }
 
 model MediaAsset {
-  id           String    @id @default(cuid())
-  tenantId     String
-  uploadedById String?
-  kind         MediaKind
-  objectKey    String
-  publicUrl    String?
-  mimeType     String
-  byteSize     Int
-  width        Int?
-  height       Int?
-  createdAt    DateTime  @default(now())
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  id               String           @id @default(cuid())
+  tenantId         String
+  uploadedById     String?
+  kind             MediaKind
+  objectKey        String
+  publicUrl        String?
+  mimeType         String
+  byteSize         Int
+  status           MediaAssetStatus @default(READY)
+  pendingExpiresAt DateTime?
+  width            Int?
+  height           Int?
+  createdAt        DateTime         @default(now())
+  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy       User?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, objectKey])
   @@index([tenantId, kind, createdAt])
+  @@index([status, pendingExpiresAt])
 }
 
 model NotificationDelivery {

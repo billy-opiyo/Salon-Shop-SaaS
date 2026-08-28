@@ -192,7 +192,12 @@ export async function changePlanForUser(
 	return prisma.$transaction(async (transaction) => {
 		const updatedSubscription = await transaction.subscription.update({
 			where: { id: subscription.id },
-			data: { planId: nextPlan.id },
+			data: {
+				pendingPlanTier: tier.toUpperCase() as
+					| "STARTER"
+					| "BUSINESS"
+					| "ENTERPRISE",
+			},
 		})
 		await transaction.billingInvoice.create({
 			data: {

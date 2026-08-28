@@ -283,9 +283,9 @@ export async function handleDarajaCallback(payload: unknown) {
 	const receipt = metadata.find(
 		(item) => item.Name === "MpesaReceiptNumber",
 	)?.Value
-	await prisma.$transaction(async (transaction) => {
-		await transaction.paymentAttempt.update({
-			where: { id: attempt.id },
+	const processed = await prisma.$transaction(async (transaction) => {
+		const claimed = await transaction.paymentAttempt.updateMany({
+			where: { id: attempt.id, status: "pending" },
 			data: {
 				status: paid ? "succeeded" : "failed",
 				mpesaReceiptNumber: receipt ? String(receipt) : null,
@@ -294,6 +294,8 @@ export async function handleDarajaCallback(payload: unknown) {
 				rawCallback: payload as object,
 			},
 		})
+		if (claimed.count !== 1) return false
+
 		if (paid) {
 			const now = new Date()
 			await transaction.billingInvoice.update({
@@ -310,6 +312,16 @@ export async function handleDarajaCallback(payload: unknown) {
 					data: { status: "setup_paid_pending_activation", lastPaymentAt: now },
 				})
 			} else {
+				const subscription = await transaction.subscription.findUnique({
+					where: { tenantId: attempt.invoice.tenantId },
+					select: { pendingPlanTier: true },
+				})
+				const pendingPlan = subscription?.pendingPlanTier
+					? await transaction.plan.findUnique({
+							where: { tier: subscription.pendingPlanTier },
+							select: { id: true },
+						})
+					: null
 				await transaction.subscription.update({
 					where: { tenantId: attempt.invoice.tenantId },
 					data: {
@@ -318,6 +330,12 @@ export async function handleDarajaCallback(payload: unknown) {
 						failedPaymentAttempts: 0,
 						gracePeriodEndsAt: null,
 						lastPaymentAt: now,
+						...(pendingPlan
+							? {
+									planId: pendingPlan.id,
+									pendingPlanTier: null,
+								}
+							: {}),
 					},
 				})
 				await transaction.tenant.updateMany({
@@ -325,7 +343,9 @@ export async function handleDarajaCallback(payload: unknown) {
 					data: { status: "ACTIVE" },
 				})
 			}
+			return true
 		}
+		if (!processed) return
 	})
 	if (paid && attempt.invoice.tenant.owner.email) {
 		await dispatchNotification({

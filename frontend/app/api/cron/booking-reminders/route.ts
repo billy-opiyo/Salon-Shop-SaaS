@@ -9,7 +9,7 @@ import { runBookingReminderSweep } from "@backend/services/reminderService"
  */
 export async function GET(request: NextRequest) {
 	const secret = (process.env.CRON_SECRET ?? "").trim()
-	if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+	if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
 		return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
 	}
 

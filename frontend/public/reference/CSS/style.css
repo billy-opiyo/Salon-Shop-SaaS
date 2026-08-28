@@ -758,16 +758,16 @@ body.splash-complete .site-shell {
 
 @keyframes splashEllipsisDot {
 
-  0%,
-  100% {
-    opacity: 0.38;
-    transform: translateY(0);
-  }
+    0%,
+    100% {
+        opacity: 0.38;
+        transform: translateY(0);
+    }
 
-  50% {
-    opacity: 1;
-    transform: translateY(-0.16em) scale(1.18);
-  }
+    50% {
+        opacity: 1;
+        transform: translateY(-0.16em) scale(1.18);
+    }
 }
 
 @keyframes splashWriteLetter {
@@ -5417,6 +5417,7 @@ h6 {
 }
 
 .admin-confirm-dialog {
+    position: relative;
     width: min(460px, 96vw);
     max-height: var(--popup-max-block-size);
     background: var(--bg-card);
@@ -5431,6 +5432,27 @@ h6 {
     overflow-y: auto;
     overflow-wrap: anywhere;
     scrollbar-gutter: stable;
+}
+
+.admin-confirm-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin-confirm-close:hover,
+.admin-confirm-close:focus-visible {
+    border-color: var(--primary);
+    color: var(--text-primary);
 }
 
 .admin-confirm-dialog h3 {
@@ -11147,4 +11169,3 @@ body.light-mode .gallery-whatsapp-btn:focus-visible {
     color: #ffffff;
     border-color: #147a3f;
 }
-

@@ -262,10 +262,12 @@ export default async function PlatformHome() {
 									</strong>{" "}
 									<span className="plan-card__billing-period">/month</span>
 									<span className="plan-card__setup-fee">
-										KES{" "}
-										{(
-											PLAN_PRICING[plan.tier].setupFeeMinor / 100
-										).toLocaleString("en-KE")}{" "}
+										<strong className="plan-card__setup-amount">
+											KES{" "}
+											{(
+												PLAN_PRICING[plan.tier].setupFeeMinor / 100
+											).toLocaleString("en-KE")}
+										</strong>{" "}
 										One-Time Setup Fee
 									</span>
 								</p>

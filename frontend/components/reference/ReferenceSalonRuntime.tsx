@@ -247,6 +247,11 @@ function formatAdminSnapshotValue(value: unknown): string {
 function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	const loginForm = document.getElementById("adminLoginForm")
 	const panel = document.getElementById("adminPanel")
+	const confirmationModal = document.getElementById("adminConfirmModal")
+	const closeConfirmation = () => {
+		confirmationModal?.classList.remove("active")
+		confirmationModal?.setAttribute("aria-hidden", "true")
+	}
 	const userState = document.getElementById("adminUserState")
 	const authMessage = document.getElementById("adminAuthMessage")
 	if (loginForm instanceof HTMLElement) loginForm.style.display = "none"
@@ -295,6 +300,19 @@ function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	removeTabHandlers.push(() =>
 		document.removeEventListener("click", actionHandler),
 	)
+	document
+		.getElementById("adminConfirmClose")
+		?.addEventListener("click", closeConfirmation)
+	const confirmationBackdropHandler = (event: Event) => {
+		if (event.target === confirmationModal) closeConfirmation()
+	}
+	confirmationModal?.addEventListener("click", confirmationBackdropHandler)
+	removeTabHandlers.push(() => {
+		document
+			.getElementById("adminConfirmClose")
+			?.removeEventListener("click", closeConfirmation)
+		confirmationModal?.removeEventListener("click", confirmationBackdropHandler)
+	})
 	const detailHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
@@ -863,6 +881,11 @@ function bindPublicParityAdapters(
 ): () => void {
 	const contactForm = document.getElementById("contactForm")
 	const reviewForm = document.getElementById("reviewForm")
+	const termsModal = document.getElementById("termsModal")
+	const closeTermsModal = () => {
+		termsModal?.classList.remove("active")
+		termsModal?.setAttribute("aria-hidden", "true")
+	}
 	if (contactForm instanceof HTMLFormElement)
 		ensureTurnstile(contactForm, turnstileSiteKey)
 	if (reviewForm instanceof HTMLFormElement)
@@ -876,34 +899,43 @@ function bindPublicParityAdapters(
 			"button[type=submit]",
 		)
 		if (submitButton) submitButton.disabled = true
-		const response = await fetch("/api/contact", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				tenantSlug,
-				name: getFormValue(contactForm, "name"),
-				email: getFormValue(contactForm, "email"),
-				subject: getFormValue(contactForm, "subject"),
-				message: getFormValue(contactForm, "message"),
-				turnstileToken: getTurnstileToken(contactForm),
-			}),
-		})
-		const result = await readReferenceJson(response)
-		if (response.ok) {
+		try {
+			const response = await fetch("/api/contact", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					tenantSlug,
+					name: getFormValue(contactForm, "name"),
+					email: getFormValue(contactForm, "email"),
+					subject: getFormValue(contactForm, "subject"),
+					message: getFormValue(contactForm, "message"),
+					turnstileToken: getTurnstileToken(contactForm),
+				}),
+			})
+			const result = await readReferenceJson(response)
+			if (response.ok) {
+				setReferenceFormMessage(
+					"contactFormMessage",
+					"Thanks, your message has been sent.",
+					"success",
+				)
+				contactForm.reset()
+			} else {
+				setReferenceFormMessage(
+					"contactFormMessage",
+					result.error ?? "The message could not be sent.",
+					"error",
+				)
+			}
+		} catch {
 			setReferenceFormMessage(
 				"contactFormMessage",
-				"Thanks, your message has been sent.",
-				"success",
-			)
-			contactForm.reset()
-		} else {
-			setReferenceFormMessage(
-				"contactFormMessage",
-				result.error ?? "The message could not be sent.",
+				"The message could not be sent. Please try again.",
 				"error",
 			)
+		} finally {
+			if (submitButton) submitButton.disabled = false
 		}
-		if (submitButton) submitButton.disabled = false
 	}
 
 	const submitReview = async (event: Event): Promise<void> => {
@@ -920,27 +952,38 @@ function bindPublicParityAdapters(
 		)
 			return
 		if (submitButton instanceof HTMLButtonElement) submitButton.disabled = true
-		const response = await fetch("/api/reviews", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				tenantSlug,
-				rating: Number(rating.value),
-				serviceName: service instanceof HTMLSelectElement ? service.value : "",
-				text: text.value.trim(),
-				turnstileToken: getTurnstileToken(reviewForm),
-			}),
-		})
-		const result = await readReferenceJson(response)
-		setReferenceFormMessage(
-			"reviewMessage",
-			response.ok
-				? "Your review was submitted for approval."
-				: (result.error ?? "The review could not be submitted."),
-			response.ok ? "success" : "error",
-		)
-		if (response.ok) reviewForm.reset()
-		if (submitButton instanceof HTMLButtonElement) submitButton.disabled = false
+		try {
+			const response = await fetch("/api/reviews", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					tenantSlug,
+					rating: Number(rating.value),
+					serviceName:
+						service instanceof HTMLSelectElement ? service.value : "",
+					text: text.value.trim(),
+					turnstileToken: getTurnstileToken(reviewForm),
+				}),
+			})
+			const result = await readReferenceJson(response)
+			setReferenceFormMessage(
+				"reviewMessage",
+				response.ok
+					? "Your review was submitted for approval."
+					: (result.error ?? "The review could not be submitted."),
+				response.ok ? "success" : "error",
+			)
+			if (response.ok) reviewForm.reset()
+		} catch {
+			setReferenceFormMessage(
+				"reviewMessage",
+				"The review could not be submitted. Please try again.",
+				"error",
+			)
+		} finally {
+			if (submitButton instanceof HTMLButtonElement)
+				submitButton.disabled = false
+		}
 	}
 
 	const toggleFavorite = async (event: Event): Promise<void> => {
@@ -1178,6 +1221,12 @@ function bindPublicParityAdapters(
 	document
 		.getElementById("deleteAccountConfirmBackdrop")
 		?.addEventListener("click", closeDeleteAccount)
+	document
+		.getElementById("termsModalCloseBtn")
+		?.addEventListener("click", closeTermsModal)
+	document
+		.getElementById("termsModalBackdrop")
+		?.addEventListener("click", closeTermsModal)
 	return () => {
 		contactForm?.removeEventListener("submit", submitContact, true)
 		reviewForm?.removeEventListener("submit", submitReview, true)
@@ -1217,6 +1266,12 @@ function bindPublicParityAdapters(
 		document
 			.getElementById("deleteAccountConfirmBackdrop")
 			?.removeEventListener("click", closeDeleteAccount)
+		document
+			.getElementById("termsModalCloseBtn")
+			?.removeEventListener("click", closeTermsModal)
+		document
+			.getElementById("termsModalBackdrop")
+			?.removeEventListener("click", closeTermsModal)
 	}
 }
 

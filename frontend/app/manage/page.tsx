@@ -85,13 +85,18 @@ export default async function ManagePage() {
 					[
 						"Storefront",
 						"Services, gallery, blog, reviews, and contact content.",
-						"/manage",
+						"/services",
 					],
-					["Team", "Memberships, roles, and staff access.", "/manage"],
+					["Team", "Memberships, roles, and staff access.", "/team"],
 					[
 						"Security",
 						"Account activity, alerts, and audit history.",
-						"/manage",
+						"/security",
+					],
+					[
+						"Waitlist",
+						"Manage customers waiting for an available appointment.",
+						"/waitlist",
 					],
 					[
 						"Analytics",
@@ -125,19 +130,25 @@ export default async function ManagePage() {
 								href={`${
 									title === "Bookings"
 										? `/manage/${tenants[0].slug}/bookings`
-										: title === "Waitlist"
-											? `/manage/${tenants[0].slug}/waitlist`
-											: title === "Analytics"
-												? `/manage/${tenants[0].slug}/analytics`
-												: title === "Billing"
-													? `/manage/${tenants[0].slug}/billing`
-													: title === "Domains"
-														? `/manage/${tenants[0].slug}/domains`
-														: title === "Settings"
-															? `/manage/${tenants[0].slug}/settings`
-															: title === "Preview"
-																? `/manage/${tenants[0].slug}/preview`
-																: "/manage"
+										: title === "Storefront"
+											? `/manage/${tenants[0].slug}/services`
+											: title === "Team"
+												? `/manage/${tenants[0].slug}/team`
+												: title === "Security"
+													? `/manage/${tenants[0].slug}/security`
+													: title === "Waitlist"
+														? `/manage/${tenants[0].slug}/waitlist`
+														: title === "Analytics"
+															? `/manage/${tenants[0].slug}/analytics`
+															: title === "Billing"
+																? `/manage/${tenants[0].slug}/billing`
+																: title === "Domains"
+																	? `/manage/${tenants[0].slug}/domains`
+																	: title === "Settings"
+																		? `/manage/${tenants[0].slug}/settings`
+																		: title === "Preview"
+																			? `/manage/${tenants[0].slug}/preview`
+																			: "/manage"
 								}`}
 							>
 								Open area

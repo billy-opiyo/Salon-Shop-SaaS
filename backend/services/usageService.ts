@@ -33,7 +33,7 @@ export async function assertStorageCapacity(
 	const [plan, storage] = await Promise.all([
 		getTenantPlan(tenantId),
 		prisma.mediaAsset.aggregate({
-			where: { tenantId },
+			where: { tenantId, status: "READY" },
 			_sum: { byteSize: true },
 		}),
 	])
@@ -49,7 +49,7 @@ export async function getTenantUsage(tenantId: string) {
 			prisma.galleryStyle.count({ where: { tenantId } }),
 			prisma.stylist.count({ where: { tenantId } }),
 			prisma.mediaAsset.aggregate({
-				where: { tenantId },
+				where: { tenantId, status: "READY" },
 				_sum: { byteSize: true },
 			}),
 			prisma.booking.count({

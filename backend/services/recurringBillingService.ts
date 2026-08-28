@@ -95,10 +95,6 @@ export async function createDueRenewalInvoices(now = new Date()) {
 		if (existing) continue
 
 		await prisma.$transaction(async (transaction) => {
-			const pendingPlan = await transaction.plan.findUnique({
-				where: { tier: subscription.pendingPlanTier ?? subscription.plan.tier },
-				select: { id: true },
-			})
 			await transaction.billingInvoice.create({
 				data: {
 					tenantId: subscription.tenantId,
@@ -115,8 +111,6 @@ export async function createDueRenewalInvoices(now = new Date()) {
 				where: { id: subscription.id },
 				data: {
 					status: "payment_due",
-					planId: pendingPlan?.id,
-					pendingPlanTier: null,
 					agreedMonthlyAmountMinor: pricing.monthlyAmountMinor,
 					priceVersion: CURRENT_PRICE_VERSION,
 					priceChangeEffectiveAt: null,

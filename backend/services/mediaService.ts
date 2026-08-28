@@ -14,6 +14,11 @@ import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
+import {
+	ALLOWED_IMAGE_TYPES,
+	getImageUploadError,
+	MAX_IMAGE_UPLOAD_BYTES,
+} from "@shared/validation/media"
 import { PLAN_ENTITLEMENTS } from "@shared/constants/plans"
 import {
 	assertStorageCapacity,
@@ -93,35 +98,17 @@ export function getStorageBackend(): StorageBackend {
 	return storageBackend
 }
 
-const ALLOWED_IMAGE_TYPES = new Set([
-	"image/jpeg",
-	"image/png",
-	"image/webp",
-	"image/gif",
-])
-const ALLOWED_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_AVATAR_SIZE = 1 * 1024 * 1024 // 1MB
+function validateImageMetadata(byteSize: number, mimeType: string): void {
+	const error = getImageUploadError(byteSize, mimeType)
+	if (error) throw new MediaUploadError(error)
+}
 
 export function validateImageUpload(file: Buffer, mimeType: string): void {
-	if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-		throw new MediaUploadError(
-			"Invalid image format. Allowed: JPEG, PNG, WebP, GIF",
-		)
-	}
-	if (file.length > ALLOWED_IMAGE_SIZE) {
-		throw new MediaUploadError("Image too large. Maximum 5MB.")
-	}
+	validateImageMetadata(file.length, mimeType)
 }
 
 export function validateAvatarUpload(file: Buffer, mimeType: string): void {
-	if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-		throw new MediaUploadError(
-			"Invalid avatar format. Allowed: JPEG, PNG, WebP, GIF",
-		)
-	}
-	if (file.length > ALLOWED_AVATAR_SIZE) {
-		throw new MediaUploadError("Avatar too large. Maximum 1MB.")
-	}
+	validateImageMetadata(file.length, mimeType)
 }
 
 export async function uploadUserAvatar(
@@ -154,7 +141,7 @@ export async function uploadGalleryImage(
 	mimeType: string,
 	fileName: string,
 ): Promise<MediaUploadResult> {
-	validateImageUpload(file, mimeType)
+	validateImageMetadata(file.length, mimeType)
 	const metadata: MediaMetadata = {
 		fileName: `${tenantId}/${fileName}`,
 		mimeType,
@@ -171,6 +158,7 @@ async function uploadDirectToR2(
 	file: Buffer,
 	metadata: MediaMetadata,
 ): Promise<MediaUploadResult> {
+	validateImageMetadata(metadata.size, metadata.mimeType)
 	const bucket = process.env.R2_BUCKET_NAME?.trim()
 	if (!bucket)
 		throw new MediaProviderConfigurationError(
@@ -210,6 +198,7 @@ async function uploadDirectToR2(
 				publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
 				mimeType: metadata.mimeType,
 				byteSize: file.length,
+				status: "READY",
 			},
 		})
 	} catch (error) {
@@ -299,16 +288,9 @@ export async function createPresignedMediaUpload(input: {
 	const tier = (tenant.subscription?.plan.tier.toLowerCase() ??
 		"starter") as keyof typeof PLAN_ENTITLEMENTS
 	const kind = mediaKind(input.kind)
-	if (
-		!Number.isInteger(input.byteSize) ||
-		input.byteSize <= 0 ||
-		input.byteSize > ALLOWED_IMAGE_SIZE
-	)
-		throw new MediaUploadError("Image size must be between 1 byte and 5MB.")
-	if (!ALLOWED_IMAGE_TYPES.has(input.mimeType))
-		throw new MediaUploadError("Invalid image format.")
+	validateImageMetadata(input.byteSize, input.mimeType)
 	const used = await prisma.mediaAsset.aggregate({
-		where: { tenantId: tenant.id },
+		where: { tenantId: tenant.id, status: "READY" },
 		_sum: { byteSize: true },
 	})
 	const quota = PLAN_ENTITLEMENTS[tier].limits.storageMegabytes * 1024 * 1024
@@ -345,6 +327,8 @@ export async function createPresignedMediaUpload(input: {
 			publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
 			mimeType: input.mimeType,
 			byteSize: input.byteSize,
+			status: "PENDING",
+			pendingExpiresAt: new Date(Date.now() + 900_000),
 		},
 	})
 	return {
@@ -435,6 +419,12 @@ export async function finalizeTenantMedia(
 		where: { id: assetId, tenantId: tenant.id },
 	})
 	if (!asset) throw new MediaUploadError("Media asset not found.")
+	if (asset.status === "READY")
+		return {
+			id: asset.id,
+			publicUrl: asset.publicUrl,
+			objectKey: asset.objectKey,
+		}
 	const bucket = process.env.R2_BUCKET_NAME?.trim()
 	if (!bucket)
 		throw new MediaProviderConfigurationError(
@@ -445,7 +435,11 @@ export async function finalizeTenantMedia(
 	)
 	if (
 		head.ContentLength !== asset.byteSize ||
-		head.ContentType !== asset.mimeType
+		head.ContentLength === undefined ||
+		head.ContentLength > MAX_IMAGE_UPLOAD_BYTES ||
+		!ALLOWED_IMAGE_TYPES.includes(
+			head.ContentType as (typeof ALLOWED_IMAGE_TYPES)[number],
+		)
 	) {
 		await r2Client().send(
 			new DeleteObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
@@ -455,9 +449,40 @@ export async function finalizeTenantMedia(
 			"Uploaded media did not match its declared metadata.",
 		)
 	}
+	await prisma.mediaAsset.update({
+		where: { id: asset.id },
+		data: { status: "READY", pendingExpiresAt: null },
+	})
 	return {
 		id: asset.id,
 		publicUrl: asset.publicUrl,
 		objectKey: asset.objectKey,
 	}
+}
+
+export async function cleanupExpiredPendingMedia(): Promise<number> {
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	const expired = await prisma.mediaAsset.findMany({
+		where: {
+			status: "PENDING",
+			pendingExpiresAt: { lt: new Date() },
+		},
+		select: { id: true, objectKey: true },
+		take: 100,
+	})
+	let cleaned = 0
+	for (const asset of expired) {
+		await r2Client().send(
+			new DeleteObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
+		)
+		const result = await prisma.mediaAsset.deleteMany({
+			where: { id: asset.id, status: "PENDING" },
+		})
+		cleaned += result.count
+	}
+	return cleaned
 }

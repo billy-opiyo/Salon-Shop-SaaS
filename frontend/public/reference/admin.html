@@ -703,9 +703,43 @@
 											placeholder="e.g. KSh 4,000 - 6,000"
 										/>
 									</div>
-									<div class="form-group admin-cosmetics-field" data-cosmetics-only="true" style="display: none"><label for="galleryProductBrand">Brand / Collection</label><input type="text" id="galleryProductBrand" placeholder="e.g. Royal Roots" /></div>
-									<div class="form-group admin-cosmetics-field" data-cosmetics-only="true" style="display: none"><label for="galleryProductSize">Size / Volume</label><input type="text" id="galleryProductSize" placeholder="e.g. 250 ml" /></div>
-									<div class="form-group full admin-cosmetics-field" data-cosmetics-only="true" style="display: none"><label for="galleryProductDescription">Product details</label><textarea id="galleryProductDescription" rows="3" placeholder="Short benefits, ingredients, or ideal use."></textarea></div>
+									<div
+										class="form-group admin-cosmetics-field"
+										data-cosmetics-only="true"
+										style="display: none"
+									>
+										<label for="galleryProductBrand">Brand / Collection</label
+										><input
+											type="text"
+											id="galleryProductBrand"
+											placeholder="e.g. Royal Roots"
+										/>
+									</div>
+									<div
+										class="form-group admin-cosmetics-field"
+										data-cosmetics-only="true"
+										style="display: none"
+									>
+										<label for="galleryProductSize">Size / Volume</label
+										><input
+											type="text"
+											id="galleryProductSize"
+											placeholder="e.g. 250 ml"
+										/>
+									</div>
+									<div
+										class="form-group full admin-cosmetics-field"
+										data-cosmetics-only="true"
+										style="display: none"
+									>
+										<label for="galleryProductDescription"
+											>Product details</label
+										><textarea
+											id="galleryProductDescription"
+											rows="3"
+											placeholder="Short benefits, ingredients, or ideal use."
+										></textarea>
+									</div>
 									<div
 										class="form-group admin-braids-field"
 										data-braids-only="true"
@@ -1787,6 +1821,14 @@
 				aria-modal="true"
 				aria-labelledby="adminConfirmTitle"
 			>
+				<button
+					type="button"
+					class="admin-confirm-close"
+					id="adminConfirmClose"
+					aria-label="Close confirmation dialog"
+				>
+					<span aria-hidden="true">&times;</span>
+				</button>
 				<h3 id="adminConfirmTitle">Confirm Action</h3>
 				<p id="adminConfirmMessage">Are you sure you want to continue?</p>
 				<div class="admin-confirm-actions">

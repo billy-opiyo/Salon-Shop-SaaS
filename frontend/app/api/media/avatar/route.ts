@@ -33,6 +33,11 @@ export async function POST(request: NextRequest) {
 		if (!(file instanceof File) || file.size === 0) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 })
 		}
+		if (file.size > 500 * 1024)
+			return NextResponse.json(
+				{ error: "Image too large. Maximum 500 KB." },
+				{ status: 400 },
+			)
 
 		const buffer = Buffer.from(await file.arrayBuffer())
 		const result = await uploadUserAvatar(
