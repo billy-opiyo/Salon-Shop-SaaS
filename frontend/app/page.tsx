@@ -250,12 +250,21 @@ export default async function PlatformHome() {
 									<span className="plan-card__badge">Recommended</span>
 								)}
 								<h3>{plan.name}</h3>
-								<p>
-									<strong>
-										KSh {PLAN_PRICING[plan.tier].monthlyAmountMinor / 100}
+								<p className="plan-card__pricing">
+									<strong className="plan-card__price">
+										KES{" "}
+										{(
+											PLAN_PRICING[plan.tier].monthlyAmountMinor / 100
+										).toLocaleString("en-KE")}
 									</strong>{" "}
-									/month · KSh {PLAN_PRICING[plan.tier].setupFeeMinor / 100}{" "}
-									setup
+									<span className="plan-card__billing-period">/month</span>
+									<span className="plan-card__setup-fee">
+										KES{" "}
+										{(
+											PLAN_PRICING[plan.tier].setupFeeMinor / 100
+										).toLocaleString("en-KE")}{" "}
+										Setup Fee
+									</span>
 								</p>
 								<p className="plan-card__best-for">
 									<strong>Best for:</strong>{" "}

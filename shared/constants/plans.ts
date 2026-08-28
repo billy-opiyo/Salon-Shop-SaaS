@@ -94,7 +94,7 @@ export const PLAN_ENTITLEMENTS: Readonly<Record<PlanTier, PlanEntitlements>> = {
 			staffMembers: 1,
 			galleryItems: 50,
 			monthlyBookings: 100,
-			storageMegabytes: 500,
+			storageMegabytes: 1000,
 		},
 		features: {
 			storefront: true,
