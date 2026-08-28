@@ -11,7 +11,11 @@ import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 import { ContactForm } from "@/components/shared/ContactForm"
-import { PLAN_PRICING } from "@shared/constants/plans"
+import {
+	PLAN_ENTITLEMENTS,
+	PLAN_POSITIONING,
+	PLAN_PRICING,
+} from "@shared/constants/plans"
 
 type PlatformIconName = "home" | "store" | "plans" | "create" | "contact"
 
@@ -72,10 +76,10 @@ const plans = [
 		tier: "starter",
 		description: "Launch a polished salon storefront with the essentials.",
 		features: [
-			"One salon store",
-			"Core branding",
-			"Services and gallery",
-			"Booking foundation",
+			"Launch one polished salon storefront",
+			"Manage services, gallery, blog, and reviews",
+			"Handle up to 100 bookings each month",
+			"Owner-led workspace with standard support",
 		],
 	},
 	{
@@ -83,10 +87,10 @@ const plans = [
 		tier: "business",
 		description: "Run daily salon operations with deeper customer workflows.",
 		features: [
-			"Advanced schedule",
-			"Waitlist workflows",
-			"Staff permissions",
-			"Email and WhatsApp automation",
+			"Run up to 1,000 bookings each month",
+			"Manage up to 10 staff members with permissions",
+			"Use waitlists and advanced scheduling",
+			"Automate email and WhatsApp follow-up",
 		],
 	},
 	{
@@ -95,10 +99,10 @@ const plans = [
 		description:
 			"Scale multiple teams, locations, and operational requirements.",
 		features: [
-			"Advanced security",
-			"Custom domains",
-			"Expanded usage",
-			"Priority onboarding",
+			"Operate multiple salon locations",
+			"Use expanded or negotiated usage limits",
+			"Apply advanced security and audit controls",
+			"Receive custom-domain and priority onboarding support",
 		],
 	},
 ] as const
@@ -253,6 +257,10 @@ export default async function PlatformHome() {
 									/month · KSh {PLAN_PRICING[plan.tier].setupFeeMinor / 100}{" "}
 									setup
 								</p>
+								<p className="plan-card__best-for">
+									<strong>Best for:</strong>{" "}
+									{PLAN_POSITIONING[plan.tier].bestFor}
+								</p>
 								<p>{plan.description}</p>
 								<ul>
 									{plan.features.map((feature) => (
@@ -266,6 +274,64 @@ export default async function PlatformHome() {
 									Start with {plan.name}
 								</Link>
 							</article>
+						))}
+					</div>
+					<div className="plan-comparison" aria-label="Plan feature comparison">
+						<div className="plan-comparison__header">
+							<span>Capability</span>
+							<span>Starter</span>
+							<span>Business</span>
+							<span>Enterprise</span>
+						</div>
+						{(
+							[
+								["Monthly bookings", "monthlyBookings"],
+								["Staff members", "staffMembers"],
+								["Gallery items", "galleryItems"],
+								["Storage", "storageMegabytes"],
+							] as const
+						).map(([label, limitKey]) => (
+							<div className="plan-comparison__row" key={label}>
+								<strong>{label}</strong>
+								{(["starter", "business", "enterprise"] as const).map(
+									(tier) => {
+										const value = PLAN_ENTITLEMENTS[tier].limits[limitKey]
+										return (
+											<span key={tier}>
+												{value === Number.MAX_SAFE_INTEGER
+													? "Negotiated"
+													: value.toLocaleString("en-KE")}
+											</span>
+										)
+									},
+								)}
+							</div>
+						))}
+						{(
+							[
+								["Waitlist", "waitlist"],
+								["Advanced scheduling", "advancedSchedule"],
+								["Staff permissions", "staffMembers"],
+								["WhatsApp and email automation", "whatsappAutomation"],
+								["Custom domains", "customDomains"],
+								["Multiple locations", "multipleLocations"],
+							] as const
+						).map(([label, feature]) => (
+							<div className="plan-comparison__row" key={label}>
+								<strong>{label}</strong>
+								{(["starter", "business", "enterprise"] as const).map(
+									(tier) => (
+										<span
+											key={tier}
+											aria-label={`${tier} ${PLAN_ENTITLEMENTS[tier].features[feature] ? "included" : "not included"}`}
+										>
+											{PLAN_ENTITLEMENTS[tier].features[feature]
+												? "Included"
+												: "Not included"}
+										</span>
+									),
+								)}
+							</div>
 						))}
 					</div>
 				</section>

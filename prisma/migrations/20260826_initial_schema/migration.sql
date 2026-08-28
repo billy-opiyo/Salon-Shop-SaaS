@@ -35,7 +35,7 @@ CREATE TYPE "MediaKind" AS ENUM ('LOGO', 'HERO', 'GALLERY', 'BLOG', 'REVIEW', 'A
 CREATE TYPE "NotificationChannel" AS ENUM ('EMAIL', 'WHATSAPP');
 
 -- CreateEnum
-CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'SKIPPED');
+CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'SKIPPED', 'EXHAUSTED');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -544,6 +544,9 @@ CREATE TABLE "NotificationDelivery" (
     "providerMessageId" TEXT,
     "status" "NotificationStatus" NOT NULL DEFAULT 'PENDING',
     "errorMessage" TEXT,
+    "templateData" JSONB,
+    "attemptCount" INTEGER NOT NULL DEFAULT 0,
+    "nextAttemptAt" TIMESTAMP(3),
     "sentAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -829,6 +832,9 @@ CREATE INDEX "NotificationDelivery_tenantId_channel_status_createdAt_idx" ON "No
 
 -- CreateIndex
 CREATE INDEX "NotificationDelivery_bookingId_idx" ON "NotificationDelivery"("bookingId");
+
+-- CreateIndex
+CREATE INDEX "NotificationDelivery_status_nextAttemptAt_idx" ON "NotificationDelivery"("status", "nextAttemptAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RateLimitRecord_scopeKey_key" ON "RateLimitRecord"("scopeKey");

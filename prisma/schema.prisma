@@ -95,6 +95,7 @@ enum NotificationStatus {
   SENT
   FAILED
   SKIPPED
+  EXHAUSTED
 }
 
 model User {
@@ -686,6 +687,9 @@ model NotificationDelivery {
   providerMessageId String?
   status            NotificationStatus  @default(PENDING)
   errorMessage      String?             @db.Text
+  templateData      Json?
+  attemptCount      Int                 @default(0)
+  nextAttemptAt     DateTime?
   sentAt            DateTime?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -695,6 +699,7 @@ model NotificationDelivery {
 
   @@index([tenantId, channel, status, createdAt])
   @@index([bookingId])
+  @@index([status, nextAttemptAt])
 }
 
 model RateLimitRecord {

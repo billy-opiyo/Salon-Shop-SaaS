@@ -8,10 +8,44 @@ export interface PlanPricing {
 	readonly setupFeeMinor: number
 }
 
+export interface PlanCommercialPositioning {
+	readonly bestFor: string
+	readonly upgradeReasons: readonly string[]
+}
+
 export const PLAN_PRICING: Readonly<Record<PlanTier, PlanPricing>> = {
 	starter: { monthlyAmountMinor: 130000, setupFeeMinor: 500000 },
 	business: { monthlyAmountMinor: 330000, setupFeeMinor: 500000 },
 	enterprise: { monthlyAmountMinor: 800000, setupFeeMinor: 200000 },
+}
+
+export const PLAN_POSITIONING: Readonly<
+	Record<PlanTier, PlanCommercialPositioning>
+> = {
+	starter: {
+		bestFor: "A solo salon building its first professional storefront.",
+		upgradeReasons: [
+			"Up to 100 monthly bookings",
+			"One owner-led workspace",
+			"Core services, gallery, blog, and reviews",
+		],
+	},
+	business: {
+		bestFor: "A busy salon with a growing team and daily appointment flow.",
+		upgradeReasons: [
+			"Up to 1,000 monthly bookings",
+			"Up to 10 staff members with permissions",
+			"Waitlists, advanced scheduling, and automation",
+		],
+	},
+	enterprise: {
+		bestFor: "A multi-team salon business with custom operating needs.",
+		upgradeReasons: [
+			"Multiple locations and expanded usage",
+			"Advanced security, audit, and data controls",
+			"Custom domains and priority onboarding",
+		],
+	},
 }
 
 export const BILLING_POLICY = {

@@ -55,18 +55,17 @@ Completed in the isolated SaaS workspace:
   controls and sent to typed Next.js APIs with server-side validation,
   rate limiting, transaction boundaries, and Turnstile enforcement.
 
-Phase D gate status — 25 August 2026:
+Phase D gate status — 28 August 2026:
 
-- **Incomplete.** The tenant route preserves the copied reference markup,
+- **Source-complete; live parity gate remains open.** The tenant route preserves the copied reference markup,
   stylesheet, image assets, and classic scripts, and the expected storefront
   section anchors render successfully.
-- Desktop and mobile screenshot/interaction parity has not yet been accepted.
+- Desktop and mobile screenshot/interaction parity has not yet been accepted as a release gate.
   The first mobile smoke check found horizontal overflow caused by the Next.js
   shell's `body` minimum width; that shell constraint has now been removed.
-- Authenticated interaction parity remains blocked in local development until
-  an operator provides `AUTH_SECRET`; `/api/auth/session` currently returns
-  Auth.js `MissingSecret`.
-- Phase E must not be treated as complete until the reference and tenant
+- Authenticated local interaction checks require the test-only `AUTH_SECRET`
+  supplied by the Playwright configuration or a real deployment secret.
+- Phase D/E release parity must not be treated as complete until the reference and tenant
   routes pass the required desktop, 490px, 390px, and 360px visual and
   interaction checks.
 - The copied Next.js reference runtime now consumes tenant gallery, review,
@@ -103,19 +102,19 @@ Phase D gate status — 25 August 2026:
   visibility controls, audit records, and a management page that controls the
   same enabled categories consumed by storefront queries.
 - Phase F gallery source work now provides tenant-authorized gallery listing,
-  publish/unpublish, deletion, and audit records; media upload signing remains
-  deferred until the R2 environment stage.
+  publish/unpublish, deletion, audit records, direct R2 upload support, and
+  presigned upload/finalization APIs.
 - Phase F review source work now provides tenant-authorized moderation listing,
   approve/reject/feature/delete actions, and audited updates; public review
   edits and provider notifications remain separate follow-up work.
 - Phase F message source work now provides tenant-authorized contact inbox
   listing, status counters, read/resolve/delete actions, and audit records.
 - Phase F blog source work now provides tenant-authorized listing,
-  publish/unpublish, deletion, and audit records; image upload remains pending
-  on the final R2 media stage.
+  publish/unpublish, deletion, and audit records; media URLs can use the shared
+  R2 upload API.
 - Phase F gallery and blog creation source work now provides validated
-  management forms using image URL fields; external media upload signing and
-  quota enforcement remain deferred to R2 configuration.
+  management forms using image URL fields, with the shared R2 upload API and
+  quota enforcement available for provider-backed media.
 - Gallery and blog management now also have validated edit operations and
   forms, completing database-level create/read/update/delete lifecycle except
   provider-backed media upload.
@@ -236,7 +235,7 @@ Phase D gate status — 25 August 2026:
   approved seed fixtures; no Firebase data import or dual-run implementation is
   planned.
 
-Source implementation checkpoint — 26 August 2026:
+Source implementation checkpoint — 28 August 2026:
 
 - Build and TypeScript validation pass after the current source batch.
 - Implemented route/service coverage includes public booking, waitlist,
@@ -244,19 +243,17 @@ Source implementation checkpoint — 26 August 2026:
   bookings, waitlist, schedule, gallery publication, blog publication, review
   moderation, messages, service visibility, team visibility, and security
   monitoring.
-- Remaining source work before environment configuration is limited to richer
-  admin edit forms, client verification/reset UI polish, deeper client
-  dashboard behavior, and broader acceptance scenarios for authenticated
-  mutations and tenant isolation.
+- Remaining source work is limited to optional UI polish and broader
+  authenticated database-backed acceptance scenarios; the required operational
+  workflows are implemented at source level.
 - Client profile/password/account deletion, preference persistence, public review
   edit/report APIs, merchant CRUD forms, and tenant-authorized management views
   are now implemented at source level and validated by the production build.
-- Media upload routes now validate files and enforce tenant permissions, but the
-  default storage adapter truthfully returns provider-unconfigured responses;
-  media signing/storage, delivery, and migrations remain intentionally
-  incomplete until their provider contracts and operator-owned environment
-  values are available. Domain verification source work is complete; live DNS,
-  Vercel, Cloudflare, SSL, and migration checks remain gated configuration.
+- Media upload routes now validate files, enforce tenant permissions and quotas,
+  sign/finalize R2 objects, and persist tenant-scoped metadata. R2 credentials,
+  bucket configuration, and production media smoke tests remain deployment
+  requirements. Domain verification source work is complete; live DNS, Vercel,
+  Cloudflare, SSL, and migration checks remain gated configuration.
 - Build, Vitest, and the Playwright desktop/mobile acceptance suite are green.
   Broader authenticated database-backed acceptance coverage requires a
   configured test database and seeded test users.
@@ -267,15 +264,15 @@ Still gated or in progress:
   Resend, R2, WhatsApp, domain/DNS, Vercel, Cloudflare WAF, and production
   billing configuration require operator-owned credentials and approvals.
 - Remaining work is provider configuration, live migration/provider smoke
-  verification, richer optional admin/dashboard polish, and expanded production
-  release testing. The required source-level domain, media, notification,
-  account, dashboard, and tenant-boundary implementations are now present.
-- **Next pending implementation phase: Phase G operational hardening.** The
+  verification, optional UI polish, and expanded production release testing.
+  Authenticated database-backed isolation tests remain pending until a seeded
+  isolated test database is configured.
+- **Next pending phase: Phase G operational hardening.** The
   source workflows for billing and custom domains now exist, so the next phase
   is to apply and verify migrations against isolated Neon, run billing and
   custom-domain provider smoke tests, select/configure SMS delivery, and finish
-  legally reviewed tax and subscription wording. Phase H is conditional and
-  should only begin if live Firebase data must be imported.
+  legally reviewed tax and subscription wording. Phase H is skipped because
+  this is a fresh SaaS with no Firebase data migration.
 - The copied reference assets are authoritative for storefront/admin UI. No
   tenant storefront redesign should be introduced; future work must preserve
   the original selectors, spacing, typography, colors, shadows, animations,
@@ -419,6 +416,23 @@ salon owner, as the M-Pesa sender, pays the transaction fee separately.
 | Starter    | One salon store, core branding, services, gallery, blog, contact, booking, basic reviews, owner dashboard, basic notifications, platform subdomain, and capped usage.                                               |
 | Business   | Starter plus expanded staff/admin permissions, advanced schedule/waitlist, richer gallery/blog/reviews, customer/security insights, additional media/usage, WhatsApp/email automation, and custom-domain readiness. |
 | Enterprise | Business plus negotiated usage, multiple locations or workspaces if approved, advanced roles/security/audit, custom domains, priority support, data/export controls, and enterprise onboarding.                     |
+
+Commercial upgrade rationale:
+
+- Starter is for a solo or early-stage salon launching one professional
+  storefront. Its 100-booking monthly limit, 50 gallery-item limit, 500 MB
+  storage limit, and owner-led access keep the entry price accessible.
+- Business is for a busy salon with a growing team. The owner upgrades for the
+  1,000-booking monthly limit, 10 staff members, staff permissions, waitlists,
+  advanced scheduling, security insights, and email/WhatsApp automation.
+- Enterprise is for a salon group or operation with higher complexity. The
+  owner upgrades for multiple locations, negotiated usage and storage,
+  advanced security/audit controls, custom domains, priority onboarding, and
+  special operational requirements.
+
+The platform homepage must show these differences directly. Plan limits and
+feature access remain enforced server-side through the entitlement service;
+the comparison UI is explanatory and is not an authorization boundary.
 
 Every feature is enforced by a server-side entitlement service. Hiding a UI
 button is never the enforcement mechanism. Plan limits must be checked in
@@ -597,8 +611,9 @@ verified separately from successful builds and tests.
 - `/{tenantSlug}/404` or tenant-aware not-found behavior;
 - tenant route state for gallery, booking, dashboard, reviews, blog, contact,
   and account interactions while preserving the current one-page navigation;
-- future verified custom domains resolve to the same tenant storefront without
-  allowing host spoofing.
+- verified custom domains resolve to the same tenant storefront without
+  allowing host spoofing; provider DNS and SSL activation remain deployment
+  responsibilities.
 
 ### Merchant routes
 

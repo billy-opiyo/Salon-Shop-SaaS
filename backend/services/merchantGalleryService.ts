@@ -8,6 +8,10 @@ import {
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import type { GalleryMutationInput } from "@shared/validation/merchant"
+import {
+	assertGalleryCapacity,
+	UsageLimitError,
+} from "@backend/services/usageService"
 
 export class MerchantGalleryError extends Error {
 	readonly code = "MERCHANT_GALLERY_FAILED" as const
@@ -122,6 +126,13 @@ export async function createGalleryStyle(
 	input: GalleryMutationInput,
 ): Promise<void> {
 	const tenantId = await getTenantId(userId, input.tenantSlug)
+	try {
+		await assertGalleryCapacity(tenantId)
+	} catch (error) {
+		if (error instanceof UsageLimitError)
+			throw new MerchantGalleryError(error.message)
+		throw error
+	}
 	const style = await prisma.galleryStyle.create({
 		data: {
 			tenantId,

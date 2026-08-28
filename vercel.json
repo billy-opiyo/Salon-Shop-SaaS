@@ -7,6 +7,10 @@
 		{
 			"path": "/api/cron/billing-renewals",
 			"schedule": "0 * * * *"
+		},
+		{
+			"path": "/api/cron/notification-retries",
+			"schedule": "*/5 * * * *"
 		}
 	]
 }

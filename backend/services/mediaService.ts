@@ -126,7 +126,13 @@ export async function uploadUserAvatar(
 	mimeType: string,
 ): Promise<MediaUploadResult> {
 	validateAvatarUpload(file, mimeType)
-
+	const membership = await prisma.membership.findFirst({
+		where: { userId, status: "ACTIVE" },
+		select: { tenantId: true },
+		orderBy: { joinedAt: "asc" },
+	})
+	if (!membership)
+		throw new MediaUploadError("An active salon membership is required.")
 	const metadata: MediaMetadata = {
 		fileName: `avatar-${userId}`,
 		mimeType,
@@ -134,7 +140,7 @@ export async function uploadUserAvatar(
 		mediaType: "image",
 	}
 
-	return storageBackend.upload(file, metadata)
+	return uploadDirectToR2(membership.tenantId, userId, "AVATAR", file, metadata)
 }
 
 export async function uploadGalleryImage(
@@ -152,7 +158,54 @@ export async function uploadGalleryImage(
 		mediaType: "image",
 	}
 
-	return storageBackend.upload(file, metadata)
+	return uploadDirectToR2(tenantId, undefined, "GALLERY", file, metadata)
+}
+
+async function uploadDirectToR2(
+	tenantId: string,
+	uploadedById: string | undefined,
+	kind: "AVATAR" | "GALLERY",
+	file: Buffer,
+	metadata: MediaMetadata,
+): Promise<MediaUploadResult> {
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	const safeName =
+		metadata.fileName
+			.toLowerCase()
+			.replace(/[^a-z0-9._-]+/g, "-")
+			.slice(-100) || "image"
+	const objectKey = `${tenantId}/${kind.toLowerCase()}/${randomUUID()}-${safeName}`
+	await r2Client().send(
+		new PutObjectCommand({
+			Bucket: bucket,
+			Key: objectKey,
+			Body: file,
+			ContentType: metadata.mimeType,
+			ContentLength: file.length,
+		}),
+	)
+	const publicBase = process.env.R2_PUBLIC_BASE_URL?.trim().replace(/\/$/, "")
+	const asset = await prisma.mediaAsset.create({
+		data: {
+			tenantId,
+			uploadedById,
+			kind,
+			objectKey,
+			publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
+			mimeType: metadata.mimeType,
+			byteSize: file.length,
+		},
+	})
+	if (kind === "AVATAR" && asset.publicUrl)
+		await prisma.user.update({
+			where: { id: uploadedById },
+			data: { image: asset.publicUrl },
+		})
+	return { id: asset.id, url: asset.publicUrl ?? objectKey, metadata }
 }
 
 export async function deleteMediaFile(mediaId: string): Promise<void> {

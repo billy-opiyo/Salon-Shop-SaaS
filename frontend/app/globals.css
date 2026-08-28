@@ -1072,6 +1072,18 @@ body.store-transitioning .platform-home-shell {
   line-height: 1.55;
 }
 
+.plan-card__best-for {
+  min-height: 4.8rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--line);
+  font-size: .92rem;
+}
+
+.plan-card__best-for strong {
+  color: var(--gold-soft);
+}
+
 .plan-card ul {
   display: grid;
   gap: .7rem;
@@ -1087,6 +1099,53 @@ body.store-transitioning .platform-home-shell {
 
 .plan-card .button {
   margin-top: auto;
+}
+
+.plan-comparison {
+  margin-top: 2rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(24, 18, 10, .48);
+}
+
+.plan-comparison__header,
+.plan-comparison__row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.4fr) repeat(3, minmax(8.5rem, 1fr));
+  min-width: 42rem;
+  align-items: center;
+}
+
+.plan-comparison__header {
+  padding: .9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--gold-soft);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.plan-comparison__header span:not(:first-child),
+.plan-comparison__row span {
+  text-align: center;
+}
+
+.plan-comparison__row {
+  padding: .85rem 1rem;
+  border-bottom: 1px solid rgba(215, 168, 79, .12);
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.plan-comparison__row:last-child {
+  border-bottom: 0;
+}
+
+.plan-comparison__row strong {
+  color: var(--text);
+  font-weight: 500;
 }
 
 .tenant-store {

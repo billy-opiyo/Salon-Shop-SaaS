@@ -4,6 +4,7 @@ import {
 	NotificationChannel,
 	NotificationStatus,
 	WaitlistStatus,
+	Prisma,
 } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
@@ -23,6 +24,7 @@ import { prisma } from "@backend/db/prisma"
 const RESEND_API_URL = "https://api.resend.com/emails"
 const WHATSAPP_API_VERSION = "v20.0"
 const WHATSAPP_MESSAGES_URL = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/`
+const MAX_NOTIFICATION_ATTEMPTS = 3
 
 export type NotificationSubject = { [key: string]: unknown }
 
@@ -305,6 +307,7 @@ export interface DispatchNotificationInput {
 	readonly subject?: NotificationSubject
 	/** Optional extra uniqueness scoping (e.g. booking id) for repeatable sends. */
 	readonly idempotencyKeySuffix?: string
+	readonly idempotencyKey?: string
 	/** When true, an already SENT delivery short-circuits without re-sending. */
 	readonly skipIfAlreadySent?: boolean
 }
@@ -318,18 +321,20 @@ export interface DispatchNotificationInput {
 export async function dispatchNotification(
 	input: DispatchNotificationInput,
 ): Promise<{ readonly id: string; readonly status: NotificationStatus }> {
-	const idempotencyKey = [
-		"manual",
-		input.tenantId,
-		input.templateKey,
-		input.destination,
-		input.idempotencyKeySuffix ?? "",
-	]
-		.filter((part) => part.length > 0)
-		.join(":")
+	const idempotencyKey =
+		input.idempotencyKey ??
+		[
+			"manual",
+			input.tenantId,
+			input.templateKey,
+			input.destination,
+			input.idempotencyKeySuffix ?? "",
+		]
+			.filter((part) => part.length > 0)
+			.join(":")
 	let delivery = await prisma.notificationDelivery.findUnique({
 		where: { idempotencyKey },
-		select: { id: true, status: true },
+		select: { id: true, status: true, attemptCount: true },
 	})
 
 	if (!delivery) {
@@ -343,30 +348,48 @@ export async function dispatchNotification(
 					templateKey: input.templateKey,
 					destination: input.destination,
 					idempotencyKey,
+					templateData: (input.subject ?? {}) as Prisma.InputJsonValue,
 				},
-				select: { id: true, status: true },
+				select: { id: true, status: true, attemptCount: true },
 			})
 		} catch {
 			delivery = await prisma.notificationDelivery.findUnique({
 				where: { idempotencyKey },
-				select: { id: true, status: true },
+				select: { id: true, status: true, attemptCount: true },
 			})
 		}
 	}
 	if (!delivery) {
-		// Concurrency lost the race; skip so the caller's flow is never blocked.
-		return {
-			id: "",
-			status: NotificationStatus.FAILED,
+		return { id: "", status: NotificationStatus.FAILED }
+	}
+	if (input.userId) {
+		const preferences = await prisma.userPreferences.findUnique({
+			where: { userId: input.userId },
+			select: { notifyEmail: true, notifySms: true },
+		})
+		const optedOut =
+			(input.channel === NotificationChannel.EMAIL &&
+				preferences?.notifyEmail === false) ||
+			(input.channel === NotificationChannel.WHATSAPP &&
+				preferences?.notifySms === false)
+		if (optedOut) {
+			await prisma.notificationDelivery.update({
+				where: { id: delivery.id },
+				data: {
+					status: NotificationStatus.SKIPPED,
+					errorMessage: "Recipient opted out.",
+				},
+			})
+			return { id: delivery.id, status: NotificationStatus.SKIPPED }
 		}
 	}
-
 	if (input.skipIfAlreadySent && delivery.status === NotificationStatus.SENT) {
 		// Repeatable notifications (e.g. cron reminders) must fire only once.
 		return { id: delivery.id, status: delivery.status }
 	}
 
 	const built = buildTemplate(input.templateKey, input.subject ?? {})
+	const nextAttempt = delivery.attemptCount
 	let result: DeliveryResult
 	if (input.channel === NotificationChannel.EMAIL) {
 		result = await sendResendEmail(
@@ -385,7 +408,15 @@ export async function dispatchNotification(
 		.update({
 			where: { id: delivery.id },
 			data: {
-				status: nextStatus,
+				status:
+					!result.ok && nextAttempt + 1 >= MAX_NOTIFICATION_ATTEMPTS
+						? NotificationStatus.EXHAUSTED
+						: nextStatus,
+				attemptCount: { increment: 1 },
+				nextAttemptAt:
+					result.ok || nextAttempt + 1 >= MAX_NOTIFICATION_ATTEMPTS
+						? null
+						: new Date(Date.now() + 2 ** nextAttempt * 60_000),
 				providerMessageId: result.providerMessageId ?? null,
 				errorMessage: result.error ?? null,
 				sentAt: result.ok ? new Date() : null,
@@ -394,7 +425,40 @@ export async function dispatchNotification(
 		.catch(() => {
 			// Status bookkeeping must never break the caller.
 		})
-	return { id: delivery.id, status: nextStatus }
+	return {
+		id: delivery.id,
+		status:
+			!result.ok && nextAttempt + 1 >= MAX_NOTIFICATION_ATTEMPTS
+				? NotificationStatus.EXHAUSTED
+				: nextStatus,
+	}
+}
+
+export async function retryDueNotifications(limit = 50): Promise<number> {
+	const due = await prisma.notificationDelivery.findMany({
+		where: {
+			status: NotificationStatus.FAILED,
+			nextAttemptAt: { lte: new Date() },
+			attemptCount: { lt: MAX_NOTIFICATION_ATTEMPTS },
+		},
+		take: limit,
+		orderBy: { nextAttemptAt: "asc" },
+	})
+	await Promise.allSettled(
+		due.map((delivery) =>
+			dispatchNotification({
+				tenantId: delivery.tenantId,
+				userId: delivery.userId,
+				bookingId: delivery.bookingId,
+				channel: delivery.channel,
+				templateKey: delivery.templateKey,
+				destination: delivery.destination,
+				subject: (delivery.templateData ?? {}) as NotificationSubject,
+				idempotencyKey: delivery.idempotencyKey,
+			}),
+		),
+	)
+	return due.length
 }
 
 /**

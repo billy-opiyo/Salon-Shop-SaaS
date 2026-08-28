@@ -104,6 +104,16 @@ export default async function ManagePage() {
 						"/manage",
 					],
 					["Domains", "Connect and verify a custom salon hostname.", "/manage"],
+					[
+						"Settings",
+						"Branding, contact details, and storefront identity.",
+						"/manage",
+					],
+					[
+						"Preview",
+						"Review the storefront before sharing it publicly.",
+						"/manage",
+					],
 				].map(([title, description]) => (
 					<article className="manage-card" key={title}>
 						<p className="eyebrow">Management area</p>
@@ -123,7 +133,11 @@ export default async function ManagePage() {
 													? `/manage/${tenants[0].slug}/billing`
 													: title === "Domains"
 														? `/manage/${tenants[0].slug}/domains`
-														: "/manage"
+														: title === "Settings"
+															? `/manage/${tenants[0].slug}/settings`
+															: title === "Preview"
+																? `/manage/${tenants[0].slug}/preview`
+																: "/manage"
 								}`}
 							>
 								Open area
