@@ -238,7 +238,10 @@ export default async function PlatformHome() {
 					<div className="section-heading">
 						<p className="eyebrow">Choose your operating level</p>
 						<h2 id="plans-title">Plans that grow with your salon.</h2>
-						<p>Simple monthly pricing in KSh, with a one-time setup fee.</p>
+						<p>
+							Simple monthly pricing in KES, with a{" "}
+							<strong>One-Time Setup Fee</strong>.
+						</p>
 					</div>
 					<div className="plans-grid">
 						{plans.map((plan) => (
@@ -263,7 +266,7 @@ export default async function PlatformHome() {
 										{(
 											PLAN_PRICING[plan.tier].setupFeeMinor / 100
 										).toLocaleString("en-KE")}{" "}
-										Setup Fee
+										One-Time Setup Fee
 									</span>
 								</p>
 								<p className="plan-card__best-for">
