@@ -1,6 +1,5 @@
-import Link from "next/link"
-
 import { getTopStores } from "@/lib/platformStores"
+import { StoreTransitionLink } from "@/components/shared/StoreTransitionLink"
 
 function RatingStars({
 	rating,
@@ -68,13 +67,21 @@ export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
 						</span>
 						<h3>{store.name}</h3>
 						<p>{store.tagline}</p>
-						<RatingStars rating={store.rating} reviewCount={store.reviewCount} />
+						<RatingStars
+							rating={store.rating}
+							reviewCount={store.reviewCount}
+						/>
 						{store.available ? (
-							<Link className="top-store__link" href={store.href}>
+							<StoreTransitionLink
+								className="top-store__link"
+								href={store.href}
+							>
 								Open {store.name} Store →
-							</Link>
+							</StoreTransitionLink>
 						) : (
-							<span className="top-store__soon-label">Coming to Beauty Sphia</span>
+							<span className="top-store__soon-label">
+								Coming to Beauty Sphia
+							</span>
 						)}
 					</div>
 				</article>

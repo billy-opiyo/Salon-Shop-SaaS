@@ -724,13 +724,18 @@ function getConfiguredWhatsAppUrl(): string {
 	return "https://wa.me/254740470381"
 }
 
-function getMobileActionIconSvg(name: "home" | "gallery" | "book" | "favorite" | "account"): string {
+function getMobileActionIconSvg(
+	name: "home" | "gallery" | "book" | "favorite" | "account",
+): string {
 	const paths = {
 		home: '<path d="m3 10 9-7 9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
-		gallery: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.4"/><path d="m3 16 4.5-4.5 3.5 3.5 2.5-2.5L21 19"/>',
+		gallery:
+			'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.4"/><path d="m3 16 4.5-4.5 3.5 3.5 2.5-2.5L21 19"/>',
 		book: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h.01M12 13h.01M16 13h.01M8 16h.01M12 16h.01"/>',
-		favorite: '<path d="M20.8 8.6c0 5.5-8.8 10.4-8.8 10.4S3.2 14.1 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"/>',
-		account: '<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+		favorite:
+			'<path d="M20.8 8.6c0 5.5-8.8 10.4-8.8 10.4S3.2 14.1 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"/>',
+		account:
+			'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
 	} as const
 	return `<svg class="mobile-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name]}</svg>`
 }
@@ -832,16 +837,19 @@ function setReferenceFormMessage(
 
 async function readReferenceJson(
 	response: Response,
-): Promise<{ readonly error?: string }> {
+): Promise<{ readonly error?: string; readonly message?: string }> {
 	try {
 		const payload: unknown = await response.json()
-		if (
-			typeof payload === "object" &&
-			payload !== null &&
-			"error" in payload &&
-			typeof payload.error === "string"
-		) {
-			return { error: payload.error }
+		if (typeof payload === "object" && payload !== null) {
+			const error =
+				"error" in payload && typeof payload.error === "string"
+					? payload.error
+					: undefined
+			const message =
+				"message" in payload && typeof payload.message === "string"
+					? payload.message
+					: undefined
+			return { error, message }
 		}
 	} catch {
 		return {}
@@ -953,6 +961,10 @@ function bindPublicParityAdapters(
 		})
 		const result = await readReferenceJson(response)
 		if (!response.ok) {
+			if (response.status === 401 || response.status === 403) {
+				openSignInModal("Log in to save this gallery style.")
+				return
+			}
 			const toast = document.getElementById("favoritesToast")
 			if (toast) {
 				toast.textContent = result.error ?? "Please sign in to save favorites."
@@ -1290,6 +1302,42 @@ function setAuthMessage(message: string, type: "error" | "success"): void {
 	element.textContent = message
 	element.classList.remove("error", "success")
 	if (message) element.classList.add(type)
+}
+
+function openSignInModal(message = ""): void {
+	const modal = document.getElementById("authModal")
+	if (!modal) return
+	const nameGroup = document.getElementById("authNameGroup")
+	const submitButton = document.getElementById("emailAuthSubmit")
+	if (nameGroup instanceof HTMLElement) nameGroup.style.display = "none"
+	if (submitButton instanceof HTMLButtonElement)
+		submitButton.textContent = "Log In"
+	modal.classList.add("active")
+	modal.setAttribute("aria-hidden", "false")
+	document.body.style.overflow = "hidden"
+	setAuthMessage(message, "error")
+}
+
+function setReferenceAuthMode(mode: "signin" | "signup"): void {
+	const isSignup = mode === "signup"
+	const nameGroup = document.getElementById("authNameGroup")
+	const submitButton = document.getElementById("emailAuthSubmit")
+	const signupButton = document.getElementById("switchToSignupBtn")
+	const signinButton = document.getElementById("switchToSigninBtn")
+	const passwordInput = document.getElementById("authPassword")
+	if (nameGroup instanceof HTMLElement)
+		nameGroup.style.display = isSignup ? "block" : "none"
+	if (submitButton instanceof HTMLButtonElement)
+		submitButton.textContent = isSignup ? "Create Account" : "Log In"
+	signupButton?.classList.toggle("hidden", isSignup)
+	signinButton?.classList.toggle("hidden", !isSignup)
+	if (passwordInput instanceof HTMLInputElement) {
+		passwordInput.type = "password"
+		passwordInput.setAttribute(
+			"autocomplete",
+			isSignup ? "new-password" : "current-password",
+		)
+	}
 }
 
 function updateReferenceAuthUi(user: SessionUser | null): void {
@@ -1677,6 +1725,13 @@ function bindAccountMutationAdapter(): () => void {
 }
 function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const form = document.getElementById("emailAuthForm")
+	const openButton = document.getElementById("openAuthModalBtn")
+	const closeButton = document.getElementById("closeAuthModalBtn")
+	const backdrop = document.getElementById("authModalBackdrop")
+	const signupButton = document.getElementById("switchToSignupBtn")
+	const signinButton = document.getElementById("switchToSigninBtn")
+	const forgotButton = document.getElementById("forgotPasswordBtn")
+	const passwordToggle = document.getElementById("authPasswordToggle")
 	const logoutButton = document.getElementById("logoutBtn")
 	const guestButton = document.getElementById("continueAsGuestBtn")
 	const googleButton = document.getElementById("continueWithGoogleBtn")
@@ -1791,11 +1846,103 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const continueAsGuest = (event: Event): void => {
 		event.preventDefault()
 		event.stopImmediatePropagation()
-		document.getElementById("authModal")?.setAttribute("aria-hidden", "true")
-		setAuthMessage("You can continue booking as a guest.", "success")
+		const modal = document.getElementById("authModal")
+		modal?.setAttribute("aria-hidden", "true")
+		modal?.classList.remove("active")
+		document.body.style.overflow = ""
+		updateReferenceAuthUi(null)
+		const toast = document.getElementById("favoritesToast")
+		if (toast) {
+			toast.textContent = "You're now continuing as guest"
+			toast.classList.add("show")
+			window.setTimeout(() => toast.classList.remove("show"), 1800)
+		}
+	}
+
+	const openAuth = (event: Event): void => {
+		event.preventDefault()
+		setReferenceAuthMode("signin")
+		document.getElementById("authModal")?.setAttribute("aria-hidden", "false")
+		document.getElementById("authModal")?.classList.add("active")
+		document.body.style.overflow = "hidden"
+	}
+	const closeAuth = (): void => {
+		const modal = document.getElementById("authModal")
+		modal?.setAttribute("aria-hidden", "true")
+		modal?.classList.remove("active")
+		document.body.style.overflow = ""
+	}
+	const switchToSignup = (): void => {
+		setReferenceAuthMode("signup")
+		setAuthMessage("", "success")
+	}
+	const switchToSignin = (): void => {
+		setReferenceAuthMode("signin")
+		setAuthMessage("", "success")
+	}
+	const togglePassword = (event: Event): void => {
+		event.preventDefault()
+		event.stopImmediatePropagation()
+		const passwordInput = document.getElementById("authPassword")
+		const button = passwordToggle
+		if (!(passwordInput instanceof HTMLInputElement)) return
+		const isVisible = passwordInput.type === "text"
+		passwordInput.type = isVisible ? "password" : "text"
+		button?.setAttribute("aria-pressed", String(!isVisible))
+		button?.setAttribute(
+			"aria-label",
+			isVisible ? "Show password" : "Hide password",
+		)
+	}
+	const forgotPassword = async (event: Event): Promise<void> => {
+		event.preventDefault()
+		const emailInput = document.getElementById("authEmail")
+		if (!(emailInput instanceof HTMLInputElement) || !emailInput.value.trim()) {
+			setAuthMessage(
+				"Enter your email first, then click Forgot Password.",
+				"error",
+			)
+			return
+		}
+		if (forgotButton instanceof HTMLButtonElement) {
+			forgotButton.disabled = true
+			forgotButton.textContent = "Sending..."
+		}
+		try {
+			const response = await fetch("/api/auth/password-reset", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					action: "request",
+					email: emailInput.value.trim(),
+				}),
+			})
+			const result = await readReferenceJson(response)
+			setAuthMessage(
+				response.ok
+					? (result.message ??
+							"Password reset email sent. Please check your inbox.")
+					: (result.error ?? "Password reset failed. Please try again."),
+				response.ok ? "success" : "error",
+			)
+		} catch {
+			setAuthMessage("Password reset failed. Please try again.", "error")
+		} finally {
+			if (forgotButton instanceof HTMLButtonElement) {
+				forgotButton.disabled = false
+				forgotButton.textContent = "Forgot Password?"
+			}
+		}
 	}
 
 	form.addEventListener("submit", submit, true)
+	openButton?.addEventListener("click", openAuth, true)
+	closeButton?.addEventListener("click", closeAuth, true)
+	backdrop?.addEventListener("click", closeAuth, true)
+	signupButton?.addEventListener("click", switchToSignup, true)
+	signinButton?.addEventListener("click", switchToSignin, true)
+	forgotButton?.addEventListener("click", forgotPassword, true)
+	passwordToggle?.addEventListener("click", togglePassword, true)
 	logoutButton?.addEventListener("click", logout, true)
 	guestButton?.addEventListener("click", continueAsGuest, true)
 	googleButton?.addEventListener("click", continueWithGoogle, true)
@@ -1803,6 +1950,13 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 
 	return () => {
 		form.removeEventListener("submit", submit, true)
+		openButton?.removeEventListener("click", openAuth, true)
+		closeButton?.removeEventListener("click", closeAuth, true)
+		backdrop?.removeEventListener("click", closeAuth, true)
+		signupButton?.removeEventListener("click", switchToSignup, true)
+		signinButton?.removeEventListener("click", switchToSignin, true)
+		forgotButton?.removeEventListener("click", forgotPassword, true)
+		passwordToggle?.removeEventListener("click", togglePassword, true)
 		logoutButton?.removeEventListener("click", logout, true)
 		guestButton?.removeEventListener("click", continueAsGuest, true)
 		googleButton?.removeEventListener("click", continueWithGoogle, true)
@@ -2029,6 +2183,7 @@ export function ReferenceSalonRuntime({
 			injectedSplash.classList.add("splash-hide")
 			injectedSplash.setAttribute("aria-hidden", "true")
 		}
+		document.body.classList.remove("store-transitioning")
 
 		const activeRuntime =
 			runtimeKind ?? (loadSalonRuntime === false ? "none" : "salon")
@@ -2106,9 +2261,6 @@ export function ReferenceSalonRuntime({
 			removeAccountMutationAdapter()
 			removeTenantNavigationLinks()
 			document.body.className = originalBodyClassName
-			document
-				.querySelectorAll<HTMLScriptElement>("script[data-reference-src]")
-				.forEach((script) => script.remove())
 		}
 	}, [
 		bodyClassName,

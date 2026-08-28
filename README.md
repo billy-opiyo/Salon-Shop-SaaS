@@ -30,6 +30,27 @@ that does not prove a live database connection. Configure a real Neon pooled
 `DATABASE_URL`, `AUTH_SECRET`, Turnstile, Resend, R2, and WhatsApp credentials
 only in the deployment environment before enabling live workflows.
 
+## Platform operations
+
+Allowlisted operators can also perform audited actions from the dashboard:
+
+- Suspend active salon stores and reactivate suspended stores after billing is resolved.
+- Resolve payment attempts marked for manual review.
+- Resolve open platform security alerts.
+
+Every mutation is re-authorized on the server, restricted to its target record,
+protected against cross-origin POSTs, and recorded in `AdminAuditLog`.
+
+The centralized Beauty Sphia operator dashboard is available at
+`/platform-admin`. It provides cross-tenant visibility for salon status,
+subscriptions, pending and overdue invoices, manual-review payments, failed
+notification deliveries, and unresolved security alerts.
+
+Access is restricted to an authenticated user whose email or user ID is listed
+in `PLATFORM_ADMIN_EMAILS` or `PLATFORM_ADMIN_USER_IDS` in the deployment
+environment. Values are comma-separated. This operator access is separate from
+the salon-specific `/manage/{tenantSlug}` admin console.
+
 ## Custom domains
 
 Business and Enterprise tenants can register a hostname through

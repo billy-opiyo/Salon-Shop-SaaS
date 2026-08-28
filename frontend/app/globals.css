@@ -382,6 +382,10 @@ main {
   display: none;
 }
 
+body.store-transitioning .platform-home-shell {
+  visibility: hidden;
+}
+
 .browse-store-list {
   display: grid;
   gap: 1rem;
@@ -607,6 +611,7 @@ main {
    the SaaS mobile action bar. Lift both above the bar whenever that bar is
    visible; standalone usages without the bar are unaffected. */
 @media (max-width: 700px) {
+
   .reference-salon-root .floating-whatsapp,
   .reference-salon-root .back-to-top {
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
@@ -719,6 +724,7 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .splash-screen,
   .splash-handwriting-fill,
   .splash-handwriting-letter,
@@ -1394,7 +1400,7 @@ main {
 }
 
 .auth-card {
-	position: relative;
+  position: relative;
   width: min(100%, 500px);
   padding: clamp(2rem, 6vw, 4rem);
   border: 1px solid var(--line);
@@ -1575,6 +1581,186 @@ main {
 
 .onboarding-form {
   margin-top: 2rem;
+}
+
+.platform-admin-page {
+  width: min(1320px, calc(100% - 3rem));
+  padding: 3rem 0 5rem;
+}
+
+.platform-admin-header {
+  align-items: end;
+  padding: 1rem 0 2.5rem;
+}
+
+.platform-admin-header h1 {
+  margin: .65rem 0;
+  font: 500 clamp(2.7rem, 6vw, 5rem)/.95 var(--serif);
+  letter-spacing: -.05em;
+}
+
+.platform-admin-header__meta {
+  display: grid;
+  gap: .35rem;
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: right;
+}
+
+.platform-admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .75rem;
+  padding: 2rem 0;
+}
+
+.platform-admin-metric {
+  display: grid;
+  gap: .5rem;
+  min-height: 150px;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: .8rem;
+  background: linear-gradient(145deg, rgba(55, 41, 20, .62), rgba(24, 18, 10, .7));
+  box-shadow: var(--glass-shadow);
+}
+
+.platform-admin-metric strong {
+  font: 500 2.4rem/1 var(--serif);
+  color: var(--foreground);
+}
+
+.platform-admin-metric span,
+.platform-admin-row span {
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.platform-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.platform-admin-panel {
+  min-width: 0;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(55, 41, 20, .48), rgba(24, 18, 10, .64));
+  box-shadow: var(--glass-shadow);
+}
+
+.platform-admin-panel h2 {
+  margin: .6rem 0 0;
+  font: 1.8rem/1.1 var(--serif);
+}
+
+.platform-admin-list {
+  display: grid;
+  gap: .65rem;
+  margin-top: 1.3rem;
+}
+
+.platform-admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .9rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.platform-admin-row>div {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.platform-admin-row>div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.platform-admin-action-wrap {
+  display: grid;
+  justify-items: end;
+  gap: .3rem;
+}
+
+.platform-admin-action-error {
+  max-width: 13rem;
+  color: #f28f8f;
+  font-size: .7rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.platform-admin-row strong,
+.platform-admin-row b {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: .9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.platform-admin-status,
+.platform-admin-severity {
+  color: var(--gold-soft) !important;
+  font-size: .7rem !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.platform-admin-status--suspended,
+.platform-admin-status--archived,
+.platform-admin-severity--high {
+  color: #f28f8f !important;
+}
+
+@media (max-width: 1000px) {
+  .platform-admin-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .platform-admin-page {
+    width: min(100% - 1.5rem, 620px);
+    padding-top: 1.5rem;
+  }
+
+  .platform-admin-header {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .platform-admin-header__meta {
+    text-align: left;
+  }
+
+  .platform-admin-metrics,
+  .platform-admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-admin-row {
+    align-items: start;
+  }
+
+  .platform-admin-row>div:last-child {
+    max-width: 46%;
+  }
+
+  .platform-admin-action-wrap {
+    justify-items: start;
+  }
+
+  .platform-admin-action-error {
+    text-align: left;
+  }
 }
 
 .onboarding-form select {
@@ -2004,8 +2190,8 @@ main {
   min-height: 3.25rem;
 }
 
-.platform-mobile-actions a > span:last-child,
-.saas-tenant-mobile-actions a > small {
+.platform-mobile-actions a>span:last-child,
+.saas-tenant-mobile-actions a>small {
   display: block;
   max-width: 100%;
   overflow: hidden;
@@ -2308,4 +2494,3 @@ main {
     padding: 2rem 1.25rem;
   }
 }
-
