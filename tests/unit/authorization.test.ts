@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}))
 
 import {
 	assertTenantMembership,
+	assertTenantPermission,
 	AuthorizationError,
 } from "../../backend/services/authorization"
 
@@ -32,5 +33,26 @@ describe("tenant authorization boundary", () => {
 				"tenant-a",
 			),
 		).toThrow(AuthorizationError)
+	})
+
+	it("allows owners to use every tenant permission", () => {
+		expect(() =>
+			assertTenantPermission(
+				{ ...membership, role: "OWNER" },
+				"canManageSecurity",
+			),
+		).not.toThrow()
+	})
+
+	it("rejects staff without the requested permission", () => {
+		expect(() =>
+			assertTenantPermission(membership, "canManageSecurity"),
+		).toThrow(AuthorizationError)
+	})
+
+	it("allows staff only for explicitly granted permissions", () => {
+		expect(() =>
+			assertTenantPermission(membership, "canManageBookings"),
+		).not.toThrow()
 	})
 })

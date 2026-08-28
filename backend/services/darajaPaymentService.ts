@@ -15,6 +15,10 @@ type StkPushResponse = {
 	ResponseCode?: string
 	ResponseDescription?: string
 }
+type StkQueryResponse = {
+	ResultCode?: string
+	ResultDesc?: string
+}
 
 function env(name: string): string {
 	return (process.env[name] ?? "").trim()
@@ -53,6 +57,29 @@ function stkPassword(timestamp: string): string {
 	if (!shortCode || !passkey || !env("DARAJA_CALLBACK_URL"))
 		throw new Error("Daraja shortcode, passkey, and callback URL are required.")
 	return Buffer.from(`${shortCode}${passkey}${timestamp}`).toString("base64")
+}
+
+async function verifyDarajaPayment(checkoutRequestId: string): Promise<void> {
+	const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14)
+	const response = await fetch(
+		`${darajaBaseUrl()}/mpesa/stkpushquery/v1/query`,
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${await getAccessToken()}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				BusinessShortCode: env("DARAJA_SHORTCODE"),
+				Password: stkPassword(timestamp),
+				Timestamp: timestamp,
+				CheckoutRequestID: checkoutRequestId,
+			}),
+		},
+	)
+	const data = (await response.json()) as StkQueryResponse
+	if (!response.ok || data.ResultCode !== "0")
+		throw new Error(data.ResultDesc || "Daraja payment verification failed.")
 }
 
 export async function requestInvoicePayment(
@@ -283,6 +310,26 @@ export async function handleDarajaCallback(payload: unknown) {
 	const receipt = metadata.find(
 		(item) => item.Name === "MpesaReceiptNumber",
 	)?.Value
+	const amount = metadata.find((item) => item.Name === "Amount")?.Value
+	const phoneNumber = metadata.find(
+		(item) => item.Name === "PhoneNumber",
+	)?.Value
+	if (paid) {
+		if (
+			!receipt ||
+			Number(amount) !== Math.ceil(attempt.invoice.amountMinor / 100)
+		) {
+			throw new Error(
+				"Daraja callback payment details do not match the invoice.",
+			)
+		}
+		if (String(phoneNumber) !== attempt.phoneNumber) {
+			throw new Error(
+				"Daraja callback phone number does not match the payment.",
+			)
+		}
+		await verifyDarajaPayment(result.CheckoutRequestID)
+	}
 	const processed = await prisma.$transaction(async (transaction) => {
 		const claimed = await transaction.paymentAttempt.updateMany({
 			where: { id: attempt.id, status: "pending" },
@@ -345,8 +392,8 @@ export async function handleDarajaCallback(payload: unknown) {
 			}
 			return true
 		}
-		if (!processed) return
 	})
+	if (!processed) return
 	if (paid && attempt.invoice.tenant.owner.email) {
 		await dispatchNotification({
 			tenantId: attempt.invoice.tenantId,

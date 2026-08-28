@@ -5,6 +5,10 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { compare } from "bcryptjs"
 
 import { prisma } from "@backend/db/prisma"
+import {
+	consumeRateLimit,
+	hashRateLimitSubject,
+} from "@backend/services/rateLimit"
 import { credentialsSchema } from "@shared/validation/auth"
 
 const googleProvider =
@@ -30,6 +34,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 			async authorize(rawCredentials) {
 				const parsed = credentialsSchema.safeParse(rawCredentials)
 				if (!parsed.success) return null
+				await consumeRateLimit({
+					subjectKey: hashRateLimitSubject(parsed.data.email),
+					kind: "auth-login",
+					intervalMs: 10_000,
+				})
 
 				const user = await prisma.user.findUnique({
 					where: { email: parsed.data.email.toLowerCase() },

@@ -9,6 +9,10 @@ import {
 	platformBaseUrl,
 	sendPlatformEmail,
 } from "@backend/services/notificationService"
+import {
+	consumeRateLimit,
+	hashRateLimitSubject,
+} from "@backend/services/rateLimit"
 
 const GENERIC_REQUEST_MESSAGE =
 	"If an account exists for that email, a password reset link has been sent."
@@ -31,6 +35,11 @@ export async function POST(request: NextRequest) {
 			const normalizedEmail = body.email.trim().toLowerCase()
 			let emailed = false
 			try {
+				await consumeRateLimit({
+					subjectKey: hashRateLimitSubject(normalizedEmail),
+					kind: "password-reset-request",
+					intervalMs: 15 * 60 * 1000,
+				})
 				const { token } = await createPasswordResetToken(normalizedEmail)
 				// Legacy parity: the reset link is delivered by email.
 				const sent = await sendPlatformEmail({

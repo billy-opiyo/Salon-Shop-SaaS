@@ -12,7 +12,7 @@ test.describe("Royal Braids SaaS parity", () => {
 			}
 		})
 
-		await page.goto("/royal-braids")
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
 		await expect(page.locator("#home")).toBeVisible()
 		await expect(page.locator("#gallery")).toBeVisible()
 		await page.waitForTimeout(1_000)
@@ -20,7 +20,7 @@ test.describe("Royal Braids SaaS parity", () => {
 	})
 
 	test("storefront remains usable at mobile width", async ({ page }) => {
-		await page.goto("/royal-braids")
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
 		await expect(page.locator("#home")).toBeVisible()
 		const documentWidth = await page.evaluate(
 			() => document.documentElement.scrollWidth,
@@ -30,7 +30,7 @@ test.describe("Royal Braids SaaS parity", () => {
 	})
 
 	test("unauthenticated admin access redirects to login", async ({ page }) => {
-		await page.goto("/manage/royal-braids")
+		await page.goto("/manage/royal-braids", { waitUntil: "domcontentloaded" })
 		await expect(page).toHaveURL(/\/login$/)
 	})
 
