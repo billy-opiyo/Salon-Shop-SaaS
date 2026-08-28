@@ -15,6 +15,10 @@ import {
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import { PLAN_ENTITLEMENTS } from "@shared/constants/plans"
+import {
+	assertStorageCapacity,
+	UsageLimitError,
+} from "@backend/services/usageService"
 
 export class MediaUploadError extends Error {
 	readonly code: string = "MEDIA_UPLOAD_FAILED"
@@ -122,16 +126,16 @@ export function validateAvatarUpload(file: Buffer, mimeType: string): void {
 
 export async function uploadUserAvatar(
 	userId: string,
+	tenantId: string,
 	file: Buffer,
 	mimeType: string,
 ): Promise<MediaUploadResult> {
 	validateAvatarUpload(file, mimeType)
-	const membership = await prisma.membership.findFirst({
-		where: { userId, status: "ACTIVE" },
-		select: { tenantId: true },
-		orderBy: { joinedAt: "asc" },
+	const membership = await prisma.membership.findUnique({
+		where: { tenantId_userId: { tenantId, userId } },
+		select: { status: true },
 	})
-	if (!membership)
+	if (membership?.status !== "ACTIVE")
 		throw new MediaUploadError("An active salon membership is required.")
 	const metadata: MediaMetadata = {
 		fileName: `avatar-${userId}`,
@@ -140,25 +144,24 @@ export async function uploadUserAvatar(
 		mediaType: "image",
 	}
 
-	return uploadDirectToR2(membership.tenantId, userId, "AVATAR", file, metadata)
+	return uploadDirectToR2(tenantId, userId, "AVATAR", file, metadata)
 }
 
 export async function uploadGalleryImage(
 	tenantId: string,
+	uploadedById: string,
 	file: Buffer,
 	mimeType: string,
 	fileName: string,
 ): Promise<MediaUploadResult> {
 	validateImageUpload(file, mimeType)
-
 	const metadata: MediaMetadata = {
 		fileName: `${tenantId}/${fileName}`,
 		mimeType,
 		size: file.length,
 		mediaType: "image",
 	}
-
-	return uploadDirectToR2(tenantId, undefined, "GALLERY", file, metadata)
+	return uploadDirectToR2(tenantId, uploadedById, "GALLERY", file, metadata)
 }
 
 async function uploadDirectToR2(
@@ -173,6 +176,13 @@ async function uploadDirectToR2(
 		throw new MediaProviderConfigurationError(
 			"R2 media storage is not configured.",
 		)
+	try {
+		await assertStorageCapacity(tenantId, file.length)
+	} catch (error) {
+		if (error instanceof UsageLimitError)
+			throw new MediaUploadError(error.message)
+		throw error
+	}
 	const safeName =
 		metadata.fileName
 			.toLowerCase()
@@ -189,17 +199,25 @@ async function uploadDirectToR2(
 		}),
 	)
 	const publicBase = process.env.R2_PUBLIC_BASE_URL?.trim().replace(/\/$/, "")
-	const asset = await prisma.mediaAsset.create({
-		data: {
-			tenantId,
-			uploadedById,
-			kind,
-			objectKey,
-			publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
-			mimeType: metadata.mimeType,
-			byteSize: file.length,
-		},
-	})
+	let asset
+	try {
+		asset = await prisma.mediaAsset.create({
+			data: {
+				tenantId,
+				uploadedById,
+				kind,
+				objectKey,
+				publicUrl: publicBase ? `${publicBase}/${objectKey}` : null,
+				mimeType: metadata.mimeType,
+				byteSize: file.length,
+			},
+		})
+	} catch (error) {
+		await r2Client()
+			.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }))
+			.catch(() => undefined)
+		throw error
+	}
 	if (kind === "AVATAR" && asset.publicUrl)
 		await prisma.user.update({
 			where: { id: uploadedById },

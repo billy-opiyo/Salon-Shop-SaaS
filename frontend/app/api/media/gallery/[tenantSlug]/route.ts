@@ -59,6 +59,7 @@ export async function POST(
 		const buffer = Buffer.from(await file.arrayBuffer())
 		const result = await uploadGalleryImage(
 			tenant.id,
+			session.user.id,
 			buffer,
 			file.type,
 			file.name,

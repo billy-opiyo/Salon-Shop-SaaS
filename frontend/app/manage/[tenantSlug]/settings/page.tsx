@@ -102,6 +102,13 @@ export default async function MerchantSettingsPage({
 					/>
 				</label>
 				<label>
+					Secondary phone
+					<input
+						name="phoneSecondary"
+						defaultValue={settings?.phoneSecondary ?? ""}
+					/>
+				</label>
+				<label>
 					Primary email
 					<input
 						name="emailPrimary"
