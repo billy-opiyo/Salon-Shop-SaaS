@@ -130,14 +130,14 @@ export default async function PlatformHome() {
 					<picture className="platform-hero__picture">
 						<source
 							media="(max-width: 1024px)"
-							srcSet="/platform/hero-mobile-beauty-sphia-copy.png"
+							srcSet="/platform/Beauty-sphia-heroimage-mobile.jpg"
 						/>
 						<Image
 							className="platform-hero__image"
-							src="/platform/hero-desktop-beauty-sphia-copy.png"
+							src="/platform/Beauty-sphia-heroimage-desktop.jpg"
 							alt="Beauty Sphia salon management platform"
-							width={1536}
-							height={880}
+							width={836}
+							height={470}
 							priority
 							sizes="100vw"
 						/>

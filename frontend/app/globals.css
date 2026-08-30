@@ -2250,7 +2250,7 @@ body.store-transitioning .platform-home-shell {
 .platform-hero__picture {
   display: block;
   width: 100%;
-  aspect-ratio: 1536 / 880;
+  aspect-ratio: 836 / 470;
   overflow: hidden;
   line-height: 0;
 }
@@ -2321,7 +2321,7 @@ body.store-transitioning .platform-home-shell {
 
 @media (max-width: 1024px) {
   .platform-hero__picture {
-    aspect-ratio: 1024 / 1374;
+    aspect-ratio: 512 / 768;
   }
 }
 
