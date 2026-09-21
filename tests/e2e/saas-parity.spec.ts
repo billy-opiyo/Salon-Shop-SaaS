@@ -29,6 +29,30 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(documentWidth).toBeLessThanOrEqual(viewportWidth + 1)
 	})
 
+	test("storefront does not load archived reference runtime assets", async ({
+		page,
+	}) => {
+		const legacyRequests: string[] = []
+		page.on("request", (request) => {
+			if (/\/reference\/(JS|CSS|IMG)|index\.html|admin\.html/i.test(request.url())) {
+				legacyRequests.push(request.url())
+			}
+		})
+
+		await page.goto("/royal-braids", { waitUntil: "networkidle" })
+		await expect(page.locator(".salon-storefront-root")).toBeVisible()
+		expect(legacyRequests).toEqual([])
+	})
+
+	test("not-found page is rendered by native Next markup", async ({ page }) => {
+		const response = await page.goto("/native-missing-page", {
+			waitUntil: "domcontentloaded",
+		})
+		expect(response?.status()).toBe(404)
+		await expect(page.locator("#page-title")).toContainText("not found")
+		await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible()
+	})
+
 	test("unauthenticated admin access redirects to login", async ({ page }) => {
 		await page.goto("/manage/royal-braids", { waitUntil: "domcontentloaded" })
 		await expect(page).toHaveURL(/\/login$/)

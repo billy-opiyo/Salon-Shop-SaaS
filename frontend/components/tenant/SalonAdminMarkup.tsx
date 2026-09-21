@@ -1,85 +1,55 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Royal Braids Admin</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
-		<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
-			rel="stylesheet"
-		/>
-		<link
-			rel="stylesheet"
-			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-		/>
-		<link rel="stylesheet" href="CSS/style.css" />
-		<link rel="icon" type="image/x-icon" href="IMG/Royal Braids logo.png" />
-		<script src="client-config.js" defer></script>
-		<script src="JS/apply-client-config.js" defer></script>
-		<script src="JS/theme-preset-preview.js" defer></script>
-		<script
-			src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"
-			defer
-		></script>
-		<script
-			src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"
-			defer
-		></script>
-		<script
-			src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"
-			defer
-		></script>
-		<script
-			src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"
-			defer
-		></script>
-		<script src="JS/admin.js" defer></script>
-		<script src="JS/register-sw.js" defer></script>
-	</head>
-	<body>
-		<section class="admin-bookings" id="admin">
-			<div class="container">
-				<div class="admin-bookings-header">
-					<div class="admin-console-heading">
-						<div class="section-subtitle">Admin Console</div>
-						<h1 class="section-title">
+"use client"
+
+import type { ReactNode } from "react"
+import type React from "react"
+
+export interface SalonAdminMarkupProps {
+	readonly homeHref: string
+}
+
+export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode {
+	return (
+		<>
+
+		<section className="admin-bookings" id="admin">
+			<div className="container">
+				<div className="admin-bookings-header">
+					<div className="admin-console-heading">
+						<div className="section-subtitle">Admin Console</div>
+						<h1 className="section-title">
 							Content, Bookings & Security Management
 						</h1>
 					</div>
-					<p class="section-desc">
+					<p className="section-desc">
 						Log in with your admin account to manage Bookings, Schedules,
 						Gallery, Blogs, Reviews, Messages, Waitlist, Services and Security
 						Alerts from one categorized control panel.
 					</p>
 					<br />
-					<p style="margin-top: 12px">
-						<a class="btn btn-outline" href="index.html" data-admin-home-link
+					<p style={{marginTop: "12px"}}>
+						<a className="btn btn-outline" href={homeHref + "#home"} data-admin-home-link
 							>← Back to Homepage</a
 						>
 					</p>
 				</div>
 
-				<div class="admin-auth-card">
-					<div class="admin-auth-actions">
-						<div class="admin-user-state" id="adminUserState">
+				<div className="admin-auth-card">
+					<div className="admin-auth-actions">
+						<div className="admin-user-state" id="adminUserState">
 							Not logged in
 						</div>
 						<button
-							class="btn btn-outline"
+							className="btn btn-outline"
 							id="adminLogoutBtn"
-							style="display: none"
+						 style={{display: "none"}}
 						>
 							Log Out
 						</button>
 					</div>
 
-					<form class="admin-auth-form" id="adminLoginForm">
-						<div class="form-group">
-							<label for="adminEmail">Admin Email</label>
+					<form className="admin-auth-form" id="adminLoginForm">
+						<div className="form-group">
+							<label htmlFor="adminEmail">Admin Email</label>
 							<input
 								type="email"
 								id="adminEmail"
@@ -87,9 +57,9 @@
 								required
 							/>
 						</div>
-						<div class="form-group">
-							<label for="adminPassword">Password</label>
-							<div class="admin-password-field">
+						<div className="form-group">
+							<label htmlFor="adminPassword">Password</label>
+							<div className="admin-password-field">
 								<input
 									type="password"
 									id="adminPassword"
@@ -99,46 +69,46 @@
 								<button
 									type="button"
 									id="adminPasswordToggle"
-									class="admin-password-toggle"
+									className="admin-password-toggle"
 									aria-label="Show password"
 									aria-pressed="false"
 								>
-									<i class="fa-solid fa-eye" aria-hidden="true"></i>
+									<i className="fa-solid fa-eye" aria-hidden="true"></i>
 								</button>
 							</div>
 						</div>
-						<button type="submit" class="btn btn-primary" id="adminLoginBtn">
+						<button type="submit" className="btn btn-primary" id="adminLoginBtn">
 							Log In
 						</button>
 					</form>
 
 					<div
-						class="form-message"
+						className="form-message"
 						id="adminAuthMessage"
-						style="display: none"
+					 style={{display: "none"}}
 					></div>
 					<button
 						type="button"
-						class="btn btn-outline admin-resend-verification"
+						className="btn btn-outline admin-resend-verification"
 						id="adminResendVerificationBtn"
-						style="display: none"
+					 style={{display: "none"}}
 					>
 						Resend Verification Email
 					</button>
-					<p class="admin-auth-tip">
+					<p className="admin-auth-tip">
 						Only authorized admin accounts can access this panel.
 					</p>
 				</div>
 
-				<div class="admin-panel" id="adminPanel">
+				<div className="admin-panel" id="adminPanel">
 					<div
-						class="admin-section-tabs"
+						className="admin-section-tabs"
 						role="tablist"
 						aria-label="Admin sections"
 					>
 						<button
 							type="button"
-							class="admin-section-tab active"
+							className="admin-section-tab active"
 							data-admin-section-tab="bookings"
 							role="tab"
 							aria-selected="true"
@@ -147,7 +117,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="waitlist"
 							role="tab"
 							aria-selected="false"
@@ -156,7 +126,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="schedule"
 							role="tab"
 							aria-selected="false"
@@ -165,7 +135,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="gallery"
 							role="tab"
 							aria-selected="false"
@@ -174,7 +144,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="blogs"
 							role="tab"
 							aria-selected="false"
@@ -183,7 +153,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="reviews"
 							role="tab"
 							aria-selected="false"
@@ -192,7 +162,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="messages"
 							role="tab"
 							aria-selected="false"
@@ -201,7 +171,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="services"
 							role="tab"
 							aria-selected="false"
@@ -210,7 +180,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="admins"
 							role="tab"
 							aria-selected="false"
@@ -219,7 +189,7 @@
 						</button>
 						<button
 							type="button"
-							class="admin-section-tab"
+							className="admin-section-tab"
 							data-admin-section-tab="security"
 							role="tab"
 							aria-selected="false"
@@ -229,50 +199,50 @@
 					</div>
 
 					<section
-						class="admin-management-section active"
+						className="admin-management-section active"
 						data-admin-section="bookings"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total</div>
 								<strong id="adminTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Pending</div>
+							<div className="admin-stat-card">
+								<div className="label">Pending</div>
 								<strong id="adminPendingCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Confirmed</div>
+							<div className="admin-stat-card">
+								<div className="label">Confirmed</div>
 								<strong id="adminConfirmedCount">0</strong>
 							</div>
-							<div class="admin-stat-card admin-stat-card-waitlisted">
-								<div class="label">Waitlisted</div>
+							<div className="admin-stat-card admin-stat-card-waitlisted">
+								<div className="label">Waitlisted</div>
 								<strong id="adminWaitlistedBookingCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Completed</div>
+							<div className="admin-stat-card">
+								<div className="label">Completed</div>
 								<strong id="adminCompletedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Cancelled</div>
+							<div className="admin-stat-card">
+								<div className="label">Cancelled</div>
 								<strong id="adminCancelledCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminActionMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 						<div
-							class="admin-booking-filter-controls"
+							className="admin-booking-filter-controls"
 							id="adminBookingFilterControls"
 							aria-label="Booking status filter"
 						>
 							<button
 								type="button"
-								class="admin-booking-filter-btn active"
+								className="admin-booking-filter-btn active"
 								data-booking-status-filter="all"
 								aria-pressed="true"
 							>
@@ -280,7 +250,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn"
+								className="admin-booking-filter-btn"
 								data-booking-status-filter="pending"
 								aria-pressed="false"
 							>
@@ -288,7 +258,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn"
+								className="admin-booking-filter-btn"
 								data-booking-status-filter="confirmed"
 								aria-pressed="false"
 							>
@@ -296,7 +266,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn"
+								className="admin-booking-filter-btn"
 								data-booking-status-filter="completed"
 								aria-pressed="false"
 							>
@@ -304,7 +274,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn"
+								className="admin-booking-filter-btn"
 								data-booking-status-filter="cancelled"
 								aria-pressed="false"
 							>
@@ -312,57 +282,57 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn waitlisted"
+								className="admin-booking-filter-btn waitlisted"
 								data-booking-status-filter="waitlisted"
 								aria-pressed="false"
 							>
 								Waitlisted Only
 							</button>
 						</div>
-						<div class="admin-bookings-list" id="adminBookingsList"></div>
+						<div className="admin-bookings-list" id="adminBookingsList"></div>
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="schedule"
 						role="tabpanel"
 					>
-						<div class="admin-schedule-wrap">
-							<div class="admin-schedule-toolbar">
-								<div class="admin-schedule-nav">
+						<div className="admin-schedule-wrap">
+							<div className="admin-schedule-toolbar">
+								<div className="admin-schedule-nav">
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										id="adminSchedulePrev"
 									>
-										<i class="fa-solid fa-chevron-left"></i>
+										<i className="fa-solid fa-chevron-left"></i>
 									</button>
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										id="adminScheduleToday"
 									>
 										Today
 									</button>
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										id="adminScheduleNext"
 									>
-										<i class="fa-solid fa-chevron-right"></i>
+										<i className="fa-solid fa-chevron-right"></i>
 									</button>
 								</div>
-								<div class="admin-schedule-range" id="adminScheduleRangeLabel">
+								<div className="admin-schedule-range" id="adminScheduleRangeLabel">
 									Schedule
 								</div>
 								<div
-									class="admin-schedule-view-toggle"
+									className="admin-schedule-view-toggle"
 									role="tablist"
 									aria-label="Schedule views"
 								>
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										data-schedule-view="day"
 										aria-pressed="false"
 									>
@@ -370,7 +340,7 @@
 									</button>
 									<button
 										type="button"
-										class="admin-action-btn active"
+										className="admin-action-btn active"
 										data-schedule-view="week"
 										aria-pressed="true"
 									>
@@ -379,26 +349,26 @@
 								</div>
 							</div>
 
-							<div class="admin-schedule-legend" aria-label="Status colors">
-								<span><i class="admin-status-dot pending"></i>Pending</span>
-								<span><i class="admin-status-dot confirmed"></i>Confirmed</span>
+							<div className="admin-schedule-legend" aria-label="Status colors">
+								<span><i className="admin-status-dot pending"></i>Pending</span>
+								<span><i className="admin-status-dot confirmed"></i>Confirmed</span>
 								<span
-									><i class="admin-status-dot waitlisted"></i>Waitlisted</span
+									><i className="admin-status-dot waitlisted"></i>Waitlisted</span
 								>
-								<span><i class="admin-status-dot completed"></i>Completed</span>
-								<span><i class="admin-status-dot cancelled"></i>Cancelled</span>
+								<span><i className="admin-status-dot completed"></i>Completed</span>
+								<span><i className="admin-status-dot cancelled"></i>Cancelled</span>
 							</div>
 
-							<div class="admin-schedule-grid" id="adminScheduleGrid"></div>
+							<div className="admin-schedule-grid" id="adminScheduleGrid"></div>
 
 							<div
-								class="form-message"
+								className="form-message"
 								id="adminScheduleMessage"
-								style="display: none"
+							 style={{display: "none"}}
 							></div>
 
-							<div class="admin-schedule-details" id="adminScheduleDetails">
-								<div class="admin-empty-state">
+							<div className="admin-schedule-details" id="adminScheduleDetails">
+								<div className="admin-empty-state">
 									Click a calendar event to view booking details and quick
 									actions.
 								</div>
@@ -407,36 +377,36 @@
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="blogs"
 						role="tabpanel"
 					>
-						<div class="admin-gallery-wrap admin-blogs-wrap">
+						<div className="admin-gallery-wrap admin-blogs-wrap">
 							<div
-								class="form-message"
+								className="form-message"
 								id="adminBlogsMessage"
-								style="display: none"
+							 style={{display: "none"}}
 							></div>
 
 							<form
-								class="admin-gallery-form admin-blogs-form"
+								className="admin-gallery-form admin-blogs-form"
 								id="adminBlogsForm"
 							>
 								<input type="hidden" id="blogEditId" />
-								<div class="admin-gallery-form-head">
+								<div className="admin-gallery-form-head">
 									<h3 id="adminBlogsFormTitle">Add New Blog</h3>
 									<button
 										type="button"
-										class="btn btn-outline"
+										className="btn btn-outline"
 										id="adminBlogsCancelEdit"
-										style="display: none"
+									 style={{display: "none"}}
 									>
 										Cancel Edit
 									</button>
 								</div>
-								<div class="admin-gallery-grid">
-									<div class="form-group full">
-										<label for="blogTitle">Blog Title *</label>
+								<div className="admin-gallery-grid">
+									<div className="form-group full">
+										<label htmlFor="blogTitle">Blog Title *</label>
 										<input
 											type="text"
 											id="blogTitle"
@@ -444,17 +414,17 @@
 											required
 										/>
 									</div>
-									<div class="form-group full">
-										<label for="blogExcerpt">Short Description *</label>
+									<div className="form-group full">
+										<label htmlFor="blogExcerpt">Short Description *</label>
 										<textarea
 											id="blogExcerpt"
-											rows="4"
+										rows={4}
 											placeholder="Summarize the blog in 1-2 sentences..."
 											required
 										></textarea>
 									</div>
-									<div class="form-group">
-										<label for="blogReadTime">Read Time *</label>
+									<div className="form-group">
+										<label htmlFor="blogReadTime">Read Time *</label>
 										<input
 											type="text"
 											id="blogReadTime"
@@ -462,12 +432,12 @@
 											required
 										/>
 									</div>
-									<div class="form-group">
-										<label for="blogDate">Publish Date *</label>
+									<div className="form-group">
+										<label htmlFor="blogDate">Publish Date *</label>
 										<input type="date" id="blogDate" required />
 									</div>
-									<div class="form-group full">
-										<label for="blogReadMoreUrl">Read More URL *</label>
+									<div className="form-group full">
+										<label htmlFor="blogReadMoreUrl">Read More URL *</label>
 										<input
 											type="url"
 											id="blogReadMoreUrl"
@@ -475,10 +445,10 @@
 											required
 										/>
 									</div>
-									<div class="form-group full">
-										<label for="blogImage">Blog Image *</label>
+									<div className="form-group full">
+										<label htmlFor="blogImage">Blog Image *</label>
 										<input type="file" id="blogImage" accept="image/*" />
-										<small class="admin-field-help"
+										<small className="admin-field-help"
 											>Image is required for new blog posts and optional while
 											editing.</small
 										>
@@ -486,19 +456,19 @@
 								</div>
 								<button
 									type="submit"
-									class="btn btn-primary"
+									className="btn btn-primary"
 									id="adminBlogsSaveBtn"
 								>
 									Save Blog
 								</button>
 							</form>
 
-							<div class="admin-gallery-list-wrap">
-								<div class="admin-gallery-list-head">
+							<div className="admin-gallery-list-wrap">
+								<div className="admin-gallery-list-head">
 									<h3>Existing Blogs</h3>
 									<a
-										class="btn btn-outline"
-										href="index.html#blog"
+										className="btn btn-outline"
+										href={homeHref + "#blog"}
 										target="_blank"
 										rel="noopener"
 									>
@@ -506,113 +476,113 @@
 									</a>
 								</div>
 								<div
-									class="admin-blog-scroll-controls"
+									className="admin-blog-scroll-controls"
 									id="adminBlogScrollControls"
 								>
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										id="adminBlogsPrevBtn"
 									>
-										<i class="fa-solid fa-arrow-left"></i> Prev
+										<i className="fa-solid fa-arrow-left"></i> Prev
 									</button>
 									<button
 										type="button"
-										class="admin-action-btn"
+										className="admin-action-btn"
 										id="adminBlogsNextBtn"
 									>
-										Next <i class="fa-solid fa-arrow-right"></i>
+										Next <i className="fa-solid fa-arrow-right"></i>
 									</button>
 								</div>
-								<div class="admin-blogs-list" id="adminBlogsList"></div>
+								<div className="admin-blogs-list" id="adminBlogsList"></div>
 							</div>
 						</div>
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="gallery"
 						role="tabpanel"
 					>
-						<div class="admin-gallery-wrap">
+						<div className="admin-gallery-wrap">
 							<div
-								class="form-message"
+								className="form-message"
 								id="adminGalleryMessage"
-								style="display: none"
+							 style={{display: "none"}}
 							></div>
 
-							<form class="admin-gallery-form" id="adminGalleryForm">
+							<form className="admin-gallery-form" id="adminGalleryForm">
 								<input type="hidden" id="galleryEditId" />
 								<div
-									class="admin-gallery-service-filters"
+									className="admin-gallery-service-filters"
 									id="adminGalleryServiceFilters"
 								>
 									<button
 										type="button"
-										class="gallery-filter-chip active"
+										className="gallery-filter-chip active"
 										data-admin-gallery-service="braids-services"
 									>
 										Braids
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="hair-services"
 									>
 										Hair
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="beauty-spa-services"
 									>
 										Beauty Spa
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="nail-services"
 									>
 										Nails
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="makeup-services"
 									>
 										Makeup
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="barber-services"
 									>
 										Barber
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="massage-wellness"
 									>
 										Massage
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="eyebrow-lash-services"
 									>
 										Eyebrows &amp; Lash
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="bridal-event-packages"
 									>
 										Bridal / Event Packages
 									</button>
 									<button
 										type="button"
-										class="gallery-filter-chip"
+										className="gallery-filter-chip"
 										data-admin-gallery-service="cosmetics-products"
 									>
 										Cosmetics
@@ -623,20 +593,20 @@
 									id="galleryServiceCategory"
 									value="braids-services"
 								/>
-								<div class="admin-gallery-form-head">
+								<div className="admin-gallery-form-head">
 									<h3 id="adminGalleryFormTitle">Add New Gallery Style</h3>
 									<button
 										type="button"
-										class="btn btn-outline"
+										className="btn btn-outline"
 										id="adminGalleryCancelEdit"
-										style="display: none"
+									 style={{display: "none"}}
 									>
 										Cancel Edit
 									</button>
 								</div>
-								<div class="admin-gallery-grid">
-									<div class="form-group">
-										<label for="galleryStyleName">Style Name *</label>
+								<div className="admin-gallery-grid">
+									<div className="form-group">
+										<label htmlFor="galleryStyleName">Style Name *</label>
 										<input
 											type="text"
 											id="galleryStyleName"
@@ -644,8 +614,8 @@
 											required
 										/>
 									</div>
-									<div class="form-group">
-										<label for="galleryStyleType">Style Type *</label>
+									<div className="form-group">
+										<label htmlFor="galleryStyleType">Style Type *</label>
 										<input
 											type="text"
 											id="galleryStyleType"
@@ -653,8 +623,8 @@
 											required
 										/>
 									</div>
-									<div class="form-group full" id="galleryServiceNameGroup">
-										<label for="galleryServiceName">Service Name *</label>
+									<div className="form-group full" id="galleryServiceNameGroup">
+										<label htmlFor="galleryServiceName">Service Name *</label>
 										<input
 											type="text"
 											id="galleryServiceName"
@@ -663,10 +633,10 @@
 										/>
 									</div>
 									<div
-										class="form-group admin-braids-field"
+										className="form-group admin-braids-field"
 										data-braids-only="true"
 									>
-										<label for="galleryLength">Length *</label>
+										<label htmlFor="galleryLength">Length *</label>
 										<select id="galleryLength" required>
 											<option value="">Select length</option>
 											<option value="Short">Short</option>
@@ -675,10 +645,10 @@
 										</select>
 									</div>
 									<div
-										class="form-group admin-braids-field"
+										className="form-group admin-braids-field"
 										data-braids-only="true"
 									>
-										<label for="gallerySize">Size *</label>
+										<label htmlFor="gallerySize">Size *</label>
 										<select id="gallerySize" required>
 											<option value="">Select size</option>
 											<option value="Small">Small</option>
@@ -686,8 +656,8 @@
 											<option value="Large">Large</option>
 										</select>
 									</div>
-									<div class="form-group" id="galleryTimeTakenGroup">
-										<label for="galleryTimeTaken">Time Taken *</label>
+									<div className="form-group" id="galleryTimeTakenGroup">
+										<label htmlFor="galleryTimeTaken">Time Taken *</label>
 										<input
 											type="text"
 											id="galleryTimeTaken"
@@ -695,56 +665,22 @@
 											required
 										/>
 									</div>
-									<div class="form-group" id="galleryPriceRangeGroup">
-										<label for="galleryPriceRange">Price Range</label>
+									<div className="form-group" id="galleryPriceRangeGroup">
+										<label htmlFor="galleryPriceRange">Price Range</label>
 										<input
 											type="text"
 											id="galleryPriceRange"
 											placeholder="e.g. KSh 4,000 - 6,000"
 										/>
 									</div>
+									<div className="form-group admin-cosmetics-field" data-cosmetics-only="true" style={{display: "none"}}><label htmlFor="galleryProductBrand">Brand / Collection</label><input type="text" id="galleryProductBrand" placeholder="e.g. Royal Roots" /></div>
+									<div className="form-group admin-cosmetics-field" data-cosmetics-only="true" style={{display: "none"}}><label htmlFor="galleryProductSize">Size / Volume</label><input type="text" id="galleryProductSize" placeholder="e.g. 250 ml" /></div>
+									<div className="form-group full admin-cosmetics-field" data-cosmetics-only="true" style={{display: "none"}}><label htmlFor="galleryProductDescription">Product details</label><textarea id="galleryProductDescription" rows={3} placeholder="Short benefits, ingredients, or ideal use."></textarea></div>
 									<div
-										class="form-group admin-cosmetics-field"
-										data-cosmetics-only="true"
-										style="display: none"
-									>
-										<label for="galleryProductBrand">Brand / Collection</label
-										><input
-											type="text"
-											id="galleryProductBrand"
-											placeholder="e.g. Royal Roots"
-										/>
-									</div>
-									<div
-										class="form-group admin-cosmetics-field"
-										data-cosmetics-only="true"
-										style="display: none"
-									>
-										<label for="galleryProductSize">Size / Volume</label
-										><input
-											type="text"
-											id="galleryProductSize"
-											placeholder="e.g. 250 ml"
-										/>
-									</div>
-									<div
-										class="form-group full admin-cosmetics-field"
-										data-cosmetics-only="true"
-										style="display: none"
-									>
-										<label for="galleryProductDescription"
-											>Product details</label
-										><textarea
-											id="galleryProductDescription"
-											rows="3"
-											placeholder="Short benefits, ingredients, or ideal use."
-										></textarea>
-									</div>
-									<div
-										class="form-group admin-braids-field"
+										className="form-group admin-braids-field"
 										data-braids-only="true"
 									>
-										<label for="galleryHairType">Hair Length/Type Used *</label>
+										<label htmlFor="galleryHairType">Hair Length/Type Used *</label>
 										<input
 											type="text"
 											id="galleryHairType"
@@ -753,11 +689,11 @@
 										/>
 									</div>
 									<div
-										class="form-group admin-hair-field"
+										className="form-group admin-hair-field"
 										data-hair-only="true"
-										style="display: none"
+									 style={{display: "none"}}
 									>
-										<label for="galleryHairServiceType"
+										<label htmlFor="galleryHairServiceType"
 											>Hair Service Type *</label
 										>
 										<select id="galleryHairServiceType">
@@ -777,11 +713,11 @@
 										</select>
 									</div>
 									<div
-										class="form-group admin-hair-field"
+										className="form-group admin-hair-field"
 										data-hair-only="true"
-										style="display: none"
+									 style={{display: "none"}}
 									>
-										<label for="galleryHairTechnique"
+										<label htmlFor="galleryHairTechnique"
 											>Technique / Finish *</label
 										>
 										<input
@@ -792,11 +728,11 @@
 										/>
 									</div>
 									<div
-										class="form-group admin-hair-field"
+										className="form-group admin-hair-field"
 										data-hair-only="true"
-										style="display: none"
+									 style={{display: "none"}}
 									>
-										<label for="galleryHairLengthDensity"
+										<label htmlFor="galleryHairLengthDensity"
 											>Client Hair Length/Volume</label
 										>
 										<input
@@ -806,11 +742,11 @@
 										/>
 									</div>
 									<div
-										class="form-group full admin-hair-field"
+										className="form-group full admin-hair-field"
 										data-hair-only="true"
-										style="display: none"
+									 style={{display: "none"}}
 									>
-										<label for="galleryHairProductsUsed"
+										<label htmlFor="galleryHairProductsUsed"
 											>Products / Color Mix Used</label
 										>
 										<input
@@ -819,8 +755,8 @@
 											placeholder="e.g. Ammonia-free color + keratin serum"
 										/>
 									</div>
-									<div class="form-group" id="galleryStylistNameGroup">
-										<label for="galleryStylistName">Stylist Name *</label>
+									<div className="form-group" id="galleryStylistNameGroup">
+										<label htmlFor="galleryStylistName">Stylist Name *</label>
 										<input
 											type="text"
 											id="galleryStylistName"
@@ -828,18 +764,18 @@
 											required
 										/>
 									</div>
-									<div class="form-group full">
-										<label for="galleryMainImage"
+									<div className="form-group full">
+										<label htmlFor="galleryMainImage"
 											>After (Final Style) Image *</label
 										>
 										<input type="file" id="galleryMainImage" accept="image/*" />
-										<small class="admin-field-help"
+										<small className="admin-field-help"
 											>This is the final/after result image. Required for new
 											entries; optional while editing.</small
 										>
 									</div>
-									<div class="form-group full" id="galleryBeforeImageGroup">
-										<label for="galleryBeforeImage"
+									<div className="form-group full" id="galleryBeforeImageGroup">
+										<label htmlFor="galleryBeforeImage"
 											>Before Image (Optional)</label
 										>
 										<input
@@ -848,7 +784,7 @@
 											accept="image/*"
 										/>
 									</div>
-									<div class="form-group full admin-checkbox-group">
+									<div className="form-group full admin-checkbox-group">
 										<label>
 											<input type="checkbox" id="galleryFeaturedTrending" />
 											<span id="galleryFeaturedTrendingLabel"
@@ -864,44 +800,44 @@
 									</div>
 								</div>
 
-								<div class="admin-gallery-helper-panel">
-									<div class="admin-gallery-live-preview">
+								<div className="admin-gallery-helper-panel">
+									<div className="admin-gallery-live-preview">
 										<h4>Live Preview</h4>
-										<div class="admin-gallery-preview-card">
-											<div class="admin-gallery-preview-media-wrap">
+										<div className="admin-gallery-preview-card">
+											<div className="admin-gallery-preview-media-wrap">
 												<img
 													id="adminGalleryPreviewImage"
-													class="admin-gallery-preview-media"
+													className="admin-gallery-preview-media"
 													alt="Gallery preview"
 													loading="lazy"
 													decoding="async"
-													style="display: none"
+												 style={{display: "none"}}
 												/>
 												<div
-													class="admin-gallery-preview-placeholder"
+													className="admin-gallery-preview-placeholder"
 													id="adminGalleryPreviewPlaceholder"
 												>
 													No image selected
 												</div>
 												<span
-													class="admin-gallery-badge"
+													className="admin-gallery-badge"
 													id="adminGalleryPreviewBeforeAfterBadge"
-													style="display: none"
+												 style={{display: "none"}}
 												>
 													Before & After
 												</span>
 											</div>
-											<div class="admin-gallery-preview-content">
+											<div className="admin-gallery-preview-content">
 												<h5 id="adminGalleryPreviewName">Style name preview</h5>
 												<p id="adminGalleryPreviewMeta">Type • Length • Size</p>
 												<p id="adminGalleryPreviewDetails">
 													Stylist: N/A • Time: N/A
 												</p>
 												<div
-													class="admin-gallery-preview-tags"
+													className="admin-gallery-preview-tags"
 													id="adminGalleryPreviewTags"
 												>
-													<span class="admin-gallery-preview-tag is-empty"
+													<span className="admin-gallery-preview-tag is-empty"
 														>No tags yet</span
 													>
 												</div>
@@ -909,102 +845,102 @@
 										</div>
 									</div>
 
-									<div class="admin-gallery-checklist">
+									<div className="admin-gallery-checklist">
 										<h4>Publish Checklist</h4>
-										<div class="admin-gallery-checklist-progress">
+										<div className="admin-gallery-checklist-progress">
 											<div
-												class="admin-gallery-checklist-progress-text"
+												className="admin-gallery-checklist-progress-text"
 												id="adminGalleryChecklistProgressText"
 											>
 												0/5 completed
 											</div>
-											<div class="admin-gallery-checklist-progress-track">
+											<div className="admin-gallery-checklist-progress-track">
 												<span
-													class="admin-gallery-checklist-progress-fill"
+													className="admin-gallery-checklist-progress-fill"
 													id="adminGalleryChecklistProgressFill"
 												></span>
 											</div>
 										</div>
 										<ul>
 											<li data-check="styleName">
-												<span class="check-dot"></span> Style name entered
+												<span className="check-dot"></span> Style name entered
 											</li>
 											<li data-check="styleType">
-												<span class="check-dot"></span> Style type entered
+												<span className="check-dot"></span> Style type entered
 											</li>
 											<li data-check="stylistName">
-												<span class="check-dot"></span> Stylist name entered
+												<span className="check-dot"></span> Stylist name entered
 											</li>
 											<li data-check="timeTaken">
-												<span class="check-dot"></span> Time taken entered
+												<span className="check-dot"></span> Time taken entered
 											</li>
 											<li data-check="mainImage">
-												<span class="check-dot"></span> Final image selected
+												<span className="check-dot"></span> Final image selected
 											</li>
 										</ul>
 									</div>
 								</div>
 								<button
 									type="submit"
-									class="btn btn-primary"
+									className="btn btn-primary"
 									id="adminGallerySaveBtn"
 								>
 									Save Gallery Style
 								</button>
 							</form>
 
-							<div class="admin-gallery-list-wrap">
-								<div class="admin-gallery-list-head">
+							<div className="admin-gallery-list-wrap">
+								<div className="admin-gallery-list-head">
 									<h3>Existing Gallery Styles</h3>
 									<a
-										class="btn btn-outline"
-										href="index.html#gallery"
+										className="btn btn-outline"
+										href={homeHref + "#gallery"}
 										target="_blank"
 										rel="noopener"
 									>
 										Open Live Gallery
 									</a>
 								</div>
-								<div class="admin-gallery-list" id="adminGalleryList"></div>
+								<div className="admin-gallery-list" id="adminGalleryList"></div>
 							</div>
 						</div>
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="reviews"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total</div>
 								<strong id="adminReviewsTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Pending</div>
+							<div className="admin-stat-card">
+								<div className="label">Pending</div>
 								<strong id="adminReviewsPendingCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Approved</div>
+							<div className="admin-stat-card">
+								<div className="label">Approved</div>
 								<strong id="adminReviewsApprovedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Rejected</div>
+							<div className="admin-stat-card">
+								<div className="label">Rejected</div>
 								<strong id="adminReviewsRejectedCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminReviewsMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
-						<div class="admin-review-list-head">
-							<label for="adminReviewsSortSelect">Sort Reviews:</label>
+						<div className="admin-review-list-head">
+							<label htmlFor="adminReviewsSortSelect">Sort Reviews:</label>
 							<select
 								id="adminReviewsSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="featured">Featured</option>
 								<option value="newest">Newest</option>
@@ -1013,13 +949,13 @@
 						</div>
 
 						<div
-							class="admin-booking-filter-controls admin-status-filter-controls"
+							className="admin-booking-filter-controls admin-status-filter-controls"
 							id="adminReviewStatusFilterControls"
 							aria-label="Review status filter"
 						>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-review-status-filter="pending"
 								aria-pressed="false"
 							>
@@ -1027,7 +963,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-review-status-filter="approved"
 								aria-pressed="false"
 							>
@@ -1035,7 +971,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-review-status-filter="rejected"
 								aria-pressed="false"
 							>
@@ -1043,23 +979,23 @@
 							</button>
 						</div>
 
-						<div class="admin-section-card" style="margin-bottom: 14px">
+						<div className="admin-section-card" style={{marginBottom: "14px"}}>
 							<h3>Basic Profanity / Content Check (Before Approval)</h3>
-							<p style="margin-bottom: 8px">
+							<p style={{marginBottom: "8px"}}>
 								Flagged terms are blocked from quick approval until edited.
 							</p>
-							<div class="form-group">
-								<label for="adminProfanityWords"
+							<div className="form-group">
+								<label htmlFor="adminProfanityWords"
 									>Blocked terms (comma-separated)</label
 								>
 								<textarea
 									id="adminProfanityWords"
-									rows="3"
+									rows={3}
 									placeholder="badword1,badword2"
 								></textarea>
 							</div>
 							<button
-								class="btn btn-outline"
+								className="btn btn-outline"
 								id="adminSaveProfanityList"
 								type="button"
 							>
@@ -1067,18 +1003,18 @@
 							</button>
 						</div>
 
-						<div class="admin-review-list" id="adminReviewsList"></div>
+						<div className="admin-review-list" id="adminReviewsList"></div>
 
-						<div class="admin-section-card-grid" style="margin-top: 14px">
-							<article class="admin-section-card">
+						<div className="admin-section-card-grid" style={{marginTop: "14px"}}>
+							<article className="admin-section-card">
 								<h3>Review Moderation Tips</h3>
 								<p>
 									Approve helpful reviews, reject spam/inappropriate feedback,
 									and feature standout testimonials.
 								</p>
 								<a
-									class="btn btn-outline"
-									href="index.html#testimonials"
+									className="btn btn-outline"
+										href={homeHref + "#testimonials"}
 									target="_blank"
 									rel="noopener"
 								>
@@ -1089,40 +1025,40 @@
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="messages"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total</div>
 								<strong id="adminMessagesTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">New</div>
+							<div className="admin-stat-card">
+								<div className="label">New</div>
 								<strong id="adminMessagesNewCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Read</div>
+							<div className="admin-stat-card">
+								<div className="label">Read</div>
 								<strong id="adminMessagesReadCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Resolved</div>
+							<div className="admin-stat-card">
+								<div className="label">Resolved</div>
 								<strong id="adminMessagesResolvedCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminContactMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
-						<div class="admin-review-list-head">
-							<label for="adminMessagesSortSelect">Sort Messages:</label>
+						<div className="admin-review-list-head">
+							<label htmlFor="adminMessagesSortSelect">Sort Messages:</label>
 							<select
 								id="adminMessagesSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="newest">Newely Added</option>
 								<option value="oldest">Old</option>
@@ -1135,13 +1071,13 @@
 						</div>
 
 						<div
-							class="admin-booking-filter-controls admin-status-filter-controls"
+							className="admin-booking-filter-controls admin-status-filter-controls"
 							id="adminContactStatusFilterControls"
 							aria-label="Message status filter"
 						>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-contact-status-filter="new"
 								aria-pressed="false"
 							>
@@ -1149,7 +1085,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-contact-status-filter="read"
 								aria-pressed="false"
 							>
@@ -1157,7 +1093,7 @@
 							</button>
 							<button
 								type="button"
-								class="admin-booking-filter-btn admin-status-filter-btn"
+								className="admin-booking-filter-btn admin-status-filter-btn"
 								data-contact-status-filter="resolved"
 								aria-pressed="false"
 							>
@@ -1165,48 +1101,48 @@
 							</button>
 						</div>
 
-						<div class="admin-review-list" id="adminContactList"></div>
+						<div className="admin-review-list" id="adminContactList"></div>
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="waitlist"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total</div>
 								<strong id="adminWaitlistTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Waiting</div>
+							<div className="admin-stat-card">
+								<div className="label">Waiting</div>
 								<strong id="adminWaitlistWaitingCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Contacted</div>
+							<div className="admin-stat-card">
+								<div className="label">Contacted</div>
 								<strong id="adminWaitlistContactedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Booked</div>
+							<div className="admin-stat-card">
+								<div className="label">Booked</div>
 								<strong id="adminWaitlistBookedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Cancelled</div>
+							<div className="admin-stat-card">
+								<div className="label">Cancelled</div>
 								<strong id="adminWaitlistCancelledCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminWaitlistMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
-						<div class="admin-review-list-head">
-							<label for="adminWaitlistSortSelect">Sort Waitlist:</label>
+						<div className="admin-review-list-head">
+							<label htmlFor="adminWaitlistSortSelect">Sort Waitlist:</label>
 							<select
 								id="adminWaitlistSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="newest">Newest first</option>
 								<option value="oldest">Oldest first</option>
@@ -1217,41 +1153,41 @@
 						</div>
 
 						<div
-							class="admin-review-list admin-waitlist-list"
+							className="admin-review-list admin-waitlist-list"
 							id="adminWaitlistList"
 						></div>
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="services"
 						role="tabpanel"
 					>
-						<div class="admin-section-card admin-services-settings-card">
+						<div className="admin-section-card admin-services-settings-card">
 							<h3>Service Category Visibility</h3>
 							<p>
 								Turn categories ON/OFF based on what this salon currently
 								offers. Changes apply live on the website and booking form.
 							</p>
 							<div
-								class="form-message"
+								className="form-message"
 								id="adminServicesMessage"
-								style="display: none"
+							 style={{display: "none"}}
 							></div>
 
 							<div
-								class="admin-service-settings-grid"
+								className="admin-service-settings-grid"
 								id="adminServiceCategoryToggles"
 							>
-								<div class="admin-empty-state">
+								<div className="admin-empty-state">
 									Loading category controls...
 								</div>
 							</div>
 
-							<div class="admin-booking-actions admin-services-save-actions">
+							<div className="admin-booking-actions admin-services-save-actions">
 								<button
 									type="button"
-									class="btn btn-primary"
+									className="btn btn-primary"
 									id="adminSaveServiceCategoriesBtn"
 								>
 									Save Category Settings
@@ -1261,88 +1197,88 @@
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="admins"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total Admins</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total Admins</div>
 								<strong id="adminAdminsTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Active</div>
+							<div className="admin-stat-card">
+								<div className="label">Active</div>
 								<strong id="adminAdminsActiveCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Super Admin</div>
+							<div className="admin-stat-card">
+								<div className="label">Super Admin</div>
 								<strong id="adminAdminsSuperCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Standard Admin</div>
+							<div className="admin-stat-card">
+								<div className="label">Standard Admin</div>
 								<strong id="adminAdminsStandardCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminAdminsMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
-						<div class="admin-gallery-wrap admin-admins-wrap">
-							<form class="admin-gallery-form" id="adminAdminsForm">
+						<div className="admin-gallery-wrap admin-admins-wrap">
+							<form className="admin-gallery-form" id="adminAdminsForm">
 								<input type="hidden" id="adminAdminEditUid" />
-								<div class="admin-gallery-form-head">
+								<div className="admin-gallery-form-head">
 									<h3 id="adminAdminsFormTitle">Create Admin Access</h3>
 									<button
 										type="button"
-										class="btn btn-outline"
+										className="btn btn-outline"
 										id="adminAdminsCancelEdit"
-										style="display: none"
+									 style={{display: "none"}}
 									>
 										Cancel Edit
 									</button>
 								</div>
 
-								<div class="admin-gallery-grid">
-									<div class="form-group full">
-										<label for="adminManageEmail">Admin Email *</label>
+								<div className="admin-gallery-grid">
+									<div className="form-group full">
+										<label htmlFor="adminManageEmail">Admin Email *</label>
 										<input
 											type="email"
 											id="adminManageEmail"
 											placeholder="admin@company.com"
 											required
 										/>
-										<small class="admin-field-help"
+										<small className="admin-field-help"
 											>Account must already exist in Firebase
 											Authentication.</small
 										>
 									</div>
-									<div class="form-group">
-										<label for="adminManageDisplayName">Display Name</label>
+									<div className="form-group">
+										<label htmlFor="adminManageDisplayName">Display Name</label>
 										<input
 											type="text"
 											id="adminManageDisplayName"
 											placeholder="e.g. Front Desk Manager"
 										/>
 									</div>
-									<div class="form-group">
-										<label for="adminManageRole">Role *</label>
+									<div className="form-group">
+										<label htmlFor="adminManageRole">Role *</label>
 										<select id="adminManageRole" required>
 											<option value="admin">Admin</option>
 											<option value="super_admin">Super Admin</option>
 										</select>
 									</div>
-									<div class="form-group full admin-checkbox-group">
+									<div className="form-group full admin-checkbox-group">
 										<label>
 											<input type="checkbox" id="adminManageActive" checked />
 											<span>Account Active</span>
 										</label>
 									</div>
-									<div class="form-group full">
+									<div className="form-group full">
 										<label>Permissions</label>
-										<div class="admin-checkbox-group">
+										<div className="admin-checkbox-group">
 											<label>
 												<input type="checkbox" id="adminPermManageAdmins" />
 												<span>Manage Admins</span>
@@ -1373,36 +1309,36 @@
 
 								<button
 									type="submit"
-									class="btn btn-primary"
+									className="btn btn-primary"
 									id="adminAdminsSaveBtn"
 								>
 									Create Admin
 								</button>
 							</form>
 
-							<div class="admin-gallery-list-wrap">
-								<div class="admin-gallery-list-head">
+							<div className="admin-gallery-list-wrap">
+								<div className="admin-gallery-list-head">
 									<h3>Existing Admin Access Records</h3>
 								</div>
-								<div class="admin-admins-toolbar" id="adminAdminsToolbar">
-									<div class="form-group">
-										<label for="adminAdminsSearchInput">Search Admins</label>
+								<div className="admin-admins-toolbar" id="adminAdminsToolbar">
+									<div className="form-group">
+										<label htmlFor="adminAdminsSearchInput">Search Admins</label>
 										<input
 											type="search"
 											id="adminAdminsSearchInput"
 											placeholder="Search by name, email, or UID"
 										/>
 									</div>
-									<div class="form-group">
-										<label for="adminAdminsRoleFilter">Role Filter</label>
+									<div className="form-group">
+										<label htmlFor="adminAdminsRoleFilter">Role Filter</label>
 										<select id="adminAdminsRoleFilter">
 											<option value="all">All Roles</option>
 											<option value="super_admin">Super Admin</option>
 											<option value="admin">Admin</option>
 										</select>
 									</div>
-									<div class="form-group">
-										<label for="adminAdminsStatusFilter">Status Filter</label>
+									<div className="form-group">
+										<label htmlFor="adminAdminsStatusFilter">Status Filter</label>
 										<select id="adminAdminsStatusFilter">
 											<option value="all">All Statuses</option>
 											<option value="active">Active</option>
@@ -1410,8 +1346,8 @@
 										</select>
 									</div>
 								</div>
-								<div class="admin-gallery-list" id="adminAdminsList">
-									<div class="admin-empty-state">
+								<div className="admin-gallery-list" id="adminAdminsList">
+									<div className="admin-empty-state">
 										No admin records loaded yet.
 									</div>
 								</div>
@@ -1420,165 +1356,165 @@
 					</section>
 
 					<section
-						class="admin-management-section"
+						className="admin-management-section"
 						data-admin-section="security"
 						role="tabpanel"
 					>
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Total Logins</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Total Logins</div>
 								<strong id="adminSecurityTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Success</div>
+							<div className="admin-stat-card">
+								<div className="label">Success</div>
 								<strong id="adminSecuritySuccessCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Failed</div>
+							<div className="admin-stat-card">
+								<div className="label">Failed</div>
 								<strong id="adminSecurityFailedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Suspicious</div>
+							<div className="admin-stat-card">
+								<div className="label">Suspicious</div>
 								<strong id="adminSecuritySuspiciousCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Locked Accounts</div>
+							<div className="admin-stat-card">
+								<div className="label">Locked Accounts</div>
 								<strong id="adminSecurityLockedCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Repeated Wrong Passwords</div>
+							<div className="admin-stat-card">
+								<div className="label">Repeated Wrong Passwords</div>
 								<strong id="adminSecurityRepeatedWrongCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">High Risk Logins</div>
+							<div className="admin-stat-card">
+								<div className="label">High Risk Logins</div>
 								<strong id="adminSecurityHighRiskCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Online Users</div>
+							<div className="admin-stat-card">
+								<div className="label">Online Users</div>
 								<strong id="adminSessionsOnlineUsersCount">0</strong>
 							</div>
 						</div>
 
-						<div class="admin-stats">
+						<div className="admin-stats">
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="total-logins-today"
 							>
-								<div class="label">Total Logins Today</div>
+								<div className="label">Total Logins Today</div>
 								<strong id="adminSecurityWidgetTotalLoginsToday">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="active-users-now"
 							>
-								<div class="label">Active Users Now</div>
+								<div className="label">Active Users Now</div>
 								<strong id="adminSecurityWidgetActiveUsersNow">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="failed-login-attempts"
 							>
-								<div class="label">Failed Login Attempts</div>
+								<div className="label">Failed Login Attempts</div>
 								<strong id="adminSecurityWidgetFailedLoginAttempts">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="new-registrations"
 							>
-								<div class="label">New Registrations</div>
+								<div className="label">New Registrations</div>
 								<strong id="adminSecurityWidgetNewRegistrations">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="returning-customers"
 							>
-								<div class="label">Returning Customers</div>
+								<div className="label">Returning Customers</div>
 								<strong id="adminSecurityWidgetReturningCustomers">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="anonymous-users"
 							>
-								<div class="label">Anonymous Users Count</div>
+								<div className="label">Anonymous Users Count</div>
 								<strong id="adminSecurityWidgetAnonymousUsers">0</strong>
 							</div>
 							<div
-								class="admin-stat-card"
+								className="admin-stat-card"
 								data-security-widget="google-signins"
 							>
-								<div class="label">Google Sign-in Count</div>
+								<div className="label">Google Sign-in Count</div>
 								<strong id="adminSecurityWidgetGoogleSignIns">0</strong>
 							</div>
-							<div class="admin-stat-card" data-security-widget="email-signins">
-								<div class="label">Email Sign-in Count</div>
+							<div className="admin-stat-card" data-security-widget="email-signins">
+								<div className="label">Email Sign-in Count</div>
 								<strong id="adminSecurityWidgetEmailSignIns">0</strong>
 							</div>
 						</div>
 
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">Online Sessions</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">Online Sessions</div>
 								<strong id="adminSessionsOnlineCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Multi-Device Users</div>
+							<div className="admin-stat-card">
+								<div className="label">Multi-Device Users</div>
 								<strong id="adminSessionsMultiDeviceCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Security Alerts</div>
+							<div className="admin-stat-card">
+								<div className="label">Security Alerts</div>
 								<strong id="adminSecurityAlertsTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Open Alerts</div>
+							<div className="admin-stat-card">
+								<div className="label">Open Alerts</div>
 								<strong id="adminSecurityAlertsOpenCount">0</strong>
 							</div>
 						</div>
 
-						<div class="admin-stats">
-							<div class="admin-stat-card">
-								<div class="label">High Severity Alerts</div>
+						<div className="admin-stats">
+							<div className="admin-stat-card">
+								<div className="label">High Severity Alerts</div>
 								<strong id="adminSecurityAlertsHighCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Account Changes</div>
+							<div className="admin-stat-card">
+								<div className="label">Account Changes</div>
 								<strong id="adminAccountHistoryTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Tracked Sessions</div>
+							<div className="admin-stat-card">
+								<div className="label">Tracked Sessions</div>
 								<strong id="adminSessionsTotalCount">0</strong>
 							</div>
-							<div class="admin-stat-card">
-								<div class="label">Timeline Events</div>
+							<div className="admin-stat-card">
+								<div className="label">Timeline Events</div>
 								<strong id="adminTimelineTotalCount">0</strong>
 							</div>
 						</div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminSecurityMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
 						<div
-							class="form-message"
+							className="form-message"
 							id="adminSecurityEventsMessage"
-							style="display: none"
+						 style={{display: "none"}}
 						></div>
 
-						<p class="admin-security-privacy-note">
+						<p className="admin-security-privacy-note">
 							Privacy note: this view shows only security-relevant metadata
 							(masked IP, city/country, device/browser, status). No passwords,
 							exact IPs, or exact GPS are stored.
 						</p>
 						<br />
 
-						<div class="admin-security-controls">
-							<div class="admin-review-list-head admin-security-controls-row">
-								<div class="admin-security-field-group">
-									<label for="adminSecuritySortSelect">Sort Activity:</label>
+						<div className="admin-security-controls">
+							<div className="admin-review-list-head admin-security-controls-row">
+								<div className="admin-security-field-group">
+									<label htmlFor="adminSecuritySortSelect">Sort Activity:</label>
 									<select
 										id="adminSecuritySortSelect"
-										class="admin-review-sort-select"
+										className="admin-review-sort-select"
 									>
 										<option value="newest">Newest</option>
 										<option value="oldest">Oldest</option>
@@ -1587,13 +1523,13 @@
 									</select>
 								</div>
 
-								<div class="admin-security-field-group">
-									<label for="adminSecurityProviderFilterSelect"
+								<div className="admin-security-field-group">
+									<label htmlFor="adminSecurityProviderFilterSelect"
 										>Sign-in Provider:</label
 									>
 									<select
 										id="adminSecurityProviderFilterSelect"
-										class="admin-review-sort-select"
+										className="admin-review-sort-select"
 									>
 										<option value="all">All Providers</option>
 										<option value="google">Google</option>
@@ -1604,11 +1540,11 @@
 								</div>
 							</div>
 
-							<div class="admin-review-list-head admin-security-controls-row">
-								<label for="adminSecurityRiskFilterSelect">Risk Filter:</label>
+							<div className="admin-review-list-head admin-security-controls-row">
+								<label htmlFor="adminSecurityRiskFilterSelect">Risk Filter:</label>
 								<select
 									id="adminSecurityRiskFilterSelect"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								>
 									<option value="all">All Risks</option>
 									<option value="high">High</option>
@@ -1616,31 +1552,31 @@
 									<option value="low">Low</option>
 								</select>
 
-								<label for="adminSecurityDateFilter">Date:</label>
+								<label htmlFor="adminSecurityDateFilter">Date:</label>
 								<input
 									type="date"
 									id="adminSecurityDateFilter"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								/>
 
-								<label for="adminSecurityDateFromFilter">From:</label>
+								<label htmlFor="adminSecurityDateFromFilter">From:</label>
 								<input
 									type="date"
 									id="adminSecurityDateFromFilter"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								/>
 
-								<label for="adminSecurityDateToFilter">To:</label>
+								<label htmlFor="adminSecurityDateToFilter">To:</label>
 								<input
 									type="date"
 									id="adminSecurityDateToFilter"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								/>
 
-								<label for="adminSecurityDeviceFilterSelect">Device:</label>
+								<label htmlFor="adminSecurityDeviceFilterSelect">Device:</label>
 								<select
 									id="adminSecurityDeviceFilterSelect"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								>
 									<option value="all">All Devices</option>
 									<option value="desktop">Desktop</option>
@@ -1649,30 +1585,30 @@
 									<option value="unknown">Unknown</option>
 								</select>
 
-								<label for="adminSecurityUserFilterSelect">User:</label>
+								<label htmlFor="adminSecurityUserFilterSelect">User:</label>
 								<select
 									id="adminSecurityUserFilterSelect"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								>
 									<option value="all">All Users</option>
 									<option value="known-user">Known Users</option>
 									<option value="anonymous">Anonymous</option>
 								</select>
 
-								<label for="adminSecurityCountryFilterInput">Country:</label>
+								<label htmlFor="adminSecurityCountryFilterInput">Country:</label>
 								<input
 									type="text"
 									id="adminSecurityCountryFilterInput"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 									placeholder="e.g. Kenya"
 								/>
 
-								<label for="adminSecurityStatusFilterSelect"
+								<label htmlFor="adminSecurityStatusFilterSelect"
 									>Login Status:</label
 								>
 								<select
 									id="adminSecurityStatusFilterSelect"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 								>
 									<option value="all">All Statuses</option>
 									<option value="success">Successful Logins</option>
@@ -1680,31 +1616,31 @@
 								</select>
 							</div>
 
-							<div class="admin-review-list-head admin-security-controls-row">
-								<label for="adminSecuritySearchInput">Search:</label>
+							<div className="admin-review-list-head admin-security-controls-row">
+								<label htmlFor="adminSecuritySearchInput">Search:</label>
 								<input
 									type="search"
 									id="adminSecuritySearchInput"
-									class="admin-review-sort-select"
+									className="admin-review-sort-select"
 									placeholder="Email, Username, or Booking ID"
 								/>
 								<button
 									type="button"
-									class="btn btn-outline"
+									className="btn btn-outline"
 									id="adminSecurityExportCsvBtn"
 								>
 									Export CSV
 								</button>
 								<button
 									type="button"
-									class="btn btn-outline"
+									className="btn btn-outline"
 									id="adminSecurityExportExcelBtn"
 								>
 									Export Excel
 								</button>
 								<button
 									type="button"
-									class="btn btn-outline"
+									className="btn btn-outline"
 									id="adminSecurityClearFiltersBtn"
 								>
 									Clear All Filters
@@ -1714,25 +1650,25 @@
 
 						<div
 							id="adminSecurityRiskFilterBadge"
-							class="admin-security-privacy-note"
-							style="margin: 8px 0 10px; display: none"
+							className="admin-security-privacy-note"
+						 style={{margin: "8px 0 10px", display: "none"}}
 						></div>
 
 						<div
-							class="admin-security-table-wrap"
+							className="admin-security-table-wrap"
 							id="adminSecurityActivityList"
 						>
-							<div class="admin-empty-state">
+							<div className="admin-empty-state">
 								No login activity yet. Activity appears here once users attempt
 								sign-in.
 							</div>
 						</div>
 
-						<div class="admin-review-list-head" style="margin-top: 18px">
-							<label for="adminSessionsSortSelect">Sort Sessions:</label>
+						<div className="admin-review-list-head" style={{marginTop: "18px"}}>
+							<label htmlFor="adminSessionsSortSelect">Sort Sessions:</label>
 							<select
 								id="adminSessionsSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="online-first">Online First</option>
 								<option value="last-active-newest">Last Active (Newest)</option>
@@ -1741,18 +1677,18 @@
 							</select>
 						</div>
 
-						<div class="admin-security-table-wrap" id="adminSessionsList">
-							<div class="admin-empty-state">
+						<div className="admin-security-table-wrap" id="adminSessionsList">
+							<div className="admin-empty-state">
 								No active session data yet. User sessions will appear here in
 								realtime.
 							</div>
 						</div>
 
-						<div class="admin-review-list-head" style="margin-top: 18px">
-							<label for="adminSecurityAlertsSortSelect">Sort Alerts:</label>
+						<div className="admin-review-list-head" style={{marginTop: "18px"}}>
+							<label htmlFor="adminSecurityAlertsSortSelect">Sort Alerts:</label>
 							<select
 								id="adminSecurityAlertsSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="newest">Newest</option>
 								<option value="oldest">Oldest</option>
@@ -1761,19 +1697,19 @@
 							</select>
 						</div>
 
-						<div class="admin-security-table-wrap" id="adminSecurityAlertsList">
-							<div class="admin-empty-state">
+						<div className="admin-security-table-wrap" id="adminSecurityAlertsList">
+							<div className="admin-empty-state">
 								No security alerts yet. Alerts will appear here in realtime.
 							</div>
 						</div>
 
-						<div class="admin-review-list-head" style="margin-top: 18px">
-							<label for="adminAccountHistorySortSelect"
+						<div className="admin-review-list-head" style={{marginTop: "18px"}}>
+							<label htmlFor="adminAccountHistorySortSelect"
 								>Sort Account Changes:</label
 							>
 							<select
 								id="adminAccountHistorySortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="newest">Newest</option>
 								<option value="oldest">Oldest</option>
@@ -1782,18 +1718,18 @@
 							</select>
 						</div>
 
-						<div class="admin-security-table-wrap" id="adminAccountHistoryList">
-							<div class="admin-empty-state">
+						<div className="admin-security-table-wrap" id="adminAccountHistoryList">
+							<div className="admin-empty-state">
 								No account change history yet. Entries will appear here in
 								realtime.
 							</div>
 						</div>
 
-						<div class="admin-review-list-head" style="margin-top: 18px">
-							<label for="adminTimelineSortSelect">Sort Timeline:</label>
+						<div className="admin-review-list-head" style={{marginTop: "18px"}}>
+							<label htmlFor="adminTimelineSortSelect">Sort Timeline:</label>
 							<select
 								id="adminTimelineSortSelect"
-								class="admin-review-sort-select"
+								className="admin-review-sort-select"
 							>
 								<option value="newest">Newest</option>
 								<option value="oldest">Oldest</option>
@@ -1803,8 +1739,8 @@
 							</select>
 						</div>
 
-						<div class="admin-security-table-wrap" id="adminTimelineList">
-							<div class="admin-empty-state">
+						<div className="admin-security-table-wrap" id="adminTimelineList">
+							<div className="admin-empty-state">
 								No booking/action timeline events yet. User behavior events will
 								appear here in realtime.
 							</div>
@@ -1814,38 +1750,30 @@
 			</div>
 		</section>
 
-		<div class="admin-confirm-modal" id="adminConfirmModal" aria-hidden="true">
+		<div className="admin-confirm-modal" id="adminConfirmModal" aria-hidden="true">
 			<div
-				class="admin-confirm-dialog"
+				className="admin-confirm-dialog"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="adminConfirmTitle"
 			>
-				<button
-					type="button"
-					class="admin-confirm-close"
-					id="adminConfirmClose"
-					aria-label="Close confirmation dialog"
-				>
-					<span aria-hidden="true">&times;</span>
-				</button>
 				<h3 id="adminConfirmTitle">Confirm Action</h3>
 				<p id="adminConfirmMessage">Are you sure you want to continue?</p>
-				<div class="admin-confirm-actions">
-					<button type="button" class="btn btn-outline" id="adminConfirmCancel">
+				<div className="admin-confirm-actions">
+					<button type="button" className="btn btn-outline" id="adminConfirmCancel">
 						Cancel
 					</button>
-					<button type="button" class="btn btn-primary" id="adminConfirmOk">
+					<button type="button" className="btn btn-primary" id="adminConfirmOk">
 						Confirm
 					</button>
 				</div>
 			</div>
 		</div>
 
-		<!-- ========== BACK TO TOP ========== -->
+		
 		<a
 			href="#admin"
-			class="back-to-top"
+			className="back-to-top"
 			id="backToTop"
 			aria-label="Back to top"
 		>
@@ -1855,12 +1783,15 @@
 				viewBox="0 0 24 24"
 				fill="none"
 				stroke="currentColor"
-				stroke-width="2.5"
-				stroke-linecap="round"
-				stroke-linejoin="round"
+				strokeWidth="2.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
 			>
 				<polyline points="18 15 12 9 6 15"></polyline>
 			</svg>
 		</a>
-	</body>
-</html>
+	
+		</>
+	)
+}
+

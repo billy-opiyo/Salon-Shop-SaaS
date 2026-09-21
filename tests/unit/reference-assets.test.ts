@@ -3,21 +3,20 @@ import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
 const projectRoot = resolve(import.meta.dirname, "../..")
-const scriptPath = resolve(
+const catalogPath = resolve(
 	projectRoot,
-	"frontend/public/reference/JS/script.js",
+	"frontend/components/tenant/SalonCatalog.tsx",
 )
 const publicRoot = resolve(projectRoot, "frontend/public")
 
-describe("reference asset contract", () => {
-	it("contains only existing absolute fallback gallery image paths", () => {
-		const script = readFileSync(scriptPath, "utf8")
+	describe("native storefront asset contract", () => {
+	it("contains only existing native salon asset paths", () => {
+		const catalog = readFileSync(catalogPath, "utf8")
 		const paths = [
-			...script.matchAll(/(?:imageUrl|beforeImageUrl):\s*"([^"]+)"/g),
-		].map((match) => match[1])
+			...catalog.matchAll(/\/assets\/salon\/[^"']+/g),
+		].map((match) => match[0])
 		expect(paths.length).toBeGreaterThan(0)
-		for (const assetPath of paths) {
-			expect(assetPath).toMatch(/^\/reference\/IMG\/.+/)
+		for (const assetPath of new Set(paths)) {
 			expect(existsSync(resolve(publicRoot, assetPath.slice(1)))).toBe(true)
 		}
 	})

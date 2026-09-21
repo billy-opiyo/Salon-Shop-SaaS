@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import "../styles/not-found.css"
 
 export const metadata: Metadata = {
 	title: "Beauty Sphia",

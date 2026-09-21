@@ -10,4 +10,4 @@ Suggested filenames:
 
 These assets are served from `/platform/<filename>`.
 
-Keep Royal Braids storefront assets in `../reference/IMG`.
+Keep Royal Braids storefront assets in `../assets/salon`.

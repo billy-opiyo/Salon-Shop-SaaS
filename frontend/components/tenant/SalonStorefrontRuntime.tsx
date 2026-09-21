@@ -4,28 +4,69 @@ import { useEffect } from "react"
 import { signIn, signOut } from "next-auth/react"
 
 import { registerAccount } from "@/app/signup/actions"
+import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
+import type {
+	SalonBlogItem,
+	SalonGalleryItem,
+	SalonReviewItem,
+	SalonServiceItem,
+} from "@/components/tenant/SalonCatalog"
+import {
+	SalonBlogs,
+	SalonGallery,
+	SalonServices,
+	SalonServiceOptions,
+	SalonTestimonials,
+} from "@/components/tenant/SalonCatalog"
 
-export interface ReferenceSalonRuntimeProps {
-	readonly markup: string
-	readonly bodyClassName: string
-	readonly headStyles?: readonly string[]
+export interface SalonClientConfig {
+	readonly client?: { readonly name?: string }
+	readonly brand?: {
+		readonly businessName?: string
+		readonly shortNameHtml?: string
+		readonly logoSrc?: string
+		readonly logoAlt?: string
+		readonly heroImage?: string
+		readonly heroImageAlt?: string
+		readonly heroSubtitle?: string
+		readonly heroTitleHtml?: string
+		readonly heroDescription?: string
+		readonly footerLogoHtml?: string
+		readonly footerDescription?: string
+		readonly copyright?: string
+		readonly craftedBy?: string
+		readonly favicon?: string
+	}
+	readonly appearance?: {
+		readonly mode?: string
+		readonly preset?: string
+	}
+	readonly seo?: {
+		readonly title?: string
+		readonly description?: string
+		readonly keywords?: string
+		readonly ogTitle?: string
+		readonly ogImage?: string
+	}
+	readonly contact?: Record<string, string | undefined>
+	readonly social?: Record<string, string | undefined>
+	readonly catalog?: {
+		readonly services?: readonly SalonServiceItem[]
+		readonly gallery?: readonly SalonGalleryItem[]
+		readonly testimonials?: readonly SalonReviewItem[]
+		readonly blogs?: readonly SalonBlogItem[]
+	}
+}
+
+export interface SalonStorefrontRuntimeProps {
 	readonly tenantSlug?: string
 	readonly turnstileSiteKey?: string
-	readonly clientConfig: Readonly<Record<string, unknown>>
-	readonly loadSalonRuntime?: boolean
-	readonly runtimeKind?: "salon" | "admin" | "none"
+	readonly clientConfig: SalonClientConfig
 }
 
 declare global {
 	interface Window {
-		APP_CONFIG?: Record<string, unknown>
 		CLIENT_CONFIG?: Record<string, unknown>
-		__referenceSalonRuntimeLoaded?: boolean
-		royalBraidsSplash?: {
-			complete: () => void
-			reveal: () => void
-			destroy: () => void
-		}
 		turnstile?: {
 			render: (
 				element: HTMLElement,
@@ -39,48 +80,6 @@ declare global {
 			remove: (widgetId: string) => void
 		}
 	}
-}
-
-const REFERENCE_SCRIPTS = [
-	"/reference/JS/apply-client-config.js",
-	"/reference/JS/theme-preset-preview.js",
-	"/reference/JS/script.js?v=20260531-waitlist-joined-feedback-mobile-time-picker-fix",
-] as const
-
-/**
- * Classic scripts must run exactly once per page load: they declare top-level
- * `const`/`let` bindings (e.g. `lightboxPriceRange` inside script.js), so
- * executing the same file twice in the global scope throws
- * "Identifier 'X' has already been declared". The reference runtime effect can
- * legitimately run more than once (React StrictMode in dev, cross-tenant
- * navigation), so we memoize the load promise at module scope rather than
- * relying on the DOM node existing (which the unmount cleanup removes).
- */
-const referenceScriptLoadPromises = new Map<string, Promise<void>>()
-
-function loadClassicScript(source: string): Promise<void> {
-	const cached = referenceScriptLoadPromises.get(source)
-	if (cached) return cached
-
-	const promise = new Promise<void>((resolve, reject) => {
-		const selector = 'script[data-reference-src="' + source + '"]'
-		if (document.querySelector(selector)) {
-			resolve()
-			return
-		}
-
-		const script = document.createElement("script")
-		script.src = source
-		script.async = false
-		script.dataset.referenceSrc = source
-		script.onload = () => resolve()
-		script.onerror = () =>
-			reject(new Error("Reference script failed to load: " + source))
-		document.head.appendChild(script)
-	})
-
-	referenceScriptLoadPromises.set(source, promise)
-	return promise
 }
 
 type AdminSnapshotRecord = Record<string, unknown>
@@ -244,7 +243,7 @@ function formatAdminSnapshotValue(value: unknown): string {
 	return JSON.stringify(value)
 }
 
-function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
+export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	const loginForm = document.getElementById("adminLoginForm")
 	const panel = document.getElementById("adminPanel")
 	const confirmationModal = document.getElementById("adminConfirmModal")
@@ -759,7 +758,7 @@ function getMobileActionIconSvg(
 }
 
 function addTenantNavigationLinks(tenantSlug: string): () => void {
-	const root = document.querySelector<HTMLElement>(".reference-salon-root")
+	const root = document.querySelector<HTMLElement>(".salon-storefront-root")
 	if (!root) return () => undefined
 	const actionBar = document.createElement("nav")
 	actionBar.className = "saas-tenant-mobile-actions"
@@ -2199,168 +2198,749 @@ function bindBookingAdapter(
 	}
 }
 
-export function ReferenceSalonRuntime({
-	markup,
-	bodyClassName,
-	headStyles,
+function readConfigValue(config: SalonClientConfig, path: string): unknown {
+	return path.split(".").reduce<unknown>((value, key) => {
+		if (typeof value !== "object" || value === null || !(key in value)) {
+			return undefined
+		}
+		return (value as Record<string, unknown>)[key]
+	}, config)
+}
+
+function sanitizeInlineMarkup(value: unknown): string {
+	if (typeof value !== "string") return ""
+	const escaped = value
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#039;")
+	return escaped.replace(
+		/&lt;(\/?)(br\s*\/?)&gt;/gi,
+		(_, closing: string) => `<${closing}br />`,
+	)
+}
+
+function applyNativeClientConfig(config: SalonClientConfig): void {
+	document.querySelectorAll<HTMLElement>("[data-client-text]").forEach((element) => {
+		const path = element.dataset.clientText
+		const value = path ? readConfigValue(config, path) : undefined
+		if (value !== undefined && value !== null) element.textContent = String(value)
+	})
+	document.querySelectorAll<HTMLElement>("[data-client-html]").forEach((element) => {
+		const path = element.dataset.clientHtml
+		const value = path ? readConfigValue(config, path) : undefined
+		if (value !== undefined && value !== null) {
+			element.innerHTML = sanitizeInlineMarkup(value)
+		}
+	})
+	document.querySelectorAll<HTMLElement>("[data-client-attr]").forEach((element) => {
+		const bindings = (element.dataset.clientAttr ?? "")
+			.split(";")
+			.map((binding) => binding.trim())
+			.filter(Boolean)
+		for (const binding of bindings) {
+			const [attribute, path] = binding.split(":").map((part) => part.trim())
+			if (!attribute || !path) continue
+			const value = readConfigValue(config, path)
+			if (value !== undefined && value !== null && value !== "") {
+				element.setAttribute(attribute, String(value))
+			}
+		}
+	})
+
+	const appearance = config.appearance ?? {}
+	const mode = appearance.mode === "light" ? "light" : "dark"
+	document.documentElement.classList.toggle("light-mode", mode === "light")
+	document.documentElement.dataset.colorMode = mode
+	document.documentElement.style.colorScheme = mode
+	document.body.classList.toggle("light-mode", mode === "light")
+	document.body.dataset.colorMode = mode
+	if (appearance.preset) {
+		document.documentElement.dataset.themePreset = appearance.preset
+		document.body.dataset.themePreset = appearance.preset
+	}
+
+	const seo = config.seo ?? {}
+	if (seo.title) document.title = seo.title
+	for (const [name, value] of [
+		["description", seo.description],
+		["keywords", seo.keywords],
+	] as const) {
+		if (!value) continue
+		let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
+		if (!meta) {
+			meta = document.createElement("meta")
+			meta.name = name
+			document.head.append(meta)
+		}
+		meta.content = value
+	}
+	for (const [property, value] of [
+		["og:title", seo.ogTitle],
+		["og:image", seo.ogImage],
+	] as const) {
+		if (!value) continue
+		let meta = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)
+		if (!meta) {
+			meta = document.createElement("meta")
+			meta.setAttribute("property", property)
+			document.head.append(meta)
+		}
+		meta.content = value
+	}
+	const favicon = config.brand?.favicon
+	if (favicon) document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.setAttribute("href", favicon)
+	const year = document.getElementById("footerYearFallback")
+	if (year) year.textContent = String(new Date().getFullYear())
+}
+
+function initializeNativeSplash(): () => void {
+	const splash = document.getElementById("siteSplash")
+	const siteMain = document.getElementById("siteMain")
+	if (!(splash instanceof HTMLElement)) return () => undefined
+
+	const originalBodyClassName = document.body.className
+	const duration = Math.max(0, Number(splash.dataset.splashDuration) || 3200)
+	const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+	const effectiveDuration = reducedMotion ? 700 : duration
+	let frame = 0
+	let completed = false
+	let revealTimer = 0
+	const progress = splash.querySelector<HTMLElement>(".splash-progress")
+	const fill = document.getElementById("splashProgressFill")
+	const percent = document.getElementById("splashProgressPercent")
+	const start = performance.now()
+	document.body.classList.add("splash-active")
+	document.body.classList.remove("splash-complete")
+	siteMain?.setAttribute("aria-hidden", "true")
+
+	const tick = (now: number): void => {
+		const ratio = Math.min(1, (now - start) / Math.max(1, effectiveDuration))
+		const value = Math.max(1, Math.round(1 + ratio * 99))
+		if (fill) fill.style.width = value + "%"
+		if (percent) percent.textContent = value + "%"
+		progress?.setAttribute("aria-valuenow", String(value))
+		if (ratio < 1) frame = window.requestAnimationFrame(tick)
+	}
+	frame = window.requestAnimationFrame(tick)
+
+	const complete = (): void => {
+		if (completed) return
+		completed = true
+		if (frame) window.cancelAnimationFrame(frame)
+		if (fill) fill.style.width = "100%"
+		if (percent) percent.textContent = "100%"
+		splash.classList.add("splash-hide")
+		splash.hidden = true
+		splash.setAttribute("aria-hidden", "true")
+		document.body.classList.remove("splash-active", "splash-revealing")
+		document.body.classList.add("splash-complete")
+		siteMain?.removeAttribute("aria-hidden")
+	}
+	revealTimer = window.setTimeout(complete, effectiveDuration)
+
+	return () => {
+		if (frame) window.cancelAnimationFrame(frame)
+		if (revealTimer) window.clearTimeout(revealTimer)
+		document.body.className = originalBodyClassName
+	}
+}
+
+function setModalState(id: string, open: boolean): void {
+	const modal = document.getElementById(id)
+	if (!modal) return
+	modal.classList.toggle("active", open)
+	modal.setAttribute("aria-hidden", String(!open))
+	if (id === "authModal" || id === "manageAccountModal" || id === "lightbox") {
+		document.body.style.overflow = open ? "hidden" : ""
+	}
+}
+
+type NativeGalleryFilter = "service" | "subService" | "length" | "size" | "styleType" | "technique"
+
+function nativeGalleryDate(value: string | undefined): number {
+	if (!value) return 0
+	const parsed = Date.parse(value)
+	return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function bindNativeGalleryControls(
+	galleryItems: readonly SalonGalleryItem[],
+): () => void {
+	const grid = document.getElementById("galleryGrid")
+	if (!grid) return () => undefined
+
+	const cards = Array.from(grid.querySelectorAll<HTMLElement>(".gallery-item"))
+	const filters: Record<NativeGalleryFilter, string> = {
+		service: "all",
+		subService: "all",
+		length: "all",
+		size: "all",
+		styleType: "all",
+		technique: "all",
+	}
+	let sortBy = "recommended"
+	let showAll = false
+	const listeners: Array<() => void> = []
+	const add = <T extends EventTarget>(
+		target: T | null,
+		type: string,
+		listener: EventListener,
+	): void => {
+		if (!target) return
+		target.addEventListener(type, listener)
+		listeners.push(() => target.removeEventListener(type, listener))
+	}
+
+	const valueFor = (card: HTMLElement, group: NativeGalleryFilter): string => {
+		const values: Record<NativeGalleryFilter, string> = {
+			service: card.dataset.galleryService ?? "",
+			subService: card.dataset.gallerySubService ?? "",
+			length: card.dataset.galleryLength ?? "",
+			size: card.dataset.gallerySize ?? "",
+			styleType: card.dataset.galleryStyleType ?? "",
+			technique: card.dataset.galleryTechnique ?? "",
+		}
+		return values[group]
+	}
+	const labelFor = (group: NativeGalleryFilter): string => ({
+		service: "Services",
+		subService: "Services",
+		length: "Lengths",
+		size: "Sizes",
+		styleType: "Style Types",
+		technique: "Techniques / Finishes",
+	})[group]
+
+	const setChipState = (group: NativeGalleryFilter, value: string): void => {
+		document.querySelectorAll<HTMLElement>(`[data-filter-group="${group}"]`).forEach((chip) => {
+			chip.classList.toggle("active", chip.dataset.filterValue === value)
+		})
+	}
+	const renderGroup = (
+		mountId: string,
+		group: NativeGalleryFilter,
+		values: readonly string[],
+	): void => {
+		const mount = document.getElementById(mountId)
+		if (!mount) return
+		mount.replaceChildren()
+		if (!values.length) {
+			mount.style.display = "none"
+			filters[group] = "all"
+			return
+		}
+		mount.style.display = "flex"
+		const title = document.createElement("span")
+		title.className = "sr-only"
+		title.textContent = labelFor(group)
+		mount.appendChild(title)
+		const allValues = ["all", ...values]
+		for (const value of allValues) {
+			const chip = document.createElement("button")
+			chip.type = "button"
+			chip.className = "gallery-filter-chip"
+			chip.dataset.filterGroup = group
+			chip.dataset.filterValue = value
+			chip.textContent = value === "all" ? `All ${labelFor(group)}` : value
+			mount.appendChild(chip)
+			add(chip, "click", () => {
+				filters[group] = value
+				setChipState(group, value)
+				apply()
+			})
+		}
+		setChipState(group, filters[group])
+	}
+
+	const renderSubfilters = (): void => {
+		const service = filters.service
+		const configs: readonly [string, NativeGalleryFilter][] =
+			service === "braids-services"
+				? [["galleryLengthFilters", "length"], ["gallerySizeFilters", "size"], ["galleryStyleTypeFilters", "styleType"]]
+			: service === "hair-services"
+				? [["galleryLengthFilters", "subService"], ["gallerySizeFilters", "technique"], ["galleryStyleTypeFilters", "styleType"]]
+				: service === "all"
+					? []
+					: [["galleryLengthFilters", "subService"], ["galleryStyleTypeFilters", "styleType"]]
+		const configured = new Set(configs.map(([, group]) => group))
+		for (const [mountId, group] of [["galleryLengthFilters", "length"], ["gallerySizeFilters", "size"], ["galleryStyleTypeFilters", "styleType"]] as const) {
+			if (!configured.has(group)) renderGroup(mountId, group, [])
+		}
+		for (const [mountId, group] of configs) {
+			const values = [...new Set(cards
+				.filter((card) => service === "all" || valueFor(card, "service") === service)
+				.map((card) => valueFor(card, group).trim())
+				.filter(Boolean))].sort((a, b) => a.localeCompare(b))
+			renderGroup(mountId, group, values)
+		}
+		const note = document.getElementById("galleryBraidsOnlyNote")
+		if (note) note.style.display = configs.length ? "block" : "none"
+	}
+
+	const score = (card: HTMLElement): number =>
+		(card.dataset.featuredTrending === "true" ? 2 : 0) +
+		(card.dataset.featuredMostBooked === "true" ? 2 : 0)
+	const compare = (a: HTMLElement, b: HTMLElement): number => {
+		if (sortBy === "name-asc" || sortBy === "name-desc") {
+			const result = (a.querySelector("h4")?.textContent ?? "").localeCompare(b.querySelector("h4")?.textContent ?? "")
+			return sortBy === "name-desc" ? -result : result
+		}
+		if (sortBy === "date-modified-desc" || sortBy === "new") return nativeGalleryDate(b.dataset.galleryUpdatedAt) - nativeGalleryDate(a.dataset.galleryUpdatedAt)
+		if (sortBy === "date-modified-asc" || sortBy === "old") return nativeGalleryDate(a.dataset.galleryUpdatedAt) - nativeGalleryDate(b.dataset.galleryUpdatedAt)
+		if (sortBy === "date-created-desc") return nativeGalleryDate(b.dataset.galleryCreatedAt) - nativeGalleryDate(a.dataset.galleryCreatedAt)
+		if (sortBy === "date-created-asc") return nativeGalleryDate(a.dataset.galleryCreatedAt) - nativeGalleryDate(b.dataset.galleryCreatedAt)
+		const scoreDiff = score(b) - score(a)
+		return scoreDiff || nativeGalleryDate(b.dataset.galleryUpdatedAt) - nativeGalleryDate(a.dataset.galleryUpdatedAt)
+	}
+
+	const updateFeatured = (): void => {
+		for (const [id, property, label] of [
+			["trendingBraidsList", "featuredTrending", "Trending Styles"],
+			["mostBookedStylesList", "featuredMostBooked", "Most Booked Styles"],
+		] as const) {
+			const list = document.getElementById(id)
+			if (!list) continue
+			list.replaceChildren()
+			const selected = galleryItems.filter((item) =>
+				Boolean(item[property]) && (filters.service === "all" || item.serviceCategory === filters.service),
+			)
+			if (!selected.length) {
+				const empty = document.createElement("span")
+				empty.className = "gallery-feature-empty"
+				empty.textContent = `No ${label.toLowerCase()} yet.`
+				list.appendChild(empty)
+				continue
+			}
+			for (const item of selected.slice(0, 6)) {
+				const button = document.createElement("button")
+				button.type = "button"
+				button.className = "gallery-feature-pill"
+				button.textContent = item.styleName
+				add(button, "click", () => {
+					const card = cards.find((candidate) => candidate.dataset.galleryId === (item.id ?? item.styleName))
+					card?.click()
+				})
+				list.appendChild(button)
+			}
+		}
+	}
+
+	const apply = (): void => {
+		const matches = cards.filter((card) =>
+			(Object.entries(filters) as [NativeGalleryFilter, string][]).every(([group, value]) => value === "all" || valueFor(card, group) === value),
+		)
+		matches.sort(compare).forEach((card) => grid.appendChild(card))
+		cards.forEach((card) => {
+			const visible = matches.includes(card) && (showAll || matches.indexOf(card) < 8)
+			card.style.display = visible ? "" : "none"
+			if (visible) card.style.animationDelay = `${Math.max(0, matches.indexOf(card)) * 0.1}s`
+		})
+		const empty = document.getElementById("galleryEmptyState")
+		if (empty) empty.style.display = matches.length ? "none" : "block"
+		const actions = document.getElementById("galleryActions")
+		if (actions) actions.style.display = matches.length > 8 ? "block" : "none"
+		const button = document.getElementById("viewAllGallery")
+		if (button) button.textContent = showAll ? "View Less Gallery" : "View All Gallery"
+		updateFeatured()
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-filter-group="service"]').forEach((chip) => add(chip, "click", () => {
+		filters.service = chip.dataset.filterValue ?? "all"
+		for (const group of ["subService", "length", "size", "styleType", "technique"] as const) filters[group] = "all"
+		setChipState("service", filters.service)
+		renderSubfilters()
+		apply()
+	}))
+	const sortSelect = document.getElementById("gallerySortSelect")
+	add(sortSelect, "change", () => {
+		if (sortSelect instanceof HTMLSelectElement) sortBy = sortSelect.value || "recommended"
+		apply()
+	})
+	add(document.getElementById("viewAllGallery"), "click", () => {
+		showAll = !showAll
+		apply()
+	})
+	renderSubfilters()
+	apply()
+	return () => listeners.forEach((remove) => remove())
+}
+
+function bindNativeContentControls(): () => void {
+	const cleanup: Array<() => void> = []
+	const add = <T extends EventTarget>(target: T | null, type: string, listener: EventListener): void => {
+		if (!target) return
+		target.addEventListener(type, listener)
+		cleanup.push(() => target.removeEventListener(type, listener))
+	}
+
+	const reviewGrid = document.getElementById("testimonialsGrid")
+	if (reviewGrid) {
+		const reviewCards = Array.from(reviewGrid.querySelectorAll<HTMLElement>(".testimonial-card"))
+		let showAllReviews = false
+		let reviewSort = "featured"
+		const applyReviews = (): void => {
+			const sorted = [...reviewCards].sort((a, b) => {
+				if (reviewSort === "highest-rated") return Number(b.dataset.reviewRating ?? 0) - Number(a.dataset.reviewRating ?? 0)
+				if (reviewSort === "newest") return Date.parse(b.dataset.reviewCreatedAt ?? "") - Date.parse(a.dataset.reviewCreatedAt ?? "")
+				return Number(b.dataset.reviewRating ?? 0) - Number(a.dataset.reviewRating ?? 0)
+			})
+			sorted.forEach((card) => reviewGrid.appendChild(card))
+			reviewCards.forEach((card, index) => {
+				card.style.display = showAllReviews || index < 6 ? "" : "none"
+			})
+			const viewAll = document.getElementById("viewAllReviewsBtn")
+			const viewLess = document.getElementById("viewLessReviewsBtn")
+			const controls = document.getElementById("reviewsToggleControls")
+			if (controls) controls.style.display = reviewCards.length > 6 ? "flex" : "none"
+			viewAll?.classList.toggle("hidden", showAllReviews || reviewCards.length <= 6)
+			viewLess?.classList.toggle("hidden", !showAllReviews || reviewCards.length <= 6)
+		}
+		const reviewSortSelect = document.getElementById("reviewsSortSelect")
+		add(reviewSortSelect, "change", () => {
+			if (reviewSortSelect instanceof HTMLSelectElement) reviewSort = reviewSortSelect.value || "featured"
+			applyReviews()
+		})
+		add(document.getElementById("viewAllReviewsBtn"), "click", () => {
+			showAllReviews = true
+			applyReviews()
+		})
+		add(document.getElementById("viewLessReviewsBtn"), "click", () => {
+			showAllReviews = false
+			applyReviews()
+		})
+		applyReviews()
+	}
+
+	const blogGrid = document.getElementById("blogGrid")
+	if (blogGrid) {
+		const blogCards = Array.from(blogGrid.querySelectorAll<HTMLElement>(".blog-card"))
+		let showAllBlogs = false
+		const applyBlogs = (): void => {
+			blogCards.forEach((card, index) => {
+				card.style.display = showAllBlogs || index < 3 ? "" : "none"
+			})
+			const viewAll = document.getElementById("viewAllBlogsBtn")
+			const viewLess = document.getElementById("viewLessBlogsBtn")
+			const controls = document.getElementById("blogToggleControls")
+			if (controls) controls.style.display = blogCards.length > 3 ? "flex" : "none"
+			viewAll?.classList.toggle("hidden", showAllBlogs || blogCards.length <= 3)
+			viewLess?.classList.toggle("hidden", !showAllBlogs || blogCards.length <= 3)
+		}
+		add(document.getElementById("viewAllBlogsBtn"), "click", () => {
+			showAllBlogs = true
+			applyBlogs()
+		})
+		add(document.getElementById("viewLessBlogsBtn"), "click", () => {
+			showAllBlogs = false
+			applyBlogs()
+		})
+		add(document.getElementById("blogPrevBtn"), "click", () => blogGrid.scrollBy({ left: -blogGrid.clientWidth, behavior: "smooth" }))
+		add(document.getElementById("blogNextBtn"), "click", () => blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" }))
+		applyBlogs()
+	}
+
+	const animationTimers: number[] = []
+	const animateCounters = (): void => {
+		document.querySelectorAll<HTMLElement>("[data-count]").forEach((element) => {
+			const target = Number(element.dataset.count ?? 0)
+			if (!Number.isFinite(target)) return
+			const start = performance.now()
+			const tick = (now: number): void => {
+				const ratio = Math.min(1, (now - start) / 1200)
+				element.textContent = String(Math.round(target * ratio))
+				if (ratio < 1) animationTimers.push(window.requestAnimationFrame(tick))
+			}
+			animationTimers.push(window.requestAnimationFrame(tick))
+		})
+	}
+	const counterObserver = "IntersectionObserver" in window
+		? new IntersectionObserver((entries, observer) => {
+			if (!entries.some((entry) => entry.isIntersecting)) return
+			animateCounters()
+			observer.disconnect()
+		}, { threshold: 0.2 })
+		: null
+	const counters = document.querySelectorAll<HTMLElement>("[data-count]")
+	if (counterObserver && counters.length) {
+		counters.forEach((counter) => counterObserver.observe(counter))
+	} else if (counters.length) {
+		animateCounters()
+	}
+	if (counterObserver) cleanup.push(() => counterObserver.disconnect())
+
+	const slideshowTimers: number[] = []
+	document.querySelectorAll<HTMLElement>(".gallery-slideshow").forEach((slideshow) => {
+		const timer = window.setInterval(() => slideshow.classList.toggle("is-showing-after"), 4000)
+		slideshowTimers.push(timer)
+	})
+	cleanup.push(() => {
+		animationTimers.forEach((frame) => window.cancelAnimationFrame(frame))
+		slideshowTimers.forEach((timer) => window.clearInterval(timer))
+	})
+	return () => cleanup.forEach((remove) => remove())
+}
+
+function bindNativeSalonInteractions(
+	galleryItems: readonly SalonGalleryItem[],
+): () => void {
+	const cleanup: Array<() => void> = []
+	const add = <T extends EventTarget>(target: T | null, type: string, listener: EventListener): void => {
+		if (!target) return
+		target.addEventListener(type, listener)
+		cleanup.push(() => target.removeEventListener(type, listener))
+	}
+
+	const navToggle = document.getElementById("navToggle")
+	const nav = document.getElementById("nav")
+	const toggleNav = (): void => {
+		navToggle?.classList.toggle("active")
+		nav?.classList.toggle("active")
+		document.body.style.overflow = nav?.classList.contains("active") ? "hidden" : ""
+	}
+	add(navToggle, "click", toggleNav)
+	nav?.querySelectorAll("a").forEach((link) =>
+		add(link, "click", () => {
+			navToggle?.classList.remove("active")
+			nav.classList.remove("active")
+			document.body.style.overflow = ""
+		}),
+	)
+
+	const darkModeToggle = document.getElementById("darkModeToggle")
+	const applyThemeToggle = (): void => {
+		const isDark = !document.documentElement.classList.contains("light-mode")
+		document.documentElement.classList.toggle("light-mode", !isDark)
+		document.body.classList.toggle("light-mode", !isDark)
+		document.documentElement.style.colorScheme = isDark ? "light" : "dark"
+		document.body.style.colorScheme = isDark ? "light" : "dark"
+		darkModeToggle?.classList.toggle("active", isDark)
+		darkModeToggle?.setAttribute("aria-pressed", String(isDark))
+		try {
+			localStorage.setItem("theme", isDark ? "light" : "dark")
+		} catch {
+			// Theme remains active for the current page when storage is unavailable.
+		}
+	}
+	add(darkModeToggle, "click", applyThemeToggle)
+
+	const openAuth = (): void => setModalState("authModal", true)
+	add(document.getElementById("openAuthModalBtn"), "click", openAuth)
+	add(document.getElementById("closeAuthModalBtn"), "click", () => setModalState("authModal", false))
+	add(document.getElementById("authModalBackdrop"), "click", () => setModalState("authModal", false))
+	add(document.getElementById("dashboardAuthBtn"), "click", openAuth)
+	add(document.getElementById("reviewAuthHintBtn"), "click", openAuth)
+	add(document.getElementById("reviewSubmitAuthGateBtn"), "click", openAuth)
+
+	const selectService = (serviceName: string): void => {
+		const serviceSelect = document.getElementById("serviceSelect")
+		if (serviceSelect instanceof HTMLSelectElement) {
+			serviceSelect.value = serviceName
+			serviceSelect.dispatchEvent(new Event("change", { bubbles: true }))
+		}
+		document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })
+	}
+	const openWhatsApp = (serviceName: string, price: string): void => {
+		const value = window.CLIENT_CONFIG?.social
+		const base = typeof value === "object" && value !== null && "whatsapp" in value && typeof value.whatsapp === "string"
+			? value.whatsapp
+			: "https://wa.me/254740470381"
+		const separator = base.includes("?") ? "&" : "?"
+		window.open(base + separator + "text=" + encodeURIComponent(`Hello, I would like to ${serviceName}. ${price}`), "_blank", "noopener,noreferrer")
+	}
+
+	const root = document.querySelector<HTMLElement>(".salon-storefront-root")
+	let activeGalleryIndex = -1
+	const openGalleryItem = (index: number): void => {
+		const gallery = galleryItems[index]
+		if (!gallery) return
+		activeGalleryIndex = index
+		const image = document.getElementById("lightboxImg") as HTMLImageElement | null
+		const beforeAfter = document.getElementById("lightboxBeforeAfter")
+		const before = document.getElementById("lightboxBeforeImg") as HTMLImageElement | null
+		const after = document.getElementById("lightboxAfterImg") as HTMLImageElement | null
+		if (image) {
+			image.src = gallery.imageUrl
+			image.alt = gallery.styleName
+		}
+		const details: Record<string, string | undefined> = {
+			lightboxStyleName: gallery.styleName,
+			lightboxStyleType: gallery.styleType ?? "Salon style",
+			lightboxTimeTaken: gallery.timeTaken,
+			lightboxPriceRange: gallery.priceRange,
+			lightboxLength: gallery.length,
+			lightboxSize: gallery.size,
+			lightboxHairType: gallery.hairType,
+			lightboxStylist: gallery.stylistName,
+		}
+		for (const [id, value] of Object.entries(details)) {
+			const element = document.getElementById(id)
+			if (element) element.textContent = value || "-"
+		}
+		const favorite = document.getElementById("lightboxFavoriteBtn")
+		favorite?.setAttribute("data-fav-style-id", gallery.id ?? "")
+		const whatsapp = document.getElementById("lightboxWhatsAppBtn")
+		if (whatsapp instanceof HTMLElement) {
+			whatsapp.dataset.whatsappService = gallery.serviceName ?? gallery.styleName
+			whatsapp.dataset.whatsappPrice = gallery.priceRange ?? ""
+		}
+		if (gallery.beforeImageUrl && beforeAfter && before && after) {
+			beforeAfter.style.display = "grid"
+			before.src = gallery.beforeImageUrl
+			after.src = gallery.imageUrl
+			if (image) image.style.display = "none"
+		} else {
+			if (beforeAfter) beforeAfter.style.display = "none"
+			if (image) image.style.display = "block"
+		}
+		setModalState("lightbox", true)
+	}
+	add(root, "click", (event) => {
+		const target = event.target
+		if (!(target instanceof Element)) return
+		const bookButton = target.closest<HTMLElement>(".service-book-btn")
+		if (bookButton?.dataset.serviceName) {
+			if (bookButton.dataset.orderOnly === "true") {
+				openWhatsApp(bookButton.dataset.serviceName, "")
+			} else {
+				selectService(bookButton.dataset.serviceName)
+			}
+			return
+		}
+		const whatsappButton = target.closest<HTMLElement>(".service-whatsapp-btn")
+		if (whatsappButton?.dataset.whatsappService) {
+			openWhatsApp(whatsappButton.dataset.whatsappService, whatsappButton.dataset.whatsappPrice ?? "")
+			return
+		}
+		const item = target.closest<HTMLElement>(".gallery-item")
+		if (item?.dataset.galleryIndex) {
+			if (target.closest(".gallery-save-favorite-btn")) return
+			openGalleryItem(Number(item.dataset.galleryIndex))
+		}
+	})
+	const openAdjacentGalleryItem = (direction: number): void => {
+		const visibleIndexes = Array.from(document.querySelectorAll<HTMLElement>("#galleryGrid .gallery-item"))
+			.filter((card) => card.style.display !== "none")
+			.map((card) => Number(card.dataset.galleryIndex))
+		const currentPosition = Math.max(0, visibleIndexes.indexOf(activeGalleryIndex))
+		const nextIndex = visibleIndexes[(currentPosition + direction + visibleIndexes.length) % visibleIndexes.length]
+		if (Number.isInteger(nextIndex)) openGalleryItem(nextIndex)
+	}
+	add(document.getElementById("lightboxPrev"), "click", () => openAdjacentGalleryItem(-1))
+	add(document.getElementById("lightboxNext"), "click", () => openAdjacentGalleryItem(1))
+	add(document.getElementById("lightboxBookNow"), "click", () => {
+		const gallery = galleryItems[activeGalleryIndex]
+		if (gallery?.serviceName) selectService(gallery.serviceName)
+	})
+	add(document.getElementById("lightboxWhatsAppBtn"), "click", () => {
+		const gallery = galleryItems[activeGalleryIndex]
+		if (gallery) openWhatsApp(gallery.serviceName ?? gallery.styleName, gallery.priceRange ?? "")
+	})
+
+	const filterServices = (filter: string): void => {
+		document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) => {
+			tab.classList.toggle("active", tab.dataset.filter === filter)
+		})
+		document.querySelectorAll<HTMLElement>(".services-category-group").forEach((group) => {
+			group.style.display = filter === "all" || group.dataset.category === filter ? "" : "none"
+		})
+	}
+	document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) =>
+		add(tab, "click", () => filterServices(tab.dataset.filter ?? "all")),
+	)
+
+	const closeLightbox = (): void => setModalState("lightbox", false)
+	add(document.getElementById("lightboxClose"), "click", closeLightbox)
+	add(document.getElementById("lightbox"), "click", (event) => {
+		if (event.target === document.getElementById("lightbox")) closeLightbox()
+	})
+	add(document, "keydown", (event) => {
+		if (event instanceof KeyboardEvent && event.key === "Escape") {
+			setModalState("lightbox", false)
+			setModalState("authModal", false)
+		}
+	})
+
+	const handleResetBooking = (): void => {
+		const form = document.getElementById("bookingForm")
+		const success = document.getElementById("bookingSuccess")
+		if (form instanceof HTMLElement) form.style.display = ""
+		if (success instanceof HTMLElement) success.style.display = "none"
+		if (form instanceof HTMLFormElement) form.reset()
+	}
+	add(root, "click", (event) => {
+		const target = event.target
+		if (target instanceof Element && target.closest('[data-action="reset-booking"]')) handleResetBooking()
+	})
+
+	const observer = "IntersectionObserver" in window
+		? new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("visible")), { threshold: 0.1, rootMargin: "0px 0px -50px 0px" })
+		: null
+	root?.querySelectorAll(".animate-on-scroll").forEach((element) => observer?.observe(element))
+	if (observer) cleanup.push(() => observer.disconnect())
+
+	return () => {
+		cleanup.forEach((remove) => remove())
+		document.body.style.overflow = ""
+	}
+}
+
+export function SalonStorefrontRuntime({
 	tenantSlug,
 	turnstileSiteKey,
 	clientConfig,
-	loadSalonRuntime,
-	runtimeKind,
-}: ReferenceSalonRuntimeProps) {
+}: SalonStorefrontRuntimeProps) {
 	useEffect(() => {
-		window.CLIENT_CONFIG = { ...clientConfig }
-		window.APP_CONFIG = { ...(window.APP_CONFIG ?? {}), firebase: {} }
-
-		const originalBodyClassName = document.body.className
-		bodyClassName
-			.split(/\s+/)
-			.map((className) => className.trim())
-			.filter(Boolean)
-			// The reference markup ships with the legacy splash controller body
-			// state. Inside the Next.js runtime the splash overlay is suppressed,
-			// so we drop the "hidden" tokens and force "complete" so the salon
-			// storefront shell is visible immediately on load.
-			.filter(
-				(className) =>
-					className !== "splash-active" && className !== "splash-revealing",
-			)
-			.forEach((className) => document.body.classList.add(className))
-		document.body.classList.add("splash-complete")
-
-		// The reference markup still contains the splash overlay markup. It is
-		// never revealed (splash.js is not loaded), but hide it defensively so it
-		// can never cover the store, and release its background image eagerly.
-		const injectedSplash = document.getElementById("siteSplash")
-		if (injectedSplash) {
-			injectedSplash.hidden = true
-			injectedSplash.classList.add("splash-hide")
-			injectedSplash.setAttribute("aria-hidden", "true")
-		}
-		document.body.classList.remove("store-transitioning")
-
-		const activeRuntime =
-			runtimeKind ?? (loadSalonRuntime === false ? "none" : "salon")
-		if (activeRuntime === "none")
-			return () => {
-				document.body.className = originalBodyClassName
-			}
-
-		if (window.__referenceSalonRuntimeLoaded) {
-			return () => {
-				document.body.className = originalBodyClassName
-			}
-		}
-
-		window.__referenceSalonRuntimeLoaded = true
-		let removeBookingAdapter: () => void = () => undefined
-		let removePublicParityAdapters: () => void = () => undefined
-		let removeAccountMutationAdapter: () => void = () => undefined
-		let removeTenantNavigationLinks: () => void = () => undefined
-		let isDisposed = false
-
-		const runtimeScripts =
-			activeRuntime === "admin"
-				? [
-						"/reference/JS/apply-client-config.js",
-						"/reference/JS/theme-preset-preview.js",
-					]
-				: REFERENCE_SCRIPTS
-
-		void runtimeScripts
-			.reduce(
-				(chain, source) => chain.then(() => loadClassicScript(source)),
-				Promise.resolve(),
-			)
-			.then(() => {
-				if (isDisposed) return
-				if (activeRuntime === "salon") {
-					const removeBooking = bindBookingAdapter(
-						tenantSlug ?? "",
-						turnstileSiteKey ?? "",
-					)
-					const removeAuth = bindAuthAdapter(
-						tenantSlug ?? "",
-						turnstileSiteKey ?? "",
-					)
-					removeBookingAdapter = () => {
-						removeBooking()
-						removeAuth()
-					}
-					removePublicParityAdapters = bindPublicParityAdapters(
-						tenantSlug ?? "",
-						turnstileSiteKey ?? "",
-					)
-					removeAccountMutationAdapter = bindAccountMutationAdapter()
-					removeTenantNavigationLinks = addTenantNavigationLinks(
-						tenantSlug ?? "",
-					)
-				} else if (activeRuntime === "admin") {
-					removeAccountMutationAdapter = bindAdminSnapshotAdapter(
-						tenantSlug ?? "",
-					)
-				}
-			})
-			.catch((error: unknown) => {
-				console.error("Reference salon runtime failed to initialize.", error)
-			})
-
+		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
+		applyNativeClientConfig(clientConfig)
+		const removeSplash = initializeNativeSplash()
+		const gallery = clientConfig.catalog?.gallery ?? []
+		const removeInteractions = bindNativeSalonInteractions(gallery)
+		const removeGalleryControls = bindNativeGalleryControls(gallery)
+		const removeContentControls = bindNativeContentControls()
+		const removeBooking = bindBookingAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
+		const removeAuth = bindAuthAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
+		const removePublic = bindPublicParityAdapters(tenantSlug ?? "", turnstileSiteKey ?? "")
+		const removeAccount = bindAccountMutationAdapter()
+		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
 		return () => {
-			isDisposed = true
-			window.royalBraidsSplash?.destroy()
-			window.royalBraidsSplash = undefined
-			window.__referenceSalonRuntimeLoaded = false
-			removeBookingAdapter()
-			removePublicParityAdapters()
-			removeAccountMutationAdapter()
-			removeTenantNavigationLinks()
-			document.body.className = originalBodyClassName
+			removeSplash()
+			removeInteractions()
+			removeGalleryControls()
+			removeContentControls()
+			removeBooking()
+			removeAuth()
+			removePublic()
+			removeAccount()
+			removeNavigation()
 		}
-	}, [
-		bodyClassName,
-		clientConfig,
-		tenantSlug,
-		turnstileSiteKey,
-		loadSalonRuntime,
-		runtimeKind,
-	])
+	}, [clientConfig, tenantSlug, turnstileSiteKey])
+
+	const services = clientConfig.catalog?.services ?? []
+	const gallery = clientConfig.catalog?.gallery ?? []
+	const testimonials = clientConfig.catalog?.testimonials ?? []
+	const blogs = clientConfig.catalog?.blogs ?? []
 
 	return (
-		<>
-			{headStyles?.map((style, index) => (
-				<style
-					key={"reference-head-style-" + index}
-					dangerouslySetInnerHTML={{ __html: style }}
-				/>
-			))}
+		<div className="salon-storefront-root">
 			<link rel="preconnect" href="https://fonts.googleapis.com" />
-			<link
-				rel="preconnect"
-				href="https://cdnjs.cloudflare.com"
-				crossOrigin="anonymous"
-			/>
-			<link
-				rel="preconnect"
-				href="https://www.gstatic.com"
-				crossOrigin="anonymous"
-			/>
 			<link
 				href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
 				rel="stylesheet"
 			/>
-			<link
-				rel="stylesheet"
-				href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+			<SalonStorefrontMarkup
+				galleryContent={<SalonGallery items={gallery} />}
+				servicesContent={<SalonServices items={services} />}
+				testimonialsContent={<SalonTestimonials items={testimonials} />}
+				blogContent={<SalonBlogs items={blogs} />}
+				serviceOptions={<SalonServiceOptions items={services} />}
+				reviewServiceOptions={services.map((service) => (
+					<option value={service.name} key={service.name}>
+						{service.name}
+					</option>
+				))}
 			/>
-			<link
-				rel="stylesheet"
-				href="/reference/CSS/style.css?v=20260827-lightmode-cta-mobilebar-fix"
-			/>
-			<div
-				className="reference-salon-root"
-				dangerouslySetInnerHTML={{ __html: markup }}
-			/>
-		</>
+		</div>
 	)
 }

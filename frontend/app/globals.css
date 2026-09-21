@@ -417,7 +417,7 @@ body.store-transitioning .platform-home-shell {
   border: 0;
   border-radius: .85rem;
   overflow: hidden;
-  background: url("/reference/IMG/Royal Braids logo.png") center/contain no-repeat;
+  background: url("/assets/salon/Royal Braids logo.png") center/contain no-repeat;
   background-color: rgba(12, 10, 7, .28);
 }
 

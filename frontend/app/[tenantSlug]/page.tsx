@@ -2,8 +2,10 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
-import { getReferenceSalonMarkup } from "@backend/services/referenceMarkup"
-import { ReferenceSalonRuntime } from "@/components/reference/ReferenceSalonRuntime"
+import {
+	SalonStorefrontRuntime,
+	type SalonClientConfig,
+} from "@/components/tenant/SalonStorefrontRuntime"
 
 interface TenantPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -53,7 +55,7 @@ function buildReferenceClientConfig(
 ) {
 	const heroImage =
 		tenant.heroImageUrl ??
-		"/reference/IMG/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
+		"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
 	const phone = tenant.contact?.phonePrimary ?? "+254 740 470 381"
 	const phoneHref = tenant.actionLinks.phoneUrl
 	const email = tenant.contact?.emailPrimary ?? "info@royalbraids.ke"
@@ -72,20 +74,39 @@ function buildReferenceClientConfig(
 	const gallery = tenant.gallery.map((item) => ({
 		id: item.id,
 		styleName: item.title,
-		serviceCategory: item.category,
-		imageUrl: item.imageUrl,
+		serviceCategory: getServiceCategoryKey(item.category),
+		imageUrl: item.imageUrl ?? "",
+		beforeImageUrl: item.beforeImageUrl,
+		serviceName: item.serviceName,
+		styleType: item.styleType,
+		length: item.length,
+		size: item.size,
+		hairType: item.hairType,
+		stylistName: item.stylistName,
+		timeTaken: item.timeTaken,
+		priceRange: item.priceRange,
+		featuredTrending: item.featuredTrending,
+		featuredMostBooked: item.featuredMostBooked,
+		createdAt: item.createdAt,
+		updatedAt: item.updatedAt,
 	}))
 	const testimonials = tenant.reviews.map((review) => ({
+		id: review.id,
 		name: review.author,
 		rating: review.rating,
 		text: review.text,
 		status: "approved",
+		createdAt: review.createdAt,
 	}))
 	const blogs = tenant.blogPosts.map((post) => ({
+		id: post.id,
 		slug: post.slug,
 		title: post.title,
 		excerpt: post.excerpt,
 		category: post.category,
+		imageUrl: post.imageUrl,
+		readTime: post.readTime,
+		publishDate: post.publishDate,
 		readMoreUrl: post.slug ? `#blog-${post.slug}` : "#blog",
 	}))
 
@@ -94,7 +115,7 @@ function buildReferenceClientConfig(
 		brand: {
 			businessName: tenant.businessName,
 			shortNameHtml: getShortNameHtml(tenant.businessName),
-			logoSrc: tenant.logoUrl ?? "/reference/IMG/logo.png",
+			logoSrc: tenant.logoUrl ?? "/assets/salon/logo.png",
 			logoAlt: tenant.businessName + " logo",
 			heroImage,
 			heroImageAlt: tenant.businessName + " salon",
@@ -103,7 +124,7 @@ function buildReferenceClientConfig(
 			heroTitleHtml:
 				tenant.heroTitle ?? "Feel confident in your signature look",
 			heroDescription: tenant.shortDescription,
-			favicon: tenant.logoUrl ?? "/reference/IMG/Royal Braids logo.png",
+			favicon: tenant.logoUrl ?? "/assets/salon/Royal Braids logo.png",
 		},
 		appearance: { mode: tenant.theme.mode, preset: tenant.theme.preset },
 		seo: {
@@ -149,15 +170,11 @@ export async function renderTenantStorefront(tenantSlug: string) {
 	const tenant = await getTenantStorefront(tenantSlug)
 	if (!tenant) notFound()
 
-	const referenceMarkup = await getReferenceSalonMarkup()
-
 	return (
-		<ReferenceSalonRuntime
-			markup={referenceMarkup.html}
-			bodyClassName={referenceMarkup.bodyClassName}
+		<SalonStorefrontRuntime
 			tenantSlug={tenant.slug}
 			turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
-			clientConfig={buildReferenceClientConfig(tenant)}
+			clientConfig={buildReferenceClientConfig(tenant) as SalonClientConfig}
 		/>
 	)
 }

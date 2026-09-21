@@ -149,12 +149,12 @@ Phase D gate status — 28 August 2026:
 - Public tenant queries now enforce category visibility for both services and
   gallery styles, so merchant category controls affect the preserved storefront
   filters and booking catalog at the data boundary.
-- Royal Braids storefront image paths were repaired: copied reference gallery
-  fallbacks now use absolute `/reference/IMG/...` URLs, all local fallback asset
+- Royal Braids storefront image paths were repaired: native gallery and hero
+  fallbacks now use absolute `/assets/salon/...` URLs, all local fallback asset
   references were verified, and the Royal Braids fixture gallery now supplies
   valid local images instead of empty image sources.
 - The remaining rotating-header-logo fallback paths were also normalized to
-  `/reference/IMG/...`; the Playwright image-health check now reports no failed
+  `/assets/salon/...`; the Playwright image-health check now reports no failed
   image requests across desktop and mobile runs.
 - The protected admin shell now uses the NextAuth session and a Prisma-backed
   admin snapshot route at `/api/manage/[tenantSlug]/snapshot`; the legacy

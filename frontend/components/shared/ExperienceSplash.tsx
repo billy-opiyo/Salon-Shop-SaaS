@@ -146,7 +146,7 @@ export function ExperienceSplash({
 		>
 			<div className="splash-bg" aria-hidden="true">
 				<img
-					src="/reference/IMG/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
+					src="/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
 					alt=""
 				/>
 			</div>
