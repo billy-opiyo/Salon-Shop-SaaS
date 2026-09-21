@@ -9,9 +9,9 @@ interface ExperienceSplashProps {
 	readonly description: string
 }
 
-const SPLASH_DURATION_MS = 7000
+const SPLASH_DURATION_MS = 4800
 const REDUCED_MOTION_DURATION_MS = 700
-const POST_PROGRESS_DELAY_MS = 2000
+const POST_PROGRESS_DELAY_MS = 180
 const PLATFORM_SPLASH_SEEN_KEY = "beauty-sphia-platform-splash-seen"
 const PLATFORM_SPLASH_DOCUMENT_KEY = "beauty-sphia-platform-splash-document"
 

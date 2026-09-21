@@ -852,6 +852,16 @@ function setReferenceFormMessage(
 	element.style.display = message ? "block" : "none"
 }
 
+function showTransientPopup(id: string, durationMs: number): () => void {
+	const popup = document.getElementById(id)
+	if (!(popup instanceof HTMLElement)) return () => undefined
+	popup.classList.remove("show")
+	void popup.offsetWidth
+	popup.classList.add("show")
+	const timer = window.setTimeout(() => popup.classList.remove("show"), durationMs)
+	return () => window.clearTimeout(timer)
+}
+
 async function readReferenceJson(
 	response: Response,
 ): Promise<{ readonly error?: string; readonly message?: string }> {
@@ -881,9 +891,42 @@ function bindPublicParityAdapters(
 	const contactForm = document.getElementById("contactForm")
 	const reviewForm = document.getElementById("reviewForm")
 	const termsModal = document.getElementById("termsModal")
+	const termsCheckbox = document.getElementById("termsConsentCheckbox")
+	const termsAcceptButton = document.getElementById("acceptTermsBtn")
+	const contactSuccessClose = document.getElementById("contactSuccessPopupClose")
 	const closeTermsModal = () => {
 		termsModal?.classList.remove("active")
 		termsModal?.setAttribute("aria-hidden", "true")
+		document.body.style.overflow = ""
+	}
+	const updateTermsAcceptance = (): void => {
+		if (termsAcceptButton instanceof HTMLButtonElement && termsCheckbox instanceof HTMLInputElement) {
+			termsAcceptButton.disabled = !termsCheckbox.checked
+		}
+	}
+	const acceptTerms = (): void => {
+		if (!(termsCheckbox instanceof HTMLInputElement) || !termsCheckbox.checked) return
+		try {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		} catch {
+			// Continue for this visit when browser storage is unavailable.
+		}
+		closeTermsModal()
+	}
+	let contactSuccessCleanup = (): void => undefined
+	const closeContactSuccess = (): void => {
+		contactSuccessCleanup()
+		const popup = document.getElementById("contactSuccessPopup")
+		popup?.classList.remove("show")
+	}
+	try {
+		if (localStorage.getItem("royal_braids_terms_accepted_v1") !== "true") {
+			if (termsCheckbox instanceof HTMLInputElement) termsCheckbox.checked = false
+			updateTermsAcceptance()
+			setModalState("termsModal", true)
+		}
+	} catch {
+		setModalState("termsModal", true)
 	}
 	if (contactForm instanceof HTMLFormElement)
 		ensureTurnstile(contactForm, turnstileSiteKey)
@@ -919,6 +962,7 @@ function bindPublicParityAdapters(
 					"success",
 				)
 				contactForm.reset()
+				contactSuccessCleanup = showTransientPopup("contactSuccessPopup", 5000)
 			} else {
 				setReferenceFormMessage(
 					"contactFormMessage",
@@ -1058,7 +1102,11 @@ function bindPublicParityAdapters(
 		event.stopImmediatePropagation()
 		rescheduleBookingId = button.dataset.bookingId
 		const modal = document.getElementById("dashboardRescheduleModal")
-		if (modal) modal.setAttribute("aria-hidden", "false")
+		if (modal) {
+			modal.classList.add("active")
+			modal.setAttribute("aria-hidden", "false")
+			document.body.style.overflow = "hidden"
+		}
 	}
 
 	const saveRescheduledBooking = async (): Promise<void> => {
@@ -1092,17 +1140,15 @@ function bindPublicParityAdapters(
 			message.classList.toggle("error", !response.ok)
 			message.classList.toggle("success", response.ok)
 		}
-		if (response.ok)
-			document
-				.getElementById("dashboardRescheduleModal")
-				?.setAttribute("aria-hidden", "true")
+	if (response.ok) closeReschedule()
 		if (save instanceof HTMLButtonElement) save.disabled = false
 	}
 
 	const closeReschedule = (): void => {
-		document
-			.getElementById("dashboardRescheduleModal")
-			?.setAttribute("aria-hidden", "true")
+		const modal = document.getElementById("dashboardRescheduleModal")
+		modal?.classList.remove("active")
+		modal?.setAttribute("aria-hidden", "true")
+		document.body.style.overflow = ""
 		rescheduleBookingId = ""
 	}
 
@@ -1173,17 +1219,24 @@ function bindPublicParityAdapters(
 		window.location.assign("/")
 	}
 
-	const openDeleteAccount = (): void =>
-		document
-			.getElementById("deleteAccountConfirmModal")
-			?.setAttribute("aria-hidden", "false")
-	const closeDeleteAccount = (): void =>
-		document
-			.getElementById("deleteAccountConfirmModal")
-			?.setAttribute("aria-hidden", "true")
+	const openDeleteAccount = (): void => {
+		const modal = document.getElementById("deleteAccountConfirmModal")
+		modal?.classList.add("active")
+		modal?.setAttribute("aria-hidden", "false")
+		document.body.style.overflow = "hidden"
+	}
+	const closeDeleteAccount = (): void => {
+		const modal = document.getElementById("deleteAccountConfirmModal")
+		modal?.classList.remove("active")
+		modal?.setAttribute("aria-hidden", "true")
+		document.body.style.overflow = ""
+	}
 
 	contactForm?.addEventListener("submit", submitContact, true)
 	reviewForm?.addEventListener("submit", submitReview, true)
+	termsCheckbox?.addEventListener("change", updateTermsAcceptance)
+	termsAcceptButton?.addEventListener("click", acceptTerms)
+	contactSuccessClose?.addEventListener("click", closeContactSuccess)
 	document.addEventListener("click", toggleFavorite, true)
 	document.addEventListener("click", cancelBooking, true)
 	document.addEventListener("click", rescheduleBooking, true)
@@ -1209,7 +1262,7 @@ function bindPublicParityAdapters(
 		.getElementById("manageAccountDeleteBtn")
 		?.addEventListener("click", openDeleteAccount)
 	document
-		.getElementById("deleteAccountConfirmBtn")
+		.getElementById("deleteAccountConfirmProceedBtn")
 		?.addEventListener("click", deleteAccount)
 	document
 		.getElementById("deleteAccountConfirmCloseBtn")
@@ -1229,6 +1282,9 @@ function bindPublicParityAdapters(
 	return () => {
 		contactForm?.removeEventListener("submit", submitContact, true)
 		reviewForm?.removeEventListener("submit", submitReview, true)
+		termsCheckbox?.removeEventListener("change", updateTermsAcceptance)
+		termsAcceptButton?.removeEventListener("click", acceptTerms)
+		contactSuccessClose?.removeEventListener("click", closeContactSuccess)
 		document.removeEventListener("click", toggleFavorite, true)
 		document.removeEventListener("click", cancelBooking, true)
 		document.removeEventListener("click", rescheduleBooking, true)
@@ -1254,7 +1310,7 @@ function bindPublicParityAdapters(
 			.getElementById("manageAccountDeleteBtn")
 			?.removeEventListener("click", openDeleteAccount)
 		document
-			.getElementById("deleteAccountConfirmBtn")
+		.getElementById("deleteAccountConfirmProceedBtn")
 			?.removeEventListener("click", deleteAccount)
 		document
 			.getElementById("deleteAccountConfirmCloseBtn")
@@ -1650,7 +1706,7 @@ function bindAccountMutationAdapter(): () => void {
 	const preferencesButton = document.getElementById(
 		"manageAccountSavePreferencesBtn",
 	)
-	const confirmDeleteButton = document.getElementById("confirmDeleteAccountBtn")
+	const confirmDeleteButton = document.getElementById("deleteAccountConfirmProceedBtn")
 	const closeDeleteButton = document.getElementById(
 		"deleteAccountConfirmCloseBtn",
 	)
@@ -1739,14 +1795,18 @@ function bindAccountMutationAdapter(): () => void {
 		)
 			setMessage("Preferences saved.")
 	}
-	const openDelete = (): void =>
-		document
-			.getElementById("deleteAccountConfirmModal")
-			?.setAttribute("aria-hidden", "false")
-	const closeDelete = (): void =>
-		document
-			.getElementById("deleteAccountConfirmModal")
-			?.setAttribute("aria-hidden", "true")
+	const openDelete = (): void => {
+		const modal = document.getElementById("deleteAccountConfirmModal")
+		modal?.classList.add("active")
+		modal?.setAttribute("aria-hidden", "false")
+		document.body.style.overflow = "hidden"
+	}
+	const closeDelete = (): void => {
+		const modal = document.getElementById("deleteAccountConfirmModal")
+		modal?.classList.remove("active")
+		modal?.setAttribute("aria-hidden", "true")
+		document.body.style.overflow = ""
+	}
 	const confirmDelete = async (): Promise<void> => {
 		const response = await fetch("/api/account", { method: "DELETE" })
 		const result = await readReferenceJson(response)
@@ -2209,13 +2269,19 @@ function readConfigValue(config: SalonClientConfig, path: string): unknown {
 
 function sanitizeInlineMarkup(value: unknown): string {
 	if (typeof value !== "string") return ""
-	const escaped = value
+	const normalized = value.replace(
+		/<span>\s*<span>([\s\S]*?)<\/span>\s*<\/span>/gi,
+		"<span>$1</span>",
+	)
+	const escaped = normalized
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;")
-	return escaped.replace(
+	return escaped
+		.replace(/&lt;(\/?)span&gt;/gi, (_, closing: string) => "<" + closing + "span>")
+		.replace(
 		/&lt;(\/?)(br\s*\/?)&gt;/gi,
 		(_, closing: string) => `<${closing}br />`,
 	)
@@ -2250,7 +2316,13 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 	})
 
 	const appearance = config.appearance ?? {}
-	const mode = appearance.mode === "light" ? "light" : "dark"
+	let mode = appearance.mode === "light" ? "light" : "dark"
+	try {
+		const savedTheme = localStorage.getItem("theme")
+		if (savedTheme === "light" || savedTheme === "dark") mode = savedTheme
+	} catch {
+		// Use the tenant setting when browser storage is unavailable.
+	}
 	document.documentElement.classList.toggle("light-mode", mode === "light")
 	document.documentElement.dataset.colorMode = mode
 	document.documentElement.style.colorScheme = mode
@@ -2295,12 +2367,23 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 	if (year) year.textContent = String(new Date().getFullYear())
 }
 
-function initializeNativeSplash(): () => void {
+function initializeNativeSplash(skipSplash = false): () => void {
 	const splash = document.getElementById("siteSplash")
 	const siteMain = document.getElementById("siteMain")
 	if (!(splash instanceof HTMLElement)) return () => undefined
 
 	const originalBodyClassName = document.body.className
+	if (skipSplash) {
+		splash.classList.add("splash-hide")
+		splash.hidden = true
+		splash.setAttribute("aria-hidden", "true")
+		document.body.classList.remove("splash-active", "splash-revealing")
+		document.body.classList.add("splash-complete")
+		siteMain?.removeAttribute("aria-hidden")
+		return () => {
+			document.body.className = originalBodyClassName
+		}
+	}
 	const duration = Math.max(0, Number(splash.dataset.splashDuration) || 3200)
 	const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
 	const effectiveDuration = reducedMotion ? 700 : duration
@@ -2337,6 +2420,7 @@ function initializeNativeSplash(): () => void {
 		document.body.classList.remove("splash-active", "splash-revealing")
 		document.body.classList.add("splash-complete")
 		siteMain?.removeAttribute("aria-hidden")
+		document.dispatchEvent(new Event("salon-splash-complete"))
 	}
 	revealTimer = window.setTimeout(complete, effectiveDuration)
 
@@ -2352,7 +2436,14 @@ function setModalState(id: string, open: boolean): void {
 	if (!modal) return
 	modal.classList.toggle("active", open)
 	modal.setAttribute("aria-hidden", String(!open))
-	if (id === "authModal" || id === "manageAccountModal" || id === "lightbox") {
+	if ([
+		"authModal",
+		"manageAccountModal",
+		"lightbox",
+		"termsModal",
+		"dashboardRescheduleModal",
+		"deleteAccountConfirmModal",
+	].includes(id)) {
 		document.body.style.overflow = open ? "hidden" : ""
 	}
 }
@@ -2642,7 +2733,10 @@ function bindNativeContentControls(): () => void {
 	}
 
 	const animationTimers: number[] = []
+	let countersAnimated = false
 	const animateCounters = (): void => {
+		if (countersAnimated) return
+		countersAnimated = true
 		document.querySelectorAll<HTMLElement>("[data-count]").forEach((element) => {
 			const target = Number(element.dataset.count ?? 0)
 			if (!Number.isFinite(target)) return
@@ -2665,6 +2759,11 @@ function bindNativeContentControls(): () => void {
 	const counters = document.querySelectorAll<HTMLElement>("[data-count]")
 	if (counterObserver && counters.length) {
 		counters.forEach((counter) => counterObserver.observe(counter))
+		if (document.body.classList.contains("splash-active")) {
+			add(document, "salon-splash-complete", animateCounters)
+		} else {
+			animateCounters()
+		}
 	} else if (counters.length) {
 		animateCounters()
 	}
@@ -2709,21 +2808,36 @@ function bindNativeSalonInteractions(
 	)
 
 	const darkModeToggle = document.getElementById("darkModeToggle")
-	const applyThemeToggle = (): void => {
+	const syncThemeToggle = (): void => {
 		const isDark = !document.documentElement.classList.contains("light-mode")
-		document.documentElement.classList.toggle("light-mode", !isDark)
-		document.body.classList.toggle("light-mode", !isDark)
-		document.documentElement.style.colorScheme = isDark ? "light" : "dark"
-		document.body.style.colorScheme = isDark ? "light" : "dark"
 		darkModeToggle?.classList.toggle("active", isDark)
 		darkModeToggle?.setAttribute("aria-pressed", String(isDark))
+	}
+	const applyThemeToggle = (event: Event): void => {
+		event.preventDefault()
+		const nextMode = document.documentElement.classList.contains("light-mode")
+			? "dark"
+			: "light"
+		const isDark = nextMode === "dark"
+		document.documentElement.classList.toggle("light-mode", !isDark)
+		document.body.classList.toggle("light-mode", !isDark)
+		document.documentElement.dataset.colorMode = nextMode
+		document.body.dataset.colorMode = nextMode
+		document.documentElement.style.colorScheme = nextMode
+		document.body.style.colorScheme = nextMode
+		syncThemeToggle()
 		try {
-			localStorage.setItem("theme", isDark ? "light" : "dark")
+			localStorage.setItem("theme", nextMode)
 		} catch {
 			// Theme remains active for the current page when storage is unavailable.
 		}
 	}
+	syncThemeToggle()
 	add(darkModeToggle, "click", applyThemeToggle)
+	add(darkModeToggle, "keydown", (event) => {
+		if (!(event instanceof KeyboardEvent) || (event.key !== "Enter" && event.key !== " ")) return
+		applyThemeToggle(event)
+	})
 
 	const openAuth = (): void => setModalState("authModal", true)
 	add(document.getElementById("openAuthModalBtn"), "click", openAuth)
@@ -2894,7 +3008,25 @@ export function SalonStorefrontRuntime({
 	useEffect(() => {
 		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
 		applyNativeClientConfig(clientConfig)
-		const removeSplash = initializeNativeSplash()
+		let skipStorefrontSplash = false
+		try {
+			skipStorefrontSplash = sessionStorage.getItem("salon-store-navigation") === "1"
+			if (skipStorefrontSplash) {
+				// Keep the marker through React development Strict Mode's immediate
+				// effect cleanup/re-run, then expire it so direct reloads still show
+				// the storefront splash normally.
+				window.setTimeout(() => {
+					try {
+						sessionStorage.removeItem("salon-store-navigation")
+					} catch {
+						// Storage may be unavailable after navigation.
+					}
+				}, 10_000)
+			}
+		} catch {
+			// Direct storefront loads keep the reference splash when storage is blocked.
+		}
+		const removeSplash = initializeNativeSplash(skipStorefrontSplash)
 		const gallery = clientConfig.catalog?.gallery ?? []
 		const removeInteractions = bindNativeSalonInteractions(gallery)
 		const removeGalleryControls = bindNativeGalleryControls(gallery)

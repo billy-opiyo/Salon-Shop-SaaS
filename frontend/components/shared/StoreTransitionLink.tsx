@@ -15,7 +15,6 @@ export function StoreTransitionLink({
 }: StoreTransitionLinkProps) {
 	const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
 		if (
-			event.defaultPrevented ||
 			event.button !== 0 ||
 			event.metaKey ||
 			event.ctrlKey ||
@@ -25,6 +24,14 @@ export function StoreTransitionLink({
 			return
 
 		document.body.classList.add("store-transitioning")
+		window.setTimeout(() => {
+			document.body.classList.remove("store-transitioning")
+		}, 700)
+		try {
+			sessionStorage.setItem("salon-store-navigation", "1")
+		} catch {
+			// Navigation still works when storage is unavailable.
+		}
 	}
 
 	return (

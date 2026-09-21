@@ -606,6 +606,96 @@ body.store-transitioning .platform-home-shell {
   }
 }
 
+/* Keep the full platform masthead usable on compact laptop and tablet widths
+   before the mobile action bar takes over. */
+@media (min-width: 701px) and (max-width: 1199px) {
+  .platform-header {
+    gap: .9rem;
+    padding-inline: 1rem;
+  }
+
+  .platform-nav {
+    gap: .72rem;
+    font-size: .78rem;
+  }
+
+  .brand-mark__image {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .brand-mark__title {
+    font-size: 1rem;
+  }
+
+  .brand-mark__tagline {
+    font-size: .5rem;
+  }
+}
+
+/* The comparison grid intentionally remains wider than a phone. The wrapper
+   must be the scroll container so every plan column stays readable. */
+.plan-comparison {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--gold) rgba(24, 18, 10, .7);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.plan-comparison__header,
+.plan-comparison__row {
+  width: max-content;
+}
+
+.platform-nav a,
+.tenant-nav a,
+.platform-home-shell .top-store__link,
+.platform-home-shell .browse-store__link {
+  color: var(--gold-soft);
+}
+
+.platform-nav a:hover,
+.platform-nav a:focus-visible,
+.tenant-nav a:hover,
+.tenant-nav a:focus-visible,
+.platform-home-shell .top-store__link:hover,
+.platform-home-shell .browse-store__link:hover {
+  color: var(--foreground);
+}
+
+.platform-home-shell .top-store__content p,
+.platform-home-shell .top-store__review-count,
+.platform-home-shell .top-store__soon-label,
+.platform-home-shell .browse-store__content > span:not(.eyebrow):not(.browse-store__link) {
+  color: #e1d6c5;
+}
+
+.platform-home-shell .button--outline,
+.platform-home-shell .button--ghost {
+  color: #ffe7ad;
+}
+
+.platform-home-shell .button--outline:hover,
+.platform-home-shell .button--outline:focus-visible,
+.platform-home-shell .button--ghost:hover,
+.platform-home-shell .button--ghost:focus-visible {
+  color: var(--foreground);
+}
+
+.platform-mobile-actions a,
+.saas-tenant-mobile-actions a {
+  color: #fff8e8;
+}
+
+.platform-mobile-actions a:hover,
+.platform-mobile-actions a:focus-visible,
+.saas-tenant-mobile-actions a:hover,
+.saas-tenant-mobile-actions a:focus-visible {
+  color: #ffe7ad;
+}
+
 /* The fixed salon floating buttons (WhatsApp chat + back-to-top) sit in the
    bottom corners at z-index 999, which covered the Home and Account icons of
    the SaaS mobile action bar. Lift both above the bar whenever that bar is
@@ -2030,6 +2120,81 @@ body.store-transitioning .platform-home-shell {
   .booking-form .button {
     width: 100%;
   }
+}
+
+/* Final parity overrides for compact platform screens and readable actions. */
+@media (min-width: 701px) and (max-width: 1199px) {
+  .platform-header {
+    gap: .9rem;
+    padding-inline: 1rem;
+  }
+
+  .platform-nav {
+    gap: .72rem;
+    font-size: .78rem;
+  }
+
+  .brand-mark__image {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .brand-mark__title {
+    font-size: 1rem;
+  }
+
+  .brand-mark__tagline {
+    font-size: .5rem;
+  }
+}
+
+.plan-comparison {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--gold) rgba(24, 18, 10, .7);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.plan-comparison__header,
+.plan-comparison__row {
+  width: max-content;
+}
+
+.platform-nav a,
+.tenant-nav a,
+.platform-home-shell .top-store__link,
+.platform-home-shell .browse-store__link {
+  color: var(--gold-soft);
+}
+
+.platform-nav a:hover,
+.platform-nav a:focus-visible,
+.tenant-nav a:hover,
+.tenant-nav a:focus-visible,
+.platform-home-shell .top-store__link:hover,
+.platform-home-shell .browse-store__link:hover {
+  color: var(--foreground);
+}
+
+.platform-home-shell .top-store__content p,
+.platform-home-shell .top-store__review-count,
+.platform-home-shell .top-store__soon-label,
+.platform-home-shell .browse-store__content > span:not(.eyebrow):not(.browse-store__link) {
+  color: #e1d6c5;
+}
+
+.platform-home-shell .button--outline,
+.platform-home-shell .button--ghost {
+  color: #ffe7ad;
+}
+
+.platform-home-shell .button--outline:hover,
+.platform-home-shell .button--outline:focus-visible,
+.platform-home-shell .button--ghost:hover,
+.platform-home-shell .button--ghost:focus-visible {
+  color: var(--foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {

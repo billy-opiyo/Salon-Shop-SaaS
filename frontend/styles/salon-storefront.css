@@ -8306,6 +8306,61 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
     box-shadow: 0 12px 30px rgba(37, 211, 102, 0.38);
 }
 
+/* Native SaaS storefront parity corrections. Keep the reference palette and
+   motion system, while raising secondary-action contrast for glass surfaces. */
+.salon-storefront-root {
+    --text-secondary: #c5b9a8;
+    --text-muted: #93897b;
+}
+
+.salon-storefront-root .nav a,
+.salon-storefront-root .contact-mini,
+.salon-storefront-root .section-desc,
+.salon-storefront-root .service-card p,
+.salon-storefront-root .blog-card p,
+.salon-storefront-root .footer-desc {
+    color: var(--text-secondary);
+}
+
+.salon-storefront-root .nav a:hover,
+.salon-storefront-root .nav a.active,
+.salon-storefront-root .btn-outline:hover,
+.salon-storefront-root .btn-outline:focus-visible {
+    color: #0a0a0a;
+}
+
+.salon-storefront-root .dark-mode-toggle {
+    padding: 0;
+    font: inherit;
+}
+
+.salon-storefront-root .auth-provider-btn--google {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 1;
+}
+
+.salon-storefront-root .auth-provider-btn__icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+}
+
+.salon-storefront-root .floating-whatsapp,
+.salon-storefront-root .floating-whatsapp:hover,
+.salon-storefront-root .floating-whatsapp:focus-visible {
+    color: #f4fff7;
+}
+
+@media (max-width: 767px) {
+    .salon-storefront-root .floating-whatsapp,
+    .salon-storefront-root .back-to-top {
+        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 /* Keep quick actions above the SaaS mobile action bar on small screens. */
 @media (max-width: 767px) {
     .site-shell {
