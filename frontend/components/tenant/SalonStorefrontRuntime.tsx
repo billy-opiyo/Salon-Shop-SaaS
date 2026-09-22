@@ -302,7 +302,9 @@ function bindStorefrontDesignEditor(
 			...savedVisibility,
 		},
 		mapEmbedUrl:
-			typeof savedDesign.mapEmbedUrl === "string" ? savedDesign.mapEmbedUrl : "",
+			typeof savedDesign.mapEmbedUrl === "string" && savedDesign.mapEmbedUrl.trim()
+				? savedDesign.mapEmbedUrl
+				: DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
 	}
 	setDesignControl("adminDesignThemePreset", settings.themePreset ?? "gold")
 	setDesignControl("adminDesignThemeMode", settings.themeMode ?? "dark")

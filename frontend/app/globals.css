@@ -2772,3 +2772,63 @@ body.store-transitioning .platform-home-shell {
     padding: 2rem 1.25rem;
   }
 }
+
+/* High-contrast platform controls. These elements sit on the glass header and
+   cards, where the old muted token became unreadable against the dark gradient.
+   Keep this scoped to platform surfaces so storefront parity is unaffected. */
+.platform-header .platform-nav,
+.platform-header .platform-nav a,
+.platform-home-shell .eyebrow,
+.platform-home-shell .section-heading .eyebrow,
+.platform-home-shell .top-store__link,
+.platform-home-shell .top-store__soon-label,
+.platform-home-shell .browse-store__link,
+.platform-home-shell .button--ghost,
+.platform-home-shell .button--outline,
+.platform-admin-page .platform-admin-header__meta,
+.platform-admin-page .platform-admin-metric span,
+.platform-admin-page .platform-admin-row span,
+.auth-page .auth-card__intro,
+.auth-page .auth-form label,
+.auth-page .auth-form__switch,
+.auth-page .auth-divider {
+  color: #f1e4d0;
+  opacity: 1;
+}
+
+.platform-header .platform-nav a:hover,
+.platform-header .platform-nav a:focus-visible,
+.platform-home-shell .top-store__link:hover,
+.platform-home-shell .top-store__link:focus-visible,
+.platform-home-shell .browse-store__link:hover,
+.platform-home-shell .browse-store__link:focus-visible,
+.platform-home-shell .button--ghost:hover,
+.platform-home-shell .button--ghost:focus-visible,
+.platform-home-shell .button--outline:hover,
+.platform-home-shell .button--outline:focus-visible {
+  color: #fffaf0;
+}
+
+.platform-home-shell .plan-card p,
+.platform-home-shell .plan-card li,
+.platform-home-shell .plan-card__billing-period,
+.platform-home-shell .plan-card__setup-fee,
+.platform-home-shell .plan-comparison__row,
+.platform-home-shell .plan-comparison__header {
+  color: #eadfce;
+  opacity: 1;
+}
+
+.platform-home-shell input::placeholder,
+.platform-home-shell textarea::placeholder,
+.auth-page input::placeholder {
+  color: #b9ad9b;
+  opacity: 1;
+}
+
+.platform-admin-page a,
+.platform-admin-page button,
+.auth-page a,
+.auth-page button {
+  opacity: 1;
+}

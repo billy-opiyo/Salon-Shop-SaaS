@@ -11288,3 +11288,32 @@ body.reduced-motion *::after {
         grid-template-columns: 1fr;
     }
 }
+
+/* Keep salon admin and customer authentication controls readable on the
+   dark legacy surface. Disabled states retain their intentional treatment. */
+.salon-storefront-root .nav a,
+.salon-storefront-root .auth-links a,
+.salon-storefront-root .auth-verify-email-link,
+.salon-storefront-root .auth-card .auth-separator,
+.salon-storefront-root .auth-card label,
+.salon-storefront-root .auth-card p,
+.salon-storefront-root .admin-auth-card p,
+.salon-storefront-root .admin-user-state,
+.salon-storefront-root .admin-section-tab,
+.salon-storefront-root .admin-section-card p,
+.salon-storefront-root .admin-section-card ul,
+.salon-storefront-root .admin-field-help {
+    color: #d8c9b4;
+    opacity: 1;
+}
+
+.salon-storefront-root .nav a:hover,
+.salon-storefront-root .nav a:focus-visible,
+.salon-storefront-root .auth-links a:hover,
+.salon-storefront-root .auth-links a:focus-visible,
+.salon-storefront-root .auth-verify-email-link:hover,
+.salon-storefront-root .auth-verify-email-link:focus-visible,
+.salon-storefront-root .admin-section-tab:hover,
+.salon-storefront-root .admin-section-tab:focus-visible {
+    color: var(--primary-light);
+}

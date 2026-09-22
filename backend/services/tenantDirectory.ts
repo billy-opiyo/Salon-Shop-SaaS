@@ -279,9 +279,28 @@ export async function getTenantStorefront(
 				heroSubtitle: isRoyalBraids
 				? ROYAL_BRAIDS_HERO_SUBTITLE
 				: (tenant.settings?.heroSubtitle ?? undefined),
-			storefrontConfig:
-				(tenant.settings?.storefrontConfig as StorefrontDesignConfig | null) ??
-				DEFAULT_STOREFRONT_DESIGN,
+			storefrontConfig: (() => {
+				const stored = tenant.settings?.storefrontConfig as
+					| Partial<StorefrontDesignConfig>
+					| null
+					| undefined
+				return {
+					...DEFAULT_STOREFRONT_DESIGN,
+					...stored,
+					mapEmbedUrl:
+						typeof stored?.mapEmbedUrl === "string" && stored.mapEmbedUrl.trim()
+							? stored.mapEmbedUrl
+							: DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+					sectionCopy: {
+						...DEFAULT_STOREFRONT_DESIGN.sectionCopy,
+						...(stored?.sectionCopy ?? {}),
+					},
+					sectionVisibility: {
+						...DEFAULT_STOREFRONT_DESIGN.sectionVisibility,
+						...(stored?.sectionVisibility ?? {}),
+					},
+				}
+			})(),
 			openingHours:
 				tenant.settings?.openingHours &&
 				typeof tenant.settings.openingHours === "object"

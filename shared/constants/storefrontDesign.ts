@@ -89,5 +89,8 @@ export const DEFAULT_STOREFRONT_DESIGN: StorefrontDesignConfig = {
 		visit: true,
 		contact: true,
 	},
-	mapEmbedUrl: "",
+	// Preserve the legacy Royal Braids Visit Us map until an owner explicitly
+	// replaces it in Store Design.
+	mapEmbedUrl:
+		"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8199!2d36.8075!3d-1.2644!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f17390b2f4643%3A0x4b25b087296c88f7!2sWestlands%2C+Nairobi!5e0!3m2!1sen!2ske!4v1",
 }
