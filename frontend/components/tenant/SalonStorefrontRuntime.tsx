@@ -4,6 +4,11 @@ import { useEffect } from "react"
 import { signIn, signOut } from "next-auth/react"
 
 import { registerAccount } from "@/app/signup/actions"
+import {
+	DEFAULT_STOREFRONT_DESIGN,
+	STOREFRONT_SECTION_KEYS,
+	type StorefrontDesignConfig,
+} from "@shared/constants/storefrontDesign"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
 import type {
 	SalonBlogItem,
@@ -56,6 +61,7 @@ export interface SalonClientConfig {
 		readonly testimonials?: readonly SalonReviewItem[]
 		readonly blogs?: readonly SalonBlogItem[]
 	}
+	readonly storefront?: StorefrontDesignConfig
 }
 
 export interface SalonStorefrontRuntimeProps {
@@ -241,6 +247,202 @@ function formatAdminSnapshotValue(value: unknown): string {
 	if (Array.isArray(value))
 		return value.map(formatAdminSnapshotValue).join(", ")
 	return JSON.stringify(value)
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+	return value && typeof value === "object" && !Array.isArray(value)
+		? (value as Record<string, unknown>)
+		: {}
+}
+
+function setDesignControl(id: string, value: unknown): void {
+	const element = document.getElementById(id)
+	if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
+		element.value = typeof value === "string" ? value : String(value ?? "")
+	}
+}
+
+function getDesignControl(id: string): string {
+	const element = document.getElementById(id)
+	return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement
+		? element.value.trim()
+		: ""
+}
+
+function setDesignMessage(message: string, type: "error" | "success" = "success"): void {
+	const element = document.getElementById("adminDesignMessage")
+	if (!element) return
+	element.textContent = message
+	element.classList.remove("error", "success")
+	element.classList.add(type)
+	element.style.display = "block"
+}
+
+function bindStorefrontDesignEditor(
+	tenantSlug: string,
+	snapshot: AdminSnapshotRecord,
+): () => void {
+	const settings = recordValue(snapshot.settings)
+	const savedDesign = recordValue(settings.storefrontConfig)
+	const savedCopy = recordValue(savedDesign.sectionCopy)
+	const savedVisibility = recordValue(savedDesign.sectionVisibility)
+	const design: StorefrontDesignConfig = {
+		...DEFAULT_STOREFRONT_DESIGN,
+		...savedDesign,
+		heroDescription:
+			typeof savedDesign.heroDescription === "string"
+				? savedDesign.heroDescription
+				: DEFAULT_STOREFRONT_DESIGN.heroDescription,
+		sectionCopy: {
+			...DEFAULT_STOREFRONT_DESIGN.sectionCopy,
+			...savedCopy,
+		},
+		sectionVisibility: {
+			...DEFAULT_STOREFRONT_DESIGN.sectionVisibility,
+			...savedVisibility,
+		},
+		mapEmbedUrl:
+			typeof savedDesign.mapEmbedUrl === "string" ? savedDesign.mapEmbedUrl : "",
+	}
+	setDesignControl("adminDesignThemePreset", settings.themePreset ?? "gold")
+	setDesignControl("adminDesignThemeMode", settings.themeMode ?? "dark")
+	setDesignControl(
+		"adminDesignLogoUrl",
+		settings.logoUrl ??
+			(tenantSlug === "royal-braids" ? "/assets/salon/RoyalBraidsnewlogo.png" : ""),
+	)
+	setDesignControl(
+		"adminDesignHeroUrl",
+		settings.heroImageUrl ?? "/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
+	)
+	setDesignControl("adminDesignHeroTitle", settings.heroTitle ?? "Celebrate Your Crown with <span>Beautiful Braids</span>")
+	setDesignControl("adminDesignHeroSubtitle", settings.heroSubtitle ?? "Premium African Hair Braiding & Beauty")
+	setDesignControl("adminDesignHeroDescription", design.heroDescription)
+	for (const key of ["phonePrimary", "phoneSecondary", "emailPrimary", "emailBookings", "address"] as const)
+		setDesignControl(`adminDesign${key[0].toUpperCase()}${key.slice(1)}`, settings[key] ?? "")
+	setDesignControl("adminDesignWhatsappUrl", settings.whatsappUrl ?? "")
+	const copyMap: Record<string, string> = {
+		gallerySubtitle: "adminDesigngallerySubtitle",
+		galleryTitle: "adminDesigngalleryTitle",
+		galleryDescription: "adminDesigngalleryDescription",
+		servicesSubtitle: "adminDesignservicesSubtitle",
+		servicesTitle: "adminDesignservicesTitle",
+		servicesDescription: "adminDesignservicesDescription",
+		bookingSubtitle: "adminDesignbookingSubtitle",
+		bookingTitle: "adminDesignbookingTitle",
+		bookingDescription: "adminDesignbookingDescription",
+		testimonialsSubtitle: "adminDesigntestimonialsSubtitle",
+		testimonialsTitle: "adminDesigntestimonialsTitle",
+		testimonialsDescription: "adminDesigntestimonialsDescription",
+		blogSubtitle: "adminDesignblogSubtitle",
+		blogTitle: "adminDesignblogTitle",
+		blogDescription: "adminDesignblogDescription",
+		visitSubtitle: "adminDesignvisitSubtitle",
+		visitTitle: "adminDesignvisitTitle",
+		visitDescription: "adminDesignvisitDescription",
+		contactTitle: "adminDesigncontactTitle",
+		contactDescription: "adminDesigncontactDescription",
+		footerDescription: "adminDesignFooterDescription",
+		copyright: "adminDesignCopyright",
+		craftedBy: "adminDesignCraftedBy",
+	}
+	Object.entries(copyMap).forEach(([key, id]) => setDesignControl(id, design.sectionCopy[key as keyof typeof design.sectionCopy]))
+	STOREFRONT_SECTION_KEYS.forEach((section) => {
+		const input = document.getElementById(`adminDesignVisible${section}`)
+		if (input instanceof HTMLInputElement) input.checked = design.sectionVisibility[section]
+	})
+	const openingHours = recordValue(settings.openingHours)
+	for (const key of ["weekday", "saturday", "sunday", "publicHoliday"] as const)
+		setDesignControl(`adminDesignHours${key}`, openingHours[key] ?? "")
+	const socialLinks = recordValue(settings.socialLinks)
+	for (const key of ["instagram", "facebook", "twitter", "tiktok", "whatsapp"] as const)
+		setDesignControl(`adminDesignSocial${key}`, socialLinks[key] ?? "")
+	setDesignControl("adminDesignMapEmbedUrl", design.mapEmbedUrl)
+
+	const fileUploads: Array<() => void> = []
+	const bindUpload = (fileId: string, urlId: string, kind: "LOGO" | "HERO") => {
+		const input = document.getElementById(fileId)
+		if (!(input instanceof HTMLInputElement)) return
+		const handler = async () => {
+			const file = input.files?.[0]
+			if (!file) return
+			if (file.size > 500 * 1024) {
+				setDesignMessage("Images must be 500 KB or smaller.", "error")
+				input.value = ""
+				return
+			}
+			setDesignMessage("Uploading image…")
+			try {
+				const prepare = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
+					method: "POST",
+					credentials: "same-origin",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ fileName: file.name, mimeType: file.type, byteSize: file.size, kind }),
+				})
+				const prepared = (await prepare.json()) as { uploadUrl?: string; assetId?: string; publicUrl?: string | null; error?: string }
+				if (!prepare.ok || !prepared.uploadUrl || !prepared.assetId) throw new Error(prepared.error ?? "The image upload could not be prepared.")
+				const uploaded = await fetch(prepared.uploadUrl, { method: "PUT", headers: { "content-type": file.type }, body: file })
+				if (!uploaded.ok) throw new Error("The image could not be uploaded to storage.")
+				const finalized = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
+					method: "PATCH",
+					credentials: "same-origin",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ assetId: prepared.assetId }),
+				})
+				const result = (await finalized.json()) as { publicUrl?: string | null; error?: string }
+				if (!finalized.ok || !result.publicUrl) throw new Error(result.error ?? "The uploaded image has no public URL configured.")
+				setDesignControl(urlId, result.publicUrl)
+				setDesignMessage("Image uploaded. Save Store Design to publish it.")
+			} catch (error) {
+				setDesignMessage(error instanceof Error ? error.message : "The image upload failed.", "error")
+			}
+		}
+		input.addEventListener("change", handler)
+		fileUploads.push(() => input.removeEventListener("change", handler))
+	}
+	bindUpload("adminDesignLogoFile", "adminDesignLogoUrl", "LOGO")
+	bindUpload("adminDesignHeroFile", "adminDesignHeroUrl", "HERO")
+	const saveButton = document.getElementById("adminSaveStoreDesignBtn")
+	if (!(saveButton instanceof HTMLButtonElement)) return () => fileUploads.forEach((remove) => remove())
+	const saveHandler = async () => {
+		saveButton.disabled = true
+		setDesignMessage("Saving Store Design…")
+		const sectionCopy = Object.fromEntries(Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]))
+		const sectionVisibility = Object.fromEntries(STOREFRONT_SECTION_KEYS.map((section) => [section, (document.getElementById(`adminDesignVisible${section}`) as HTMLInputElement | null)?.checked === true]))
+		const body = {
+			action: "storefront-design",
+			themePreset: getDesignControl("adminDesignThemePreset"),
+			themeMode: getDesignControl("adminDesignThemeMode"),
+			logoUrl: getDesignControl("adminDesignLogoUrl"),
+			heroImageUrl: getDesignControl("adminDesignHeroUrl"),
+			heroTitle: getDesignControl("adminDesignHeroTitle"),
+			heroSubtitle: getDesignControl("adminDesignHeroSubtitle"),
+			phonePrimary: getDesignControl("adminDesignPhonePrimary"),
+			phoneSecondary: getDesignControl("adminDesignPhoneSecondary"),
+			emailPrimary: getDesignControl("adminDesignEmailPrimary"),
+			emailBookings: getDesignControl("adminDesignEmailBookings"),
+			address: getDesignControl("adminDesignAddress"),
+			whatsappUrl: getDesignControl("adminDesignWhatsappUrl"),
+			storefrontConfig: { heroDescription: getDesignControl("adminDesignHeroDescription"), sectionCopy, sectionVisibility, mapEmbedUrl: getDesignControl("adminDesignMapEmbedUrl") },
+			openingHours: Object.fromEntries(["weekday", "saturday", "sunday", "publicHoliday"].map((key) => [key, getDesignControl(`adminDesignHours${key}`)])),
+			socialLinks: Object.fromEntries(["instagram", "facebook", "twitter", "tiktok", "whatsapp"].map((key) => [key, getDesignControl(`adminDesignSocial${key}`)])),
+		}
+		try {
+			const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+			const result = (await response.json()) as { error?: string }
+			if (!response.ok) throw new Error(result.error ?? "Store Design could not be saved.")
+			setDesignMessage("Store Design saved successfully.")
+			window.setTimeout(() => window.location.reload(), 450)
+		} catch (error) {
+			setDesignMessage(error instanceof Error ? error.message : "Store Design could not be saved.", "error")
+			saveButton.disabled = false
+		}
+	}
+	saveButton.addEventListener("click", saveHandler)
+	return () => {
+		fileUploads.forEach((remove) => remove())
+		saveButton.removeEventListener("click", saveHandler)
+	}
 }
 
 export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
@@ -540,6 +742,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const gallery = Array.isArray(snapshot.gallery) ? snapshot.gallery : []
 			const blogs = Array.isArray(snapshot.blogs) ? snapshot.blogs : []
 			const services = Array.isArray(snapshot.services) ? snapshot.services : []
+			removeTabHandlers.push(bindStorefrontDesignEditor(tenantSlug, snapshot))
 			const categoryMount = document.getElementById(
 				"adminServiceCategoryToggles",
 			)
@@ -1849,6 +2052,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const logoutButton = document.getElementById("logoutBtn")
 	const guestButton = document.getElementById("continueAsGuestBtn")
 	const googleButton = document.getElementById("continueWithGoogleBtn")
+	const verifyEmailLink = document.getElementById("authVerifyEmailLink")
 	if (!(form instanceof HTMLFormElement)) return () => undefined
 
 	ensureTurnstile(form, turnstileSiteKey)
@@ -1887,6 +2091,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 				)
 				formData.set("email", emailInput.value)
 				formData.set("password", passwordInput.value)
+				if (tenantSlug) formData.set("tenantSlug", tenantSlug)
 				formData.set("turnstileToken", getTurnstileToken(form))
 				const registration = await registerAccount(formData)
 				if (!registration.ok) {
@@ -1897,6 +2102,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 					"Account created. Verify your email before signing in.",
 					"success",
 				)
+				verifyEmailLink?.classList.remove("hidden")
 				if (nameGroup) nameGroup.style.display = "none"
 				submitButton.textContent = "Log In"
 				return
@@ -1993,6 +2199,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const switchToSignin = (): void => {
 		setReferenceAuthMode("signin")
 		setAuthMessage("", "success")
+		verifyEmailLink?.classList.add("hidden")
 	}
 	const togglePassword = (event: Event): void => {
 		event.preventDefault()
@@ -2331,6 +2538,15 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 	if (appearance.preset) {
 		document.documentElement.dataset.themePreset = appearance.preset
 		document.body.dataset.themePreset = appearance.preset
+	}
+	const visibility = config.storefront?.sectionVisibility
+	for (const section of STOREFRONT_SECTION_KEYS) {
+		const isVisible = visibility?.[section] ?? true
+		document
+			.querySelectorAll<HTMLElement>(`[data-config-section="${section}"]`)
+			.forEach((element) => {
+				element.hidden = !isVisible
+			})
 	}
 
 	const seo = config.seo ?? {}
@@ -3061,7 +3277,8 @@ export function SalonStorefrontRuntime({
 				href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
 				rel="stylesheet"
 			/>
-			<SalonStorefrontMarkup
+					<SalonStorefrontMarkup
+				verifyEmailHref={`/verify-email?tenant=${encodeURIComponent(tenantSlug ?? "royal-braids")}`}
 				galleryContent={<SalonGallery items={gallery} />}
 				servicesContent={<SalonServices items={services} />}
 				testimonialsContent={<SalonTestimonials items={testimonials} />}

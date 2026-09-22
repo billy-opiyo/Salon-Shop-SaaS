@@ -3,6 +3,10 @@ import "server-only"
 import { prisma } from "@backend/db/prisma"
 import { resolveTenantSlugByHost } from "@backend/services/tenantDomainService"
 import type { TenantStorefront } from "@shared/types/tenant"
+import {
+	DEFAULT_STOREFRONT_DESIGN,
+	type StorefrontDesignConfig,
+} from "@shared/constants/storefrontDesign"
 
 const ROYAL_BRAIDS_HERO_SUBTITLE = "Premium African Hair Braiding & Beauty"
 const ROYAL_BRAIDS_HERO_TITLE =
@@ -151,8 +155,8 @@ export async function getTenantStorefront(
 				city: true,
 				status: true,
 				subscription: { select: { plan: { select: { tier: true } } } },
-				settings: {
-					select: {
+		settings: {
+			select: {
 						themePreset: true,
 						themeMode: true,
 						phonePrimary: true,
@@ -164,7 +168,10 @@ export async function getTenantStorefront(
 						logoUrl: true,
 						heroImageUrl: true,
 						heroTitle: true,
-						heroSubtitle: true,
+				heroSubtitle: true,
+				openingHours: true,
+				socialLinks: true,
+				storefrontConfig: true,
 					},
 				},
 				services: {
@@ -263,12 +270,28 @@ export async function getTenantStorefront(
 			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,
 			heroImageUrl: tenant.settings?.heroImageUrl ?? undefined,
+			heroDescription:
+				(tenant.settings?.storefrontConfig as StorefrontDesignConfig | null)
+					?.heroDescription ?? undefined,
 			heroTitle: isRoyalBraids
 				? ROYAL_BRAIDS_HERO_TITLE
 				: (tenant.settings?.heroTitle ?? undefined),
-			heroSubtitle: isRoyalBraids
+				heroSubtitle: isRoyalBraids
 				? ROYAL_BRAIDS_HERO_SUBTITLE
 				: (tenant.settings?.heroSubtitle ?? undefined),
+			storefrontConfig:
+				(tenant.settings?.storefrontConfig as StorefrontDesignConfig | null) ??
+				DEFAULT_STOREFRONT_DESIGN,
+			openingHours:
+				tenant.settings?.openingHours &&
+				typeof tenant.settings.openingHours === "object"
+					? (tenant.settings.openingHours as Record<string, string>)
+					: undefined,
+			socialLinks:
+				tenant.settings?.socialLinks &&
+				typeof tenant.settings.socialLinks === "object"
+					? (tenant.settings.socialLinks as Record<string, string>)
+					: undefined,
 			services: tenant.services.map((service) => ({
 				id: service.id,
 				name: service.name,

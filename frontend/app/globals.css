@@ -9,8 +9,11 @@
   --gold-glow: rgba(215, 168, 79, .2);
   --glass-border: rgba(241, 213, 155, .28);
   --glass-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .24), 0 1px 0 rgba(255, 248, 232, .08) inset;
-  --serif: Georgia, "Times New Roman", serif;
-  --sans: Arial, Helvetica, sans-serif;
+  --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-script: "Great Vibes", cursive;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: var(--font-heading);
+  --sans: var(--font-body);
 }
 
 * {
@@ -49,7 +52,21 @@ body {
     linear-gradient(135deg, #0c0a07 0%, #191208 48%, #0d0b08 100%);
   background-attachment: fixed;
   color: var(--foreground);
-  font-family: var(--sans);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6,
+.platform-hero__title,
+.platform-section__title,
+.section-heading h2,
+.section-heading h3 {
+  font-family: var(--font-heading);
+}
+
+.platform-hero__eyebrow,
+.platform-section__eyebrow,
+.eyebrow {
+  font-family: var(--font-body);
 }
 
 body.splash-active .platform-home-shell {

@@ -86,6 +86,23 @@ export async function getMerchantAdminSnapshot(
 		stylists?: Awaited<ReturnType<typeof listStylistsForUser>>
 		team?: Awaited<ReturnType<typeof listTeamForUser>>
 		security?: Awaited<ReturnType<typeof getSecuritySnapshot>>
+		settings?: {
+			themePreset: string
+			themeMode: string
+			logoUrl: string | null
+			heroImageUrl: string | null
+			heroTitle: string | null
+			heroSubtitle: string | null
+			phonePrimary: string | null
+			phoneSecondary: string | null
+			whatsappUrl: string | null
+			emailPrimary: string | null
+			emailBookings: string | null
+			address: string | null
+			openingHours: unknown
+			socialLinks: unknown
+			storefrontConfig: unknown
+		} | null
 		permissions: typeof membership
 	} = { permissions: membership }
 
@@ -103,6 +120,28 @@ export async function getMerchantAdminSnapshot(
 	}
 	if (membership.canManageContent || membership.role === "OWNER") {
 		tasks.push(
+			prisma.tenantSettings.findUnique({
+				where: { tenantId },
+				select: {
+					themePreset: true,
+					themeMode: true,
+					logoUrl: true,
+						heroImageUrl: true,
+						heroTitle: true,
+						heroSubtitle: true,
+					phonePrimary: true,
+					phoneSecondary: true,
+					whatsappUrl: true,
+					emailPrimary: true,
+					emailBookings: true,
+					address: true,
+					openingHours: true,
+					socialLinks: true,
+					storefrontConfig: true,
+				},
+			}).then((value) => {
+				result.settings = value
+			}),
 			listGalleryForUser(userId, tenantSlug).then((value) => {
 				result.gallery = value
 			}),

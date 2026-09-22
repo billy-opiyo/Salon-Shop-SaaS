@@ -1,7 +1,6 @@
 import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 import {
-	BookingStatus,
 	MessageStatus,
 	ReviewStatus,
 	WaitlistStatus,
@@ -39,6 +38,7 @@ import {
 	resolveSecurityAlert,
 } from "@backend/services/merchantSecurityActionsService"
 import { bookingStatusUpdateSchema } from "@shared/validation/merchant"
+import { updateTenantDesignForUser } from "@backend/services/tenantSettingsService"
 
 const statusValues = <T extends string>(
 	values: readonly T[],
@@ -65,7 +65,10 @@ export async function POST(
 	const id = typeof input.id === "string" ? input.id : ""
 
 	try {
-		switch (action) {
+			switch (action) {
+			case "storefront-design":
+				await updateTenantDesignForUser(session.user.id, tenantSlug, input)
+				break
 			case "booking-status": {
 				const parsed = bookingStatusUpdateSchema.safeParse({
 					tenantSlug,

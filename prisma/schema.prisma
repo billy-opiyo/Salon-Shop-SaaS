@@ -278,6 +278,7 @@ model TenantSettings {
   legal             Json?
   featureFlags      Json?
   serviceVisibility Json?
+  storefrontConfig  Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)

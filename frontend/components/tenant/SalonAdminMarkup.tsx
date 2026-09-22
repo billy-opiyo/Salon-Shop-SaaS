@@ -3,6 +3,8 @@
 import type { ReactNode } from "react"
 import type React from "react"
 
+import { THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
+
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
 }
@@ -196,7 +198,149 @@ export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode
 						>
 							Security
 						</button>
+						<button
+							type="button"
+							className="admin-section-tab"
+							data-admin-section-tab="design"
+							role="tab"
+							aria-selected="false"
+						>
+							Store Design
+						</button>
 					</div>
+
+					<section
+						className="admin-management-section"
+						data-admin-section="design"
+						role="tabpanel"
+					>
+						<div className="admin-section-card admin-store-design-card">
+							<h2>Store Design</h2>
+							<p>
+								Customize the public storefront without changing your existing
+								services, gallery, bookings, or customer records. Current values are
+								loaded before you save.
+							</p>
+							<div className="form-message" id="adminDesignMessage" style={{display: "none"}}></div>
+							<form id="adminStoreDesignForm" className="admin-gallery-form">
+								<div className="admin-gallery-grid">
+									<div className="form-group">
+										<label htmlFor="adminDesignThemePreset">Theme preset</label>
+										<select id="adminDesignThemePreset" defaultValue="gold">
+											{THEME_PRESET_OPTIONS.map((preset) => (
+												<option value={preset.key} key={preset.key}>
+													{preset.label}
+												</option>
+											))}
+										</select>
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignThemeMode">Color mode</label>
+										<select id="adminDesignThemeMode" defaultValue="dark">
+											<option value="dark">Dark</option>
+											<option value="light">Light</option>
+										</select>
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignLogoFile">Logo upload</label>
+										<input id="adminDesignLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+										<small className="admin-field-help">Maximum 500 KB. Uploads use the salon media storage.</small>
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignHeroFile">Hero image upload</label>
+										<input id="adminDesignHeroFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignLogoUrl">Current logo URL</label>
+										<input id="adminDesignLogoUrl" type="text" placeholder="Uploaded URL or /assets/..." />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignHeroUrl">Current hero image URL</label>
+										<input id="adminDesignHeroUrl" type="text" placeholder="Uploaded URL or /assets/..." />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignHeroTitle">Hero title</label>
+										<input id="adminDesignHeroTitle" defaultValue="Celebrate Your Crown with Beautiful Braids" maxLength={140} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignHeroSubtitle">Hero subtitle</label>
+										<input id="adminDesignHeroSubtitle" defaultValue="Premium African Hair Braiding & Beauty" maxLength={160} />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignHeroDescription">Hero description</label>
+										<textarea id="adminDesignHeroDescription" rows={3} maxLength={600} />
+									</div>
+								</div>
+
+								<h3>Storefront sections</h3>
+								<div className="admin-design-visibility-grid">
+									{["gallery", "services", "booking", "testimonials", "blog", "visit", "contact"].map((section) => (
+										<label key={section}>
+											<input type="checkbox" id={`adminDesignVisible${section}`} defaultChecked />
+											<span>{section[0].toUpperCase() + section.slice(1)}</span>
+										</label>
+									))}
+								</div>
+
+								<h3>Section headings and copy</h3>
+								<div className="admin-design-copy-grid">
+									{[
+										["gallery", "Gallery"], ["services", "Services"], ["booking", "Booking"],
+										["testimonials", "Testimonials"], ["blog", "Blog"], ["visit", "Visit"], ["contact", "Contact"],
+									].map(([key, label]) => (
+										<div className="admin-section-card" key={key}>
+											<h4>{label}</h4>
+											<label>Subtitle<input id={`adminDesign${key}Subtitle`} /></label>
+											<label>Title<input id={`adminDesign${key}Title`} /></label>
+											<label>Description<textarea id={`adminDesign${key}Description`} rows={3} /></label>
+										</div>
+									))}
+								</div>
+
+								<h3>Contact, hours, social links, and footer</h3>
+								<div className="admin-gallery-grid">
+									<div className="form-group">
+										<label htmlFor="adminDesignPhonePrimary">Primary phone</label>
+										<input id="adminDesignPhonePrimary" type="tel" maxLength={40} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignPhoneSecondary">Secondary phone</label>
+										<input id="adminDesignPhoneSecondary" type="tel" maxLength={40} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignEmailPrimary">Primary email</label>
+										<input id="adminDesignEmailPrimary" type="email" />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignEmailBookings">Booking email</label>
+										<input id="adminDesignEmailBookings" type="email" />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignAddress">Salon address</label>
+										<textarea id="adminDesignAddress" rows={2} maxLength={500} />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignWhatsappUrl">WhatsApp URL</label>
+										<input id="adminDesignWhatsappUrl" type="url" />
+									</div>
+									{[["weekday", "Weekday hours"], ["saturday", "Saturday hours"], ["sunday", "Sunday hours"], ["publicHoliday", "Public holiday hours"]].map(([key, label]) => (
+										<div className="form-group" key={key}><label htmlFor={`adminDesignHours${key}`}>{label}</label><input id={`adminDesignHours${key}`} /></div>
+									))}
+									<div className="form-group full"><label htmlFor="adminDesignMapEmbedUrl">Map embed URL</label><input id="adminDesignMapEmbedUrl" type="url" /></div>
+									{[["instagram", "Instagram URL"], ["facebook", "Facebook URL"], ["twitter", "X/Twitter URL"], ["tiktok", "TikTok URL"], ["whatsapp", "WhatsApp URL"]].map(([key, label]) => (
+										<div className="form-group" key={key}><label htmlFor={`adminDesignSocial${key}`}>{label}</label><input id={`adminDesignSocial${key}`} type="url" /></div>
+									))}
+									<div className="form-group full"><label htmlFor="adminDesignFooterDescription">Footer description</label><textarea id="adminDesignFooterDescription" rows={2} /></div>
+									<div className="form-group"><label htmlFor="adminDesignCopyright">Copyright line</label><input id="adminDesignCopyright" /></div>
+									<div className="form-group"><label htmlFor="adminDesignCraftedBy">Footer attribution</label><input id="adminDesignCraftedBy" /></div>
+								</div>
+								<div className="admin-booking-actions">
+									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn">Save Store Design</button>
+									<a className="btn btn-outline" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
+								</div>
+							</form>
+						</div>
+					</section>
 
 					<section
 						className="admin-management-section active"
@@ -1757,6 +1901,14 @@ export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode
 				aria-modal="true"
 				aria-labelledby="adminConfirmTitle"
 			>
+				<button
+					type="button"
+					className="admin-confirm-close"
+					id="adminConfirmClose"
+					aria-label="Close confirmation dialog"
+				>
+					×
+				</button>
 				<h3 id="adminConfirmTitle">Confirm Action</h3>
 				<p id="adminConfirmMessage">Are you sure you want to continue?</p>
 				<div className="admin-confirm-actions">

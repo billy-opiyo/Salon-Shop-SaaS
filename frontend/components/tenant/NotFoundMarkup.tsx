@@ -13,7 +13,7 @@ export function NotFoundMarkup(): ReactNode {
 					<a className="brand-mark" href="/royal-braids#home" aria-label="Return to Royal Braids home page">
 						<span className="logo-frame" aria-hidden="true">
 							<img
-								src="/assets/salon/logo.png"
+								src="/assets/salon/RoyalBraidsnewlogo.png"
 								alt="Royal Braids logo"
 								width="58"
 								height="58"
@@ -26,12 +26,12 @@ export function NotFoundMarkup(): ReactNode {
 						</span>
 					</a>
 
-					<span className="hosting-pill" title="Hosted on Firebase Hosting">
+					<span className="hosting-pill" title="Hosted on Vercel">
 						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M4.5 20.5 7.1 3.9c.1-.6.9-.8 1.2-.2l2.4 4.5 1.9-3.6c.3-.6 1.1-.5 1.3.1l1.3 4.1 2.4-2.3c.4-.4 1.1-.1 1 .5l.9 13.5L12 23 4.5 20.5Z" />
 							<path d="M10.7 8.2 4.5 20.5 12 23l7.5-2.5-4.3-11.7-3.2 3.1-1.3-3.7Z" opacity="0.45" />
 						</svg>
-						Firebase Hosting fallback
+						Vercel Hosting fallback
 					</span>
 				</header>
 
@@ -43,10 +43,10 @@ export function NotFoundMarkup(): ReactNode {
 						<p className="lead">
 							The link you opened is unavailable, moved, or typed incorrectly. This page
 							keeps the <span data-client-text="brand.businessName">Royal Braids</span>
-							Firebase-hosted website graceful whenever a route returns a 404.
+							Vercel-hosted website graceful whenever a route returns a 404.
 						</p>
 						<p className="firebase-note">
-							<strong>Firebase Hosting custom 404:</strong> if this Firebase-hosted site
+							<strong>Vercel Hosting custom 404:</strong> if this Vercel-hosted site
 							receives a missing link or route error, this branded page is shown instead
 							of a blank or default error screen.
 						</p>
@@ -76,7 +76,7 @@ export function NotFoundMarkup(): ReactNode {
 
 				<p className="footer-note">
 					<span data-client-text="brand.copyright">© Royal Braids. All rights reserved.</span>
-					This custom 404 page is configured as the Firebase Hosting fallback for missing links.
+					This custom 404 page is configured as the Vercel Hosting fallback for missing links.
 				</p>
 			</section>
 		</main>

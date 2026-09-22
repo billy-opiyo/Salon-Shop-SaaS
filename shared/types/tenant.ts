@@ -85,6 +85,10 @@ export interface TenantStorefront {
 	readonly heroImageUrl?: string
 	readonly heroTitle?: string
 	readonly heroSubtitle?: string
+	readonly heroDescription?: string
+	readonly storefrontConfig?: import("@shared/constants/storefrontDesign").StorefrontDesignConfig
+	readonly openingHours?: Readonly<Record<string, string>>
+	readonly socialLinks?: Readonly<Record<string, string>>
 	readonly services: readonly TenantService[]
 	readonly gallery: readonly TenantGalleryItem[]
 	readonly reviews: readonly TenantReview[]

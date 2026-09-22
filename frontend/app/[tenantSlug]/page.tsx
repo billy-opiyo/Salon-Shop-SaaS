@@ -6,6 +6,10 @@ import {
 	SalonStorefrontRuntime,
 	type SalonClientConfig,
 } from "@/components/tenant/SalonStorefrontRuntime"
+import {
+	DEFAULT_STOREFRONT_DESIGN,
+	type StorefrontDesignConfig,
+} from "@shared/constants/storefrontDesign"
 
 interface TenantPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -53,6 +57,9 @@ function getServiceCategoryKey(category: string): string {
 function buildReferenceClientConfig(
 	tenant: NonNullable<Awaited<ReturnType<typeof getTenantStorefront>>>,
 ) {
+	const design =
+		(tenant.storefrontConfig as StorefrontDesignConfig | undefined) ??
+		DEFAULT_STOREFRONT_DESIGN
 	const heroImage =
 		tenant.heroImageUrl ??
 		"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
@@ -115,7 +122,11 @@ function buildReferenceClientConfig(
 		brand: {
 			businessName: tenant.businessName,
 			shortNameHtml: getShortNameHtml(tenant.businessName),
-			logoSrc: tenant.logoUrl ?? "/assets/salon/logo.png",
+			logoSrc:
+				tenant.logoUrl ??
+				(tenant.slug === "royal-braids"
+					? "/assets/salon/RoyalBraidsnewlogo.png"
+					: "/assets/salon/logo.png"),
 			logoAlt: tenant.businessName + " logo",
 			heroImage,
 			heroImageAlt: tenant.businessName + " salon",
@@ -123,7 +134,7 @@ function buildReferenceClientConfig(
 				tenant.heroSubtitle ?? "Hair, beauty, and self-care made personal",
 			heroTitleHtml:
 				tenant.heroTitle ?? "Feel confident in your signature look",
-			heroDescription: tenant.shortDescription,
+			heroDescription: design.heroDescription || tenant.shortDescription,
 			favicon: tenant.logoUrl ?? "/assets/salon/Royal Braids logo.png",
 		},
 		appearance: { mode: tenant.theme.mode, preset: tenant.theme.preset },
@@ -147,8 +158,20 @@ function buildReferenceClientConfig(
 			emailBookingsHref: `mailto:${bookingEmail}`,
 			locationShort: tenant.locationLabel,
 			addressHtml: tenant.contact?.address ?? tenant.locationLabel,
+			weekdayHours: tenant.openingHours?.weekday ?? "Mon–Fri: 9:00 AM – 7:00 PM",
+			saturdayHours: tenant.openingHours?.saturday ?? "Saturday: 9:00 AM – 6:00 PM",
+			sundayHours: tenant.openingHours?.sunday ?? "Sunday: 10:00 AM – 4:00 PM",
+			publicHolidayHours:
+				tenant.openingHours?.publicHoliday ?? "Public holidays: By appointment",
+			footerWeekdayHours: tenant.openingHours?.weekday ?? "Mon–Fri: 9 AM – 7 PM",
+			footerWeekendHours: tenant.openingHours?.saturday ?? "Sat–Sun: 9 AM – 6 PM",
+			mapEmbedUrl: design.mapEmbedUrl,
 		},
-		social: { whatsapp: tenant.actionLinks.whatsappUrl },
+		social: {
+			...tenant.socialLinks,
+			whatsapp: tenant.socialLinks?.whatsapp ?? tenant.actionLinks.whatsappUrl,
+		},
+		storefront: design,
 		catalog: { services, gallery, testimonials, blogs },
 	} satisfies Readonly<Record<string, unknown>>
 }

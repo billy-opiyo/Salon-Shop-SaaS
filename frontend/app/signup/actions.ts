@@ -41,6 +41,11 @@ export async function registerAccount(
 	}
 
 	const email = parsed.data.email.toLowerCase()
+	const rawTenantSlug = formData.get("tenantSlug")
+	const tenantSlug =
+		typeof rawTenantSlug === "string" && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(rawTenantSlug.trim().toLowerCase())
+			? rawTenantSlug.trim().toLowerCase()
+			: ""
 	const existingUser = await prisma.user.findUnique({ where: { email } })
 	if (existingUser)
 		return { ok: false, message: "An account with that email already exists." }
@@ -61,7 +66,7 @@ export async function registerAccount(
 				businessName: "Beauty Sphia",
 				firstName: parsed.data.name,
 				email,
-				link: `${platformBaseUrl()}/verify-email?token=${token}`,
+				link: `${platformBaseUrl()}/verify-email?token=${encodeURIComponent(token)}${tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ""}`,
 			},
 		})
 	} catch {

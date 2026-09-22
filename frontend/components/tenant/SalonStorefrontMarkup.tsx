@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type React from "react"
 
 export interface SalonStorefrontMarkupProps {
+	readonly verifyEmailHref?: string
 	readonly galleryContent?: ReactNode
 	readonly servicesContent?: ReactNode
 	readonly testimonialsContent?: ReactNode
@@ -13,6 +14,7 @@ export interface SalonStorefrontMarkupProps {
 }
 
 export function SalonStorefrontMarkup({
+	verifyEmailHref = "/verify-email",
 	galleryContent,
 	servicesContent,
 	testimonialsContent,
@@ -106,7 +108,7 @@ export function SalonStorefrontMarkup({
 						<span className="logo-cube-track" id="logoCubeTrack">
 							<img
 								id="logoCubeImage"
-								src="/assets/salon/logo.png"
+								src="/assets/salon/RoyalBraidsnewlogo.png"
 								alt="Royal Braids rotating logo"
 								loading="eager"
 								decoding="async"
@@ -339,13 +341,13 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="gallery" id="gallery">
+		<section className="gallery" id="gallery" data-config-section="gallery">
 			<div className="container">
 				<div className="gallery-header main-section-heading animate-on-scroll">
-					<div className="section-subtitle">Our Work</div>
-					<h2 className="section-title">Services Gallery</h2>
+					<div className="section-subtitle" data-client-text="storefront.sectionCopy.gallerySubtitle">Our Work</div>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.galleryTitle">Services Gallery</h2>
 				</div>
-				<p className="section-desc section-heading-copy">
+				<p className="section-desc section-heading-copy" data-client-text="storefront.sectionCopy.galleryDescription">
 					Discover our stunning transformations across braids, hair services,
 					spa glow-ups, nail artistry, makeup finishes, barber cuts, eyebrows &
 					lash details, and bridal/event beauty moments—beautifully updated in
@@ -502,13 +504,13 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="services" id="services">
+		<section className="services" id="services" data-config-section="services">
 			<div className="container">
 				<div className="services-header main-section-heading animate-on-scroll">
-					<div className="section-subtitle">What We Offer</div>
-					<h2 className="section-title">Our Full Salon Services</h2>
+					<div className="section-subtitle" data-client-text="storefront.sectionCopy.servicesSubtitle">What We Offer</div>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.servicesTitle">Our Full Salon Services</h2>
 				</div>
-				<p className="section-desc section-heading-copy">
+				<p className="section-desc section-heading-copy" data-client-text="storefront.sectionCopy.servicesDescription">
 					Explore our complete salon experience, from Braids and Hair services,
 					Nails to Spa, Makeup, Barbering, Massage & Wellness, Eyebrows &
 					Lashes, Bridal packages, and salon-picked Cosmetics Products.
@@ -557,15 +559,15 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="booking" id="booking">
+		<section className="booking" id="booking" data-config-section="booking">
 			<div className="container">
 				<div className="booking-inner">
 					<div className="booking-info animate-on-scroll">
 						<div className="booking-section-heading main-section-heading">
-							<div className="section-subtitle">Easy Online Booking</div>
-							<h2 className="section-title">Book Your Service Session</h2>
+							<div className="section-subtitle" data-client-text="storefront.sectionCopy.bookingSubtitle">Easy Online Booking</div>
+							<h2 className="section-title" data-client-text="storefront.sectionCopy.bookingTitle">Book Your Service Session</h2>
 						</div>
-					<p className="section-desc section-heading-copy">
+					<p className="section-desc section-heading-copy" data-client-text="storefront.sectionCopy.bookingDescription">
 						Secure your ideal appointment in minutes—whether you’re coming for
 						premium braids, hair styling, spa care, nails, makeup, barber
 						services, lashes, wellness, cosmetics, or a complete bridal/event
@@ -1073,13 +1075,13 @@ export function SalonStorefrontMarkup({
 		</div>
 
 		
-		<section className="testimonials" id="testimonials">
+		<section className="testimonials" id="testimonials" data-config-section="testimonials">
 			<div className="container">
 				<div className="testimonials-header main-section-heading animate-on-scroll">
-					<div className="section-subtitle">Client Love</div>
-					<h2 className="section-title">What Our Queens Say</h2>
+					<div className="section-subtitle" data-client-text="storefront.sectionCopy.testimonialsSubtitle">Client Love</div>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.testimonialsTitle">What Our Queens Say</h2>
 				</div>
-				<p className="section-desc section-heading-copy" id="reviewsSummary">
+				<p className="section-desc section-heading-copy" id="reviewsSummary" data-client-text="storefront.sectionCopy.testimonialsDescription">
 					★ 5.0 average from 6 reviews
 				</p>
 				<div className="review-auth-hint hidden" id="reviewAuthHint" role="status">
@@ -1226,13 +1228,13 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="blog" id="blog">
+		<section className="blog" id="blog" data-config-section="blog">
 			<div className="container">
 				<div className="blog-header main-section-heading animate-on-scroll">
-					<div className="section-subtitle">Hair Care Tips & Guides</div>
-					<h2 className="section-title">From Our Blog</h2>
+					<div className="section-subtitle" data-client-text="storefront.sectionCopy.blogSubtitle">Hair Care Tips & Guides</div>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.blogTitle">From Our Blog</h2>
 				</div>
-				<p className="section-desc section-heading-copy">
+				<p className="section-desc section-heading-copy" data-client-text="storefront.sectionCopy.blogDescription">
 					Get insider tips on braids, natural hair care, skincare, nail health,
 					makeup longevity, grooming routines, lash care, wellness, and bridal
 					beauty planning from our expert team.
@@ -1270,17 +1272,17 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="contact" id="visit">
+		<section className="contact" id="visit" data-config-section="visit">
 			<div className="container">
 				<div
 					className="text-center contact-heading main-section-heading animate-on-scroll"
 				>
-					<div className="section-subtitle" style={{justifyContent: "center"}}>
+					<div className="section-subtitle" style={{justifyContent: "center"}} data-client-text="storefront.sectionCopy.visitSubtitle">
 						Get In Touch
 					</div>
-					<h2 className="section-title">Visit Our Salon</h2>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.visitTitle">Visit Our Salon</h2>
 				</div>
-				<p className="section-desc section-heading-copy mb-lg">
+				<p className="section-desc section-heading-copy mb-lg" data-client-text="storefront.sectionCopy.visitDescription">
 					We&apos;d love to hear from you. Visit us or reach out through any of the
 					channels below.
 				</p>
@@ -1439,13 +1441,13 @@ export function SalonStorefrontMarkup({
 		</section>
 
 		
-		<section className="newsletter contact-form-section" id="contact">
+		<section className="newsletter contact-form-section" id="contact" data-config-section="contact">
 			<div className="container">
 				<div className="contact-heading main-section-heading animate-on-scroll">
 					<div className="section-subtitle">Send Us A Message</div>
-					<h2 className="section-title">Contact Us</h2>
+					<h2 className="section-title" data-client-text="storefront.sectionCopy.contactTitle">Contact Us</h2>
 				</div>
-				<p className="section-desc section-heading-copy">
+				<p className="section-desc section-heading-copy" data-client-text="storefront.sectionCopy.contactDescription">
 					Have questions about our services or need assistance? Send us a
 					message and we&apos;ll get back to you soon.
 				</p>
@@ -1517,7 +1519,7 @@ export function SalonStorefrontMarkup({
 						<div className="footer-logo" data-client-html="brand.footerLogoHtml">
 							👑 ROYAL BRAIDS
 						</div>
-						<p className="footer-desc" data-client-text="brand.footerDescription">
+						<p className="footer-desc" data-client-text="storefront.sectionCopy.footerDescription">
 							Nairobi’s premier beauty destination for braids and
 							beyond—offering expert hair styling, spa indulgence, nail
 							artistry, makeup, barber grooming, lash enhancement, wellness
@@ -1648,11 +1650,11 @@ export function SalonStorefrontMarkup({
 					</div>
 				</div>
 				<div className="footer-bottom">
-					<p data-client-text="brand.copyright">
+					<p data-client-text="storefront.sectionCopy.copyright">
 						&copy; <span id="footerYearFallback">2026</span> Royal Braids. All
 						rights reserved.
 					</p>
-					<p data-client-text="brand.craftedBy">
+					<p data-client-text="storefront.sectionCopy.craftedBy">
 						Crafted with ❤️ in Nairobi, Kenya
 					</p>
 				</div>
@@ -1846,6 +1848,9 @@ export function SalonStorefrontMarkup({
 					</button>
 				</div>
 				<div className="form-message" id="authMessage"></div>
+				<a className="auth-verify-email-link hidden" id="authVerifyEmailLink" href={verifyEmailHref}>
+					Open email verification
+				</a>
 			</div>
 		</div>
 
