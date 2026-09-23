@@ -137,7 +137,11 @@ function buildReferenceClientConfig(
 			heroDescription: design.heroDescription || tenant.shortDescription,
 			favicon: tenant.logoUrl ?? "/assets/salon/Royal Braids logo.png",
 		},
-		appearance: { mode: tenant.theme.mode, preset: tenant.theme.preset },
+		appearance: {
+			mode: tenant.theme.mode,
+			preset: tenant.theme.preset,
+			storageKey: `salon-theme-${tenant.slug}`,
+		},
 		seo: {
 			title: tenant.businessName + " | Premium African Hair Braiding Salon",
 			description: tenant.shortDescription,

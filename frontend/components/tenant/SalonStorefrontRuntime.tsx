@@ -45,6 +45,7 @@ export interface SalonClientConfig {
 	readonly appearance?: {
 		readonly mode?: string
 		readonly preset?: string
+		readonly storageKey?: string
 	}
 	readonly seo?: {
 		readonly title?: string
@@ -983,6 +984,15 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 	const revealAndFocusDashboardCard = (cardId: string): boolean => {
 		const section = document.getElementById("clientDashboard")
 		if (section?.classList.contains("hidden")) {
+			const authButton = document.getElementById("dashboardAuthBtn")
+			if (
+				authButton instanceof HTMLButtonElement &&
+				!authButton.hidden &&
+				!authButton.classList.contains("hidden")
+			) {
+				authButton.click()
+				return true
+			}
 			section.classList.remove("hidden")
 		}
 		const target = document.getElementById(cardId)
@@ -2526,8 +2536,9 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 
 	const appearance = config.appearance ?? {}
 	let mode = appearance.mode === "light" ? "light" : "dark"
+	const themeStorageKey = appearance.storageKey?.trim() || "theme"
 	try {
-		const savedTheme = localStorage.getItem("theme")
+		const savedTheme = localStorage.getItem(themeStorageKey)
 		if (savedTheme === "light" || savedTheme === "dark") mode = savedTheme
 	} catch {
 		// Use the tenant setting when browser storage is unavailable.
@@ -3045,7 +3056,16 @@ function bindNativeSalonInteractions(
 		document.body.style.colorScheme = nextMode
 		syncThemeToggle()
 		try {
-			localStorage.setItem("theme", nextMode)
+			const configuredAppearance = window.CLIENT_CONFIG?.appearance
+			const configuredStorageKey =
+				typeof configuredAppearance === "object" &&
+				configuredAppearance !== null &&
+				"storageKey" in configuredAppearance &&
+				typeof configuredAppearance.storageKey === "string" &&
+				configuredAppearance.storageKey.trim()
+					? configuredAppearance.storageKey.trim()
+					: "theme"
+			localStorage.setItem(configuredStorageKey, nextMode)
 		} catch {
 			// Theme remains active for the current page when storage is unavailable.
 		}
@@ -3226,25 +3246,9 @@ export function SalonStorefrontRuntime({
 	useEffect(() => {
 		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
 		applyNativeClientConfig(clientConfig)
-		let skipStorefrontSplash = false
-		try {
-			skipStorefrontSplash = sessionStorage.getItem("salon-store-navigation") === "1"
-			if (skipStorefrontSplash) {
-				// Keep the marker through React development Strict Mode's immediate
-				// effect cleanup/re-run, then expire it so direct reloads still show
-				// the storefront splash normally.
-				window.setTimeout(() => {
-					try {
-						sessionStorage.removeItem("salon-store-navigation")
-					} catch {
-						// Storage may be unavailable after navigation.
-					}
-				}, 10_000)
-			}
-		} catch {
-			// Direct storefront loads keep the reference splash when storage is blocked.
-		}
-		const removeSplash = initializeNativeSplash(skipStorefrontSplash)
+		// Storefronts open directly into their homepage. The platform owns the
+		// Beauty Sphia splash, so tenant stores never flash a second splash.
+		const removeSplash = initializeNativeSplash(true)
 		const gallery = clientConfig.catalog?.gallery ?? []
 		const removeInteractions = bindNativeSalonInteractions(gallery)
 		const removeGalleryControls = bindNativeGalleryControls(gallery)
@@ -3279,7 +3283,8 @@ export function SalonStorefrontRuntime({
 				href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
 				rel="stylesheet"
 			/>
-					<SalonStorefrontMarkup
+			<SalonStorefrontMarkup
+				showSplash={false}
 				verifyEmailHref={`/verify-email?tenant=${encodeURIComponent(tenantSlug ?? "royal-braids")}`}
 				galleryContent={<SalonGallery items={gallery} />}
 				servicesContent={<SalonServices items={services} />}

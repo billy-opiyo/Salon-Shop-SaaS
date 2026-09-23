@@ -386,6 +386,15 @@ body.splash-active {
     transition: opacity 0.9s ease, transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), filter 0.95s ease;
 }
 
+/* Tenant routes render directly without the platform splash. Keep the page
+   interactive on the first paint instead of waiting for a legacy body class. */
+.site-shell.no-storefront-splash {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    filter: none;
+}
+
 body.splash-active .site-shell {
     opacity: 0;
     transform: translateY(12vh);
@@ -1496,7 +1505,9 @@ h6 {
     height: var(--nav-height);
     z-index: 1000;
     transition: var(--transition);
-    background: transparent;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
 }
 
 .header.scrolled {
@@ -1529,7 +1540,7 @@ h6 {
 }
 
 .logo-icon {
-    --logo-cube-size: 72px;
+    --logo-cube-size: 56px;
     width: var(--logo-cube-size);
     height: var(--logo-cube-size);
     display: flex;
@@ -1721,14 +1732,14 @@ h6 {
     transform: rotate(-45deg) translate(5px, -5px);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1199px) {
     .logo {
         font-size: 1.5rem;
         gap: 8px;
     }
 
     .logo-icon {
-        --logo-cube-size: 62px;
+        --logo-cube-size: 52px;
     }
 
     .header-actions {
@@ -1792,7 +1803,7 @@ h6 {
     }
 
     .logo-icon {
-        --logo-cube-size: 48px;
+        --logo-cube-size: 44px;
     }
 
     .header-actions {

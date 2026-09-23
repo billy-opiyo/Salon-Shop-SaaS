@@ -80,6 +80,34 @@ body.splash-active .platform-home-shell {
   transition: opacity .25s ease;
 }
 
+/* Keep platform typography identical to the Royal Braids storefront tokens. */
+.platform-home-shell,
+.platform-header,
+.platform-footer,
+.platform-admin-page,
+.auth-page,
+.onboarding-page {
+  font-family: var(--font-body);
+}
+
+.platform-home-shell h1,
+.platform-home-shell h2,
+.platform-home-shell h3,
+.platform-home-shell h4,
+.platform-header .brand-mark__title,
+.platform-footer__title,
+.platform-admin-page h1,
+.platform-admin-page h2,
+.platform-admin-page h3,
+.auth-page h1,
+.auth-page h2,
+.auth-page h3,
+.onboarding-page h1,
+.onboarding-page h2,
+.onboarding-page h3 {
+  font-family: var(--font-heading);
+}
+
 body.splash-complete .splash-screen {
   display: none;
 }
@@ -397,10 +425,6 @@ main {
 .platform-mobile-actions,
 .saas-tenant-mobile-actions {
   display: none;
-}
-
-body.store-transitioning .platform-home-shell {
-  visibility: hidden;
 }
 
 .browse-store-list {

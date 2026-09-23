@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type React from "react"
 
 export interface SalonStorefrontMarkupProps {
+	readonly showSplash?: boolean
 	readonly verifyEmailHref?: string
 	readonly galleryContent?: ReactNode
 	readonly servicesContent?: ReactNode
@@ -14,6 +15,7 @@ export interface SalonStorefrontMarkupProps {
 }
 
 export function SalonStorefrontMarkup({
+	showSplash = false,
 	verifyEmailHref = "/verify-email",
 	galleryContent,
 	servicesContent,
@@ -26,7 +28,7 @@ export function SalonStorefrontMarkup({
 		<>
 
 		
-		<div
+		{showSplash ? <div
 			className="splash-screen"
 			id="siteSplash"
 			data-splash-duration="3200"
@@ -93,9 +95,9 @@ export function SalonStorefrontMarkup({
 					>
 				</p>
 			</div>
-		</div>
+		</div> : null}
 
-		<div className="site-shell" id="siteMain">
+		<div className={`site-shell${showSplash ? "" : " no-storefront-splash"}`} id="siteMain">
 			
 		<header className="header" id="header">
 			<div className="container header-inner">
@@ -941,7 +943,7 @@ export function SalonStorefrontMarkup({
 							</ul>
 						</div>
 
-						<div className="dashboard-card">
+						<div className="dashboard-card" id="dashboardFavoritesCard">
 							<h3>
 								Favorite Styles
 								<span className="dashboard-count-badge" id="dashboardFavoritesCount"
@@ -953,7 +955,7 @@ export function SalonStorefrontMarkup({
 							</ul>
 						</div>
 
-						<div className="dashboard-card">
+						<div className="dashboard-card" id="dashboardProfileCard">
 							<h3>Profile Settings</h3>
 							<div className="dashboard-profile-item">
 								<span>Name</span>
