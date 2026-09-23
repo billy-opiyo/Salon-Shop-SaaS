@@ -10,6 +10,7 @@ import {
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { hasEntitlement } from "@shared/constants/plans"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { recalculateWaitlistQueuePositions } from "@backend/services/waitlistQueueService"
 import type { WaitlistRequestInput } from "@shared/validation/booking"
 
 export class WaitlistRequestError extends Error {
@@ -88,7 +89,17 @@ export async function createPublicWaitlistEntry(
 				(await transaction.waitlistEntry.count({
 					where: {
 						tenantId: tenant.id,
-						status: { in: [WaitlistStatus.WAITING, WaitlistStatus.CONTACTED] },
+						preferredDate,
+						preferredTime: input.preferredTime,
+						preferredStylist: input.preferredStylist,
+						status: {
+							in: [
+								WaitlistStatus.WAITING,
+								WaitlistStatus.NOTIFIED,
+								WaitlistStatus.CONTACTED,
+								WaitlistStatus.NOTIFICATION_FAILED,
+							],
+						},
 					},
 				})) + 1
 			const created = await transaction.waitlistEntry.create({
@@ -117,6 +128,11 @@ export async function createPublicWaitlistEntry(
 				},
 			})
 			return created
+		})
+		await recalculateWaitlistQueuePositions(tenant.id, {
+			preferredDate: preferredDate ?? null,
+			preferredTime: input.preferredTime ?? null,
+			preferredStylist: input.preferredStylist ?? null,
 		})
 	} catch (error) {
 		if (error instanceof WaitlistRequestError) throw error

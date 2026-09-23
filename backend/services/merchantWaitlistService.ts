@@ -8,6 +8,7 @@ import {
 	assertTenantPermission,
 	type TenantMembershipContext,
 } from "@backend/services/authorization"
+import { recalculateWaitlistQueuePositions } from "@backend/services/waitlistQueueService"
 
 export class MerchantWaitlistError extends Error {
 	readonly code = "MERCHANT_WAITLIST_FAILED" as const
@@ -80,7 +81,12 @@ export async function updateWaitlistStatusForUser(
 	await prisma.$transaction(async (transaction) => {
 		const entry = await transaction.waitlistEntry.findFirst({
 			where: { id: entryId, tenantId: membership.tenantId },
-			select: { status: true },
+			select: {
+				status: true,
+				preferredDate: true,
+				preferredTime: true,
+				preferredStylist: true,
+			},
 		})
 		if (!entry) throw new MerchantWaitlistError("Waitlist entry not found.")
 		if (
@@ -108,4 +114,15 @@ export async function updateWaitlistStatusForUser(
 			},
 		})
 	})
+	const entry = await prisma.waitlistEntry.findUnique({
+		where: { id: entryId },
+		select: {
+			preferredDate: true,
+			preferredTime: true,
+			preferredStylist: true,
+		},
+	})
+	if (entry) {
+		await recalculateWaitlistQueuePositions(membership.tenantId, entry)
+	}
 }

@@ -16,6 +16,8 @@ const ALLOWED_TRANSITIONS: Readonly<Record<BookingStatus, readonly BookingStatus
   WAITLISTED: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
   COMPLETED: [],
   CANCELLED: [],
+  EXPIRED: [],
+  NO_SHOW: [],
 };
 
 export class MerchantBookingError extends Error {

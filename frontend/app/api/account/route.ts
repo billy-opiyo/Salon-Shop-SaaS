@@ -12,6 +12,11 @@ import {
 	ClientAccountError,
 	getClientAccountSnapshot,
 } from "@backend/services/clientAccountService"
+import {
+	ClientWaitlistError,
+	getClientWaitlistQueueInfo,
+} from "@backend/services/clientWaitlistService"
+import { clientWaitlistQueueSchema } from "@shared/validation/clientWaitlist"
 
 export const dynamic = "force-dynamic"
 
@@ -34,10 +39,32 @@ export async function GET(request: Request): Promise<NextResponse> {
 	}
 
 	try {
+		const query = new URL(request.url).searchParams
+		const queueRequest = clientWaitlistQueueSchema.safeParse({
+			tenantSlug,
+			bookingId: query.get("bookingId") || undefined,
+			waitlistId: query.get("waitlistId") || undefined,
+		})
+		if (
+			(query.has("bookingId") || query.has("waitlistId")) &&
+			!queueRequest.success
+		) {
+			return NextResponse.json(
+				{ error: "A valid booking or waitlist request is required." },
+				{ status: 400 },
+			)
+		}
+		if (queueRequest.success) {
+			const queueInfo = await getClientWaitlistQueueInfo({
+				userId,
+				...queueRequest.data,
+			})
+			return NextResponse.json(queueInfo, { status: 200 })
+		}
 		const snapshot = await getClientAccountSnapshot(userId, tenantSlug)
 		return NextResponse.json(snapshot, { status: 200 })
 	} catch (error) {
-		if (error instanceof ClientAccountError) {
+		if (error instanceof ClientAccountError || error instanceof ClientWaitlistError) {
 			return NextResponse.json({ error: error.message }, { status: 400 })
 		}
 		return NextResponse.json(

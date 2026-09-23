@@ -5,6 +5,15 @@ import { BookingStatus, Prisma, WaitlistStatus } from "@prisma/client"
 import { prisma } from "@backend/db/prisma"
 import { notifyBookingCustomer } from "@backend/services/notificationService"
 import {
+	recalculateWaitlistQueuePositions,
+	type WaitlistSlotIdentity,
+} from "@backend/services/waitlistQueueService"
+import {
+	WAITLIST_SLOT_OCCUPIED_MESSAGE,
+	type WaitlistSlotOccupiedDetails,
+	buildWaitlistSlotOccupiedDetails,
+} from "@shared/constants/waitlistActionMessages"
+import {
 	assertTenantMembership,
 	assertTenantPermission,
 	type TenantMembershipContext,
@@ -12,9 +21,12 @@ import {
 
 export class MerchantWaitlistConversionError extends Error {
 	readonly code = "MERCHANT_WAITLIST_CONVERSION_FAILED" as const
-	constructor(message: string) {
+	readonly details?: WaitlistSlotOccupiedDetails
+
+	constructor(message: string, details?: WaitlistSlotOccupiedDetails) {
 		super(message)
 		this.name = "MerchantWaitlistConversionError"
+		this.details = details
 	}
 }
 
@@ -95,7 +107,10 @@ export async function convertWaitlistEntryToBooking(
 	const membership = await getMembership(userId, tenantSlug)
 	assertTenantPermission(membership, "canManageBookings")
 
-	let converted: { readonly bookingId: string }
+	let converted: {
+		readonly bookingId: string
+		readonly slot: WaitlistSlotIdentity
+	}
 
 	try {
 		converted = await prisma.$transaction(async (transaction) => {
@@ -147,7 +162,12 @@ export async function convertWaitlistEntryToBooking(
 			})
 			if (slot?.bookingId && slot.bookingId !== entry.linkedBookingId) {
 				throw new MerchantWaitlistConversionError(
-					"That preferred appointment slot is no longer available.",
+					WAITLIST_SLOT_OCCUPIED_MESSAGE,
+					buildWaitlistSlotOccupiedDetails({
+						slotId: slot.id,
+						currentBookingId: slot.bookingId,
+						waitlistBookingId: entry.linkedBookingId,
+					}),
 				)
 			}
 
@@ -233,7 +253,14 @@ export async function convertWaitlistEntryToBooking(
 			await transaction.waitlistEntry.updateMany({
 				where: {
 					tenantId: membership.tenantId,
-					status: { in: [WaitlistStatus.WAITING, WaitlistStatus.CONTACTED] },
+					status: {
+						in: [
+							WaitlistStatus.WAITING,
+							WaitlistStatus.NOTIFIED,
+							WaitlistStatus.CONTACTED,
+							WaitlistStatus.NOTIFICATION_FAILED,
+						],
+					},
 					queuePosition: {
 						gt:
 							(
@@ -256,14 +283,26 @@ export async function convertWaitlistEntryToBooking(
 					metadata: { bookingId } as Prisma.InputJsonValue,
 				},
 			})
-			return { bookingId: bookingId as string }
+			return {
+				bookingId: bookingId as string,
+				slot: {
+					preferredDate: entry.preferredDate,
+					preferredTime: entry.preferredTime,
+					preferredStylist: entry.preferredStylist,
+				},
+			}
 		})
+
+		await recalculateWaitlistQueuePositions(
+			membership.tenantId,
+			converted.slot,
+		)
 
 		await sendConvertedBookingNotifications(
 			membership.tenantId,
 			converted.bookingId,
 		)
-		return converted
+		return { bookingId: converted.bookingId }
 	} catch (error) {
 		if (error instanceof MerchantWaitlistConversionError) throw error
 		if (
@@ -271,7 +310,7 @@ export async function convertWaitlistEntryToBooking(
 			error.code === "P2002"
 		) {
 			throw new MerchantWaitlistConversionError(
-				"That appointment slot is no longer available.",
+				WAITLIST_SLOT_OCCUPIED_MESSAGE,
 			)
 		}
 		throw new MerchantWaitlistConversionError(

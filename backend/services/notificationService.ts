@@ -579,7 +579,7 @@ export async function notifyBookingCustomer(input: {
 		timeLabel: input.timeLabel,
 	}
 
-	const jobs: Promise<unknown>[] = [
+	const jobs: Array<Promise<{ readonly status: NotificationStatus }>> = [
 		dispatchNotification({
 			tenantId: input.tenantId,
 			bookingId: input.bookingId,
@@ -610,6 +610,10 @@ export async function notifyBookingCustomer(input: {
  */
 export async function notifyNextWaitlistedCustomer(
 	tenantId: string,
+	availableSlot?: {
+		readonly appointmentDate?: Date
+		readonly timeLabel?: string
+	},
 ): Promise<void> {
 	const tenant = await prisma.tenant.findUnique({
 		where: { id: tenantId },
@@ -617,9 +621,19 @@ export async function notifyNextWaitlistedCustomer(
 	})
 	if (!tenant) return
 	const entry = await prisma.waitlistEntry.findFirst({
-		where: { tenantId, status: WaitlistStatus.WAITING },
+		where: {
+			tenantId,
+			status: WaitlistStatus.WAITING,
+			...(availableSlot?.appointmentDate
+				? { preferredDate: availableSlot.appointmentDate }
+				: {}),
+			...(availableSlot?.timeLabel
+				? { preferredTime: availableSlot.timeLabel }
+				: {}),
+		},
 		orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],
 		select: {
+			id: true,
 			email: true,
 			phone: true,
 			serviceName: true,
@@ -637,7 +651,7 @@ export async function notifyNextWaitlistedCustomer(
 		timeLabel: entry.preferredTime ?? "",
 	}
 
-	const jobs: Promise<unknown>[] = [
+	const jobs: Array<Promise<{ readonly status: NotificationStatus }>> = [
 		dispatchNotification({
 			tenantId,
 			channel: NotificationChannel.EMAIL,
@@ -657,5 +671,18 @@ export async function notifyNextWaitlistedCustomer(
 			}),
 		)
 	}
-	await Promise.allSettled(jobs)
+	const outcomes = await Promise.allSettled(jobs)
+	const delivered = outcomes.some(
+		(outcome) =>
+			outcome.status === "fulfilled" &&
+			outcome.value.status === NotificationStatus.SENT,
+	)
+	await prisma.waitlistEntry.update({
+		where: { id: entry.id },
+		data: {
+			status: delivered
+				? WaitlistStatus.NOTIFIED
+				: WaitlistStatus.NOTIFICATION_FAILED,
+		},
+	})
 }

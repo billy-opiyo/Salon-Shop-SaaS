@@ -1723,6 +1723,11 @@ interface ClientAccountSnapshotPayload {
 		readonly status: string
 		readonly stylistName: string | null
 		readonly specialRequests: string | null
+		readonly waitlistId?: string | null
+		readonly waitlistPosition?: number | null
+		readonly waitlistLabel?: string
+		readonly waitlistQueueSize?: number | null
+		readonly waitlistStatus?: string | null
 	}[]
 	readonly reviews: readonly {
 		readonly id: string
@@ -1747,6 +1752,14 @@ interface ClientAccountSnapshotPayload {
 		readonly country: string | null
 		readonly createdAt: string
 	}[]
+}
+
+interface ClientWaitlistQueuePayload {
+	readonly waitlistId: string
+	readonly position: number | null
+	readonly label: string
+	readonly size: number | null
+	readonly status: string
 }
 
 function escapeClientHtml(value: string): string {
@@ -1797,6 +1810,14 @@ function renderReferenceDashboard(
 				"</span>" +
 				'<span class="dashboard-booking-status-line">Status: ' +
 				status +
+				(booking.waitlistPosition
+					? ' · <span class="dashboard-waitlist-position">Waitlist: ' +
+						escapeClientHtml(booking.waitlistLabel || String(booking.waitlistPosition)) +
+						(booking.waitlistQueueSize
+							? " of " + escapeClientHtml(String(booking.waitlistQueueSize))
+							: "") +
+						"</span>"
+					: "") +
 				"</span>" +
 				(["pending", "confirmed", "waitlisted"].includes(booking.status)
 					? '<button type="button" class="btn btn-outline dashboard-booking-action" data-dashboard-booking-action="cancel" data-booking-id="' +
@@ -1906,7 +1927,44 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 			return
 		}
 		const snapshot = (await response.json()) as ClientAccountSnapshotPayload
-		renderReferenceDashboard(snapshot)
+		const queueLookups = await Promise.all(
+			snapshot.bookings
+				.filter((booking) => booking.status === "waitlisted")
+				.map(async (booking) => {
+					try {
+						const queueResponse = await fetch(
+							"/api/account?tenantSlug=" +
+								encodeURIComponent(tenantSlug) +
+								"&bookingId=" +
+								encodeURIComponent(booking.id),
+							{ cache: "no-store", credentials: "same-origin" },
+						)
+						if (!queueResponse.ok) return [booking.id, null] as const
+						const queue = (await queueResponse.json()) as ClientWaitlistQueuePayload
+						return [booking.id, queue] as const
+					} catch {
+						return [booking.id, null] as const
+					}
+				}),
+		)
+		const queueByBookingId = new Map(queueLookups)
+		const enrichedSnapshot: ClientAccountSnapshotPayload = {
+			...snapshot,
+			bookings: snapshot.bookings.map((booking) => {
+				const queue = queueByBookingId.get(booking.id)
+				return queue
+					? {
+							...booking,
+							waitlistId: queue.waitlistId,
+							waitlistPosition: queue.position,
+							waitlistLabel: queue.label,
+							waitlistQueueSize: queue.size,
+							waitlistStatus: queue.status,
+						}
+					: booking
+			}),
+		}
+		renderReferenceDashboard(enrichedSnapshot)
 	} catch {
 		setDashboardMessage("Your dashboard data could not be loaded.", "error")
 	}

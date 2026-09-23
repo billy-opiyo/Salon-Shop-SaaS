@@ -3,9 +3,11 @@ import { z } from "zod"
 export const bookingStatusSchema = z.enum([
 	"PENDING",
 	"CONFIRMED",
-	"WAITLISTED",
-	"COMPLETED",
-	"CANCELLED",
+  "WAITLISTED",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+  "NO_SHOW",
 ])
 
 export const bookingStatusUpdateSchema = z.object({

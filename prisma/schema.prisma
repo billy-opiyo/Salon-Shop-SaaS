@@ -54,11 +54,15 @@ enum BookingStatus {
   WAITLISTED
   COMPLETED
   CANCELLED
+  EXPIRED
+  NO_SHOW
 }
 
 enum WaitlistStatus {
   WAITING
+  NOTIFIED
   CONTACTED
+  NOTIFICATION_FAILED
   BOOKED
   CANCELLED
 }
@@ -578,6 +582,11 @@ model Booking {
   slotReleaseReason   String?
   slotReleaseSource   String?
   slotReleasedBy      String?
+  previousStatusBeforeAutoRelease BookingStatus?
+  bookingAutoStatus   BookingStatus?
+  autoReleasedAt      DateTime?
+  expiredAt           DateTime?
+  noShowAt            DateTime?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)

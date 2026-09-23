@@ -290,7 +290,15 @@ export async function POST(
 			error instanceof Error &&
 			(error.name.startsWith("Merchant") || error.name === "AuthorizationError")
 		) {
-			return NextResponse.json({ error: error.message }, { status: 400 })
+			return NextResponse.json(
+				{
+					error: error.message,
+					...("details" in error && error.details
+						? { details: error.details }
+						: {}),
+				},
+				{ status: 400 },
+			)
 		}
 		console.error("Admin action failed:", error)
 		return NextResponse.json({ error: "Admin action failed" }, { status: 500 })
