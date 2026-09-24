@@ -97,6 +97,7 @@ export async function POST(
 			body.email,
 			role as MembershipRole,
 			{
+				canManageAdmins: body.canManageAdmins === true,
 				canManageBookings: body.canManageBookings === true,
 				canManageContent: body.canManageContent === true,
 				canManageSecurity: body.canManageSecurity === true,

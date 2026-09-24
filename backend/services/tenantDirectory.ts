@@ -7,6 +7,12 @@ import {
 	DEFAULT_STOREFRONT_DESIGN,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import {
+	DEFAULT_SALON_BLOGS,
+	DEFAULT_SALON_GALLERY,
+	DEFAULT_SALON_REVIEWS,
+	DEFAULT_SALON_SERVICES,
+} from "@shared/constants/legacySalonCatalog"
 
 const ROYAL_BRAIDS_HERO_SUBTITLE = "Premium African Hair Braiding & Beauty"
 const ROYAL_BRAIDS_HERO_TITLE =
@@ -41,95 +47,48 @@ const fixtureTenant: TenantStorefront = {
 		address:
 			"Westlands Shopping Centre, 2nd Floor<br />Waiyaki Way, Nairobi, Kenya",
 	},
-	services: [
-		{
-			name: "Signature Knotless Braids",
-			description: "Lightweight, polished braids tailored to your style.",
-			durationMinutes: 180,
-			priceLabel: "From KES 4,500",
-			category: "Braids",
-		},
-		{
-			name: "Silk Press & Finish",
-			description:
-				"A smooth, luminous finish with a considered aftercare routine.",
-			durationMinutes: 120,
-			priceLabel: "From KES 2,500",
-			category: "Hair",
-		},
-		{
-			name: "Royal Glow Facial",
-			description: "A restorative facial ritual for an event-ready glow.",
-			durationMinutes: 75,
-			priceLabel: "From KES 2,000",
-			category: "Beauty",
-		},
-		{
-			name: "Edge Control & Care",
-			description:
-				"Salon-grade care products available through WhatsApp ordering.",
-			durationMinutes: 0,
-			priceLabel: "Order on WhatsApp",
-			category: "Cosmetics",
-			isCosmeticProduct: true,
-		},
-	],
-	gallery: [
-		{
-			title: "Golden knotless",
-			category: "Braids",
-			tone: "gallery-tone--gold",
-			imageUrl: "/assets/salon/knotless braids.jpg",
-		},
-		{
-			title: "Soft silk finish",
-			category: "Hair",
-			tone: "gallery-tone--rose",
-			imageUrl: "/assets/salon/box-braids-hairstyles-1x1-1.jpg",
-		},
-		{
-			title: "Weekend glow",
-			category: "Beauty",
-			tone: "gallery-tone--plum",
-			imageUrl: "/assets/salon/goddess-braids.webp",
-		},
-		{
-			title: "Classic crown",
-			category: "Braids",
-			tone: "gallery-tone--sand",
-			imageUrl: "/assets/salon/fulan-braids.jpg",
-		},
-	],
-	reviews: [
-		{
-			author: "Miriam K.",
-			rating: 5,
-			text: "The finish was beautiful, the timing was thoughtful, and the whole visit felt personal.",
-		},
-		{
-			author: "Achieng O.",
-			rating: 5,
-			text: "My braids stayed neat for weeks. The team understood exactly what I wanted.",
-		},
-		{
-			author: "Njeri W.",
-			rating: 4,
-			text: "A calm, welcoming space with careful attention to detail.",
-		},
-	],
-	blogPosts: [
-		{
-			title: "How to prepare for your next braid appointment",
-			excerpt:
-				"A simple routine that helps your stylist create your best result.",
-			category: "Care guide",
-		},
-		{
-			title: "The Royal Braids aftercare ritual",
-			excerpt: "Keep your style fresh with a few small, consistent habits.",
-			category: "Journal",
-		},
-	],
+	services: DEFAULT_SALON_SERVICES.map((service) => ({
+		name: service.name,
+		description: service.description,
+		durationMinutes: Number.parseInt(service.durationLabel, 10) || 0,
+		durationLabel: service.durationLabel,
+		priceLabel: service.priceLabel,
+		priceMinor: service.priceMinor ?? undefined,
+		category: service.categoryKey,
+		isCosmeticProduct: service.orderOnly,
+	})),
+	gallery: DEFAULT_SALON_GALLERY.map((item, index) => ({
+		title: item.title,
+		category: item.serviceCategory,
+		tone: `gallery-tone--${["gold", "rose", "plum", "sand"][index % 4]}`,
+		imageUrl: item.imageUrl,
+		beforeImageUrl: item.beforeImageUrl,
+		serviceName: item.serviceName,
+		styleType: item.styleType,
+		stylistName: item.stylistName,
+		length: item.length,
+		size: item.size,
+		timeTaken: item.timeTaken,
+		priceRange: item.priceRange,
+		hairType: item.hairType,
+		featuredTrending: item.featuredTrending,
+		featuredMostBooked: item.featuredMostBooked,
+	})),
+	reviews: DEFAULT_SALON_REVIEWS.map((review) => ({
+		author: review.name,
+		rating: review.rating,
+		text: review.text,
+		role: review.role,
+		source: review.source,
+	})),
+	blogPosts: DEFAULT_SALON_BLOGS.map((post) => ({
+		title: post.title,
+		excerpt: post.excerpt,
+		category: "Journal",
+		imageUrl: post.imageUrl,
+		readTime: post.readTime,
+		publishDate: post.publishDate,
+	})),
 }
 
 const tenantFixtures: Readonly<Record<string, TenantStorefront>> = {
@@ -153,6 +112,7 @@ export async function getTenantStorefront(
 				businessName: true,
 				country: true,
 				city: true,
+				currency: true,
 				status: true,
 				subscription: { select: { plan: { select: { tier: true } } } },
 		settings: {
@@ -172,6 +132,9 @@ export async function getTenantStorefront(
 				openingHours: true,
 				socialLinks: true,
 				storefrontConfig: true,
+				bookingPaymentsEnabled: true,
+				bookingPaymentModes: true,
+				bookingDepositPercent: true,
 					},
 				},
 				services: {
@@ -183,6 +146,7 @@ export async function getTenantStorefront(
 						description: true,
 						durationLabel: true,
 						priceLabel: true,
+						priceMinor: true,
 						orderOnly: true,
 						category: { select: { label: true } },
 					},
@@ -268,6 +232,17 @@ export async function getTenantStorefront(
 				emailBookings: tenant.settings?.emailBookings ?? undefined,
 				address: tenant.settings?.address ?? undefined,
 			},
+			bookingPayment: {
+				enabled: tenant.settings?.bookingPaymentsEnabled === true,
+				modes: Array.isArray(tenant.settings?.bookingPaymentModes)
+					? tenant.settings.bookingPaymentModes.filter(
+							(mode): mode is "partial" | "full" | "after_service" =>
+								mode === "partial" || mode === "full" || mode === "after_service",
+						)
+					: ["partial", "full", "after_service"],
+				depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
+				currency: tenant.currency,
+			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,
 			heroImageUrl: tenant.settings?.heroImageUrl ?? undefined,
 			heroDescription:
@@ -316,9 +291,11 @@ export async function getTenantStorefront(
 				name: service.name,
 				description: service.description,
 				durationMinutes: Number.parseInt(service.durationLabel, 10) || 0,
+				durationLabel: service.durationLabel,
 				priceLabel: service.orderOnly
 					? "Order on WhatsApp"
 					: service.priceLabel,
+				priceMinor: service.priceMinor ?? undefined,
 				category: service.category.label,
 				isCosmeticProduct: service.orderOnly,
 			})),
@@ -347,6 +324,7 @@ export async function getTenantStorefront(
 				author: review.name,
 				rating: review.rating,
 				text: review.text,
+				role: undefined,
 				createdAt: review.createdAt.toISOString(),
 			})),
 			blogPosts: tenant.blogPosts.map((post) => ({

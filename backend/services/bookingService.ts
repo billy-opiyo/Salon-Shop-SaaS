@@ -9,6 +9,7 @@ import {
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { resolveBookingPaymentPlan } from "@shared/constants/bookingPayments"
 import type { BookingRequestInput } from "@shared/validation/booking"
 
 export class BookingRequestError extends Error {
@@ -39,7 +40,17 @@ export async function createPublicBooking(
 	input: BookingRequestInput,
 	remoteAddress?: string,
 	userId?: string,
-): Promise<{ readonly id: string; readonly status: BookingStatus }> {
+): Promise<{
+	readonly id: string
+	readonly status: BookingStatus
+	readonly payment?: {
+		readonly id: string
+		readonly status: string
+		readonly mode: string
+		readonly amountMinor: number
+		readonly currency: string
+	}
+}> {
 	if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
 		throw new BookingRequestError(
 			"Security verification failed. Please try again.",
@@ -52,12 +63,21 @@ export async function createPublicBooking(
 			id: true,
 			status: true,
 			businessName: true,
-			settings: { select: { emailPrimary: true, emailBookings: true } },
+			currency: true,
+			settings: {
+				select: {
+					emailPrimary: true,
+					emailBookings: true,
+					bookingPaymentsEnabled: true,
+					bookingPaymentModes: true,
+					bookingDepositPercent: true,
+				},
+			},
 			services: {
 				where: input.serviceId
 					? { id: input.serviceId, enabled: true }
 					: undefined,
-				select: { id: true, name: true, orderOnly: true },
+				select: { id: true, name: true, orderOnly: true, priceMinor: true },
 			},
 			stylists: {
 				where: input.stylistId
@@ -83,6 +103,21 @@ export async function createPublicBooking(
 	if (input.stylistId && tenant.stylists.length !== 1) {
 		throw new BookingRequestError("That stylist is not available for booking.")
 	}
+	let paymentPlan
+	try {
+		paymentPlan = resolveBookingPaymentPlan({
+			enabled: tenant.settings?.bookingPaymentsEnabled === true,
+			configuredModes: tenant.settings?.bookingPaymentModes,
+			depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
+			servicePriceMinor: service?.priceMinor,
+			orderOnly: service?.orderOnly === true,
+			requestedMode: service ? input.paymentMode : undefined,
+		})
+	} catch (error) {
+		if (error instanceof Error)
+			throw new BookingRequestError(error.message)
+		throw new BookingRequestError("The selected payment option is unavailable.")
+	}
 
 	const subjectKey = hashRateLimitSubject(
 		`${remoteAddress ?? "unknown"}:${input.email}`,
@@ -106,7 +141,17 @@ export async function createPublicBooking(
 
 	const slotKey = `${input.appointmentDate}:${input.timeLabel}:${input.stylistId ?? "general"}`
 
-	let booking: { id: string; status: BookingStatus }
+	let booking: {
+		readonly id: string
+		readonly status: BookingStatus
+		readonly payment?: {
+			readonly id: string
+			readonly status: string
+			readonly mode: string
+			readonly amountMinor: number
+			readonly currency: string
+		}
+	}
 	try {
 		booking = await prisma.$transaction(async (transaction) => {
 			const created = await transaction.booking.create({
@@ -139,6 +184,28 @@ export async function createPublicBooking(
 				},
 			})
 
+			const payment = paymentPlan
+				? await transaction.bookingPayment.create({
+						data: {
+							tenantId: tenant.id,
+							bookingId: created.id,
+							paymentMode: paymentPlan.mode,
+							amountMinor: paymentPlan.amountMinor,
+							serviceTotalMinor: paymentPlan.serviceTotalMinor,
+							currency: tenant.currency,
+							status: paymentPlan.status,
+							expiresAt: paymentPlan.expiresAt,
+						},
+						select: {
+							id: true,
+							status: true,
+							paymentMode: true,
+							amountMinor: true,
+							currency: true,
+						},
+					})
+				: null
+
 			await transaction.notificationDelivery.create({
 				data: {
 					tenantId: tenant.id,
@@ -149,7 +216,18 @@ export async function createPublicBooking(
 					idempotencyKey: `manual:${tenant.id}:booking.pending:${created.id}`,
 				},
 			})
-			return created
+			return {
+				...created,
+				payment: payment
+					? {
+							id: payment.id,
+							status: payment.status,
+							mode: payment.paymentMode,
+							amountMinor: payment.amountMinor,
+							currency: payment.currency,
+						}
+					: undefined,
+			}
 		})
 	} catch (error) {
 		if (error instanceof BookingRequestError) throw error
@@ -218,5 +296,9 @@ export async function createPublicBooking(
 		}).catch(() => {})
 	}
 
-	return { id: booking.id, status: booking.status }
+	return {
+		id: booking.id,
+		status: booking.status,
+		payment: booking.payment,
+	}
 }

@@ -51,7 +51,7 @@ export const PLAN_POSITIONING: Readonly<
 
 export const BILLING_POLICY = {
 	currency: BEAUTY_SPHIA_CURRENCY,
-	trialDays: 14,
+	freeUsageMonths: 6,
 	paymentGraceDays: 3,
 	failedPaymentRetryCount: 2,
 	setupTargetBusinessDays: "1-3",
@@ -61,6 +61,26 @@ export const BILLING_POLICY = {
 	paymentFlow: "stk-push" as const,
 	transactionFeePayer: "sender" as const,
 } as const
+
+/**
+ * Adds calendar months without allowing dates such as January 31 to overflow
+ * into a later month. Billing periods are calendar-based, not fixed 30-day
+ * approximations.
+ */
+export function addCalendarMonths(date: Date, months: number): Date {
+	if (!Number.isInteger(months)) {
+		throw new RangeError("Billing months must be a whole number.")
+	}
+	const result = new Date(date.getTime())
+	const originalDay = result.getUTCDate()
+	result.setUTCDate(1)
+	result.setUTCMonth(result.getUTCMonth() + months)
+	const lastDayOfTargetMonth = new Date(
+		Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0),
+	).getUTCDate()
+	result.setUTCDate(Math.min(originalDay, lastDayOfTargetMonth))
+	return result
+}
 
 export type EntitlementKey =
 	| "storefront"

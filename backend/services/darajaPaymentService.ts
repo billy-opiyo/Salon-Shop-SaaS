@@ -20,6 +20,11 @@ type StkQueryResponse = {
 	ResultDesc?: string
 }
 
+export interface DarajaStkPushResult {
+	readonly merchantRequestId?: string
+	readonly checkoutRequestId: string
+}
+
 function env(name: string): string {
 	return (process.env[name] ?? "").trim()
 }
@@ -59,7 +64,7 @@ function stkPassword(timestamp: string): string {
 	return Buffer.from(`${shortCode}${passkey}${timestamp}`).toString("base64")
 }
 
-async function verifyDarajaPayment(checkoutRequestId: string): Promise<void> {
+export async function verifyDarajaPayment(checkoutRequestId: string): Promise<void> {
 	const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14)
 	const response = await fetch(
 		`${darajaBaseUrl()}/mpesa/stkpushquery/v1/query`,
@@ -80,6 +85,56 @@ async function verifyDarajaPayment(checkoutRequestId: string): Promise<void> {
 	const data = (await response.json()) as StkQueryResponse
 	if (!response.ok || data.ResultCode !== "0")
 		throw new Error(data.ResultDesc || "Daraja payment verification failed.")
+}
+
+/**
+ * Sends an STK push without creating or mutating a Beauty Sphia subscription
+ * invoice. Storefront booking payments use this provider transport, but keep
+ * their own ledger and callback handling in bookingPaymentService.
+ */
+export async function requestDarajaStkPush(
+	phoneInput: string,
+	amountMinor: number,
+	accountReference: string,
+	transactionDescription: string,
+): Promise<DarajaStkPushResult & { readonly phoneNumber: string }> {
+	const phoneNumber = normalizeKenyanMpesaPhone(phoneInput)
+	if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0)
+		throw new Error("The M-Pesa amount is invalid.")
+	const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14)
+	const response = await fetch(
+		`${darajaBaseUrl()}/mpesa/stkpush/v1/processrequest`,
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${await getAccessToken()}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				BusinessShortCode: env("DARAJA_SHORTCODE"),
+				Password: stkPassword(timestamp),
+				Timestamp: timestamp,
+				TransactionType: "CustomerPayBillOnline",
+				Amount: Math.ceil(amountMinor / 100),
+				PartyA: phoneNumber,
+				PartyB: env("DARAJA_SHORTCODE"),
+				PhoneNumber: phoneNumber,
+				CallBackURL: env("DARAJA_CALLBACK_URL"),
+				AccountReference: accountReference,
+				TransactionDesc: transactionDescription,
+			}),
+		},
+	)
+	const data = (await response.json()) as StkPushResponse
+	if (!response.ok || data.ResponseCode !== "0" || !data.CheckoutRequestID)
+		throw new Error(
+			data.ResponseDescription || "Daraja rejected the payment request.",
+		)
+	return {
+		phoneNumber,
+		merchantRequestId: data.MerchantRequestID,
+		checkoutRequestId: data.CheckoutRequestID,
+	}
 }
 
 export async function requestInvoicePayment(

@@ -5,7 +5,7 @@ import { PlatformBrandMark } from "@/components/shared/PlatformBrandMark"
 
 interface PlatformHeaderProps {
 	/** Which page is currently being viewed, to resolve in-page anchors. */
-	readonly page?: "home" | "stores"
+	readonly page?: "home" | "stores" | "about" | "support"
 }
 
 /**

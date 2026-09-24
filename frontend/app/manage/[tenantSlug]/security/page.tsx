@@ -40,16 +40,20 @@ export default async function MerchantSecurityPage({
 				aria-label="Security totals"
 			>
 				<div className="admin-booking-filter-btn active">
-					<strong>{snapshot.logins.length}</strong>
+					<strong>{snapshot.stats.totalLogins}</strong>
 					<span>recent logins</span>
 				</div>
 				<div className="admin-booking-filter-btn active">
-					<strong>{snapshot.alerts.length}</strong>
+					<strong>{snapshot.stats.openAlerts}</strong>
 					<span>alerts</span>
 				</div>
 				<div className="admin-booking-filter-btn active">
-					<strong>{snapshot.changes.length}</strong>
+					<strong>{snapshot.stats.totalAccountChanges}</strong>
 					<span>account changes</span>
+				</div>
+				<div className="admin-booking-filter-btn active">
+					<strong>{snapshot.stats.activeSessions}</strong>
+					<span>active sessions</span>
 				</div>
 			</section>
 			<section
@@ -74,6 +78,36 @@ export default async function MerchantSecurityPage({
 					<p className="manage-empty">
 						No tenant login activity has been recorded.
 					</p>
+				)}
+			</section>
+			<section className="manage-store-list" aria-label="Active sessions">
+				<h2>Active sessions</h2>
+				{snapshot.sessions.map((session) => (
+					<article className="manage-store" key={session.id}>
+						<div>
+							<p className="eyebrow">Authenticated session</p>
+							<h2>{session.user.name ?? session.user.email ?? session.userId}</h2>
+							<p>Expires {session.expires.toISOString()}</p>
+						</div>
+					</article>
+				))}
+				{snapshot.sessions.length === 0 && (
+					<p className="manage-empty">No active tenant sessions.</p>
+				)}
+			</section>
+			<section className="manage-store-list" aria-label="Activity timeline">
+				<h2>Activity timeline</h2>
+				{snapshot.timeline.map((event) => (
+					<article className="manage-store" key={event.id}>
+						<div>
+							<p className="eyebrow">{event.eventType}</p>
+							<h2>{event.summary}</h2>
+							<p>{event.createdAt.toISOString()}</p>
+						</div>
+					</article>
+				))}
+				{snapshot.timeline.length === 0 && (
+					<p className="manage-empty">No activity timeline events.</p>
 				)}
 			</section>
 		</main>

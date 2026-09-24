@@ -65,6 +65,7 @@ export async function listServiceCatalogForUser(
 					id: true,
 					name: true,
 					priceLabel: true,
+					priceMinor: true,
 					durationLabel: true,
 					enabled: true,
 					orderOnly: true,
@@ -122,6 +123,7 @@ export async function createServiceForUser(
 					slug: input.slug,
 					description: input.description,
 					priceLabel: input.priceLabel,
+					priceMinor: input.priceMinor ?? null,
 					durationLabel: input.durationLabel,
 					orderOnly: input.orderOnly,
 				},
@@ -175,6 +177,7 @@ export async function updateServiceForUser(
 					slug: input.slug,
 					description: input.description,
 					priceLabel: input.priceLabel,
+					priceMinor: input.priceMinor ?? null,
 					durationLabel: input.durationLabel,
 					orderOnly: input.orderOnly,
 				},
@@ -219,4 +222,32 @@ export async function deleteServiceForUser(
 	})
 	if (result.count !== 1)
 		throw new MerchantServiceCatalogError("Service not found.")
+}
+
+export async function updateServicePaymentPriceForUser(
+	userId: string,
+	input: import("@shared/validation/merchant").ServicePriceUpdateInput,
+): Promise<void> {
+	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const result = await prisma.$transaction(async (transaction) => {
+		const updated = await transaction.service.updateMany({
+			where: { id: input.serviceId, tenantId, orderOnly: false },
+			data: { priceMinor: input.priceMinor },
+		})
+		if (updated.count !== 1)
+			throw new MerchantServiceCatalogError(
+				"Only normal bookable services can receive online payment pricing.",
+			)
+		await transaction.adminAuditLog.create({
+			data: {
+				tenantId,
+				actorUserId: userId,
+				action: "service.payment-price.updated",
+				resourceType: "service",
+				resourceId: input.serviceId,
+				metadata: { priceMinor: input.priceMinor },
+			},
+		})
+	})
+	void result
 }

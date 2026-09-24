@@ -20,10 +20,14 @@ import {
 import {
 	updateGalleryPublication,
 	deleteGalleryStyle,
+	createGalleryStyle,
+	updateGalleryStyle,
 } from "@backend/services/merchantGalleryService"
 import {
 	updateBlogPublication,
 	deleteBlog,
+	createBlogForUser,
+	updateBlogForUser,
 } from "@backend/services/merchantBlogService"
 import { updateServiceCategoryVisibility } from "@backend/services/merchantServiceCatalog"
 import {
@@ -37,7 +41,11 @@ import {
 	restrictTenantUser,
 	resolveSecurityAlert,
 } from "@backend/services/merchantSecurityActionsService"
-import { bookingStatusUpdateSchema } from "@shared/validation/merchant"
+import {
+	bookingStatusUpdateSchema,
+	blogMutationSchema,
+	galleryMutationSchema,
+} from "@shared/validation/merchant"
 import { updateTenantDesignForUser } from "@backend/services/tenantSettingsService"
 
 const statusValues = <T extends string>(
@@ -165,6 +173,25 @@ export async function POST(
 					)
 				await deleteGalleryStyle(session.user.id, tenantSlug, id)
 				break
+			case "gallery-create":
+			case "gallery-update": {
+				const parsed = galleryMutationSchema.safeParse({
+					...input,
+					tenantSlug,
+				})
+				if (!parsed.success)
+					return NextResponse.json(
+						{ error: "Invalid gallery form" },
+						{ status: 400 },
+					)
+				if (action === "gallery-create")
+					await createGalleryStyle(session.user.id, parsed.data)
+				else if (id)
+					await updateGalleryStyle(session.user.id, { ...parsed.data, id })
+				else
+					return NextResponse.json({ error: "Gallery id is required" }, { status: 400 })
+				break
+			}
 			case "blog-publication":
 				if (!id || typeof input.published !== "boolean")
 					return NextResponse.json(
@@ -186,6 +213,25 @@ export async function POST(
 					)
 				await deleteBlog(session.user.id, tenantSlug, id)
 				break
+			case "blog-create":
+			case "blog-update": {
+				const parsed = blogMutationSchema.safeParse({
+					...input,
+					tenantSlug,
+				})
+				if (!parsed.success)
+					return NextResponse.json(
+						{ error: "Invalid blog form" },
+						{ status: 400 },
+					)
+				if (action === "blog-create")
+					await createBlogForUser(session.user.id, parsed.data)
+				else if (id)
+					await updateBlogForUser(session.user.id, { ...parsed.data, id })
+				else
+					return NextResponse.json({ error: "Blog id is required" }, { status: 400 })
+				break
+			}
 			case "category-visibility":
 				if (!id || typeof input.enabled !== "boolean")
 					return NextResponse.json(

@@ -71,10 +71,12 @@ function buildReferenceClientConfig(
 		name: service.name,
 		desc: service.description,
 		price: service.priceLabel,
+		priceMinor: service.priceMinor,
 		duration:
-			service.durationMinutes > 0
-				? service.durationMinutes + " min"
-				: "Order via WhatsApp",
+			service.durationLabel ??
+				(service.durationMinutes > 0
+					? service.durationMinutes + " min"
+					: "Order via WhatsApp"),
 		category: getServiceCategoryKey(service.category),
 		orderOnly: service.isCosmeticProduct === true,
 	}))
@@ -100,6 +102,8 @@ function buildReferenceClientConfig(
 	const testimonials = tenant.reviews.map((review) => ({
 		id: review.id,
 		name: review.author,
+		role: review.role,
+		source: review.source,
 		rating: review.rating,
 		text: review.text,
 		status: "approved",
@@ -171,6 +175,7 @@ function buildReferenceClientConfig(
 			footerWeekendHours: tenant.openingHours?.saturday ?? "Sat–Sun: 9 AM – 6 PM",
 			mapEmbedUrl: design.mapEmbedUrl,
 		},
+		bookingPayment: tenant.bookingPayment,
 		social: {
 			...tenant.socialLinks,
 			whatsapp: tenant.socialLinks?.whatsapp ?? tenant.actionLinks.whatsappUrl,

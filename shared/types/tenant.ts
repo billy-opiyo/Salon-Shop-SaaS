@@ -21,12 +21,21 @@ export interface TenantContactDetails {
 	readonly address?: string
 }
 
+export interface TenantBookingPaymentPolicy {
+	readonly enabled: boolean
+	readonly modes: readonly import("@shared/constants/bookingPayments").BookingPaymentMode[]
+	readonly depositPercent: number
+	readonly currency: string
+}
+
 export interface TenantService {
 	readonly id?: string
 	readonly name: string
 	readonly description: string
 	readonly durationMinutes: number
+	readonly durationLabel?: string
 	readonly priceLabel: string
+	readonly priceMinor?: number
 	readonly category: string
 	readonly isCosmeticProduct?: boolean
 }
@@ -57,6 +66,8 @@ export interface TenantReview {
 	readonly author: string
 	readonly rating: number
 	readonly text: string
+	readonly role?: string
+	readonly source?: string
 	readonly createdAt?: string
 }
 
@@ -81,6 +92,7 @@ export interface TenantStorefront {
 	readonly theme: TenantTheme
 	readonly actionLinks: TenantActionLinks
 	readonly contact?: TenantContactDetails
+	readonly bookingPayment?: TenantBookingPaymentPolicy
 	readonly logoUrl?: string
 	readonly heroImageUrl?: string
 	readonly heroTitle?: string

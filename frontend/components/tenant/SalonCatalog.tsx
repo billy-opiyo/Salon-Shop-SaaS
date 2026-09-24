@@ -1,9 +1,11 @@
 import type { ReactNode } from "react"
 
 export interface SalonServiceItem {
+	readonly id?: string
 	readonly name: string
 	readonly desc: string
 	readonly price: string
+	readonly priceMinor?: number
 	readonly duration: string
 	readonly category: string
 	readonly orderOnly?: boolean
@@ -32,6 +34,8 @@ export interface SalonGalleryItem {
 export interface SalonReviewItem {
 	readonly id?: string
 	readonly name: string
+	readonly role?: string
+	readonly source?: string
 	readonly rating: number
 	readonly text: string
 	readonly status?: string
@@ -160,8 +164,9 @@ export function SalonServices({
 								<button
 									className="service-book-btn"
 									type="button"
-									data-service-name={service.name}
+								data-service-name={service.name}
 									data-order-only={String(Boolean(service.orderOnly))}
+									data-price-minor={String(service.priceMinor ?? "")}
 								>
 									{service.orderOnly ? "Order Product" : "Book This Service"}
 								</button>
@@ -276,7 +281,7 @@ export function SalonTestimonials({
 				<div className="testimonial-avatar">{review.name.charAt(0).toUpperCase()}</div>
 				<div className="testimonial-author-info">
 					<h4>{review.name}</h4>
-					<span>Verified Client</span>
+					<span>{review.role ?? "Verified Client"}</span>
 				</div>
 			</div>
 			<div className="testimonial-social" aria-hidden="true">
@@ -340,6 +345,8 @@ export function SalonServiceOptions({
 								key={item.name}
 								value={item.name}
 								data-order-only={String(Boolean(item.orderOnly))}
+								data-service-id={item.id ?? ""}
+								data-price-minor={String(item.priceMinor ?? "")}
 							>
 								{item.name} ({item.price}){item.orderOnly ? " - Order via WhatsApp" : ""}
 							</option>

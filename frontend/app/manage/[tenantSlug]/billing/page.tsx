@@ -68,9 +68,9 @@ export default async function MerchantBillingPage({
 					<p>Status: {billing.subscription?.status ?? "Not configured"}</p>
 				</article>
 				<article className="manage-card">
-					<p className="eyebrow">Trial and renewal</p>
+					<p className="eyebrow">Free usage and renewal</p>
 					<h2>{formatDate(billing.subscription?.trialEndsAt ?? null)}</h2>
-					<p>Trial end or next billing date</p>
+					<p>Six-month free usage ends, then monthly billing begins</p>
 					{billing.subscription?.cancelAtPeriodEnd && (
 						<p>Cancellation is scheduled for the end of the paid period.</p>
 					)}
@@ -86,7 +86,9 @@ export default async function MerchantBillingPage({
 					</h2>
 					<p>
 						Setup begins after payment. Your M-Pesa provider may charge the
-						sender a separate transaction fee.
+						sender a separate transaction fee. Your first six months of store
+						usage are free after the one-time setup fee; recurring billing starts
+						after that period.
 					</p>
 					<SetupPaymentForm tenantSlug={tenantSlug} />
 				</section>

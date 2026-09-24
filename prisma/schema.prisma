@@ -141,6 +141,7 @@ model User {
   createdAttributions    Tenant[]               @relation("TenantCreatedBy")
   sentTeamInvitations    TeamInvitation[]       @relation("TeamInvitationSender")
   legalAcceptances       LegalAcceptance[]
+  platformAuditLogs      PlatformAuditLog[]
 }
 
 model Account {
@@ -237,9 +238,44 @@ model Tenant {
   teamInvitations  TeamInvitation[]
   legalAcceptances LegalAcceptance[]
   invoices         BillingInvoice[]
+  bookingPayments  BookingPayment[]
 
   @@index([ownerUserId])
   @@index([status])
+}
+
+model PlatformTeamMember {
+  id              String   @id @default(cuid())
+  name            String
+  role            String
+  bio             String   @db.Text
+  avatarUrl       String?
+  avatarObjectKey String?
+  websiteUrl      String?
+  instagramUrl    String?
+  facebookUrl     String?
+  linkedinUrl     String?
+  xUrl            String?
+  displayOrder    Int      @default(0)
+  published       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([published, displayOrder, createdAt])
+}
+
+model PlatformAuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  actor        User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([actorUserId, createdAt])
+  @@index([resourceType, resourceId, createdAt])
 }
 
 model TenantDomain {
@@ -283,6 +319,9 @@ model TenantSettings {
   featureFlags      Json?
   serviceVisibility Json?
   storefrontConfig  Json?
+  bookingPaymentsEnabled Boolean @default(false)
+  bookingPaymentModes Json?
+  bookingDepositPercent Int @default(50)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -463,6 +502,7 @@ model Service {
   slug          String
   description   String          @db.Text
   priceLabel    String
+  priceMinor    Int?
   durationLabel String
   orderOnly     Boolean         @default(false)
   enabled       Boolean         @default(true)
@@ -505,6 +545,13 @@ model GalleryStyle {
   length             String?
   size               String?
   hairType           String?
+  productBrand       String?
+  productSize        String?
+  productDescription String?          @db.Text
+  hairServiceType    String?
+  hairTechnique      String?
+  hairLengthDensity  String?
+  hairProductsUsed   String?          @db.Text
   stylistName        String?
   timeTaken          String?
   priceRange         String?
@@ -596,10 +643,39 @@ model Booking {
   bookingSlot         BookingSlot?           @relation("BookingSlot")
   waitlistEntry       WaitlistEntry?         @relation("WaitlistBooking")
   notifications       NotificationDelivery[]
+  payments            BookingPayment[]
 
   @@index([tenantId, status, appointmentDate])
   @@index([tenantId, email])
   @@index([userId, appointmentDate])
+}
+
+model BookingPayment {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  bookingId            String
+  paymentMode          String
+  amountMinor          Int
+  serviceTotalMinor    Int
+  currency             String   @default("KES")
+  status               String   @default("pending")
+  phoneNumber          String?
+  merchantRequestId    String?
+  checkoutRequestId    String?  @unique
+  mpesaReceiptNumber   String?
+  resultDescription    String?
+  requestedAt          DateTime @default(now())
+  completedAt          DateTime?
+  expiresAt            DateTime?
+  rawCallback          Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, createdAt])
+  @@index([bookingId, status])
+  @@index([merchantRequestId])
 }
 
 model WaitlistEntry {

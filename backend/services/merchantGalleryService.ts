@@ -51,6 +51,18 @@ async function getTenantId(
 	return tenant.id
 }
 
+async function resolveCategoryId(
+	tenantId: string,
+	categoryKey: string | undefined,
+): Promise<string | null> {
+	if (!categoryKey) return null
+	const category = await prisma.serviceCategory.findFirst({
+		where: { tenantId, key: categoryKey },
+		select: { id: true },
+	})
+	return category?.id ?? null
+}
+
 export async function listGalleryForUser(userId: string, tenantSlug: string) {
 	const tenantId = await getTenantId(userId, tenantSlug)
 	return prisma.galleryStyle.findMany({
@@ -58,14 +70,30 @@ export async function listGalleryForUser(userId: string, tenantSlug: string) {
 		orderBy: { updatedAt: "desc" },
 		select: {
 			id: true,
+			categoryId: true,
 			styleName: true,
+			description: true,
+			serviceName: true,
 			styleType: true,
+			length: true,
+			size: true,
+			hairType: true,
+			productBrand: true,
+			productSize: true,
+			productDescription: true,
+			hairServiceType: true,
+			hairTechnique: true,
+			hairLengthDensity: true,
+			hairProductsUsed: true,
+			stylistName: true,
+			timeTaken: true,
+			priceRange: true,
 			imageUrl: true,
 			beforeImageUrl: true,
 			published: true,
 			featuredTrending: true,
 			featuredMostBooked: true,
-			category: { select: { label: true } },
+			category: { select: { label: true, key: true } },
 		},
 	})
 }
@@ -133,13 +161,32 @@ export async function createGalleryStyle(
 			throw new MerchantGalleryError(error.message)
 		throw error
 	}
+	const categoryId = await resolveCategoryId(tenantId, input.categoryKey)
 	const style = await prisma.galleryStyle.create({
 		data: {
 			tenantId,
+			categoryId,
 			styleName: input.styleName,
+			description: input.description || null,
+			serviceName: input.serviceName || null,
 			imageUrl: input.imageUrl,
 			beforeImageUrl: input.beforeImageUrl || null,
 			styleType: input.styleType || null,
+			length: input.length || null,
+			size: input.size || null,
+			hairType: input.hairType || null,
+			productBrand: input.productBrand || null,
+			productSize: input.productSize || null,
+			productDescription: input.productDescription || null,
+			hairServiceType: input.hairServiceType || null,
+			hairTechnique: input.hairTechnique || null,
+			hairLengthDensity: input.hairLengthDensity || null,
+			hairProductsUsed: input.hairProductsUsed || null,
+			stylistName: input.stylistName || null,
+			timeTaken: input.timeTaken || null,
+			priceRange: input.priceRange || null,
+			featuredTrending: input.featuredTrending ?? false,
+			featuredMostBooked: input.featuredMostBooked ?? false,
 			published: input.published,
 		},
 		select: { id: true },
@@ -160,13 +207,32 @@ export async function updateGalleryStyle(
 	input: GalleryMutationInput & { id: string },
 ): Promise<void> {
 	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const categoryId = await resolveCategoryId(tenantId, input.categoryKey)
 	const result = await prisma.galleryStyle.updateMany({
 		where: { id: input.id, tenantId },
 		data: {
+			categoryId,
 			styleName: input.styleName,
+			description: input.description || null,
+			serviceName: input.serviceName || null,
 			imageUrl: input.imageUrl,
 			beforeImageUrl: input.beforeImageUrl || null,
 			styleType: input.styleType || null,
+			length: input.length || null,
+			size: input.size || null,
+			hairType: input.hairType || null,
+			productBrand: input.productBrand || null,
+			productSize: input.productSize || null,
+			productDescription: input.productDescription || null,
+			hairServiceType: input.hairServiceType || null,
+			hairTechnique: input.hairTechnique || null,
+			hairLengthDensity: input.hairLengthDensity || null,
+			hairProductsUsed: input.hairProductsUsed || null,
+			stylistName: input.stylistName || null,
+			timeTaken: input.timeTaken || null,
+			priceRange: input.priceRange || null,
+			featuredTrending: input.featuredTrending ?? false,
+			featuredMostBooked: input.featuredMostBooked ?? false,
 			published: input.published,
 		},
 	})

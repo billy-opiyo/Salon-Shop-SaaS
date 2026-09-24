@@ -142,7 +142,9 @@ export async function createDueRenewalInvoices(now = new Date()) {
 	for (const invoice of dueInvoices) {
 		if (!invoice.subscription) continue
 		const dueAt = invoice.dueAt ?? now
-		const graceEndsAt = new Date(dueAt.getTime() + 3 * 86400000)
+		const graceEndsAt = new Date(
+			dueAt.getTime() + BILLING_POLICY.paymentGraceDays * 86400000,
+		)
 		if (now >= graceEndsAt) {
 			await prisma.$transaction([
 				prisma.subscription.updateMany({
@@ -160,7 +162,10 @@ export async function createDueRenewalInvoices(now = new Date()) {
 			suspended += 1
 			continue
 		}
-		if (!invoice.subscription.billingPhoneNumber || invoice.retryCount >= 2)
+		if (
+			!invoice.subscription.billingPhoneNumber ||
+			invoice.retryCount >= BILLING_POLICY.failedPaymentRetryCount
+		)
 			continue
 		const retryDue =
 			!invoice.lastAttemptAt ||

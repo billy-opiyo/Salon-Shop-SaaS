@@ -25,8 +25,12 @@ export function PlatformFooter() {
 						place.
 					</p>
 				</div>
-				<nav className="platform-footer__links" aria-label="Platform policies">
-					<span className="eyebrow">Policies</span>
+				<nav className="platform-footer__links" aria-label="Beauty Sphia links">
+					<span className="eyebrow">Platform</span>
+					<Link href="/support">Salon Owner Support</Link>
+					<Link href="/about">About Us</Link>
+					<Link href="/#contact">Contact</Link>
+					<span className="eyebrow platform-footer__links-heading">Policies</span>
 					<Link href="/privacy">Privacy Policy</Link>
 					<Link href="/cookies">Cookie Policy</Link>
 					<Link href="/terms">Terms of Service</Link>

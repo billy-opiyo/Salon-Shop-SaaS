@@ -45,7 +45,7 @@ export function NotFoundMarkup(): ReactNode {
 							keeps the <span data-client-text="brand.businessName">Royal Braids</span>
 							Vercel-hosted website graceful whenever a route returns a 404.
 						</p>
-						<p className="firebase-note">
+						<p className="hosting-note">
 							<strong>Vercel Hosting custom 404:</strong> if this Vercel-hosted site
 							receives a missing link or route error, this branded page is shown instead
 							of a blank or default error screen.

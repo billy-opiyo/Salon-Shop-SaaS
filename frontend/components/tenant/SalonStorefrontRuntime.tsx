@@ -9,6 +9,7 @@ import {
 	STOREFRONT_SECTION_KEYS,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
 import type {
 	SalonBlogItem,
@@ -56,6 +57,12 @@ export interface SalonClientConfig {
 	}
 	readonly contact?: Record<string, string | undefined>
 	readonly social?: Record<string, string | undefined>
+	readonly bookingPayment?: {
+		readonly enabled: boolean
+		readonly modes: readonly BookingPaymentMode[]
+		readonly depositPercent: number
+		readonly currency: string
+	}
 	readonly catalog?: {
 		readonly services?: readonly SalonServiceItem[]
 		readonly gallery?: readonly SalonGalleryItem[]
@@ -114,6 +121,21 @@ function renderAdminSnapshotList(
 				: { value: item }
 		const row = document.createElement("article")
 		row.className = "admin-snapshot-row"
+		row.dataset.searchText = Object.values(record)
+			.map(formatAdminSnapshotValue)
+			.join(" ")
+			.toLowerCase()
+		row.dataset.provider = String(record.provider ?? "").toLowerCase()
+		row.dataset.risk = String(record.riskLevel ?? "").toLowerCase()
+		row.dataset.country = String(record.country ?? "").toLowerCase()
+		row.dataset.status = record.resolvedAt
+			? "resolved"
+			: record.resolvedAt === null
+				? "open"
+				: String(record.status ?? "").toLowerCase()
+		row.dataset.severity = String(record.severity ?? "").toLowerCase()
+		row.dataset.eventType = String(record.eventType ?? "").toLowerCase()
+		row.dataset.createdAt = String(record.createdAt ?? "")
 		const title = document.createElement("strong")
 		title.textContent = String(
 			record.serviceName ??
@@ -172,6 +194,7 @@ function renderAdminSnapshotList(
 			button.className = "btn btn-outline admin-platform-action"
 			button.dataset.adminAction = action
 			button.dataset.adminId = recordId
+			button.dataset.adminDetail = JSON.stringify(record)
 			Object.entries(extra).forEach(([key, value]) => {
 				button.dataset[key] = value
 			})
@@ -213,6 +236,7 @@ function renderAdminSnapshotList(
 			addAction("review-delete", "Delete")
 		}
 		if (elementId === "adminGalleryList") {
+			addAction("gallery-edit", "Edit")
 			addAction(
 				"gallery-publication",
 				record.published === true ? "Unpublish" : "Publish",
@@ -221,6 +245,7 @@ function renderAdminSnapshotList(
 			addAction("gallery-delete", "Delete")
 		}
 		if (elementId === "adminBlogsList") {
+			addAction("blog-edit", "Edit")
 			addAction(
 				"blog-publication",
 				record.published === true ? "Unpublish" : "Publish",
@@ -248,6 +273,313 @@ function formatAdminSnapshotValue(value: unknown): string {
 	if (Array.isArray(value))
 		return value.map(formatAdminSnapshotValue).join(", ")
 	return JSON.stringify(value)
+}
+
+function formField(form: HTMLFormElement, id: string): string {
+	const element = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#${id}`)
+	return element?.value.trim() ?? ""
+}
+
+function setFormField(form: HTMLFormElement, id: string, value: unknown): void {
+	const element = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#${id}`)
+	if (element) element.value = typeof value === "string" ? value : String(value ?? "")
+}
+
+async function uploadLegacyAdminImage(
+	tenantSlug: string,
+	file: File,
+	kind: "GALLERY" | "BLOG",
+): Promise<string> {
+	if (file.size > 500 * 1024) throw new Error("Images must be 500 KB or smaller.")
+	const prepare = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
+		method: "POST",
+		credentials: "same-origin",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			fileName: file.name,
+			mimeType: file.type,
+			byteSize: file.size,
+			kind,
+		}),
+	})
+	const prepared = (await prepare.json()) as {
+		readonly uploadUrl?: string
+		readonly assetId?: string
+		readonly error?: string
+	}
+	if (!prepare.ok || !prepared.uploadUrl || !prepared.assetId)
+		throw new Error(prepared.error ?? "The image upload could not be prepared.")
+	const uploaded = await fetch(prepared.uploadUrl, {
+		method: "PUT",
+		headers: { "content-type": file.type },
+		body: file,
+	})
+	if (!uploaded.ok) throw new Error("The image could not be uploaded to storage.")
+	const finalized = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
+		method: "PATCH",
+		credentials: "same-origin",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ assetId: prepared.assetId }),
+	})
+	const result = (await finalized.json()) as { readonly publicUrl?: string | null; readonly error?: string }
+	if (!finalized.ok || !result.publicUrl)
+		throw new Error(result.error ?? "The uploaded image has no public URL configured.")
+	return result.publicUrl
+}
+
+function bindLegacyContentForms(tenantSlug: string): () => void {
+	const removers: Array<() => void> = []
+	const message = (id: string, text: string, error = false) => {
+		const element = document.getElementById(id)
+		if (!element) return
+		element.textContent = text
+		element.classList.toggle("error", error)
+		element.classList.toggle("success", !error)
+		element.style.display = "block"
+	}
+	const bind = (formId: string, handler: (form: HTMLFormElement) => Promise<void>) => {
+		const form = document.getElementById(formId)
+		if (!(form instanceof HTMLFormElement)) return
+		const submit = (event: SubmitEvent) => {
+			event.preventDefault()
+			void handler(form).catch((error: unknown) => {
+				const messageId = formId === "adminGalleryForm"
+					? "adminGalleryMessage"
+					: formId === "adminBlogsForm"
+						? "adminBlogsMessage"
+						: "adminAdminsMessage"
+				message(messageId, error instanceof Error ? error.message : "The content could not be saved.", true)
+			})
+		}
+		form.addEventListener("submit", submit)
+		removers.push(() => form.removeEventListener("submit", submit))
+	}
+	bind("adminGalleryForm", async (form) => {
+		const file = form.querySelector<HTMLInputElement>("#galleryMainImage")?.files?.[0]
+		const imageUrl = file
+			? await uploadLegacyAdminImage(tenantSlug, file, "GALLERY")
+			: form.dataset.imageUrl ?? ""
+		if (!imageUrl) throw new Error("Select a gallery image before saving.")
+		const beforeFile = form.querySelector<HTMLInputElement>("#galleryBeforeImage")?.files?.[0]
+		const beforeImageUrl = beforeFile
+			? await uploadLegacyAdminImage(tenantSlug, beforeFile, "GALLERY")
+			: form.dataset.beforeImageUrl ?? ""
+		const id = formField(form, "galleryEditId")
+		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				action: id ? "gallery-update" : "gallery-create",
+				id,
+				categoryKey: formField(form, "galleryServiceCategory"),
+				styleName: formField(form, "galleryStyleName"),
+				imageUrl,
+				beforeImageUrl,
+				styleType: formField(form, "galleryStyleType"),
+				serviceName: formField(form, "galleryServiceName"),
+				length: formField(form, "galleryLength"),
+				size: formField(form, "gallerySize"),
+				timeTaken: formField(form, "galleryTimeTaken"),
+				priceRange: formField(form, "galleryPriceRange"),
+				productBrand: formField(form, "galleryProductBrand"),
+				productSize: formField(form, "galleryProductSize"),
+				productDescription: formField(form, "galleryProductDescription"),
+				hairType: formField(form, "galleryHairType"),
+				hairServiceType: formField(form, "galleryHairServiceType"),
+				hairTechnique: formField(form, "galleryHairTechnique"),
+				hairLengthDensity: formField(form, "galleryHairLengthDensity"),
+				hairProductsUsed: formField(form, "galleryHairProductsUsed"),
+				stylistName: formField(form, "galleryStylistName"),
+				published: true,
+			}),
+		})
+		if (!response.ok) {
+			const result = (await response.json()) as { readonly error?: string }
+			throw new Error(result.error ?? "The gallery style could not be saved.")
+		}
+		window.location.reload()
+	})
+	bind("adminBlogsForm", async (form) => {
+		const file = form.querySelector<HTMLInputElement>("#blogImage")?.files?.[0]
+		const imageUrl = file
+			? await uploadLegacyAdminImage(tenantSlug, file, "BLOG")
+			: form.dataset.imageUrl ?? ""
+		if (!imageUrl) throw new Error("Select a blog image before saving.")
+		const title = formField(form, "blogTitle")
+		const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+		const id = formField(form, "blogEditId")
+		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				action: id ? "blog-update" : "blog-create",
+				id,
+				title,
+				slug,
+				excerpt: formField(form, "blogExcerpt"),
+				imageUrl,
+				readTime: formField(form, "blogReadTime"),
+				publishDate: formField(form, "blogDate"),
+				readMoreUrl: formField(form, "blogReadMoreUrl"),
+				published: true,
+			}),
+		})
+		if (!response.ok) {
+			const result = (await response.json()) as { readonly error?: string }
+			throw new Error(result.error ?? "The blog post could not be saved.")
+		}
+		window.location.reload()
+	})
+	bind("adminAdminsForm", async (form) => {
+		const email = formField(form, "adminManageEmail")
+		const role = formField(form, "adminManageRole") === "super_admin" ? "ADMIN" : "STAFF"
+		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				email,
+				role,
+				canManageAdmins: document.getElementById("adminPermManageAdmins") instanceof HTMLInputElement && (document.getElementById("adminPermManageAdmins") as HTMLInputElement).checked,
+				canManageBookings: document.getElementById("adminPermManageBookings") instanceof HTMLInputElement && (document.getElementById("adminPermManageBookings") as HTMLInputElement).checked,
+				canManageContent: document.getElementById("adminPermManageContent") instanceof HTMLInputElement && (document.getElementById("adminPermManageContent") as HTMLInputElement).checked,
+				canManageSecurity: document.getElementById("adminPermManageSecurity") instanceof HTMLInputElement && (document.getElementById("adminPermManageSecurity") as HTMLInputElement).checked,
+			}),
+		})
+		if (!response.ok) {
+			const result = (await response.json()) as { readonly error?: string }
+			throw new Error(result.error ?? "The team invitation could not be created.")
+		}
+		window.location.reload()
+	})
+	const cancelMap: ReadonlyArray<readonly [string, string, string]> = [
+		["adminGalleryCancelEdit", "adminGalleryForm", "adminGalleryFormTitle"],
+		["adminBlogsCancelEdit", "adminBlogsForm", "adminBlogsFormTitle"],
+		["adminAdminsCancelEdit", "adminAdminsForm", "adminAdminsFormTitle"],
+	]
+	cancelMap.forEach(([buttonId, formId, titleId]) => {
+		const button = document.getElementById(buttonId)
+		const form = document.getElementById(formId)
+		if (!(button instanceof HTMLButtonElement) || !(form instanceof HTMLFormElement)) return
+		const handler = () => {
+			form.reset()
+			delete form.dataset.imageUrl
+			delete form.dataset.beforeImageUrl
+			const title = document.getElementById(titleId)
+			if (title) title.textContent = formId === "adminGalleryForm" ? "Add New Gallery Style" : formId === "adminBlogsForm" ? "Add New Blog" : "Create Admin Access"
+			button.style.display = "none"
+		}
+		button.addEventListener("click", handler)
+		removers.push(() => button.removeEventListener("click", handler))
+	})
+	return () => removers.forEach((remove) => remove())
+}
+
+function bindAdminSnapshotFilters(): () => void {
+	const removers: Array<() => void> = []
+	const getValue = (id: string): string => {
+		const element = document.getElementById(id)
+		return element instanceof HTMLInputElement || element instanceof HTMLSelectElement
+			? element.value.trim().toLowerCase()
+			: ""
+	}
+	const apply = () => {
+		const search = getValue("adminSecuritySearchInput")
+		const provider = getValue("adminSecurityProviderFilterSelect")
+		const risk = getValue("adminSecurityRiskFilterSelect")
+		const country = getValue("adminSecurityCountryFilterInput")
+		const status = getValue("adminSecurityStatusFilterSelect")
+		const from = getValue("adminSecurityDateFromFilter")
+		const to = getValue("adminSecurityDateToFilter")
+		const exactDate = getValue("adminSecurityDateFilter")
+		const rows = document.querySelectorAll<HTMLElement>("#adminSecurityActivityList .admin-snapshot-row")
+		rows.forEach((row) => {
+			const date = row.dataset.createdAt?.slice(0, 10) ?? ""
+			row.hidden = Boolean(
+				(search && !row.dataset.searchText?.includes(search)) ||
+				(provider && provider !== "all" && row.dataset.provider !== provider) ||
+				(risk && risk !== "all" && row.dataset.risk !== risk) ||
+				(country && !row.dataset.country?.includes(country)) ||
+				(status && status !== "all" && row.dataset.status !== status) ||
+				(from && date < from) ||
+				(to && date > to) ||
+				(exactDate && date !== exactDate),
+			)
+		})
+		const sortRows = (selector: string, mode: string) => {
+			const container = document.querySelector<HTMLElement>(selector)
+			if (!container) return
+			const rows = Array.from(container.querySelectorAll<HTMLElement>(".admin-snapshot-row"))
+			rows.sort((left, right) => {
+				if (mode.includes("oldest"))
+					return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
+				if (mode.includes("failed")) return Number(right.dataset.status === "failure") - Number(left.dataset.status === "failure")
+				if (mode.includes("suspicious")) return Number(right.dataset.risk === "high") - Number(left.dataset.risk === "high")
+				if (mode.includes("high")) return Number(right.dataset.severity === "high") - Number(left.dataset.severity === "high")
+				if (mode.includes("open")) return Number(right.dataset.status !== "resolved") - Number(left.dataset.status !== "resolved")
+				return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
+			})
+			rows.forEach((row) => container.append(row))
+		}
+		sortRows("#adminSecurityActivityList", getValue("adminSecuritySortSelect"))
+		sortRows("#adminSecurityAlertsList", getValue("adminSecurityAlertsSortSelect"))
+		sortRows("#adminAccountHistoryList", getValue("adminAccountHistorySortSelect"))
+		sortRows("#adminTimelineList", getValue("adminTimelineSortSelect"))
+		sortRows("#adminSessionsList", getValue("adminSessionsSortSelect"))
+		const teamSearch = getValue("adminAdminsSearchInput")
+		const teamRole = getValue("adminAdminsRoleFilter")
+		const teamStatus = getValue("adminAdminsStatusFilter")
+		document.querySelectorAll<HTMLElement>("#adminAdminsList .admin-snapshot-row").forEach((row) => {
+			row.hidden = Boolean(
+				(teamSearch && !row.dataset.searchText?.includes(teamSearch)) ||
+				(teamRole && teamRole !== "all" && !row.dataset.searchText?.includes(teamRole)) ||
+				(teamStatus && teamStatus !== "all" && row.dataset.status !== teamStatus),
+			)
+		})
+	}
+	const ids = [
+		"adminSecuritySortSelect",
+		"adminSecurityAlertsSortSelect",
+		"adminAccountHistorySortSelect",
+		"adminTimelineSortSelect",
+		"adminSessionsSortSelect",
+		"adminSecuritySearchInput",
+		"adminSecurityProviderFilterSelect",
+		"adminSecurityRiskFilterSelect",
+		"adminSecurityCountryFilterInput",
+		"adminSecurityStatusFilterSelect",
+		"adminSecurityDateFromFilter",
+		"adminSecurityDateToFilter",
+		"adminSecurityDateFilter",
+		"adminAdminsSearchInput",
+		"adminAdminsRoleFilter",
+		"adminAdminsStatusFilter",
+	]
+	ids.forEach((id) => {
+		const element = document.getElementById(id)
+		if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement)) return
+		const eventName = element instanceof HTMLInputElement && element.type === "search" ? "input" : "change"
+		element.addEventListener(eventName, apply)
+		removers.push(() => element.removeEventListener(eventName, apply))
+	})
+	const clear = document.getElementById("adminSecurityClearFiltersBtn")
+	if (clear instanceof HTMLButtonElement) {
+		const handler = () => {
+			ids.forEach((id) => {
+				const element = document.getElementById(id)
+				if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
+					element.value = element instanceof HTMLSelectElement ? "all" : ""
+				}
+			})
+			apply()
+		}
+		clear.addEventListener("click", handler)
+		removers.push(() => clear.removeEventListener("click", handler))
+	}
+	apply()
+	return () => removers.forEach((remove) => remove())
 }
 
 function recordValue(value: unknown): Record<string, unknown> {
@@ -472,6 +804,57 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		const action = button.dataset.adminAction
 		const id = button.dataset.adminId
 		if (!action || !id) return
+		if (action === "gallery-edit" || action === "blog-edit") {
+			const formId = action === "gallery-edit" ? "adminGalleryForm" : "adminBlogsForm"
+			const form = document.getElementById(formId)
+			if (!(form instanceof HTMLFormElement) || !button.dataset.adminDetail) return
+			try {
+				const record = JSON.parse(button.dataset.adminDetail) as AdminSnapshotRecord
+				if (action === "gallery-edit") {
+					setFormField(form, "galleryEditId", id)
+					const category = record.category && typeof record.category === "object" ? record.category as AdminSnapshotRecord : {}
+					setFormField(form, "galleryServiceCategory", category.key)
+					setFormField(form, "galleryStyleName", record.styleName)
+					setFormField(form, "galleryStyleType", record.styleType)
+					setFormField(form, "galleryServiceName", record.serviceName)
+					setFormField(form, "galleryLength", record.length)
+					setFormField(form, "gallerySize", record.size)
+					setFormField(form, "galleryTimeTaken", record.timeTaken)
+					setFormField(form, "galleryPriceRange", record.priceRange)
+					setFormField(form, "galleryProductBrand", record.productBrand)
+					setFormField(form, "galleryProductSize", record.productSize)
+					setFormField(form, "galleryProductDescription", record.productDescription)
+					setFormField(form, "galleryHairType", record.hairType)
+					setFormField(form, "galleryHairServiceType", record.hairServiceType)
+					setFormField(form, "galleryHairTechnique", record.hairTechnique)
+					setFormField(form, "galleryHairLengthDensity", record.hairLengthDensity)
+					setFormField(form, "galleryHairProductsUsed", record.hairProductsUsed)
+					setFormField(form, "galleryStylistName", record.stylistName)
+					form.dataset.imageUrl = typeof record.imageUrl === "string" ? record.imageUrl : ""
+					form.dataset.beforeImageUrl = typeof record.beforeImageUrl === "string" ? record.beforeImageUrl : ""
+					const title = document.getElementById("adminGalleryFormTitle")
+					if (title) title.textContent = "Edit Gallery Style"
+					const cancel = document.getElementById("adminGalleryCancelEdit")
+					if (cancel) cancel.style.display = "inline-flex"
+				} else {
+					setFormField(form, "blogEditId", id)
+					setFormField(form, "blogTitle", record.title)
+					setFormField(form, "blogExcerpt", record.excerpt)
+					setFormField(form, "blogReadTime", record.readTime)
+					setFormField(form, "blogReadMoreUrl", record.readMoreUrl)
+					setFormField(form, "blogDate", typeof record.publishDate === "string" ? record.publishDate.slice(0, 10) : "")
+					form.dataset.imageUrl = typeof record.imageUrl === "string" ? record.imageUrl : ""
+					const title = document.getElementById("adminBlogsFormTitle")
+					if (title) title.textContent = "Edit Blog"
+					const cancel = document.getElementById("adminBlogsCancelEdit")
+					if (cancel) cancel.style.display = "inline-flex"
+				}
+				form.scrollIntoView({ behavior: "smooth", block: "center" })
+			} catch {
+				// The detail payload is generated locally from the server snapshot.
+			}
+			return
+		}
 		button.disabled = true
 		const payload: Record<string, unknown> = { action, id }
 		if (button.dataset.status) payload.status = button.dataset.status
@@ -746,6 +1129,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const blogs = Array.isArray(snapshot.blogs) ? snapshot.blogs : []
 			const services = Array.isArray(snapshot.services) ? snapshot.services : []
 			removeTabHandlers.push(bindStorefrontDesignEditor(tenantSlug, snapshot))
+			removeTabHandlers.push(bindLegacyContentForms(tenantSlug))
 			const categoryMount = document.getElementById(
 				"adminServiceCategoryToggles",
 			)
@@ -787,7 +1171,6 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			}
 			scheduleBookings = bookings
 			renderSchedule()
-			const stylists = Array.isArray(snapshot.stylists) ? snapshot.stylists : []
 			const team = Array.isArray(snapshot.team) ? snapshot.team : []
 			const security = snapshot.security as AdminSnapshotRecord | undefined
 			const securityLogins = Array.isArray(security?.logins)
@@ -799,6 +1182,16 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const accountChanges = Array.isArray(security?.changes)
 				? security.changes
 				: []
+			const securitySessions = Array.isArray(security?.sessions)
+				? security.sessions
+				: []
+			const securityTimeline = Array.isArray(security?.timeline)
+				? security.timeline
+				: []
+			const securityStats =
+				security?.stats && typeof security.stats === "object"
+					? (security.stats as AdminSnapshotRecord)
+					: {}
 			renderAdminSnapshotList(
 				"adminBookingsList",
 				bookings,
@@ -842,6 +1235,17 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				accountChanges,
 				"No account changes found.",
 			)
+			renderAdminSnapshotList(
+				"adminSessionsList",
+				securitySessions,
+				"No active session data found.",
+			)
+			renderAdminSnapshotList(
+				"adminTimelineList",
+				securityTimeline,
+				"No activity timeline events found.",
+			)
+			removeTabHandlers.push(bindAdminSnapshotFilters())
 			const exportButton = document.getElementById("adminSecurityExportCsvBtn")
 			if (exportButton instanceof HTMLButtonElement) {
 				exportButton.onclick = () => {
@@ -881,7 +1285,56 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					(item) => (item as AdminSnapshotRecord).status === "WAITING",
 				).length,
 				adminAdminsTotalCount: team.length,
-				adminSecurityTotalCount: securityLogins.length,
+				adminAdminsActiveCount: team.filter(
+					(item) => (item as AdminSnapshotRecord).status === "ACTIVE",
+				).length,
+				adminAdminsSuperCount: team.filter(
+					(item) =>
+						(item as AdminSnapshotRecord).role === "OWNER" ||
+						(item as AdminSnapshotRecord).role === "ADMIN",
+				).length,
+				adminAdminsStandardCount: team.filter(
+					(item) => (item as AdminSnapshotRecord).role === "STAFF",
+				).length,
+				adminSecurityTotalCount: Number(
+					securityStats.totalLogins ?? securityLogins.length,
+				),
+				adminSecuritySuccessCount: Number(securityStats.successfulLogins ?? 0),
+				adminSecurityFailedCount: Number(securityStats.failedLogins ?? 0),
+				adminSecurityHighRiskCount: Number(securityStats.highRiskLogins ?? 0),
+				adminSecurityAlertsTotalCount: Number(
+					securityStats.totalAlerts ?? securityAlerts.length,
+				),
+				adminSecurityAlertsOpenCount: Number(securityStats.openAlerts ?? 0),
+				adminSecurityAlertsHighCount: Number(
+					securityStats.highSeverityAlerts ?? 0,
+				),
+				adminAccountHistoryTotalCount: Number(
+					securityStats.totalAccountChanges ?? accountChanges.length,
+				),
+				adminSessionsTotalCount: securitySessions.length,
+				adminSessionsOnlineCount: Number(
+					securityStats.activeSessions ?? securitySessions.length,
+				),
+				adminSessionsOnlineUsersCount: Number(securityStats.activeUsers ?? 0),
+				adminTimelineTotalCount: Number(
+					securityStats.totalTimelineEvents ?? securityTimeline.length,
+				),
+				adminSecurityWidgetTotalLoginsToday: Number(
+					securityStats.totalLoginsToday ?? 0,
+				),
+				adminSecurityWidgetActiveUsersNow: Number(
+					securityStats.activeUsers ?? 0,
+				),
+				adminSecurityWidgetFailedLoginAttempts: Number(
+					securityStats.failedLogins ?? 0,
+				),
+				adminSecurityWidgetGoogleSignIns: Number(
+					securityStats.googleSignIns ?? 0,
+				),
+				adminSecurityWidgetEmailSignIns: Number(
+					securityStats.emailSignIns ?? 0,
+				),
 			}
 			Object.entries(counts).forEach(([id, count]) => {
 				const element = document.getElementById(id)
@@ -2372,11 +2825,13 @@ function bindBookingAdapter(
 		const phone = getFormValue(form, "phone")
 		const serviceName = getFormValue(form, "service")
 		const customService = getFormValue(form, "customService")
+		const paymentMode = getFormValue(form, "paymentMode")
 		const serviceSelect = document.getElementById("serviceSelect")
 		const selectedOption =
 			serviceSelect instanceof HTMLSelectElement
 				? serviceSelect.options[serviceSelect.selectedIndex]
 				: undefined
+		const serviceId = selectedOption?.dataset.serviceId || undefined
 		if (selectedOption?.dataset.orderOnly === "true") {
 			openReferenceWhatsAppOrder(
 				serviceName,
@@ -2412,8 +2867,10 @@ function bindBookingAdapter(
 					lastName,
 					email,
 					phone,
+					serviceId,
 					serviceName: customService || serviceName,
 					customService: customService || undefined,
+					paymentMode: paymentMode || undefined,
 					appointmentDate,
 					timeLabel,
 					specialRequests: specialRequests || undefined,
@@ -2435,10 +2892,28 @@ function bindBookingAdapter(
 				return
 			}
 
+			const paymentRecord =
+				typeof payload === "object" &&
+				payload !== null &&
+				"payment" in payload &&
+				typeof payload.payment === "object" &&
+				payload.payment !== null
+					? (payload.payment as { status?: string })
+					: undefined
+			const paymentPending = paymentRecord?.status === "pending"
 			setBookingMessage(
-				"Booking request received. We will confirm your appointment shortly.",
+				paymentPending
+					? "Booking received. Approve the M-Pesa prompt to confirm your appointment."
+					: "Booking request received. We will confirm your appointment shortly.",
 				"success",
 			)
+			const successHeading = document.querySelector<HTMLHeadingElement>(
+				"#bookingSuccess h3",
+			)
+			if (successHeading)
+				successHeading.textContent = paymentPending
+					? "Payment Pending"
+					: "Booking Confirmed!"
 			showBookingSuccess()
 		} catch {
 			setBookingMessage(
@@ -3333,6 +3808,36 @@ export function SalonStorefrontRuntime({
 	const gallery = clientConfig.catalog?.gallery ?? []
 	const testimonials = clientConfig.catalog?.testimonials ?? []
 	const blogs = clientConfig.catalog?.blogs ?? []
+	const bookingPayment = clientConfig.bookingPayment
+	const paymentModeLabels: Readonly<Record<BookingPaymentMode, string>> = {
+		partial: "Partial payment deposit",
+		full: "Full payment",
+		after_service: "Pay after service",
+	}
+	const bookingPaymentContent = bookingPayment?.enabled ? (
+		<div className="form-group full booking-payment-options" id="bookingPaymentGroup">
+			<label htmlFor="bookingPaymentMode">Payment option</label>
+			<select
+				name="paymentMode"
+				id="bookingPaymentMode"
+				defaultValue={bookingPayment.modes[0] ?? "after_service"}
+			>
+				{bookingPayment.modes.map((mode) => (
+					<option value={mode} key={mode}>
+						{paymentModeLabels[mode]}
+						{mode === "partial"
+							? ` (${bookingPayment.depositPercent}% deposit)`
+							: ""}
+					</option>
+				))}
+			</select>
+			<small id="bookingPaymentHint">
+				{bookingPayment.currency} payment instructions will be sent to the phone
+				 number entered above. WhatsApp orders and bookings do not use online
+				payments.
+			</small>
+		</div>
+	) : null
 
 	return (
 		<div className="salon-storefront-root">
@@ -3349,6 +3854,7 @@ export function SalonStorefrontRuntime({
 				testimonialsContent={<SalonTestimonials items={testimonials} />}
 				blogContent={<SalonBlogs items={blogs} />}
 				serviceOptions={<SalonServiceOptions items={services} />}
+				bookingPaymentContent={bookingPaymentContent}
 				reviewServiceOptions={services.map((service) => (
 					<option value={service.name} key={service.name}>
 						{service.name}

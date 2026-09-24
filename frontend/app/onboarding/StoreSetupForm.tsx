@@ -68,6 +68,10 @@ export function StoreSetupForm() {
 					<option value="enterprise">Enterprise</option>
 				</select>
 			</label>
+			<p className="form-help">
+				A one-time setup fee activates your store. The selected plan then
+				includes six months of free usage before monthly billing begins.
+			</p>
 			<div className="onboarding-form__row">
 				<label>
 					City

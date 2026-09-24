@@ -11,6 +11,7 @@ export interface SalonStorefrontMarkupProps {
 	readonly testimonialsContent?: ReactNode
 	readonly blogContent?: ReactNode
 	readonly serviceOptions?: ReactNode
+	readonly bookingPaymentContent?: ReactNode
 	readonly reviewServiceOptions?: ReactNode
 }
 
@@ -22,6 +23,7 @@ export function SalonStorefrontMarkup({
 	testimonialsContent,
 	blogContent,
 	serviceOptions,
+	bookingPaymentContent,
 	reviewServiceOptions,
 }: SalonStorefrontMarkupProps): ReactNode {
 	return (
@@ -710,6 +712,7 @@ export function SalonStorefrontMarkup({
 						{serviceOptions}
 					</select>
 								</div>
+								{bookingPaymentContent}
 								<div className="form-group full hidden" id="customServiceGroup">
 									<label htmlFor="customServiceInput">Type Your Service *</label>
 									<input
@@ -1458,7 +1461,7 @@ export function SalonStorefrontMarkup({
 						className="newsletter-form"
 						id="contactForm"
 						method="POST"
-						data-email-provider="firebase-functions-resend"
+						data-email-provider="resend-api"
 					>
 						<div className="contact-form-grid">
 							<div className="form-group">

@@ -236,6 +236,13 @@ function buildTemplate(templateKey: string, data: TemplateLike): BuiltTemplate {
 				bodyHtml: `<p>We've noted your request for <strong>${escapeHtml(service)}</strong> at <strong>${escapeHtml(when)}</strong>. Our team will confirm your appointment and reach out if anything needs adjusting.</p><p>See you soon at <strong>${escapeHtml(business)}</strong>.</p>`,
 				whatsapp: `Hi ${name}, thank you for booking ${service} at ${business} for ${when}. We will confirm your appointment shortly.`,
 			}
+		case "booking.payment_confirmed":
+			return {
+				subject: `Payment received — ${business}`,
+				heading: `Your ${service} booking is confirmed.`,
+				bodyHtml: `<p>We received your M-Pesa payment for <strong>${escapeHtml(service)}</strong> at <strong>${escapeHtml(business)}</strong> on <strong>${escapeHtml(when)}</strong>. Your appointment is now confirmed.</p>`,
+				whatsapp: `Hi ${name}, your M-Pesa payment for ${service} at ${business} was received and your appointment for ${when} is confirmed.`,
+			}
 		case "booking.cancelled":
 			return {
 				subject: `Booking cancelled — ${business}`,

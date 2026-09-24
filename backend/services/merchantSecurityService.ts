@@ -37,7 +37,15 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 		assertTenantMembership(membership, tenant.id),
 		"canManageSecurity",
 	)
-	const [logins, alerts, changes] = await Promise.all([
+	const tenantMemberships = await prisma.membership.findMany({
+		where: { tenantId: tenant.id, status: "ACTIVE" },
+		select: { userId: true },
+	})
+	const tenantUserIds = tenantMemberships.map((item) => item.userId)
+	const now = new Date()
+	const todayStart = new Date(now)
+	todayStart.setUTCHours(0, 0, 0, 0)
+	const [logins, alerts, changes, timeline, sessions, loginCounts, alertCounts] = await Promise.all([
 		prisma.loginActivity.findMany({
 			where: { tenantId: tenant.id },
 			orderBy: { createdAt: "desc" },
@@ -73,6 +81,61 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 			take: 50,
 			select: { id: true, changeType: true, summary: true, createdAt: true },
 		}),
+		prisma.activityTimeline.findMany({
+			where: { tenantId: tenant.id },
+			orderBy: { createdAt: "desc" },
+			take: 100,
+			select: { id: true, userId: true, eventType: true, summary: true, createdAt: true },
+		}),
+		prisma.session.findMany({
+			where: { userId: { in: tenantUserIds }, expires: { gt: now } },
+			orderBy: { expires: "desc" },
+			take: 100,
+			select: {
+				id: true,
+				userId: true,
+				expires: true,
+				user: { select: { email: true, name: true } },
+			},
+		}),
+		Promise.all([
+			prisma.loginActivity.count({ where: { tenantId: tenant.id } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, status: { equals: "success", mode: "insensitive" } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, status: { not: "success" } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, riskLevel: { equals: "high", mode: "insensitive" } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, createdAt: { gte: todayStart } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "google", mode: "insensitive" } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "email/password", mode: "insensitive" } } }),
+		]),
+		Promise.all([
+			prisma.securityAlert.count({ where: { tenantId: tenant.id } }),
+			prisma.securityAlert.count({ where: { tenantId: tenant.id, resolvedAt: null } }),
+			prisma.securityAlert.count({ where: { tenantId: tenant.id, severity: { equals: "high", mode: "insensitive" } } }),
+			prisma.accountChangeHistory.count({ where: { tenantId: tenant.id } }),
+			prisma.activityTimeline.count({ where: { tenantId: tenant.id } }),
+		]),
 	])
-	return { logins, alerts, changes }
+	return {
+		logins,
+		alerts,
+		changes,
+		timeline,
+		sessions,
+		stats: {
+			totalLogins: loginCounts[0],
+			successfulLogins: loginCounts[1],
+			failedLogins: loginCounts[2],
+			highRiskLogins: loginCounts[3],
+			totalLoginsToday: loginCounts[4],
+			googleSignIns: loginCounts[5],
+			emailSignIns: loginCounts[6],
+			activeSessions: sessions.length,
+			activeUsers: new Set(sessions.map((item) => item.userId)).size,
+			totalAlerts: alertCounts[0],
+			openAlerts: alertCounts[1],
+			highSeverityAlerts: alertCounts[2],
+			totalAccountChanges: alertCounts[3],
+			totalTimelineEvents: alertCounts[4],
+		},
+	}
 }

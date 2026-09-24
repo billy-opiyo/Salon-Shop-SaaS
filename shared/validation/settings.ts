@@ -1,11 +1,18 @@
 import { z } from "zod"
 
 import { THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
+import { BOOKING_PAYMENT_MODES } from "@shared/constants/bookingPayments"
 
 const themePresetKeys = THEME_PRESET_OPTIONS.map((preset) => preset.key) as [
 	string,
 	...string[],
 ]
+
+const booleanFormValue = z.preprocess(
+	(value) => value === true || value === "true" || value === "on",
+	z.boolean(),
+)
+const bookingPaymentModeSchema = z.enum(BOOKING_PAYMENT_MODES)
 
 const imageUrlSchema = z.union([
 	z.string().url(),
@@ -109,6 +116,13 @@ export const tenantSettingsSchema = z.object({
 	emailBookings: z.union([z.string().email(), z.literal("")]),
 	address: z.string().trim().max(500),
 	storefrontConfig: storefrontDesignConfigSchema.optional(),
+	bookingPaymentsEnabled: booleanFormValue.default(false),
+	bookingPaymentModes: z.array(bookingPaymentModeSchema).default([
+		"partial",
+		"full",
+		"after_service",
+	]),
+	bookingDepositPercent: z.coerce.number().int().min(1).max(100).default(50),
 })
 
 export type TenantSettingsInput = z.infer<typeof tenantSettingsSchema>

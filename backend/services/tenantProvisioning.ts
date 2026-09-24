@@ -9,20 +9,20 @@ import {
 } from "@backend/services/authorization"
 import {
 	CURRENT_PRICE_VERSION,
+	BILLING_POLICY,
+	addCalendarMonths,
 	PLAN_ENTITLEMENTS,
 	PLAN_PRICING,
 } from "@shared/constants/plans"
 import {
+	DEFAULT_SALON_CATEGORIES,
+	DEFAULT_SALON_SERVICES,
+	slugifyDefaultService,
+} from "@shared/constants/legacySalonCatalog"
+import {
 	createTenantSchema,
 	type CreateTenantInput,
 } from "@shared/validation/tenant"
-
-const DEFAULT_CATEGORIES = [
-	{ key: "hair", label: "Hair", sortOrder: 10 },
-	{ key: "braids", label: "Braids", sortOrder: 20 },
-	{ key: "nails", label: "Nails", sortOrder: 30 },
-	{ key: "beauty", label: "Beauty", sortOrder: 40 },
-] as const
 
 export class TenantProvisioningError extends Error {
 	readonly code = "TENANT_PROVISIONING_FAILED" as const
@@ -108,7 +108,14 @@ export async function provisionTenant(
 							priceVersion: CURRENT_PRICE_VERSION,
 						},
 					},
-					categories: { create: [...DEFAULT_CATEGORIES] },
+					categories: {
+						create: DEFAULT_SALON_CATEGORIES.map((category) => ({
+							key: category.key,
+							label: category.label,
+							shortLabel: category.shortLabel,
+							sortOrder: category.sortOrder,
+						})),
+					},
 					legalAcceptances: {
 						create: {
 							userId,
@@ -126,8 +133,30 @@ export async function provisionTenant(
 							description: "Beauty Sphia salon store setup fee",
 						},
 					},
-				},
-				select: { id: true, slug: true, businessName: true, status: true },
+					},
+					select: { id: true, slug: true, businessName: true, status: true },
+				})
+
+			const categories = await transaction.serviceCategory.findMany({
+				where: { tenantId: tenant.id },
+				select: { id: true, key: true },
+			})
+			const categoryIds = new Map(
+				categories.map((category) => [category.key, category.id]),
+			)
+			await transaction.service.createMany({
+				data: DEFAULT_SALON_SERVICES.map((service, index) => ({
+					tenantId: tenant.id,
+					categoryId: categoryIds.get(service.categoryKey) as string,
+					name: service.name,
+					slug: slugifyDefaultService(service.name),
+					description: service.description,
+					priceLabel: service.priceLabel,
+					priceMinor: service.priceMinor,
+					durationLabel: service.durationLabel,
+					orderOnly: service.orderOnly ?? false,
+					sortOrder: index,
+				})),
 			})
 
 			return tenant
@@ -202,9 +231,9 @@ export async function publishTenantForUser(userId: string, tenantId: string) {
 				status: "trialing",
 				trialConsumedAt: now,
 				trialStartsAt: now,
-				trialEndsAt: new Date(now.getTime() + 14 * 86400000),
+				trialEndsAt: addCalendarMonths(now, BILLING_POLICY.freeUsageMonths),
 				activatedAt: now,
-				currentPeriodEnd: new Date(now.getTime() + 14 * 86400000),
+				currentPeriodEnd: addCalendarMonths(now, BILLING_POLICY.freeUsageMonths),
 			},
 		})
 		return true

@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { BOOKING_PAYMENT_MODES } from "@shared/constants/bookingPayments"
+
+const bookingPaymentModeSchema = z.enum(BOOKING_PAYMENT_MODES)
+
 export const bookingRequestSchema = z.object({
   tenantSlug: z.string().trim().min(3).max(48),
   firstName: z.string().trim().min(1).max(80),
@@ -13,6 +17,7 @@ export const bookingRequestSchema = z.object({
   timeLabel: z.string().trim().min(1).max(40),
   stylistId: z.string().trim().cuid().optional(),
   specialRequests: z.string().trim().max(2000).optional(),
+  paymentMode: bookingPaymentModeSchema.optional(),
   turnstileToken: z.string().trim().min(1).max(2048),
 });
 

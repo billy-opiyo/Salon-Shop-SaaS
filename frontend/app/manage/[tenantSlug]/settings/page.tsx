@@ -124,14 +124,65 @@ export default async function MerchantSettingsPage({
 						defaultValue={settings?.emailBookings ?? ""}
 					/>
 				</label>
-				<label>
-					Address
+			<label>
+				Address
 					<textarea
 						name="address"
 						defaultValue={settings?.address ?? ""}
 						maxLength={500}
 					/>
+			</label>
+			<fieldset className="legal-consent">
+				<legend>Online booking payments</legend>
+				<label>
+					<input
+						name="bookingPaymentsEnabled"
+						type="checkbox"
+						defaultChecked={settings?.bookingPaymentsEnabled ?? false}
+					/>
+					Enable M-Pesa payments for normal service bookings
 				</label>
+				<p className="form-help">
+					WhatsApp orders and WhatsApp bookings are never charged here.
+				</p>
+				<label>
+					<input
+						name="bookingPaymentModes"
+						type="checkbox"
+						value="partial"
+						defaultChecked={Array.isArray(settings?.bookingPaymentModes) && settings.bookingPaymentModes.includes("partial")}
+					/>
+					Partial payment deposit
+				</label>
+				<label>
+					<input
+						name="bookingPaymentModes"
+						type="checkbox"
+						value="full"
+						defaultChecked={Array.isArray(settings?.bookingPaymentModes) && settings.bookingPaymentModes.includes("full")}
+					/>
+					Full payment
+				</label>
+				<label>
+					<input
+						name="bookingPaymentModes"
+						type="checkbox"
+						value="after_service"
+						defaultChecked={Array.isArray(settings?.bookingPaymentModes) && settings.bookingPaymentModes.includes("after_service")}
+					/>
+					Pay after service
+				</label>
+				<label>
+					Partial deposit percentage
+					<input
+						name="bookingDepositPercent"
+						type="number"
+						min="1"
+						max="100"
+						defaultValue={settings?.bookingDepositPercent ?? 50}
+					/>
+				</label>
+			</fieldset>
 				<button className="button button--primary" type="submit">
 					Save settings
 				</button>

@@ -399,7 +399,8 @@ identity.
 Beauty Sphia launches in Kenya with KES pricing. These are the current
 configuration values and may change in the future with at least 30 days' notice
 before an existing owner's next renewal. The setup fee is paid before store
-setup; the 14-day subscription trial begins only after the store is activated.
+setup; six calendar months of subscription usage begin only after the store is
+activated.
 
 | Plan       | Monthly price | One-time setup fee |
 | ---------- | ------------: | -----------------: |
@@ -697,8 +698,9 @@ service, not just a frontend conditional.
 
 ### Phase G: platform monetization and lifecycle
 
-- Implement the agreed subscription lifecycle: setup fee before setup, a
-  14-day trial after activation, 3-day failed-payment grace period, two payment
+- Implement the agreed subscription lifecycle: setup fee before setup, six
+  calendar months of free subscription usage after activation, 3-day
+  failed-payment grace period, two payment
   retries, suspension after unresolved failure, and reactivation without an
   extra fee. Billing pauses while suspended.
 - The billing source foundation now includes plan pricing constants, setup and
@@ -790,14 +792,18 @@ The following decisions are confirmed for the initial Kenya launch:
 
 - platform public name: **Beauty Sphia**;
 - billing model: salon owners pay a one-time setup fee and recurring monthly
-  subscription; SalonSaaS does not process salon-customer service payments;
+  subscription after six free calendar months; salon-customer service payments
+  use the salon's separately configured M-Pesa policy (partial deposit, full,
+  or after-service), while WhatsApp orders remain outside the online payment
+  flow;
 - billing currency and prices: KES, using the Starter/Business/Enterprise table
   above;
 - billing provider and flow: SalonSaaS's own M-Pesa Paybill/Till through the
   Safaricom Daraja API and STK Push;
 - setup fee is paid first; setup targets 1-3 business days, with the timeline
   paused when owner-provided information is missing;
-- one 14-day subscription trial per salon, beginning after activation;
+- six calendar months of free subscription usage per salon, beginning after
+  activation;
 - monthly billing follows the activation date and requires a new STK Push;
 - the sender pays the M-Pesa transaction fee; admins may make payments but only
   the owner may change plans;

@@ -10,7 +10,7 @@ import {
 	createService,
 	deleteService,
 	updateCategoryVisibility,
-	updateService,
+	updateServicePaymentPrice,
 } from "./actions"
 
 interface ServicesPageProps {
@@ -90,6 +90,9 @@ export default async function MerchantServicesPage({
 								<h3>{service.name}</h3>
 								<p>
 									{service.priceLabel} · {service.durationLabel}
+									{service.priceMinor !== null && service.priceMinor !== undefined
+										? ` · KES ${(service.priceMinor / 100).toLocaleString("en-KE")}`
+										: " · Online price not configured"}
 									{service.orderOnly ? " · WhatsApp order only" : ""}
 								</p>
 							</div>
@@ -103,6 +106,26 @@ export default async function MerchantServicesPage({
 									Delete
 								</button>
 							</form>
+							{!service.orderOnly && (
+								<form className="service-price-form" action={updateServicePaymentPrice}>
+									<input type="hidden" name="tenantSlug" value={tenantSlug} />
+									<input type="hidden" name="serviceId" value={service.id} />
+									<label>
+										Online payment price (KES cents)
+										<input
+											name="priceMinor"
+											type="number"
+											min="0"
+											step="1"
+											defaultValue={service.priceMinor ?? ""}
+											required
+										/>
+									</label>
+									<button className="button button--outline button--small" type="submit">
+										Save online price
+									</button>
+								</form>
+							)}
 						</article>
 					)),
 				)}
@@ -132,6 +155,11 @@ export default async function MerchantServicesPage({
 					<label>
 						Price label
 						<input name="priceLabel" required maxLength={120} />
+					</label>
+					<label>
+						Online payment price (KES cents)
+						<input name="priceMinor" type="number" min="0" step="1" />
+						<small>Required before Full or Partial M-Pesa payment can be offered.</small>
 					</label>
 					<label>
 						Duration label

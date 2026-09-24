@@ -19,6 +19,7 @@ export class TeamInvitationError extends Error {
 }
 
 type InvitationPermissions = {
+	canManageAdmins?: boolean
 	canManageBookings?: boolean
 	canManageContent?: boolean
 	canManageSecurity?: boolean
@@ -58,6 +59,7 @@ function getPermissions(value: Prisma.JsonValue | null): InvitationPermissions {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return {}
 	const permissions = value as Record<string, unknown>
 	return {
+		canManageAdmins: permissions.canManageAdmins === true,
 		canManageBookings: permissions.canManageBookings === true,
 		canManageContent: permissions.canManageContent === true,
 		canManageSecurity: permissions.canManageSecurity === true,

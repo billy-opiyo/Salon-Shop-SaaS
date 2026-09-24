@@ -9,9 +9,13 @@ import {
 	createServiceForUser,
 	deleteServiceForUser,
 	updateServiceForUser,
+	updateServicePaymentPriceForUser,
 	updateServiceCategoryVisibility,
 } from "@backend/services/merchantServiceCatalog"
-import { serviceMutationSchema } from "@shared/validation/merchant"
+import {
+	serviceMutationSchema,
+	servicePriceUpdateSchema,
+} from "@shared/validation/merchant"
 
 export async function updateCategoryVisibility(
 	formData: FormData,
@@ -50,6 +54,7 @@ function readServiceInput(formData: FormData) {
 		slug: formData.get("slug"),
 		description: formData.get("description"),
 		priceLabel: formData.get("priceLabel"),
+		priceMinor: formData.get("priceMinor") || undefined,
 		durationLabel: formData.get("durationLabel"),
 		orderOnly: formData.get("orderOnly") === "true",
 	})
@@ -95,6 +100,25 @@ export async function deleteService(formData: FormData): Promise<void> {
 	try {
 		await deleteServiceForUser(session.user.id, tenantSlug, serviceId)
 		revalidatePath(`/manage/${tenantSlug}/services`)
+	} catch (error) {
+		if (error instanceof MerchantServiceCatalogError) return
+		throw error
+	}
+}
+
+export async function updateServicePaymentPrice(formData: FormData): Promise<void> {
+	const session = await auth()
+	if (!session?.user?.id) redirect("/login")
+	const parsed = servicePriceUpdateSchema.safeParse({
+		tenantSlug: formData.get("tenantSlug"),
+		serviceId: formData.get("serviceId"),
+		priceMinor: formData.get("priceMinor"),
+	})
+	if (!parsed.success) return
+	try {
+		await updateServicePaymentPriceForUser(session.user.id, parsed.data)
+		revalidatePath(`/manage/${parsed.data.tenantSlug}/services`)
+		revalidatePath(`/${parsed.data.tenantSlug}`)
 	} catch (error) {
 		if (error instanceof MerchantServiceCatalogError) return
 		throw error

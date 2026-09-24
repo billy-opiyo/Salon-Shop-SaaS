@@ -239,8 +239,9 @@ export default async function PlatformHome() {
 						<p className="eyebrow">Choose your operating level</p>
 						<h2 id="plans-title">Plans that grow with your salon.</h2>
 						<p>
-							Simple monthly pricing in KES, with a{" "}
-							<strong>One-Time Setup Fee</strong>.
+						Simple monthly pricing in KES, with a{" "}
+						<strong>one-time setup fee</strong>, followed by six months of
+						free usage before monthly billing begins.
 						</p>
 					</div>
 					<div className="plans-grid">

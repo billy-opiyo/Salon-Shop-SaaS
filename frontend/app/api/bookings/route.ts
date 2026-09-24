@@ -3,10 +3,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 import {
-  BookingRequestError,
-  BookingSlotUnavailableError,
-  createPublicBooking,
+	BookingRequestError,
+	BookingSlotUnavailableError,
+	createPublicBooking,
 } from "@backend/services/bookingService";
+import {
+	BookingPaymentError,
+	requestBookingPayment,
+} from "@backend/services/bookingPaymentService"
 import { bookingRequestSchema } from "@shared/validation/booking";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +33,44 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Please complete the booking details correctly." }, { status: 400 });
   }
 
-  try {
-    const session = await auth();
-    const booking = await createPublicBooking(parsed.data, getRemoteAddress(request), session?.user?.id);
-    return NextResponse.json({ bookingId: booking.id, status: booking.status }, { status: 201 });
+	try {
+		const session = await auth();
+		const booking = await createPublicBooking(parsed.data, getRemoteAddress(request), session?.user?.id);
+		let payment: { readonly status: string; readonly paymentId: string } | undefined
+		if (booking.payment?.status === "pending") {
+			try {
+				payment = await requestBookingPayment(
+					parsed.data.tenantSlug,
+					booking.payment.id,
+					parsed.data.phone,
+				)
+			} catch (error) {
+				if (error instanceof BookingPaymentError)
+					return NextResponse.json(
+						{
+							error: error.message,
+							bookingId: booking.id,
+							paymentId: booking.payment.id,
+						},
+						{ status: 502 },
+					)
+				throw error
+			}
+		}
+		return NextResponse.json(
+			{
+				bookingId: booking.id,
+				status: booking.status,
+				payment: booking.payment
+					? {
+							...booking.payment,
+							status: payment?.status ?? booking.payment.status,
+							paymentId: payment?.paymentId ?? booking.payment.id,
+						}
+					: null,
+			},
+			{ status: 201 },
+		);
   } catch (error) {
     if (error instanceof BookingSlotUnavailableError) {
       return NextResponse.json({ error: error.message }, { status: 409 });

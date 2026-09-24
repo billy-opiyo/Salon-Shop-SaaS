@@ -6,8 +6,10 @@ import {
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
 import { getPlatformAdminSnapshot } from "@backend/services/platformAdminService"
+import { listPlatformTeamForAdmin } from "@backend/services/platformTeamService"
 
 import { PlatformAdminAction } from "./PlatformAdminAction"
+import { PlatformTeamManager } from "./PlatformTeamManager"
 
 function formatDate(value: Date | null): string {
 	return value ? value.toLocaleDateString("en-KE") : "Not set"
@@ -36,7 +38,10 @@ export default async function PlatformAdminPage() {
 		throw error
 	}
 
-	const snapshot = await getPlatformAdminSnapshot()
+	const [snapshot, teamMembers] = await Promise.all([
+		getPlatformAdminSnapshot(),
+		listPlatformTeamForAdmin(session.user.id, session.user.email),
+	])
 	const { counts } = snapshot
 	const metricCards = [
 		["Total salons", counts.totalTenants, "Across the Beauty Sphia platform"],
@@ -281,6 +286,7 @@ export default async function PlatformAdminPage() {
 					</div>
 				</section>
 			</section>
+			<PlatformTeamManager initialMembers={teamMembers} />
 		</main>
 	)
 }
