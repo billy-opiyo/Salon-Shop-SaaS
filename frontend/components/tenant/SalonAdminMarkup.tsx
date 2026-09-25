@@ -1395,8 +1395,8 @@ export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode
 											required
 										/>
 										<small className="admin-field-help"
-											>Account must already exist in Firebase
-											Authentication.</small
+							>Account must already exist in the Beauty Sphia
+							platform.</small
 										>
 									</div>
 									<div className="form-group">

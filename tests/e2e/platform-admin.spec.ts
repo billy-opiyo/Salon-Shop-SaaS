@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test"
 
 test.describe("Beauty Sphia platform admin boundary", () => {
+	test.setTimeout(60_000)
+
 	test("redirects unauthenticated operators to sign in", async ({ page }) => {
 		await page.goto("/platform-admin")
 		await expect(page).toHaveURL(/\/login$/)

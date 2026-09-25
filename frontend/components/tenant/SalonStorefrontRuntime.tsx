@@ -337,11 +337,181 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		element.classList.toggle("success", !error)
 		element.style.display = "block"
 	}
+	const galleryForm = document.getElementById("adminGalleryForm")
+	let galleryPreviewObjectUrl = ""
+	let galleryPreviewFile: File | null = null
+	const setGalleryText = (id: string, value: string): void => {
+		const element = document.getElementById(id)
+		if (element) element.textContent = value
+	}
+	const updateGalleryPreview = (): void => {
+		if (!(galleryForm instanceof HTMLFormElement)) return
+		const styleName = formField(galleryForm, "galleryStyleName")
+		const styleType = formField(galleryForm, "galleryStyleType")
+		const serviceName = formField(galleryForm, "galleryServiceName")
+		const serviceCategory = formField(galleryForm, "galleryServiceCategory") || "braids-services"
+		const length = formField(galleryForm, "galleryLength")
+		const size = formField(galleryForm, "gallerySize")
+		const priceRange = formField(galleryForm, "galleryPriceRange")
+		const hairServiceType = formField(galleryForm, "galleryHairServiceType")
+		const hairTechnique = formField(galleryForm, "galleryHairTechnique")
+		const stylist = formField(galleryForm, "galleryStylistName")
+		const timeTaken = formField(galleryForm, "galleryTimeTaken")
+		setGalleryText("adminGalleryPreviewName", styleName || "Style name preview")
+		const serviceLabel = serviceName || ({
+			"braids-services": "Braids",
+			"hair-services": "Hair",
+			"beauty-spa-services": "Beauty Spa",
+			"nail-services": "Nails",
+			"makeup-services": "Makeup",
+			"barber-services": "Barber",
+			"massage-wellness": "Massage",
+			"eyebrow-lash-services": "Eyebrows & Lash",
+			"bridal-event-packages": "Bridal / Event Packages",
+			"cosmetics-products": "Cosmetics",
+		} as Readonly<Record<string, string>>)[serviceCategory] || "Braids"
+		const previewMeta = serviceCategory === "braids-services"
+			? `${serviceLabel} • ${styleType || "Type"} • ${length || "Length"} • ${size || "Size"}`
+			: serviceCategory === "hair-services"
+				? `${serviceLabel} • ${styleType || hairServiceType || "Type"} • ${hairTechnique || "Technique"}`
+				: `${serviceLabel} • ${styleType || "Type"}`
+		setGalleryText(
+			"adminGalleryPreviewMeta",
+			previewMeta,
+		)
+		setGalleryText(
+			"adminGalleryPreviewDetails",
+			`Stylist: ${stylist || "N/A"} • Time: ${timeTaken || "N/A"}`,
+		)
+		const file = galleryForm.querySelector<HTMLInputElement>("#galleryMainImage")?.files?.[0] ?? null
+		if (file !== galleryPreviewFile) {
+			if (galleryPreviewObjectUrl) URL.revokeObjectURL(galleryPreviewObjectUrl)
+			galleryPreviewObjectUrl = file ? URL.createObjectURL(file) : ""
+			galleryPreviewFile = file
+		}
+		const previewImage = document.getElementById("adminGalleryPreviewImage")
+		const placeholder = document.getElementById("adminGalleryPreviewPlaceholder")
+		const imageUrl = file
+			? galleryPreviewObjectUrl
+			: galleryForm.dataset.imageUrl ?? ""
+		if (previewImage instanceof HTMLImageElement && imageUrl) {
+			previewImage.src = imageUrl
+			previewImage.style.display = "block"
+			if (placeholder) placeholder.style.display = "none"
+		} else {
+			if (previewImage instanceof HTMLImageElement) {
+				previewImage.removeAttribute("src")
+				previewImage.style.display = "none"
+			}
+			if (placeholder) placeholder.style.display = "block"
+		}
+		const hasBefore = Boolean(
+			galleryForm.querySelector<HTMLInputElement>("#galleryBeforeImage")?.files?.[0] ||
+			galleryForm.dataset.beforeImageUrl,
+		)
+		const badge = document.getElementById("adminGalleryPreviewBeforeAfterBadge")
+		if (badge) badge.style.display = hasBefore ? "inline-flex" : "none"
+		const previewTags = document.getElementById("adminGalleryPreviewTags")
+		if (previewTags) {
+			const tags = [
+				...(galleryForm.querySelector<HTMLInputElement>("#galleryFeaturedTrending")?.checked ? ["Trending"] : []),
+				...(galleryForm.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")?.checked ? ["Most Booked"] : []),
+				...(priceRange ? [priceRange] : []),
+			]
+			previewTags.replaceChildren(
+				...(tags.length
+					? tags.map((tag) => {
+						const element = document.createElement("span")
+						element.className = "admin-gallery-preview-tag"
+						element.textContent = tag
+						return element
+					})
+					: (() => {
+						const element = document.createElement("span")
+						element.className = "admin-gallery-preview-tag is-empty"
+						element.textContent = "No tags yet"
+						return [element]
+					})()),
+			)
+		}
+		const checks: Readonly<Record<string, boolean>> = {
+			styleName: Boolean(styleName),
+			styleType: Boolean(styleType),
+			stylistName: Boolean(stylist),
+			timeTaken: Boolean(timeTaken),
+			mainImage: Boolean(imageUrl),
+		}
+		let complete = 0
+		Object.entries(checks).forEach(([key, checked]) => {
+			const item = galleryForm.querySelector<HTMLElement>(`[data-check="${key}"]`)
+			item?.classList.toggle("completed", checked)
+			item?.querySelector(".check-dot")?.classList.toggle("completed", checked)
+			if (checked) complete += 1
+		})
+		setGalleryText("adminGalleryChecklistProgressText", `${complete}/5 completed`)
+		const fill = document.getElementById("adminGalleryChecklistProgressFill")
+		if (fill instanceof HTMLElement) fill.style.width = `${complete * 20}%`
+	}
+	const updateGalleryCategory = (category: string): void => {
+		if (!(galleryForm instanceof HTMLFormElement)) return
+		setFormField(galleryForm, "galleryServiceCategory", category)
+		document.querySelectorAll<HTMLElement>("[data-admin-gallery-service]").forEach((button) => {
+			button.classList.toggle("active", button.dataset.adminGalleryService === category)
+		})
+		const isBraids = category === "braids-services"
+		const isHair = category === "hair-services"
+		const isCosmetics = category === "cosmetics-products"
+		document.querySelectorAll<HTMLElement>(".admin-braids-field").forEach((field) => { field.style.display = isBraids ? "" : "none" })
+		document.querySelectorAll<HTMLElement>(".admin-hair-field").forEach((field) => { field.style.display = isHair ? "" : "none" })
+		document.querySelectorAll<HTMLElement>(".admin-cosmetics-field").forEach((field) => { field.style.display = isCosmetics ? "" : "none" })
+		const setRequired = (id: string, required: boolean): void => {
+			const element = document.getElementById(id)
+			if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) element.required = required
+		}
+		setRequired("galleryServiceName", !isCosmetics)
+		setRequired("galleryTimeTaken", !isCosmetics)
+		setRequired("galleryStylistName", !isCosmetics)
+		setRequired("galleryLength", isBraids)
+		setRequired("gallerySize", isBraids)
+		setRequired("galleryHairType", isBraids)
+		setRequired("galleryHairServiceType", isHair)
+		setRequired("galleryHairTechnique", isHair)
+		updateGalleryPreview()
+	}
+	if (galleryForm instanceof HTMLFormElement) {
+		const refreshGalleryPreview = (): void => updateGalleryPreview()
+		window.addEventListener("admin-gallery-refresh-preview", refreshGalleryPreview)
+		removers.push(() =>
+			window.removeEventListener("admin-gallery-refresh-preview", refreshGalleryPreview),
+		)
+		document.querySelectorAll<HTMLElement>("[data-admin-gallery-service]").forEach((button) => {
+			const handler = () => updateGalleryCategory(button.dataset.adminGalleryService ?? "braids-services")
+			button.addEventListener("click", handler)
+			removers.push(() => button.removeEventListener("click", handler))
+		})
+		galleryForm.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((field) => {
+			const handler = () => updateGalleryPreview()
+			field.addEventListener("input", handler)
+			field.addEventListener("change", handler)
+			removers.push(() => {
+				field.removeEventListener("input", handler)
+				field.removeEventListener("change", handler)
+			})
+		})
+		updateGalleryCategory(formField(galleryForm, "galleryServiceCategory") || "braids-services")
+	}
 	const bind = (formId: string, handler: (form: HTMLFormElement) => Promise<void>) => {
 		const form = document.getElementById(formId)
 		if (!(form instanceof HTMLFormElement)) return
 		const submit = (event: SubmitEvent) => {
 			event.preventDefault()
+			const saveButton = form.querySelector<HTMLButtonElement>("button[type=submit]")
+			const originalText = saveButton?.textContent ?? "Save"
+			if (saveButton instanceof HTMLButtonElement) {
+				saveButton.disabled = true
+				saveButton.setAttribute("aria-busy", "true")
+				saveButton.textContent = formField(form, formId === "adminGalleryForm" ? "galleryEditId" : formId === "adminBlogsForm" ? "blogEditId" : "adminAdminEditUid") ? "Updating..." : "Saving..."
+			}
 			void handler(form).catch((error: unknown) => {
 				const messageId = formId === "adminGalleryForm"
 					? "adminGalleryMessage"
@@ -349,6 +519,11 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 						? "adminBlogsMessage"
 						: "adminAdminsMessage"
 				message(messageId, error instanceof Error ? error.message : "The content could not be saved.", true)
+				if (saveButton instanceof HTMLButtonElement) {
+					saveButton.disabled = false
+					saveButton.removeAttribute("aria-busy")
+					saveButton.textContent = originalText
+				}
 			})
 		}
 		form.addEventListener("submit", submit)
@@ -391,6 +566,8 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 				hairLengthDensity: formField(form, "galleryHairLengthDensity"),
 				hairProductsUsed: formField(form, "galleryHairProductsUsed"),
 				stylistName: formField(form, "galleryStylistName"),
+				featuredTrending: form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")?.checked === true,
+				featuredMostBooked: form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")?.checked === true,
 				published: true,
 			}),
 		})
@@ -398,7 +575,8 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			const result = (await response.json()) as { readonly error?: string }
 			throw new Error(result.error ?? "The gallery style could not be saved.")
 		}
-		window.location.reload()
+		message("adminGalleryMessage", id ? "Gallery style updated successfully." : "Gallery style created successfully.")
+		window.setTimeout(() => window.location.reload(), 650)
 	})
 	bind("adminBlogsForm", async (form) => {
 		const file = form.querySelector<HTMLInputElement>("#blogImage")?.files?.[0]
@@ -467,6 +645,15 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			form.reset()
 			delete form.dataset.imageUrl
 			delete form.dataset.beforeImageUrl
+			if (formId === "adminGalleryForm") {
+				if (galleryPreviewObjectUrl) {
+					URL.revokeObjectURL(galleryPreviewObjectUrl)
+					galleryPreviewObjectUrl = ""
+				}
+				galleryPreviewFile = null
+				document.querySelector<HTMLButtonElement>('[data-admin-gallery-service="braids-services"]')?.click()
+				updateGalleryPreview()
+			}
 			const title = document.getElementById(titleId)
 			if (title) title.textContent = formId === "adminGalleryForm" ? "Add New Gallery Style" : formId === "adminBlogsForm" ? "Add New Blog" : "Create Admin Access"
 			button.style.display = "none"
@@ -474,7 +661,11 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		button.addEventListener("click", handler)
 		removers.push(() => button.removeEventListener("click", handler))
 	})
-	return () => removers.forEach((remove) => remove())
+	return () => {
+		removers.forEach((remove) => remove())
+		if (galleryPreviewObjectUrl) URL.revokeObjectURL(galleryPreviewObjectUrl)
+		galleryPreviewFile = null
+	}
 }
 
 function bindAdminSnapshotFilters(): () => void {
@@ -796,6 +987,28 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	if (authMessage) authMessage.textContent = ""
 
 	const removeTabHandlers: Array<() => void> = []
+	const adminBackToTop = document.getElementById("backToTop")
+	if (adminBackToTop) {
+		const updateAdminBackToTopVisibility = (): void => {
+			adminBackToTop.classList.toggle("visible", window.scrollY > 500)
+		}
+		const handleAdminBackToTopClick = (event: Event): void => {
+			event.preventDefault()
+			window.scrollTo({
+				top: 0,
+				behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+					? "auto"
+					: "smooth",
+			})
+		}
+		window.addEventListener("scroll", updateAdminBackToTopVisibility, { passive: true })
+		adminBackToTop.addEventListener("click", handleAdminBackToTopClick)
+		updateAdminBackToTopVisibility()
+		removeTabHandlers.push(() => {
+			window.removeEventListener("scroll", updateAdminBackToTopVisibility)
+			adminBackToTop.removeEventListener("click", handleAdminBackToTopClick)
+		})
+	}
 	const actionHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
@@ -814,6 +1027,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					setFormField(form, "galleryEditId", id)
 					const category = record.category && typeof record.category === "object" ? record.category as AdminSnapshotRecord : {}
 					setFormField(form, "galleryServiceCategory", category.key)
+					document.querySelector<HTMLButtonElement>(`[data-admin-gallery-service="${String(category.key ?? "braids-services")}"]`)?.click()
 					setFormField(form, "galleryStyleName", record.styleName)
 					setFormField(form, "galleryStyleType", record.styleType)
 					setFormField(form, "galleryServiceName", record.serviceName)
@@ -832,6 +1046,11 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					setFormField(form, "galleryStylistName", record.stylistName)
 					form.dataset.imageUrl = typeof record.imageUrl === "string" ? record.imageUrl : ""
 					form.dataset.beforeImageUrl = typeof record.beforeImageUrl === "string" ? record.beforeImageUrl : ""
+					const trending = form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")
+					const mostBooked = form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")
+					if (trending) trending.checked = record.featuredTrending === true
+					if (mostBooked) mostBooked.checked = record.featuredMostBooked === true
+					window.dispatchEvent(new Event("admin-gallery-refresh-preview"))
 					const title = document.getElementById("adminGalleryFormTitle")
 					if (title) title.textContent = "Edit Gallery Style"
 					const cancel = document.getElementById("adminGalleryCancelEdit")
@@ -1111,6 +1330,10 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	removeTabHandlers.push(() =>
 		document.removeEventListener("click", scheduleHandler),
 	)
+	// Bind content forms immediately after the admin markup mounts. The snapshot
+	// populates lists asynchronously and must not control whether Save/Edit
+	// buttons are interactive.
+	removeTabHandlers.push(bindLegacyContentForms(tenantSlug))
 	void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`, {
 		credentials: "same-origin",
 		cache: "no-store",
@@ -1129,7 +1352,6 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const blogs = Array.isArray(snapshot.blogs) ? snapshot.blogs : []
 			const services = Array.isArray(snapshot.services) ? snapshot.services : []
 			removeTabHandlers.push(bindStorefrontDesignEditor(tenantSlug, snapshot))
-			removeTabHandlers.push(bindLegacyContentForms(tenantSlug))
 			const categoryMount = document.getElementById(
 				"adminServiceCategoryToggles",
 			)
@@ -2128,6 +2350,9 @@ function updateReferenceAuthUi(user: SessionUser | null): void {
 	const dashboardAuthButton = document.getElementById("dashboardAuthBtn")
 	const dashboardName = document.getElementById("dashboardProfileName")
 	const dashboardEmail = document.getElementById("dashboardProfileEmail")
+	const reviewAuthHint = document.getElementById("reviewAuthHint")
+	const reviewSubmitAuthGate = document.getElementById("reviewSubmitAuthGate")
+	const reviewSubmitWrap = document.getElementById("reviewSubmitWrap")
 
 	const signedIn = Boolean(user)
 	loginButton?.classList.toggle("hidden", signedIn)
@@ -2135,6 +2360,9 @@ function updateReferenceAuthUi(user: SessionUser | null): void {
 	dashboardLink?.classList.toggle("hidden", !signedIn)
 	dashboard?.classList.toggle("hidden", !signedIn)
 	dashboardAuthButton?.classList.toggle("hidden", signedIn)
+	reviewAuthHint?.classList.toggle("hidden", signedIn)
+	reviewSubmitAuthGate?.classList.toggle("hidden", signedIn)
+	reviewSubmitWrap?.classList.toggle("hidden", !signedIn)
 
 	const displayName = user?.name || user?.email || "Client"
 	if (profileInitial)
@@ -2790,6 +3018,11 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	logoutButton?.addEventListener("click", logout, true)
 	guestButton?.addEventListener("click", continueAsGuest, true)
 	googleButton?.addEventListener("click", continueWithGoogle, true)
+	// The legacy storefront starts in the guest state and then reconciles the
+	// authenticated session asynchronously. Keep guest-only review guidance
+	// visible during that request instead of leaving the server-rendered hidden
+	// state on screen when Auth.js is slow or unavailable.
+	updateReferenceAuthUi(null)
 	void refreshReferenceAuthUi(tenantSlug)
 
 	return () => {
@@ -3636,6 +3869,21 @@ function bindNativeSalonInteractions(
 	}
 
 	const root = document.querySelector<HTMLElement>(".salon-storefront-root")
+	const backToTop = document.getElementById("backToTop")
+	const updateBackToTopVisibility = (): void => {
+		backToTop?.classList.toggle("visible", window.scrollY > 500)
+	}
+	add(window, "scroll", updateBackToTopVisibility)
+	updateBackToTopVisibility()
+	add(backToTop, "click", (event) => {
+		event.preventDefault()
+		window.scrollTo({
+			top: 0,
+			behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+				? "auto"
+				: "smooth",
+		})
+	})
 	let activeGalleryIndex = -1
 	const openGalleryItem = (index: number): void => {
 		const gallery = galleryItems[index]
@@ -3723,13 +3971,31 @@ function bindNativeSalonInteractions(
 		if (gallery) openWhatsApp(gallery.serviceName ?? gallery.styleName, gallery.priceRange ?? "")
 	})
 
+	const servicesGrid = document.getElementById("servicesGrid")
+	const groupedServicesMarkup = servicesGrid?.innerHTML ?? ""
 	const filterServices = (filter: string): void => {
 		document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) => {
 			tab.classList.toggle("active", tab.dataset.filter === filter)
 		})
-		document.querySelectorAll<HTMLElement>(".services-category-group").forEach((group) => {
-			group.style.display = filter === "all" || group.dataset.category === filter ? "" : "none"
-		})
+		if (!servicesGrid) return
+		if (filter === "all") {
+			servicesGrid.classList.add("is-grouped")
+			servicesGrid.innerHTML = groupedServicesMarkup
+			return
+		}
+		const groupedSnapshot = document.createElement("div")
+		groupedSnapshot.innerHTML = groupedServicesMarkup
+		const selectedGroup = Array.from(
+			groupedSnapshot.querySelectorAll<HTMLElement>(".services-category-group"),
+		).find((group) => group.dataset.category === filter)
+		servicesGrid.classList.remove("is-grouped")
+		servicesGrid.replaceChildren(
+			...(selectedGroup
+				? Array.from(selectedGroup.querySelectorAll<HTMLElement>(".service-card")).map(
+						(card) => card.cloneNode(true),
+					)
+				: []),
+		)
 	}
 	document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) =>
 		add(tab, "click", () => filterServices(tab.dataset.filter ?? "all")),

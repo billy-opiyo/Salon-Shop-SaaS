@@ -67,6 +67,22 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(response.status()).toBe(401)
 	})
 
+	test("gallery Save mutations reject unauthenticated requests", async ({
+		request,
+	}) => {
+		const response = await request.post("/api/manage/royal-braids/actions", {
+			data: {
+				action: "gallery-create",
+				categoryKey: "braids-services",
+				styleName: "Contract Test Style",
+				styleType: "Knotless",
+				imageUrl: "https://cdn.example.com/gallery/contract-test.webp",
+				published: true,
+			},
+		})
+		expect(response.status()).toBe(401)
+	})
+
 	test("domain management rejects unauthenticated registration", async ({
 		request,
 	}) => {
