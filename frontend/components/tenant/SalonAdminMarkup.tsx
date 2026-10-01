@@ -244,7 +244,7 @@ export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode
 									<div className="form-group">
 										<label htmlFor="adminDesignLogoFile">Logo upload</label>
 										<input id="adminDesignLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-										<small className="admin-field-help">Maximum 500 KB. Uploads use the salon media storage.</small>
+										<small className="admin-field-help">Maximum 1 MB. The upload will be rejected with a compression message when it is larger.</small>
 									</div>
 									<div className="form-group">
 										<label htmlFor="adminDesignHeroFile">Hero image upload</label>

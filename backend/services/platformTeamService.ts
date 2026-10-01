@@ -16,6 +16,7 @@ import {
 import {
 	ALLOWED_IMAGE_TYPES,
 	getImageUploadError,
+	IMAGE_TOO_LARGE_MESSAGE,
 	MAX_IMAGE_UPLOAD_BYTES,
 } from "@shared/validation/media"
 import {
@@ -274,7 +275,7 @@ export function isPlatformTeamImageUrl(value: string | null): value is string {
 
 export function assertPlatformTeamUploadSize(size: number): void {
 	if (size > MAX_IMAGE_UPLOAD_BYTES)
-		throw new PlatformTeamError("Image too large. Maximum 500 KB.")
+		throw new PlatformTeamError(IMAGE_TOO_LARGE_MESSAGE)
 }
 
 export { PlatformAuthorizationError }

@@ -556,7 +556,7 @@ export function SalonStorefrontMarkup({
 				</button>
 					</div>
 
-				<div className="services-grid" id="servicesGrid">
+				<div className="services-grid is-grouped" id="servicesGrid">
 					{servicesContent}
 				</div>
 			</div>
@@ -1949,7 +1949,7 @@ export function SalonStorefrontMarkup({
 									id="manageAccountAvatarInput"
 									accept="image/*"
 								/>
-								<small>JPG/PNG up to 5MB</small>
+								<small>JPG/PNG up to 1MB</small>
 							</div>
 						</div>
 						<div className="form-grid">

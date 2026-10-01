@@ -16,6 +16,7 @@ import {
 	PLAN_POSITIONING,
 	PLAN_PRICING,
 } from "@shared/constants/plans"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 
 type PlatformIconName = "home" | "store" | "plans" | "create" | "contact"
 
@@ -113,6 +114,8 @@ export default async function PlatformHome() {
 		const customTenant = await getTenantStorefrontByHost(requestHost)
 		if (customTenant) return renderTenantStorefront(customTenant.slug)
 	}
+	const design = await getPlatformStorefrontDesign()
+	const content = design.content
 	return (
 		<>
 			<ExperienceSplash
@@ -121,7 +124,7 @@ export default async function PlatformHome() {
 				description="Preparing your workspace experience"
 			/>
 			<main id="home" className="platform-home-shell">
-				<PlatformHeader page="home" />
+				<PlatformHeader page="home" logoUrl={design.logoUrl} />
 
 				<section
 					className="platform-hero platform-hero--image"
@@ -130,12 +133,13 @@ export default async function PlatformHome() {
 					<picture className="platform-hero__picture">
 						<source
 							media="(max-width: 1024px)"
-							srcSet="/platform/Beauty-sphia-heroimage-mobile.jpg"
+							srcSet={design.heroMobileUrl}
 						/>
 						<Image
 							className="platform-hero__image"
-							src="/platform/Beauty-sphia-heroimage-desktop.jpg"
-							alt="Beauty Sphia salon management platform"
+							src={design.heroDesktopUrl}
+							alt={design.heroAlt}
+							unoptimized
 							width={836}
 							height={470}
 							priority
@@ -151,24 +155,20 @@ export default async function PlatformHome() {
 					className="platform-section platform-showcase"
 					aria-labelledby="showcase-title"
 				>
-					<p className="eyebrow">A calmer way to run your business</p>
+					<p className="eyebrow">{content.showcaseEyebrow}</p>
 					<div className="showcase-copy">
 						<h2 id="showcase-title">
-							Where every salon finds its people — and every crown finds its
-							craft.
+							{content.showcaseTitle}
 						</h2>
 						<p>
-							From glossy knotless braids to evenings that glow, the talent on
-							Beauty Sphia turns appointments into rituals and clients into
-							regulars. Step into a directory of independent salons, each one
-							ready to welcome you the moment you arrive.
+							{content.showcaseDescription}
 						</p>
 						<div className="platform-hero__actions">
 							<Link className="button button--primary" href="/stores">
-								Explore Stores
+									{content.showcasePrimaryLabel}
 							</Link>
 							<Link className="button button--ghost" href="/#plans">
-								See plans
+									{content.showcaseSecondaryLabel}
 							</Link>
 						</div>
 					</div>
@@ -181,13 +181,11 @@ export default async function PlatformHome() {
 				>
 					<div className="section-heading section-heading--row">
 						<div>
-							<p className="eyebrow">Top Stores Available</p>
-							<h2 id="top-stores-title">
-								Step inside a live salon experience.
-							</h2>
+							<p className="eyebrow">{content.topStoresEyebrow}</p>
+							<h2 id="top-stores-title">{content.topStoresTitle}</h2>
 						</div>
 						<Link className="button button--outline" href="/stores">
-							View all stores
+							{content.topStoresViewAllLabel}
 						</Link>
 					</div>
 					<TopStoresGrid />
@@ -199,33 +197,20 @@ export default async function PlatformHome() {
 					aria-labelledby="how-title"
 				>
 					<div className="section-heading">
-						<p className="eyebrow">A calmer way to run your business</p>
-						<h2 id="how-title">From first click to fully booked.</h2>
+						<p className="eyebrow">{content.howEyebrow}</p>
+						<h2 id="how-title">{content.howTitle}</h2>
 					</div>
 					<div className="steps-grid">
 						<article>
-							<span>01</span>
-							<h3>Create</h3>
-							<p>
-								Set up your salon identity, services, team, and public store
-								address.
-							</p>
+								<span>01</span><h3>{content.howSteps[0].title}</h3><p>{content.howSteps[0].description}</p>
 						</article>
 						<article>
 							<span>02</span>
-							<h3>Customize</h3>
-							<p>
-								Bring your brand to life with the preserved salon storefront
-								experience.
-							</p>
+								<h3>{content.howSteps[1].title}</h3><p>{content.howSteps[1].description}</p>
 						</article>
 						<article>
 							<span>03</span>
-							<h3>Grow</h3>
-							<p>
-								Manage bookings, content, customers, and daily operations from
-								one workspace.
-							</p>
+								<h3>{content.howSteps[2].title}</h3><p>{content.howSteps[2].description}</p>
 						</article>
 					</div>
 				</section>
@@ -236,13 +221,9 @@ export default async function PlatformHome() {
 					aria-labelledby="plans-title"
 				>
 					<div className="section-heading">
-						<p className="eyebrow">Choose your operating level</p>
-						<h2 id="plans-title">Plans that grow with your salon.</h2>
-						<p>
-						Simple monthly pricing in KES, with a{" "}
-						<strong>one-time setup fee</strong>, followed by six months of
-						free usage before monthly billing begins.
-						</p>
+						<p className="eyebrow">{content.plansEyebrow}</p>
+						<h2 id="plans-title">{content.plansTitle}</h2>
+						<p>{content.plansDescription}</p>
 					</div>
 					<div className="plans-grid">
 						{plans.map((plan) => (
@@ -362,19 +343,15 @@ export default async function PlatformHome() {
 				>
 					<div className="contact-grid">
 						<div className="section-heading">
-							<p className="eyebrow">Get in touch</p>
-							<h2 id="contact-title">Let’s talk about your salon.</h2>
-							<p>
-								Questions about the platform, ready to open a store, or just
-								want to say hello? Drop us a message and the Beauty Sphia team
-								will get right back to you.
-							</p>
+							<p className="eyebrow">{content.contactEyebrow}</p>
+							<h2 id="contact-title">{content.contactTitle}</h2>
+							<p>{content.contactDescription}</p>
 						</div>
 						<ContactForm />
 					</div>
 				</section>
 			</main>
-			<PlatformFooter />
+			<PlatformFooter description={content.footerDescription} />
 			<nav
 				className="platform-mobile-actions"
 				aria-label="Mobile platform navigation"

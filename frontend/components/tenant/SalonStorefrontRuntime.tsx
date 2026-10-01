@@ -24,6 +24,10 @@ import {
 	SalonServiceOptions,
 	SalonTestimonials,
 } from "@/components/tenant/SalonCatalog"
+import {
+	getImageUploadError,
+	IMAGE_TOO_LARGE_MESSAGE,
+} from "@shared/validation/media"
 
 export interface SalonClientConfig {
 	readonly client?: { readonly name?: string }
@@ -280,6 +284,20 @@ function formField(form: HTMLFormElement, id: string): string {
 	return element?.value.trim() ?? ""
 }
 
+function bindImageSizeGuard(): () => void {
+	const handleChange = (event: Event) => {
+		const input = event.target
+		if (!(input instanceof HTMLInputElement) || input.type !== "file") return
+		const file = input.files?.[0]
+		if (!file || file.size <= 1024 * 1024) return
+		input.value = ""
+		event.stopPropagation()
+		window.alert(IMAGE_TOO_LARGE_MESSAGE)
+	}
+	document.addEventListener("change", handleChange, true)
+	return () => document.removeEventListener("change", handleChange, true)
+}
+
 function setFormField(form: HTMLFormElement, id: string, value: unknown): void {
 	const element = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#${id}`)
 	if (element) element.value = typeof value === "string" ? value : String(value ?? "")
@@ -290,7 +308,8 @@ async function uploadLegacyAdminImage(
 	file: File,
 	kind: "GALLERY" | "BLOG",
 ): Promise<string> {
-	if (file.size > 500 * 1024) throw new Error("Images must be 500 KB or smaller.")
+	const imageError = getImageUploadError(file.size, file.type)
+	if (imageError) throw new Error(imageError)
 	const prepare = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
 		method: "POST",
 		credentials: "same-origin",
@@ -892,8 +911,9 @@ function bindStorefrontDesignEditor(
 		const handler = async () => {
 			const file = input.files?.[0]
 			if (!file) return
-			if (file.size > 500 * 1024) {
-				setDesignMessage("Images must be 500 KB or smaller.", "error")
+			const imageError = getImageUploadError(file.size, file.type)
+			if (imageError) {
+				setDesignMessage(imageError, "error")
 				input.value = ""
 				return
 			}
@@ -3973,6 +3993,10 @@ function bindNativeSalonInteractions(
 
 	const servicesGrid = document.getElementById("servicesGrid")
 	const groupedServicesMarkup = servicesGrid?.innerHTML ?? ""
+	// The legacy renderer starts with category groups expanded. Without this
+	// class the outer grid treats each category section as a service card and
+	// collapses the cards inside each section into a single column.
+	servicesGrid?.classList.add("is-grouped")
 	const filterServices = (filter: string): void => {
 		document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) => {
 			tab.classList.toggle("active", tab.dataset.filter === filter)
@@ -4048,6 +4072,7 @@ export function SalonStorefrontRuntime({
 		// Storefronts open directly into their homepage. The platform owns the
 		// Beauty Sphia splash, so tenant stores never flash a second splash.
 		const removeSplash = initializeNativeSplash(true)
+		const removeImageSizeGuard = bindImageSizeGuard()
 		const gallery = clientConfig.catalog?.gallery ?? []
 		const removeInteractions = bindNativeSalonInteractions(gallery)
 		const removeGalleryControls = bindNativeGalleryControls(gallery)
@@ -4059,6 +4084,7 @@ export function SalonStorefrontRuntime({
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
 		return () => {
 			removeSplash()
+			removeImageSizeGuard()
 			removeInteractions()
 			removeGalleryControls()
 			removeContentControls()

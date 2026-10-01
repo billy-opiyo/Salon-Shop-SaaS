@@ -8,7 +8,7 @@ function SocialIcon({ name }: { readonly name: SocialIconName }) {
 	return <i className={`platform-social-icon fab fa-${name}`} aria-hidden="true" />
 }
 
-export function PlatformFooter() {
+export function PlatformFooter({ description = "Manage your salon, book clients, and grow your brand in one place." }: { readonly description?: string }) {
 	return (
 		<footer className="platform-footer">
 			<div className="platform-footer__grid">
@@ -20,10 +20,7 @@ export function PlatformFooter() {
 					>
 						Beauty Sphia
 					</Link>
-					<p>
-						Manage your salon, book clients, and grow your brand in one
-						place.
-					</p>
+					<p>{description}</p>
 				</div>
 				<nav className="platform-footer__links" aria-label="Beauty Sphia links">
 					<span className="eyebrow">Platform</span>

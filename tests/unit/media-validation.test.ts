@@ -6,19 +6,17 @@ import {
 } from "../../shared/validation/media"
 
 describe("media upload validation", () => {
-	it("accepts supported images at exactly 500 KB", () => {
+	it("accepts supported images at exactly 1 MB", () => {
 		const file = Buffer.alloc(MAX_IMAGE_UPLOAD_BYTES)
 
 		expect(getImageUploadError(file.length, "image/jpeg")).toBeNull()
 		expect(getImageUploadError(file.length, "image/png")).toBeNull()
 	})
 
-	it("rejects images larger than 500 KB", () => {
+	it("rejects images larger than 1 MB", () => {
 		const file = Buffer.alloc(MAX_IMAGE_UPLOAD_BYTES + 1)
 
-		expect(getImageUploadError(file.length, "image/webp")).toContain(
-			"Maximum 500 KB",
-		)
+		expect(getImageUploadError(file.length, "image/webp")).toContain("below 1MB")
 	})
 
 	it("rejects non-image files", () => {

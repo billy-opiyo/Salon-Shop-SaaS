@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react"
 
 import type { PlatformTeamMemberView } from "@shared/types/platformTeam"
+import { getImageUploadError } from "@shared/validation/media"
 
 interface PlatformTeamManagerProps {
 	readonly initialMembers: readonly PlatformTeamMemberView[]
@@ -74,6 +75,18 @@ export function PlatformTeamManager({
 		value: TeamFormState[K],
 	) {
 		setForm((current) => ({ ...current, [field]: value }))
+	}
+
+	function setSelectedAvatar(file: File | undefined) {
+		if (!file) return
+		const error = getImageUploadError(file.size, file.type)
+		if (error) {
+			setError(error)
+			setAvatar(null)
+			return
+		}
+		setError("")
+		setAvatar(file)
 	}
 
 	function startCreate() {
@@ -180,7 +193,7 @@ export function PlatformTeamManager({
 					<label>Name<input name="name" value={form.name} onChange={(event) => updateField("name", event.target.value)} required maxLength={120} /></label>
 					<label>Role<input name="role" value={form.role} onChange={(event) => updateField("role", event.target.value)} required maxLength={120} /></label>
 					<label className="platform-team-form__wide">Short bio<textarea name="bio" value={form.bio} onChange={(event) => updateField("bio", event.target.value)} required minLength={10} maxLength={2000} rows={4} /></label>
-					<label>Profile image<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setAvatar(event.target.files?.[0] ?? null)} /></label>
+					<label>Profile image<input name="avatar" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setSelectedAvatar(event.target.files?.[0])} /><small>Maximum 1 MB.</small></label>
 					<label>Display order<input name="displayOrder" type="number" min="0" max="9999" value={form.displayOrder} onChange={(event) => updateField("displayOrder", event.target.value)} /></label>
 					<label>Website URL<input name="websiteUrl" type="url" value={form.websiteUrl} onChange={(event) => updateField("websiteUrl", event.target.value)} placeholder="https://..." /></label>
 					<label>Instagram URL<input name="instagramUrl" type="url" value={form.instagramUrl} onChange={(event) => updateField("instagramUrl", event.target.value)} placeholder="https://instagram.com/..." /></label>

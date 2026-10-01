@@ -2555,7 +2555,7 @@ main {
   padding: .8rem .9rem;
   border: 1px solid var(--line);
   border-radius: .55rem;
-  background: #0f0f0f;
+  background-color: #0f0f0f;
   color: var(--foreground);
   font: inherit;
 }
@@ -3130,4 +3130,161 @@ main {
 .auth-page a,
 .auth-page button {
   opacity: 1;
+}
+
+/* Keep every platform link visibly gold in its normal, visited, hover, and
+   keyboard-focus states. These rules intentionally sit after the generic
+   muted-card rules so platform navigation and footer links cannot fall back
+   to brown/low-contrast tokens. Buttons retain their own surface colors. */
+.platform-home-shell a:not(.button):link,
+.platform-home-shell a:not(.button):visited,
+.platform-header a:not(.button):link,
+.platform-header a:not(.button):visited,
+.platform-footer a:link,
+.platform-footer a:visited,
+.platform-admin-page a:not(.button):link,
+.platform-admin-page a:not(.button):visited,
+.auth-page a:not(.button):link,
+.auth-page a:not(.button):visited {
+  color: #f1d59b !important;
+  opacity: 1 !important;
+}
+
+.platform-home-shell a:not(.button):hover,
+.platform-home-shell a:not(.button):focus-visible,
+.platform-header a:not(.button):hover,
+.platform-header a:not(.button):focus-visible,
+.platform-footer a:hover,
+.platform-footer a:focus-visible,
+.platform-admin-page a:not(.button):hover,
+.platform-admin-page a:not(.button):focus-visible,
+.auth-page a:not(.button):hover,
+.auth-page a:not(.button):focus-visible {
+  color: #ffe7ad !important;
+  opacity: 1 !important;
+}
+
+/* Royal Braids authentication parity: same compact card rhythm, golden
+   controls, provider treatment, password toggle, and link hierarchy. */
+.auth-form--salon-parity {
+	gap: 0;
+	margin-top: 1.2rem;
+}
+
+.auth-card-head {
+	margin-bottom: 14px;
+}
+
+.auth-card-head .section-subtitle {
+	margin-bottom: 8px;
+	font-size: .72rem;
+}
+
+.auth-card-head h1 {
+	margin: 0;
+	font: 500 1.25rem/1.35 var(--serif);
+	letter-spacing: normal;
+}
+
+.auth-form--salon-parity .auth-provider-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: .7rem;
+	width: 100%;
+  min-height: 3rem;
+  padding: .85rem 1rem;
+  border: 1px solid rgba(241, 213, 155, .28);
+  border-radius: .75rem;
+  background: rgba(215, 168, 79, .14);
+  color: #fff8e8;
+  font-weight: 700;
+}
+
+.auth-form--salon-parity .auth-provider-btn:hover,
+.auth-form--salon-parity .auth-provider-btn:focus-visible {
+  border-color: #d7a84f;
+  background: rgba(215, 168, 79, .24);
+  color: #fff8e8;
+}
+
+.auth-form--salon-parity .auth-provider-btn:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.auth-form--salon-parity .auth-separator {
+  margin: 1rem 0;
+  color: #f1d59b;
+}
+
+.auth-form--salon-parity .form-group {
+  display: grid;
+  gap: .45rem;
+  margin-bottom: .8rem;
+}
+
+.auth-form--salon-parity .form-group label {
+  color: #f1d59b;
+  font-size: .8rem;
+}
+
+.auth-form--salon-parity .form-group input {
+  padding: .85rem 1rem;
+  border: 1px solid rgba(241, 213, 155, .28);
+  border-radius: .65rem;
+  background: rgba(10, 8, 5, .62);
+  color: #fff8e8;
+}
+
+.auth-form--salon-parity .form-group input::placeholder {
+  color: #b9ad9b;
+  opacity: 1;
+}
+
+.auth-form--salon-parity .auth-password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-form--salon-parity .auth-password-input-wrap input {
+  padding-right: 3rem;
+}
+
+.auth-form--salon-parity .auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: .5rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #c8bda8;
+  transform: translateY(-50%);
+}
+
+.auth-form--salon-parity .auth-password-toggle:hover,
+.auth-form--salon-parity .auth-password-toggle:focus-visible {
+  color: #f1d59b;
+  background: rgba(215, 168, 79, .12);
+}
+
+.auth-form--salon-parity .auth-submit-btn {
+  width: 100%;
+  margin-top: .25rem;
+}
+
+.auth-form--salon-parity .auth-links {
+  display: grid;
+  justify-items: center;
+  gap: .4rem;
+  margin-top: 1rem;
+}
+
+.auth-form--salon-parity .auth-links a {
+  color: #f1d59b !important;
+  font-size: .86rem;
 }

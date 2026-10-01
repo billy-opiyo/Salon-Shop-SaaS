@@ -11,6 +11,7 @@ export function LoginForm() {
 	const router = useRouter()
 	const [message, setMessage] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [showPassword, setShowPassword] = useState(false)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
@@ -47,9 +48,9 @@ export function LoginForm() {
 	}
 
 	return (
-		<form className="auth-form" onSubmit={handleSubmit}>
+		<form className="auth-form auth-form--salon-parity" onSubmit={handleSubmit}>
 			<button
-				className="auth-google-button"
+				className="auth-provider-btn auth-provider-btn--google"
 				type="button"
 				onClick={handleGoogleSignIn}
 				disabled={isSubmitting}
@@ -57,39 +58,60 @@ export function LoginForm() {
 				<GoogleIcon />
 				Continue with Google
 			</button>
-			<div className="auth-divider" aria-hidden="true">
+			<div className="auth-separator" aria-hidden="true">
 				<span>or</span>
 			</div>
-			<label>
-				Email
-				<input name="email" type="email" autoComplete="email" required />
-			</label>
-			<label>
-				Password
+			<div className="form-group">
+				<label htmlFor="platformAuthEmail">Email</label>
 				<input
-					name="password"
-					type="password"
-					autoComplete="current-password"
-					minLength={12}
+					id="platformAuthEmail"
+					name="email"
+					type="email"
+					placeholder="you@email.com"
+					autoComplete="email"
 					required
 				/>
-			</label>
+			</div>
+			<div className="form-group auth-password-field">
+				<label htmlFor="platformAuthPassword">Password</label>
+				<div className="auth-password-input-wrap">
+					<input
+						id="platformAuthPassword"
+						name="password"
+						type={showPassword ? "text" : "password"}
+						placeholder="••••••••"
+						autoComplete="current-password"
+						minLength={12}
+						required
+					/>
+					<button
+						className="auth-password-toggle"
+						type="button"
+						aria-label={showPassword ? "Hide password" : "Show password"}
+						aria-pressed={showPassword}
+						onClick={() => setShowPassword((visible) => !visible)}
+					>
+						<i className={showPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye"} aria-hidden="true" />
+					</button>
+				</div>
+			</div>
 			<button
-				className="button button--primary"
+				className="button button--primary auth-submit-btn"
 				type="submit"
 				disabled={isSubmitting}
 			>
-				{isSubmitting ? "Signing in…" : "Sign in"}
+				{isSubmitting ? "Signing in…" : "Log In"}
 			</button>
 			{message && (
 				<p className="form-message" role="alert">
 					{message}
 				</p>
 			)}
-			<p className="auth-form__switch">
-				New here? <Link href="/signup">Create an account</Link> ·{" "}
-				<Link href="/reset-password">Forgot your password?</Link>
-			</p>
+			<div className="auth-links">
+				<Link href="/signup">Don&apos;t have an account? Register</Link>
+				<Link href="/reset-password">Forgot Password?</Link>
+				<Link href="/">Continue as Guest</Link>
+			</div>
 		</form>
 	)
 }

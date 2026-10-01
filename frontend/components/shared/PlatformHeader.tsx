@@ -6,6 +6,7 @@ import { PlatformBrandMark } from "@/components/shared/PlatformBrandMark"
 interface PlatformHeaderProps {
 	/** Which page is currently being viewed, to resolve in-page anchors. */
 	readonly page?: "home" | "stores" | "about" | "support"
+	readonly logoUrl?: string
 }
 
 /**
@@ -13,7 +14,7 @@ interface PlatformHeaderProps {
  * and the scroll-to-top brand mark; on the /stores page links resolve to the
  * full routes so navigation works from the directory page.
  */
-export function PlatformHeader({ page = "home" }: PlatformHeaderProps) {
+export function PlatformHeader({ page = "home", logoUrl = "/platform/Beauty Sphia logo.webp" }: PlatformHeaderProps) {
 	const isHome = page === "home"
 
 	const homeHref = isHome ? "#home" : "/"
@@ -25,8 +26,9 @@ export function PlatformHeader({ page = "home" }: PlatformHeaderProps) {
 		<>
 			<Image
 				className="brand-mark__image"
-				src="/platform/Beauty Sphia logo.png"
+				src={logoUrl}
 				alt="Beauty Sphia logo"
+				unoptimized
 				width={48}
 				height={48}
 			/>

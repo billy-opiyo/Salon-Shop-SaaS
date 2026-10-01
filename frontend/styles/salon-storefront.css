@@ -8355,10 +8355,59 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
 }
 
 .salon-storefront-root .nav a:hover,
-.salon-storefront-root .nav a.active,
 .salon-storefront-root .btn-outline:hover,
 .salon-storefront-root .btn-outline:focus-visible {
     color: #0a0a0a;
+}
+
+.salon-storefront-root .nav a.active {
+    color: var(--primary);
+}
+
+/* The platform shell has generic blog rules in globals.css. Keep the
+   storefront cards on the reference layout and prevent those rules from
+   changing card padding, headings, and link contrast. */
+.salon-storefront-root .blog-grid {
+    display: flex;
+    gap: 24px;
+    margin-top: 0;
+}
+
+.salon-storefront-root .blog-card {
+    padding: 0;
+}
+
+.salon-storefront-root .blog-card h3 {
+    margin: 0 0 10px;
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.salon-storefront-root .blog-card p {
+    min-height: 0;
+    color: var(--text-secondary);
+}
+
+.salon-storefront-root .blog-card a.read-more {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.salon-storefront-root .blog-card a.read-more svg {
+    stroke: var(--primary);
+}
+
+.salon-storefront-root .booking-form select {
+    background-color: var(--bg-card);
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--select-arrow-color) 50%),
+        linear-gradient(135deg, var(--select-arrow-color) 50%, transparent 50%);
+    background-repeat: no-repeat;
+    background-position:
+        var(--select-arrow-left-position) var(--select-arrow-y-position),
+        var(--select-arrow-right-position) var(--select-arrow-y-position);
+    background-size: 7px 7px, 7px 7px;
 }
 
 .salon-storefront-root .dark-mode-toggle {

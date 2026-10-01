@@ -6,8 +6,14 @@ export const metadata: Metadata = {
 	title: "Beauty Sphia",
 	description: "Create and run a beautiful salon storefront from one platform.",
 	icons: {
-		icon: "/platform/Beauty Sphia logo.png",
-		shortcut: "/platform/Beauty Sphia logo.png",
+		icon: {
+			url: "/platform/Beauty Sphia logo.png",
+			type: "image/png",
+		},
+		shortcut: {
+			url: "/platform/Beauty Sphia logo.png",
+			type: "image/png",
+		},
 		apple: "/platform/Beauty Sphia logo.png",
 	},
 }

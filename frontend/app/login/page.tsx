@@ -12,11 +12,10 @@ export default function LoginPage() {
 				<Link className="brand-mark" href="/">
 					Beauty Sphia
 				</Link>
-				<p className="eyebrow">Secure workspace access</p>
-				<h1 id="login-title">Welcome back.</h1>
-				<p className="auth-card__intro">
-					Sign in to manage your salon workspace and storefront.
-				</p>
+				<div className="auth-card-head">
+					<p className="section-subtitle">Welcome Back</p>
+					<h1 id="login-title">Log in to Manage Bookings, Reviews, Favorites styles &amp; Account</h1>
+				</div>
 				<LoginForm />
 			</section>
 		</main>

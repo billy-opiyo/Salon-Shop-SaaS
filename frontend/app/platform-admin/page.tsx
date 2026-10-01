@@ -5,11 +5,15 @@ import {
 	assertPlatformAdmin,
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
-import { getPlatformAdminSnapshot } from "@backend/services/platformAdminService"
+import {
+	getPlatformAdminSnapshot,
+	getPlatformStorefrontDesign,
+} from "@backend/services/platformAdminService"
 import { listPlatformTeamForAdmin } from "@backend/services/platformTeamService"
 
 import { PlatformAdminAction } from "./PlatformAdminAction"
 import { PlatformTeamManager } from "./PlatformTeamManager"
+import { PlatformStorefrontManager } from "./PlatformStorefrontManager"
 
 function formatDate(value: Date | null): string {
 	return value ? value.toLocaleDateString("en-KE") : "Not set"
@@ -38,9 +42,10 @@ export default async function PlatformAdminPage() {
 		throw error
 	}
 
-	const [snapshot, teamMembers] = await Promise.all([
+	const [snapshot, teamMembers, storefrontDesign] = await Promise.all([
 		getPlatformAdminSnapshot(),
 		listPlatformTeamForAdmin(session.user.id, session.user.email),
+		getPlatformStorefrontDesign(),
 	])
 	const { counts } = snapshot
 	const metricCards = [
@@ -285,8 +290,9 @@ export default async function PlatformAdminPage() {
 						)}
 					</div>
 				</section>
-			</section>
-			<PlatformTeamManager initialMembers={teamMembers} />
+		</section>
+		<PlatformStorefrontManager initialDesign={storefrontDesign} />
+		<PlatformTeamManager initialMembers={teamMembers} />
 		</main>
 	)
 }

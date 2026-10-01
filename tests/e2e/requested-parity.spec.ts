@@ -155,4 +155,98 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		await page.locator("#backToTop").click()
 		await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(10)
 	})
+
+	test("keeps storefront controls readable and cards aligned like the legacy page", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 1000 })
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("#home")
+		await page.waitForTimeout(1_000)
+		await page.locator("#blog").scrollIntoViewIfNeeded()
+		await page.locator(".blog-card-image img").first().scrollIntoViewIfNeeded()
+		await expect.poll(
+			() => page.locator(".blog-card-image img").first().evaluate((image) => image.naturalWidth),
+		).toBeGreaterThan(0)
+
+		const state = await page.evaluate(() => {
+			const home = document.querySelector<HTMLAnchorElement>('.nav a[href="#home"]')
+			const readMore = document.querySelector<HTMLAnchorElement>(".read-more")
+			const firstCategory = document.querySelector<HTMLElement>(
+				"#servicesGrid .services-category-grid",
+			)
+			const cards = firstCategory
+				? Array.from(firstCategory.querySelectorAll<HTMLElement>(":scope > .service-card")).slice(0, 2)
+				: []
+			const cardRects = cards.map((card) => ({
+				left: card.getBoundingClientRect().left,
+				top: card.getBoundingClientRect().top,
+				width: card.getBoundingClientRect().width,
+				actionsTop: card.querySelector<HTMLElement>(".service-card-actions")?.getBoundingClientRect().top ?? -1,
+			}))
+			const visibleSelects = ["#serviceSelect", "#stylistSelect"]
+				.map((selector) => document.querySelector<HTMLSelectElement>(selector))
+				.filter((select): select is HTMLSelectElement => Boolean(select))
+				.map((select) => getComputedStyle(select).backgroundImage)
+			const blogImage = document.querySelector<HTMLImageElement>(".blog-card-image img")
+			const blogImageBox = document.querySelector<HTMLElement>(".blog-card-image")
+			return {
+				homeColor: home ? getComputedStyle(home).color : "",
+				homeOpacity: home ? getComputedStyle(home).opacity : "0",
+				readMoreColor: readMore ? getComputedStyle(readMore).color : "",
+				readMoreOpacity: readMore ? getComputedStyle(readMore).opacity : "0",
+				cardRects,
+				selectBackgroundImages: visibleSelects,
+				blogImageLoaded: Boolean(blogImage?.complete && blogImage.naturalWidth > 0),
+				blogImageHeight: blogImageBox?.getBoundingClientRect().height ?? 0,
+			}
+		})
+		expect(state.homeColor).toBe(state.readMoreColor)
+		expect(state.homeOpacity).toBe("1")
+		expect(state.readMoreOpacity).toBe("1")
+		expect(state.cardRects.length).toBe(2)
+		expect(state.cardRects[0].left).toBeLessThan(state.cardRects[1].left)
+		expect(state.cardRects[0].top).toBe(state.cardRects[1].top)
+		expect(state.cardRects[0].actionsTop).toBe(state.cardRects[1].actionsTop)
+		expect(state.selectBackgroundImages).toHaveLength(2)
+		for (const backgroundImage of state.selectBackgroundImages) {
+			expect(backgroundImage).toContain("linear-gradient")
+		}
+		expect(state.blogImageLoaded).toBe(true)
+		expect(state.blogImageHeight).toBeGreaterThanOrEqual(190)
+	})
+
+	test("uses the Beauty Sphia logo as the favicon and keeps platform auth readable", async ({
+		page,
+	}) => {
+		await page.goto("/", { waitUntil: "domcontentloaded" })
+		await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+			"href",
+			/Beauty%20Sphia%20logo\.png|Beauty Sphia logo\.png/,
+		)
+
+		await page.goto("/login", { waitUntil: "domcontentloaded" })
+		await expect(page.locator("#login-title")).toHaveText(
+			"Log in to Manage Bookings, Reviews, Favorites styles & Account",
+		)
+		await expect(page.locator(".auth-provider-btn--google")).toContainText("Continue with Google")
+		await expect(page.locator(".auth-password-toggle")).toBeVisible()
+		const authState = await page.locator(".auth-links a").first().evaluate((link) => {
+			const style = getComputedStyle(link)
+			return { color: style.color, opacity: style.opacity }
+		})
+		expect(authState.color).toBe("rgb(241, 213, 155)")
+		expect(authState.opacity).toBe("1")
+
+		await page.goto("/", { waitUntil: "domcontentloaded" })
+		await page.waitForTimeout(5_250)
+		const platformLink = page.locator('.platform-nav a[href="/stores"]').first()
+		await platformLink.hover()
+		await expect
+			.poll(() => platformLink.evaluate((link) => getComputedStyle(link).color))
+			.toBe("rgb(255, 231, 173)")
+	})
 })
