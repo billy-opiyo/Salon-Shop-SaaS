@@ -22,12 +22,14 @@ export function PlatformFooter({ description = "Manage your salon, book clients,
 					</Link>
 					<p>{description}</p>
 				</div>
-				<nav className="platform-footer__links" aria-label="Beauty Sphia links">
+				<nav className="platform-footer__links" aria-label="Platform">
 					<span className="eyebrow">Platform</span>
 					<Link href="/support">Salon Owner Support</Link>
 					<Link href="/about">About Us</Link>
 					<Link href="/#contact">Contact</Link>
-					<span className="eyebrow platform-footer__links-heading">Policies</span>
+				</nav>
+				<nav className="platform-footer__links platform-footer__policies" aria-label="Policies">
+					<span className="eyebrow">Policies</span>
 					<Link href="/privacy">Privacy Policy</Link>
 					<Link href="/cookies">Cookie Policy</Link>
 					<Link href="/terms">Terms of Service</Link>

@@ -29,25 +29,26 @@ export function SignupForm() {
 	}
 
 	return (
-		<form className="auth-form" onSubmit={handleSubmit}>
-			<label>
-				Full name
-				<input name="name" type="text" autoComplete="name" required />
-			</label>
-			<label>
-				Email
-				<input name="email" type="email" autoComplete="email" required />
-			</label>
-			<label>
-				Password
+		<form className="auth-form auth-form--salon-parity" onSubmit={handleSubmit}>
+			<div className="form-group">
+				<label htmlFor="platformSignupName">Your name</label>
+				<input id="platformSignupName" name="name" type="text" autoComplete="name" required />
+			</div>
+			<div className="form-group">
+				<label htmlFor="platformSignupEmail">Email address</label>
+				<input id="platformSignupEmail" name="email" type="email" autoComplete="email" required />
+			</div>
+			<div className="form-group">
+				<label htmlFor="platformSignupPassword">Create a password</label>
 				<input
+					id="platformSignupPassword"
 					name="password"
 					type="password"
 					autoComplete="new-password"
 					minLength={12}
 					required
 				/>
-			</label>
+			</div>
 			<input
 				name="turnstileToken"
 				type="hidden"
@@ -56,7 +57,7 @@ export function SignupForm() {
 			/>
 			<TurnstileWidget onToken={setTurnstileToken} />
 			<button
-				className="button button--primary"
+				className="button button--primary auth-submit-btn"
 				type="submit"
 				disabled={isSubmitting}
 			>
@@ -67,9 +68,11 @@ export function SignupForm() {
 					{message}
 				</p>
 			)}
-			<p className="auth-form__switch">
-				Already registered? <Link href="/login">Sign in</Link>
-			</p>
+			<div className="auth-links">
+				<p className="auth-form__switch">
+					Already have a Beauty Sphia account? <Link href="/login">Sign in</Link>
+				</p>
+			</div>
 		</form>
 	)
 }

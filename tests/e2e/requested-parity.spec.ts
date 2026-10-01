@@ -230,7 +230,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 
 		await page.goto("/login", { waitUntil: "domcontentloaded" })
 		await expect(page.locator("#login-title")).toHaveText(
-			"Log in to Manage Bookings, Reviews, Favorites styles & Account",
+			"Sign in to your salon workspace",
 		)
 		await expect(page.locator(".auth-provider-btn--google")).toContainText("Continue with Google")
 		await expect(page.locator(".auth-password-toggle")).toBeVisible()

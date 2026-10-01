@@ -13,8 +13,11 @@ export default function LoginPage() {
 					Beauty Sphia
 				</Link>
 				<div className="auth-card-head">
-					<p className="section-subtitle">Welcome Back</p>
-					<h1 id="login-title">Log in to Manage Bookings, Reviews, Favorites styles &amp; Account</h1>
+					<p className="section-subtitle">Welcome back</p>
+					<h1 id="login-title">Sign in to your salon workspace</h1>
+					<p className="auth-card__intro">
+						Manage your storefront, bookings, services, and team from one place.
+					</p>
 				</div>
 				<LoginForm />
 			</section>

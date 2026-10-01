@@ -758,14 +758,14 @@ main {
 
 .platform-footer__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(140px, .75fr) minmax(220px, .9fr);
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1.5fr) minmax(140px, .75fr) minmax(140px, .75fr) minmax(180px, .9fr);
+  gap: 2rem;
 }
 
 .platform-footer__brand p {
   max-width: 28rem;
   margin: .8rem 0 0;
-  color: var(--muted);
+  color: #eadfce;
   line-height: 1.65;
 }
 
@@ -787,7 +787,7 @@ main {
 }
 
 .platform-footer__links a {
-  color: var(--muted);
+  color: #f1d59b;
   transition: color .2s ease;
 }
 
@@ -814,7 +814,7 @@ main {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: .6rem;
-  color: var(--muted);
+  color: #f1d59b;
   transition: color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease;
 }
 
@@ -848,8 +848,22 @@ main {
   }
 
   .platform-footer__grid {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem 1.25rem;
+  }
+
+  .platform-footer__brand,
+  .platform-footer__social {
+    grid-column: 1 / -1;
+  }
+
+  .platform-footer__links,
+  .platform-footer__social {
+    min-width: 0;
+  }
+
+  .platform-footer__links {
+    gap: .65rem;
   }
 
   .platform-footer__bottom {
@@ -2722,9 +2736,9 @@ main {
 .platform-hero.platform-hero--image {
   position: relative;
   display: block;
-  width: 100%;
+  width: min(1180px, calc(100% - 3rem));
   min-height: 0;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
 }
 
@@ -2803,6 +2817,12 @@ main {
 @media (max-width: 1024px) {
   .platform-hero__picture {
     aspect-ratio: 512 / 768;
+  }
+}
+
+@media (max-width: 520px) {
+  .platform-hero.platform-hero--image {
+    width: min(1180px, calc(100% - 2rem));
   }
 }
 
@@ -3184,6 +3204,51 @@ main {
 	margin: 0;
 	font: 500 1.25rem/1.35 var(--serif);
 	letter-spacing: normal;
+}
+
+.auth-card-head .auth-card__intro {
+	margin: .65rem 0 0;
+	font-size: .88rem;
+	line-height: 1.55;
+}
+
+.auth-form--salon-parity .auth-form__switch {
+	margin: 0;
+	text-align: center;
+}
+
+.platform-footer .eyebrow,
+.platform-footer__title,
+.platform-footer__brand p,
+.platform-footer__bottom,
+.platform-footer__links a,
+.platform-footer__social .eyebrow,
+.platform-social-links a {
+	color: #f1d59b;
+	opacity: 1;
+}
+
+.platform-footer__links a:link,
+.platform-footer__links a:visited,
+.platform-footer__bottom a:link,
+.platform-footer__bottom a:visited {
+	color: #f1d59b !important;
+	opacity: 1 !important;
+}
+
+.platform-footer__links a:hover,
+.platform-footer__links a:focus-visible,
+.platform-footer__bottom a:hover,
+.platform-footer__bottom a:focus-visible {
+	color: #ffe7ad !important;
+	opacity: 1 !important;
+}
+
+.platform-header .brand-mark__tagline,
+.platform-home-shell .plan-card p.plan-card__best-for,
+.platform-home-shell .plan-card__best-for strong {
+	color: #f1d59b;
+	opacity: 1;
 }
 
 .auth-form--salon-parity .auth-provider-btn {
