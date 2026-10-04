@@ -28,6 +28,7 @@ import {
 	getImageUploadError,
 	IMAGE_TOO_LARGE_MESSAGE,
 } from "@shared/validation/media"
+import { getHairGalleryFieldRules } from "@shared/validation/galleryRules"
 
 export interface SalonClientConfig {
 	readonly client?: { readonly name?: string }
@@ -471,6 +472,45 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		const fill = document.getElementById("adminGalleryChecklistProgressFill")
 		if (fill instanceof HTMLElement) fill.style.width = `${complete * 20}%`
 	}
+	const updateGalleryHairFields = (): void => {
+		if (!(galleryForm instanceof HTMLFormElement)) return
+		const isHair = formField(galleryForm, "galleryServiceCategory") === "hair-services"
+		const rules = getHairGalleryFieldRules(
+			formField(galleryForm, "galleryHairServiceType"),
+		)
+		const fields = [
+			{
+				id: "galleryHairTechnique",
+				visible: rules.showTechnique,
+				required: rules.requireTechnique,
+			},
+			{
+				id: "galleryHairLengthDensity",
+				visible: rules.showLengthDensity,
+				required: false,
+			},
+			{
+				id: "galleryHairProductsUsed",
+				visible: rules.showProductsUsed,
+				required: rules.requireProductsUsed,
+			},
+		] as const
+		for (const field of fields) {
+			const control = document.getElementById(field.id)
+			const wrapper = control?.closest<HTMLElement>(".admin-hair-field")
+			if (!control || !wrapper) continue
+			const visible = isHair && field.visible
+			wrapper.style.display = visible ? "" : "none"
+			if (
+				control instanceof HTMLInputElement ||
+				control instanceof HTMLSelectElement ||
+				control instanceof HTMLTextAreaElement
+			) {
+				control.required = visible && field.required
+				if (!visible) control.value = ""
+			}
+		}
+	}
 	const updateGalleryCategory = (category: string): void => {
 		if (!(galleryForm instanceof HTMLFormElement)) return
 		setFormField(galleryForm, "galleryServiceCategory", category)
@@ -480,9 +520,82 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		const isBraids = category === "braids-services"
 		const isHair = category === "hair-services"
 		const isCosmetics = category === "cosmetics-products"
-		document.querySelectorAll<HTMLElement>(".admin-braids-field").forEach((field) => { field.style.display = isBraids ? "" : "none" })
-		document.querySelectorAll<HTMLElement>(".admin-hair-field").forEach((field) => { field.style.display = isHair ? "" : "none" })
+		const categoryLabels: Readonly<Record<string, string>> = {
+			"braids-services": "Braids",
+			"hair-services": "Hair",
+			"beauty-spa-services": "Beauty Spa",
+			"nail-services": "Nails",
+			"makeup-services": "Makeup",
+			"barber-services": "Barber",
+			"massage-wellness": "Massage",
+			"eyebrow-lash-services": "Eyebrows & Lash",
+			"bridal-event-packages": "Bridal / Event Packages",
+			"cosmetics-products": "Cosmetics",
+		}
+		const categoryLabel = categoryLabels[category] ?? "Braids"
+		const serviceNameInput = document.getElementById("galleryServiceName")
+		if (serviceNameInput instanceof HTMLInputElement)
+			serviceNameInput.placeholder = `e.g. ${categoryLabel} Style`
+		const setLabel = (id: string, text: string): void => {
+			const label = document.querySelector<HTMLLabelElement>(`label[for="${id}"]`)
+			if (label) label.textContent = text
+		}
+		setLabel("galleryStyleName", isCosmetics ? "Product Name *" : "Style Name *")
+		setLabel("galleryStyleType", isCosmetics ? "Product Type *" : "Style Type *")
+		setLabel("galleryPriceRange", isCosmetics ? "Price" : "Price Range")
+		setLabel(
+			"galleryMainImage",
+			isCosmetics ? "Product Image *" : "After (Final Style) Image *",
+		)
+		const setPlaceholder = (id: string, placeholder: string): void => {
+			const control = document.getElementById(id)
+			if (control instanceof HTMLInputElement) control.placeholder = placeholder
+		}
+		setPlaceholder(
+			"galleryStyleName",
+			isCosmetics ? "e.g. Nourish & Shine Hair Oil" : "e.g. Boho Knotless Braids",
+		)
+		setPlaceholder(
+			"galleryStyleType",
+			isCosmetics ? "e.g. Hair Oil" : "e.g. Knotless",
+		)
+		setPlaceholder(
+			"galleryPriceRange",
+			isCosmetics ? "e.g. KSh 1,200" : "e.g. KSh 4,000 - 6,000",
+		)
+		const trendingLabel = document.getElementById("galleryFeaturedTrendingLabel")
+		const mostBookedLabel = document.getElementById("galleryFeaturedMostBookedLabel")
+		if (trendingLabel) trendingLabel.textContent = `Trending ${categoryLabel}`
+		if (mostBookedLabel) mostBookedLabel.textContent = `Most Booked ${categoryLabel}`
+		const setGroupVisibility = (
+			selector: string,
+			visible: boolean,
+			clearWhenHidden: boolean,
+		): void => {
+			document.querySelectorAll<HTMLElement>(selector).forEach((group) => {
+				group.style.display = visible ? "" : "none"
+				if (visible || !clearWhenHidden) return
+				group.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach((control) => {
+					control.required = false
+					if (control instanceof HTMLInputElement && control.type === "checkbox")
+						control.checked = false
+					else if (!(control instanceof HTMLInputElement && control.type === "file"))
+						control.value = ""
+				})
+			})
+		}
+		setGroupVisibility(".admin-braids-field", isBraids, true)
+		setGroupVisibility(".admin-hair-field", isHair, true)
 		document.querySelectorAll<HTMLElement>(".admin-cosmetics-field").forEach((field) => { field.style.display = isCosmetics ? "" : "none" })
+		for (const [id, visible] of [
+			["galleryServiceNameGroup", !isCosmetics],
+			["galleryTimeTakenGroup", !isCosmetics],
+			["galleryStylistNameGroup", !isCosmetics],
+			["galleryBeforeImageGroup", !isCosmetics],
+		] as const) {
+			const group = document.getElementById(id)
+			if (group instanceof HTMLElement) group.style.display = visible ? "" : "none"
+		}
 		const setRequired = (id: string, required: boolean): void => {
 			const element = document.getElementById(id)
 			if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) element.required = required
@@ -494,11 +607,15 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		setRequired("gallerySize", isBraids)
 		setRequired("galleryHairType", isBraids)
 		setRequired("galleryHairServiceType", isHair)
-		setRequired("galleryHairTechnique", isHair)
+		setRequired("galleryHairTechnique", false)
+		updateGalleryHairFields()
 		updateGalleryPreview()
 	}
 	if (galleryForm instanceof HTMLFormElement) {
-		const refreshGalleryPreview = (): void => updateGalleryPreview()
+		const refreshGalleryPreview = (): void => {
+			updateGalleryHairFields()
+			updateGalleryPreview()
+		}
 		window.addEventListener("admin-gallery-refresh-preview", refreshGalleryPreview)
 		removers.push(() =>
 			window.removeEventListener("admin-gallery-refresh-preview", refreshGalleryPreview),
@@ -509,7 +626,10 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			removers.push(() => button.removeEventListener("click", handler))
 		})
 		galleryForm.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((field) => {
-			const handler = () => updateGalleryPreview()
+			const handler = () => {
+				if (field.id === "galleryHairServiceType") updateGalleryHairFields()
+				updateGalleryPreview()
+			}
 			field.addEventListener("input", handler)
 			field.addEventListener("change", handler)
 			removers.push(() => {
@@ -559,6 +679,11 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			? await uploadLegacyAdminImage(tenantSlug, beforeFile, "GALLERY")
 			: form.dataset.beforeImageUrl ?? ""
 		const id = formField(form, "galleryEditId")
+		const categoryKey = formField(form, "galleryServiceCategory") || "braids-services"
+		const isBraids = categoryKey === "braids-services"
+		const isHair = categoryKey === "hair-services"
+		const isCosmetics = categoryKey === "cosmetics-products"
+		const hairRules = getHairGalleryFieldRules(formField(form, "galleryHairServiceType"))
 		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
 			method: "POST",
 			credentials: "same-origin",
@@ -566,25 +691,25 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			body: JSON.stringify({
 				action: id ? "gallery-update" : "gallery-create",
 				id,
-				categoryKey: formField(form, "galleryServiceCategory"),
+				categoryKey,
 				styleName: formField(form, "galleryStyleName"),
 				imageUrl,
 				beforeImageUrl,
 				styleType: formField(form, "galleryStyleType"),
-				serviceName: formField(form, "galleryServiceName"),
-				length: formField(form, "galleryLength"),
-				size: formField(form, "gallerySize"),
-				timeTaken: formField(form, "galleryTimeTaken"),
+				serviceName: isCosmetics ? "Cosmetics Products" : formField(form, "galleryServiceName"),
+				length: isBraids ? formField(form, "galleryLength") : "",
+				size: isBraids ? formField(form, "gallerySize") : "",
+				timeTaken: isCosmetics ? "" : formField(form, "galleryTimeTaken"),
 				priceRange: formField(form, "galleryPriceRange"),
-				productBrand: formField(form, "galleryProductBrand"),
-				productSize: formField(form, "galleryProductSize"),
-				productDescription: formField(form, "galleryProductDescription"),
-				hairType: formField(form, "galleryHairType"),
-				hairServiceType: formField(form, "galleryHairServiceType"),
-				hairTechnique: formField(form, "galleryHairTechnique"),
-				hairLengthDensity: formField(form, "galleryHairLengthDensity"),
-				hairProductsUsed: formField(form, "galleryHairProductsUsed"),
-				stylistName: formField(form, "galleryStylistName"),
+				productBrand: isCosmetics ? formField(form, "galleryProductBrand") : "",
+				productSize: isCosmetics ? formField(form, "galleryProductSize") : "",
+				productDescription: isCosmetics ? formField(form, "galleryProductDescription") : "",
+				hairType: isBraids ? formField(form, "galleryHairType") : "",
+				hairServiceType: isHair ? formField(form, "galleryHairServiceType") : "",
+				hairTechnique: isHair ? formField(form, "galleryHairTechnique") : "",
+				hairLengthDensity: isHair ? formField(form, "galleryHairLengthDensity") : "",
+				hairProductsUsed: isHair && hairRules.showProductsUsed ? formField(form, "galleryHairProductsUsed") : "",
+				stylistName: isCosmetics ? "" : formField(form, "galleryStylistName"),
 				featuredTrending: form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")?.checked === true,
 				featuredMostBooked: form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")?.checked === true,
 				published: true,

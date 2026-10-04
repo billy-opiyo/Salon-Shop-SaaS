@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { getHairGalleryFieldRules } from "@shared/validation/galleryRules"
+
 export const bookingStatusSchema = z.enum([
 	"PENDING",
 	"CONFIRMED",
@@ -49,9 +51,22 @@ export const servicePriceUpdateSchema = z.object({
 
 export type ServicePriceUpdateInput = z.infer<typeof servicePriceUpdateSchema>
 
+const galleryCategoryKeySchema = z.enum([
+	"braids-services",
+	"hair-services",
+	"beauty-spa-services",
+	"nail-services",
+	"makeup-services",
+	"barber-services",
+	"massage-wellness",
+	"eyebrow-lash-services",
+	"bridal-event-packages",
+	"cosmetics-products",
+])
+
 export const galleryMutationSchema = z.object({
 	tenantSlug: z.string().trim().min(3).max(48),
-	categoryKey: z.string().trim().max(80).optional(),
+	categoryKey: galleryCategoryKeySchema.default("braids-services"),
 	styleName: z.string().trim().min(2).max(160),
 	imageUrl: z.string().trim().url().max(2000),
 	beforeImageUrl: z
@@ -80,6 +95,39 @@ export const galleryMutationSchema = z.object({
 	featuredTrending: z.boolean().optional(),
 	featuredMostBooked: z.boolean().optional(),
 	published: z.boolean(),
+}).superRefine((input, context) => {
+	const category = input.categoryKey ?? "braids-services"
+	const isCosmetics = category === "cosmetics-products"
+	const isBraids = category === "braids-services"
+	const isHair = category === "hair-services"
+	const requireField = (value: string | undefined, field: string, label: string) => {
+		if (!value?.trim()) {
+			context.addIssue({
+				code: "custom",
+				path: [field],
+				message: `${label} is required.`,
+			})
+		}
+	}
+
+	requireField(input.styleType, "styleType", "Style type")
+	if (!isCosmetics) {
+		requireField(input.serviceName, "serviceName", "Service name")
+		requireField(input.timeTaken, "timeTaken", "Time taken")
+		requireField(input.stylistName, "stylistName", "Stylist name")
+	}
+	if (isBraids) {
+		requireField(input.length, "length", "Length")
+		requireField(input.size, "size", "Size")
+		requireField(input.hairType, "hairType", "Hair type")
+	}
+	if (isHair) {
+		requireField(input.hairServiceType, "hairServiceType", "Hair service type")
+		requireField(input.hairTechnique, "hairTechnique", "Technique / finish")
+		if (getHairGalleryFieldRules(input.hairServiceType).requireProductsUsed) {
+			requireField(input.hairProductsUsed, "hairProductsUsed", "Products / color mix used")
+		}
+	}
 })
 
 export type GalleryMutationInput = z.infer<typeof galleryMutationSchema>

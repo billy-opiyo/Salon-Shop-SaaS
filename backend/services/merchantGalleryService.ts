@@ -8,6 +8,7 @@ import {
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import type { GalleryMutationInput } from "@shared/validation/merchant"
+import { getHairGalleryFieldRules } from "@shared/validation/galleryRules"
 import {
 	assertGalleryCapacity,
 	UsageLimitError,
@@ -61,6 +62,32 @@ async function resolveCategoryId(
 		select: { id: true },
 	})
 	return category?.id ?? null
+}
+
+function categoryScopedGalleryFields(input: GalleryMutationInput) {
+	const category = input.categoryKey ?? "braids-services"
+	const isBraids = category === "braids-services"
+	const isHair = category === "hair-services"
+	const isCosmetics = category === "cosmetics-products"
+	const hairRules = getHairGalleryFieldRules(input.hairServiceType)
+	return {
+		serviceName: isCosmetics ? "Cosmetics Products" : input.serviceName || null,
+		length: isBraids ? input.length || null : null,
+		size: isBraids ? input.size || null : null,
+		hairType: isBraids ? input.hairType || null : null,
+		productBrand: isCosmetics ? input.productBrand || null : null,
+		productSize: isCosmetics ? input.productSize || null : null,
+		productDescription: isCosmetics ? input.productDescription || null : null,
+		hairServiceType: isHair ? input.hairServiceType || null : null,
+		hairTechnique: isHair ? input.hairTechnique || null : null,
+		hairLengthDensity: isHair ? input.hairLengthDensity || null : null,
+		hairProductsUsed:
+			isHair && hairRules.showProductsUsed
+				? input.hairProductsUsed || null
+				: null,
+		stylistName: isCosmetics ? null : input.stylistName || null,
+		timeTaken: isCosmetics ? null : input.timeTaken || null,
+	}
 }
 
 export async function listGalleryForUser(userId: string, tenantSlug: string) {
@@ -154,6 +181,7 @@ export async function createGalleryStyle(
 	input: GalleryMutationInput,
 ): Promise<void> {
 	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const categoryFields = categoryScopedGalleryFields(input)
 	try {
 		await assertGalleryCapacity(tenantId)
 	} catch (error) {
@@ -168,22 +196,10 @@ export async function createGalleryStyle(
 			categoryId,
 			styleName: input.styleName,
 			description: input.description || null,
-			serviceName: input.serviceName || null,
+			...categoryFields,
 			imageUrl: input.imageUrl,
 			beforeImageUrl: input.beforeImageUrl || null,
 			styleType: input.styleType || null,
-			length: input.length || null,
-			size: input.size || null,
-			hairType: input.hairType || null,
-			productBrand: input.productBrand || null,
-			productSize: input.productSize || null,
-			productDescription: input.productDescription || null,
-			hairServiceType: input.hairServiceType || null,
-			hairTechnique: input.hairTechnique || null,
-			hairLengthDensity: input.hairLengthDensity || null,
-			hairProductsUsed: input.hairProductsUsed || null,
-			stylistName: input.stylistName || null,
-			timeTaken: input.timeTaken || null,
 			priceRange: input.priceRange || null,
 			featuredTrending: input.featuredTrending ?? false,
 			featuredMostBooked: input.featuredMostBooked ?? false,
@@ -207,6 +223,7 @@ export async function updateGalleryStyle(
 	input: GalleryMutationInput & { id: string },
 ): Promise<void> {
 	const tenantId = await getTenantId(userId, input.tenantSlug)
+	const categoryFields = categoryScopedGalleryFields(input)
 	const categoryId = await resolveCategoryId(tenantId, input.categoryKey)
 	const result = await prisma.galleryStyle.updateMany({
 		where: { id: input.id, tenantId },
@@ -214,22 +231,10 @@ export async function updateGalleryStyle(
 			categoryId,
 			styleName: input.styleName,
 			description: input.description || null,
-			serviceName: input.serviceName || null,
+			...categoryFields,
 			imageUrl: input.imageUrl,
 			beforeImageUrl: input.beforeImageUrl || null,
 			styleType: input.styleType || null,
-			length: input.length || null,
-			size: input.size || null,
-			hairType: input.hairType || null,
-			productBrand: input.productBrand || null,
-			productSize: input.productSize || null,
-			productDescription: input.productDescription || null,
-			hairServiceType: input.hairServiceType || null,
-			hairTechnique: input.hairTechnique || null,
-			hairLengthDensity: input.hairLengthDensity || null,
-			hairProductsUsed: input.hairProductsUsed || null,
-			stylistName: input.stylistName || null,
-			timeTaken: input.timeTaken || null,
 			priceRange: input.priceRange || null,
 			featuredTrending: input.featuredTrending ?? false,
 			featuredMostBooked: input.featuredMostBooked ?? false,

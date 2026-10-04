@@ -79,6 +79,35 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		expect(state.bodyHasSplash).toBe(false)
 	})
 
+	test("mobile Favorites and Account actions open the customer sign-in flow", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 })
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "visible",
+			timeout: 15_000,
+		})
+		const actionBar = page.locator("nav.saas-tenant-mobile-actions")
+
+		for (const label of ["Favorites", "Account"]) {
+			await actionBar.getByRole("link", { name: label }).click()
+			await expect(page.locator("#authModal")).toHaveAttribute(
+				"aria-hidden",
+				"false",
+			)
+			await expect(page.getByRole("dialog")).toBeVisible()
+			await page.getByRole("button", { name: "Close log in modal" }).click()
+			await expect(page.locator("#authModal")).toHaveAttribute(
+				"aria-hidden",
+				"true",
+			)
+		}
+	})
+
 	test("preserves legacy storefront navigation, service filtering, review gating, and motion", async ({
 		page,
 	}) => {
