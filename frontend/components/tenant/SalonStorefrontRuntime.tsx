@@ -1396,61 +1396,301 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	let cancelled = false
 	let scheduleDate = new Date()
 	let scheduleMode: "day" | "week" = "week"
-	let scheduleBookings: unknown[] = []
+	let scheduleBookings: AdminSnapshotRecord[] = []
+	let selectedScheduleBookingId = ""
+	let visibleScheduleBookingIds: string[] = []
+	const scheduleDateKey = (date: Date): string =>
+		`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+	const bookingDateKey = (value: unknown): string => {
+		if (typeof value === "string") {
+			const match = value.trim().match(/^(\d{4}-\d{2}-\d{2})/)
+			if (match) return match[1]
+		}
+		const date = value instanceof Date ? value : new Date(String(value ?? ""))
+		return Number.isNaN(date.getTime()) ? "" : scheduleDateKey(date)
+	}
+	const bookingTimeMinutes = (value: unknown): number => {
+		const text = String(value ?? "").trim().toLowerCase().replace(/\./g, "").replace(/\s+/g, "")
+		const match = text.match(/^(\d{1,2})(?::?(\d{2}))?(am|pm)?$/)
+		if (!match) return 9 * 60
+		let hours = Number(match[1])
+		const minutes = Number(match[2] ?? 0)
+		if (minutes > 59) return 9 * 60
+		if (match[3] === "pm" && hours < 12) hours += 12
+		if (match[3] === "am" && hours === 12) hours = 0
+		if (!match[3] && hours === 24 && minutes === 0) hours = 0
+		return hours >= 0 && hours < 24 ? hours * 60 + minutes : 9 * 60
+	}
+	const scheduleCustomerName = (booking: AdminSnapshotRecord): string =>
+		`${String(booking.firstName ?? "")} ${String(booking.lastName ?? "")}`.trim() ||
+		String(booking.name ?? "Unknown Customer")
+	const scheduleStatus = (booking: AdminSnapshotRecord): string =>
+		String(booking.status ?? "PENDING").toLowerCase().replace(/[_-]+/g, " ")
+	const renderScheduleDetails = (booking?: AdminSnapshotRecord): void => {
+		const details = document.getElementById("adminScheduleDetails")
+		if (!details) return
+		if (!booking) {
+			const empty = document.createElement("div")
+			empty.className = "admin-empty-state"
+			empty.textContent = "Click a calendar event to view booking details and quick actions."
+			details.replaceChildren(empty)
+			return
+		}
+		const article = document.createElement("article")
+		article.className = "admin-booking-item admin-schedule-detail-card"
+		const head = document.createElement("div")
+		head.className = "admin-booking-item-head"
+		const identity = document.createElement("div")
+		const name = document.createElement("div")
+		name.className = "admin-booking-name"
+		name.textContent = scheduleCustomerName(booking)
+		const id = document.createElement("div")
+		id.className = "admin-booking-id"
+		id.textContent = `Booking ID: ${String(booking.id ?? "N/A")}`
+		identity.append(name, id)
+		const badge = document.createElement("span")
+		badge.className = `admin-status-badge admin-status-${scheduleStatus(booking).replace(/\s+/g, "-")}`
+		badge.textContent = scheduleStatus(booking)
+		head.append(identity, badge)
+		const meta = document.createElement("div")
+		meta.className = "admin-booking-meta"
+		const dateKey = bookingDateKey(booking.appointmentDate)
+		const date = dateKey ? new Date(`${dateKey}T12:00:00`) : null
+		const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "N/A"
+		const stylist =
+			typeof booking.stylist === "object" && booking.stylist !== null &&
+			"name" in booking.stylist && typeof booking.stylist.name === "string"
+				? booking.stylist.name
+				: "Any Available"
+		const fields: Array<[string, unknown]> = [
+			["Service", booking.serviceName],
+			["Stylist", stylist],
+			["Date", dateLabel],
+			["Time", booking.timeLabel],
+			["Email", booking.email],
+			["Phone", booking.phone],
+		]
+		fields.forEach(([label, value]) => {
+			const field = document.createElement("div")
+			const fieldLabel = document.createElement("span")
+			fieldLabel.textContent = `${label}: `
+			field.append(fieldLabel, document.createTextNode(String(value || "N/A")))
+			meta.append(field)
+		})
+		const request = document.createElement("div")
+		request.className = "admin-booking-special-request"
+		const requestLabel = document.createElement("span")
+		requestLabel.textContent = "Special Request:"
+		const requestText = document.createElement("p")
+		requestText.textContent = String(booking.specialRequests || "No special request provided.")
+		request.append(requestLabel, requestText)
+		const inspiration = document.createElement("div")
+		inspiration.className = "admin-booking-inspiration"
+		const inspirationLabel = document.createElement("span")
+		inspirationLabel.textContent = "Inspiration Image: "
+		const inspirationUrl = typeof booking.inspirationImageUrl === "string"
+			? booking.inspirationImageUrl.trim()
+			: ""
+		if (inspirationUrl) {
+			try {
+				const safeInspirationUrl = new URL(inspirationUrl, window.location.origin)
+				if (safeInspirationUrl.protocol === "http:" || safeInspirationUrl.protocol === "https:") {
+					const link = document.createElement("a")
+					link.className = "admin-inline-link"
+					link.href = safeInspirationUrl.href
+					link.target = "_blank"
+					link.rel = "noopener noreferrer"
+					link.textContent = "Open full image"
+					inspiration.append(inspirationLabel, link)
+				} else {
+				inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+				}
+			} catch {
+				inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+			}
+		} else {
+			inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+		}
+		const actions = document.createElement("div")
+		actions.className = "admin-booking-actions admin-schedule-detail-actions"
+		const addNavigation = (direction: "previous" | "next", label: string): void => {
+			const button = document.createElement("button")
+			button.type = "button"
+			button.className = `admin-action-btn admin-schedule-${direction}-btn`
+			button.dataset.scheduleNav = direction
+			button.textContent = label
+			actions.append(button)
+		}
+		addNavigation("previous", "← Previous Booking")
+		addNavigation("next", "Next Booking →")
+		const status = String(booking.status ?? "PENDING")
+		const addStatusAction = (label: string, nextStatus: string, danger = false): void => {
+			const button = document.createElement("button")
+			button.type = "button"
+			button.className = `admin-action-btn admin-platform-action${danger ? " danger" : ""}`
+			button.dataset.adminAction = "booking-status"
+			button.dataset.adminId = String(booking.id ?? "")
+			button.dataset.status = nextStatus
+			button.textContent = label
+			actions.append(button)
+		}
+		if (status === "PENDING") {
+			addStatusAction("Confirm", "CONFIRMED")
+			addStatusAction("Cancel + Release Slot", "CANCELLED", true)
+		} else if (status === "CONFIRMED") {
+			addStatusAction("Complete + Release Slot", "COMPLETED")
+			addStatusAction("Cancel + Release Slot", "CANCELLED", true)
+		} else if (status === "WAITLISTED") {
+			const waitlistEntry = booking.waitlistEntry
+			const waitlistEntryId =
+				typeof waitlistEntry === "object" && waitlistEntry !== null &&
+				"id" in waitlistEntry && typeof waitlistEntry.id === "string"
+					? waitlistEntry.id
+					: ""
+			if (waitlistEntryId) {
+				const move = document.createElement("button")
+				move.type = "button"
+				move.className = "admin-action-btn admin-platform-action"
+				move.dataset.adminAction = "waitlist-convert"
+				move.dataset.adminId = waitlistEntryId
+				move.textContent = "Move to Confirmed"
+				actions.append(move)
+			} else {
+				const note = document.createElement("span")
+				note.className = "admin-empty-state"
+				note.textContent = "This booking is not linked to an actionable waitlist entry."
+				actions.append(note)
+			}
+		} else {
+			const note = document.createElement("button")
+			note.type = "button"
+			note.className = "admin-action-btn"
+			note.disabled = true
+			note.textContent = "No quick actions available"
+			actions.append(note)
+		}
+		article.append(head, meta, request, inspiration, actions)
+		details.replaceChildren(article)
+	}
 	const renderSchedule = () => {
 		const grid = document.getElementById("adminScheduleGrid")
 		if (!grid) return
 		const start = new Date(scheduleDate)
+		start.setHours(0, 0, 0, 0)
 		if (scheduleMode === "week") {
 			const day = start.getDay()
-			start.setDate(start.getDate() - day)
+			start.setDate(start.getDate() - (day === 0 ? 6 : day - 1))
 		}
 		const days = scheduleMode === "day" ? 1 : 7
 		grid.replaceChildren()
+		grid.classList.toggle("is-week-view", scheduleMode === "week")
+		const visibleBookings: AdminSnapshotRecord[] = []
 		for (let offset = 0; offset < days; offset += 1) {
 			const date = new Date(start)
 			date.setDate(start.getDate() + offset)
-			const key = date.toISOString().slice(0, 10)
+			const key = scheduleDateKey(date)
 			const column = document.createElement("div")
-			column.className = "admin-schedule-day"
-			const heading = document.createElement("h3")
-			heading.textContent = date.toLocaleDateString(undefined, {
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-			})
-			column.append(heading)
-			const dayItems = scheduleBookings.filter((item) => {
-				const record = item as AdminSnapshotRecord
-				return String(record.appointmentDate ?? "").slice(0, 10) === key
-			})
+			column.className = "admin-schedule-day-column"
+			const header = document.createElement("div")
+			header.className = "admin-schedule-day-header"
+			const heading = document.createElement("h4")
+			heading.textContent = date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+			const dayItems = scheduleBookings.filter((record) => bookingDateKey(record.appointmentDate) === key)
+				.sort((a, b) => bookingTimeMinutes(a.timeLabel) - bookingTimeMinutes(b.timeLabel))
+			const dayCount = document.createElement("p")
+			dayCount.textContent = `${dayItems.length} appointment${dayItems.length === 1 ? "" : "s"}`
+			header.append(heading, dayCount)
+			column.append(header)
+			const eventList = document.createElement("div")
+			eventList.className = "admin-schedule-day-events"
 			if (!dayItems.length) {
 				const empty = document.createElement("p")
-				empty.className = "admin-empty-state"
+				empty.className = "admin-schedule-empty-day"
 				empty.textContent = "No appointments"
-				column.append(empty)
+				eventList.append(empty)
 			}
-			dayItems.forEach((item) => {
-				const record = item as AdminSnapshotRecord
-				const event = document.createElement("button")
-				event.type = "button"
-				event.className = "admin-schedule-event"
-				event.textContent = `${String(record.timeLabel ?? "Time")} - ${String(record.serviceName ?? "Appointment")}`
-				event.title = `${String(record.firstName ?? "")} ${String(record.lastName ?? "")} (${String(record.status ?? "")})`
-				column.append(event)
+			const buckets = [
+				{ label: "Morning", start: 6 * 60, end: 12 * 60 },
+				{ label: "Afternoon", start: 12 * 60, end: 17 * 60 },
+				{ label: "Evening", start: 17 * 60, end: 22 * 60 },
+				{ label: "Late Night", start: 22 * 60, end: 24 * 60 },
+			]
+			buckets.forEach((bucket) => {
+				const bucketItems = dayItems.filter((record) => {
+					const minutes = bookingTimeMinutes(record.timeLabel)
+					return bucket.label === "Late Night"
+						? minutes < 6 * 60 || minutes >= bucket.start
+						: minutes >= bucket.start && minutes < bucket.end
+				})
+				if (!bucketItems.length) return
+				const section = document.createElement("section")
+				section.className = "admin-schedule-bucket"
+				const bucketLabel = document.createElement("div")
+				bucketLabel.className = "admin-schedule-bucket-label"
+				bucketLabel.textContent = bucket.label
+				section.append(bucketLabel)
+				bucketItems.forEach((record) => {
+					const id = String(record.id ?? "")
+					if (!id) return
+					visibleBookings.push(record)
+					const event = document.createElement("button")
+					event.type = "button"
+					event.className = `admin-schedule-event admin-status-${scheduleStatus(record).replace(/\s+/g, "-")}${id === selectedScheduleBookingId ? " is-selected" : ""}`
+					event.dataset.scheduleBooking = id
+					event.setAttribute("aria-pressed", String(id === selectedScheduleBookingId))
+					const time = document.createElement("span")
+					time.className = "admin-schedule-event-time"
+					time.textContent = String(record.timeLabel ?? "Time")
+					const customer = document.createElement("span")
+					customer.className = "admin-schedule-event-name"
+					customer.textContent = scheduleCustomerName(record)
+					const service = document.createElement("span")
+					service.className = "admin-schedule-event-service"
+					service.textContent = String(record.serviceName ?? "Appointment")
+					event.append(time, customer, service)
+					event.title = `${scheduleCustomerName(record)} · ${scheduleStatus(record)}`
+					section.append(event)
+				})
+				eventList.append(section)
 			})
 			grid.append(column)
+			column.append(eventList)
 		}
+		visibleScheduleBookingIds = visibleBookings.map((booking) => String(booking.id ?? ""))
+		if (!visibleScheduleBookingIds.includes(selectedScheduleBookingId))
+			selectedScheduleBookingId = visibleScheduleBookingIds[0] ?? ""
+		grid.querySelectorAll<HTMLButtonElement>("[data-schedule-booking]").forEach((button) => {
+			const isSelected = button.dataset.scheduleBooking === selectedScheduleBookingId
+			button.classList.toggle("is-selected", isSelected)
+			button.setAttribute("aria-pressed", String(isSelected))
+		})
+		const selected = scheduleBookings.find((booking) => String(booking.id ?? "") === selectedScheduleBookingId)
+		renderScheduleDetails(selected)
 		const label = document.getElementById("adminScheduleRangeLabel")
 		if (label)
-			label.textContent =
-				scheduleMode === "day"
-					? start.toLocaleDateString()
-					: `${start.toLocaleDateString()} - ${new Date(start.getTime() + 6 * 86400000).toLocaleDateString()}`
+			label.textContent = scheduleMode === "day"
+				? start.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
+				: `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
 	}
 	const scheduleHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
+		const scheduleEvent = target.closest<HTMLButtonElement>("[data-schedule-booking]")
+		if (scheduleEvent?.dataset.scheduleBooking) {
+			selectedScheduleBookingId = scheduleEvent.dataset.scheduleBooking
+			renderSchedule()
+			return
+		}
+		const scheduleNav = target.closest<HTMLButtonElement>("[data-schedule-nav]")
+		if (scheduleNav?.dataset.scheduleNav && visibleScheduleBookingIds.length) {
+			const index = visibleScheduleBookingIds.indexOf(selectedScheduleBookingId)
+			const nextIndex = scheduleNav.dataset.scheduleNav === "previous"
+				? index <= 0 ? visibleScheduleBookingIds.length - 1 : index - 1
+				: (index + 1) % visibleScheduleBookingIds.length
+			selectedScheduleBookingId = visibleScheduleBookingIds[nextIndex]
+			renderSchedule()
+			return
+		}
 		if (target.id === "adminScheduleToday") scheduleDate = new Date()
 		if (target.id === "adminSchedulePrev")
 			scheduleDate.setDate(
@@ -1462,7 +1702,14 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			)
 		const view = target.closest<HTMLElement>("[data-schedule-view]")?.dataset
 			.scheduleView
-		if (view === "day" || view === "week") scheduleMode = view
+		if (view === "day" || view === "week") {
+			scheduleMode = view
+			document.querySelectorAll<HTMLButtonElement>("[data-schedule-view]").forEach((button) => {
+				const active = button.dataset.scheduleView === view
+				button.classList.toggle("active", active)
+				button.setAttribute("aria-pressed", String(active))
+			})
+		}
 		if (
 			target.id === "adminScheduleToday" ||
 			target.id === "adminSchedulePrev" ||
@@ -1536,7 +1783,10 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					categoryMount.append(label)
 				})
 			}
-			scheduleBookings = bookings
+			scheduleBookings = bookings.filter(
+				(item): item is AdminSnapshotRecord =>
+					typeof item === "object" && item !== null,
+			)
 			renderSchedule()
 			const team = Array.isArray(snapshot.team) ? snapshot.team : []
 			const security = snapshot.security as AdminSnapshotRecord | undefined
@@ -2075,25 +2325,45 @@ function bindPublicParityAdapters(
 		event.preventDefault()
 		event.stopImmediatePropagation()
 		const isSaved = button.getAttribute("aria-pressed") === "true"
-		const response = await fetch("/api/favorites", {
-			method: isSaved ? "DELETE" : "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ tenantSlug, galleryStyleId }),
-		})
-		const result = await readReferenceJson(response)
-		if (!response.ok) {
-			if (response.status === 401 || response.status === 403) {
-				openSignInModal("Log in to save this gallery style.")
+		const originalText = button.textContent ?? "♡ Save"
+		let stateUpdated = false
+		if (button instanceof HTMLButtonElement) {
+			button.disabled = true
+			button.classList.add("btn-loading")
+			button.setAttribute("aria-busy", "true")
+			button.textContent = isSaved ? "Removing…" : "Saving…"
+		}
+		try {
+			const response = await fetch("/api/favorites", {
+				method: isSaved ? "DELETE" : "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ tenantSlug, galleryStyleId }),
+			})
+			const result = await readReferenceJson(response)
+			if (!response.ok) {
+				if (response.status === 401 || response.status === 403) {
+					openSignInModal("Log in to save this gallery style.")
+					return
+				}
+				showFavoritesToast(
+					result.error ?? "The gallery favorite could not be updated.",
+				)
 				return
 			}
-			const toast = document.getElementById("favoritesToast")
-			if (toast) {
-				toast.textContent = result.error ?? "Please sign in to save favorites."
-				toast.classList.add("show")
+			setFavoriteButtonsState(galleryStyleId, !isSaved)
+			stateUpdated = true
+			showFavoritesToast(isSaved ? "Removed from favorites" : "Saved to favorites")
+			void loadReferenceDashboardData(tenantSlug)
+		} catch {
+			showFavoritesToast("The gallery favorite could not be updated. Please try again.")
+		} finally {
+			if (button instanceof HTMLButtonElement) {
+				button.disabled = false
+				button.classList.remove("btn-loading")
+				button.removeAttribute("aria-busy")
+				if (!stateUpdated) button.textContent = originalText
 			}
-			return
 		}
-		button.setAttribute("aria-pressed", String(!isSaved))
 	}
 
 	const cancelBooking = async (event: Event): Promise<void> => {
@@ -2565,6 +2835,7 @@ interface ClientAccountSnapshotPayload {
 	}[]
 	readonly favorites: readonly {
 		readonly id: string
+		readonly galleryStyleId: string
 		readonly styleName: string
 		readonly imageUrl: string
 		readonly category: string | null
@@ -2613,6 +2884,30 @@ function setDashboardList(
 	const element = document.getElementById(elementId)
 	if (!element) return
 	element.innerHTML = html || "<li>" + escapeClientHtml(emptyText) + "</li>"
+}
+
+function setFavoriteButtonsState(galleryStyleId: string, favorited: boolean): void {
+	const buttons = document.querySelectorAll<HTMLElement>(
+		".gallery-save-favorite-btn, #lightboxFavoriteBtn",
+	)
+	for (const button of buttons) {
+		if (button.dataset.favStyleId !== galleryStyleId) continue
+		button.classList.toggle("is-favorited", favorited)
+		button.setAttribute("aria-pressed", String(favorited))
+		button.setAttribute(
+			"aria-label",
+			favorited ? "Remove saved gallery style from favorites" : "Save gallery style to favorites",
+		)
+		button.textContent = favorited ? "♥ Saved" : "♡ Save"
+	}
+}
+
+function showFavoritesToast(message: string): void {
+	const toast = document.getElementById("favoritesToast")
+	if (!toast) return
+	toast.textContent = message
+	toast.classList.add("show")
+	window.setTimeout(() => toast.classList.remove("show"), 1800)
 }
 
 function renderReferenceDashboard(
@@ -2737,6 +3032,16 @@ function renderReferenceDashboard(
 		favoriteCount.textContent = String(snapshot.favorites.length)
 	if (historyCount)
 		historyCount.textContent = String(snapshot.loginHistory.length)
+	const savedGalleryIds = new Set(
+		snapshot.favorites.map((favorite) => favorite.galleryStyleId),
+	)
+	for (const button of document.querySelectorAll<HTMLElement>(
+		".gallery-save-favorite-btn, #lightboxFavoriteBtn",
+	)) {
+		const galleryStyleId = button.dataset.favStyleId
+		if (galleryStyleId)
+			setFavoriteButtonsState(galleryStyleId, savedGalleryIds.has(galleryStyleId))
+	}
 	setDashboardMessage("", "success")
 }
 

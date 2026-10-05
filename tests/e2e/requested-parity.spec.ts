@@ -88,7 +88,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		})
 		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
 		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
-			state: "visible",
+			state: "attached",
 			timeout: 15_000,
 		})
 		const actionBar = page.locator("nav.saas-tenant-mobile-actions")
@@ -105,6 +105,198 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 				"aria-hidden",
 				"true",
 			)
+		}
+	})
+
+	test("gallery Save prompts guests to sign in after the API rejects the save", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "attached",
+			timeout: 15_000,
+		})
+		const saveButton = page.locator(".gallery-save-favorite-btn").first()
+		await expect(saveButton).toBeAttached()
+		await expect(saveButton).toHaveAttribute("data-fav-style-id", /\S+/)
+		await saveButton.scrollIntoViewIfNeeded()
+		await saveButton.hover()
+		const saveResponsePromise = page.waitForResponse(
+			(response) =>
+				response.url().endsWith("/api/favorites") &&
+				response.request().method() === "POST",
+		)
+		await saveButton.click()
+		const saveResponse = await saveResponsePromise
+		expect(saveResponse.status()).toBe(401)
+		await expect(page.locator("#authModal")).toHaveAttribute(
+			"aria-hidden",
+			"false",
+		)
+		await expect(page.locator("#authMessage")).toHaveText(
+			"Log in to save this gallery style.",
+		)
+	})
+
+	test("gallery favorites show saving, saved, removal, and toast feedback", async ({
+		page,
+	}) => {
+		let resolveSaveStarted!: () => void
+		let releaseSaveResponse!: () => void
+		let resolveRemoveStarted!: () => void
+		let releaseRemoveResponse!: () => void
+		const saveStarted = new Promise<void>((resolve) => {
+			resolveSaveStarted = resolve
+		})
+		const saveResponseGate = new Promise<void>((resolve) => {
+			releaseSaveResponse = resolve
+		})
+		const removeStarted = new Promise<void>((resolve) => {
+			resolveRemoveStarted = resolve
+		})
+		const removeResponseGate = new Promise<void>((resolve) => {
+			releaseRemoveResponse = resolve
+		})
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.route("**/api/favorites", async (route) => {
+			if (route.request().method() === "POST") {
+				resolveSaveStarted()
+				await saveResponseGate
+				await route.fulfill({ status: 201, json: { favoriteId: "favorite-test" } })
+				return
+			}
+			resolveRemoveStarted()
+			await removeResponseGate
+			await route.fulfill({ status: 204 })
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "attached",
+			timeout: 15_000,
+		})
+		const saveButton = page.locator(".gallery-save-favorite-btn").first()
+		await saveButton.scrollIntoViewIfNeeded()
+		const saveRequest = saveButton.click()
+		await saveStarted
+		await expect(saveButton).toHaveText("Saving…")
+		await expect(saveButton).toBeDisabled()
+		await expect(saveButton).toHaveAttribute("aria-busy", "true")
+		await expect(saveButton).toHaveClass(/btn-loading/)
+		await expect
+			.poll(() => saveButton.evaluate((button) => getComputedStyle(button, "::after").animationName))
+			.toBe("rbButtonSpinner")
+		releaseSaveResponse()
+		await saveRequest
+		await expect(saveButton).toHaveAttribute("aria-pressed", "true")
+		await expect(saveButton).toHaveText("♥ Saved")
+		await expect(saveButton).not.toHaveClass(/btn-loading/)
+		await expect(page.locator("#favoritesToast")).toHaveText("Saved to favorites")
+
+		const removeRequest = saveButton.click()
+		await removeStarted
+		await expect(saveButton).toHaveText("Removing…")
+		await expect(saveButton).toBeDisabled()
+		await expect(saveButton).toHaveClass(/btn-loading/)
+		releaseRemoveResponse()
+		await removeRequest
+		await expect(saveButton).toHaveAttribute("aria-pressed", "false")
+		await expect(saveButton).toHaveText("♡ Save")
+		await expect(saveButton).not.toHaveClass(/btn-loading/)
+		await expect(page.locator("#favoritesToast")).toHaveText("Removed from favorites")
+	})
+
+	test("back-to-top appears after scrolling and returns smoothly to the hero", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("#home")
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "attached",
+			timeout: 15_000,
+		})
+		const termsClose = page.locator("#termsModalCloseBtn")
+		if (await termsClose.isVisible()) await termsClose.click()
+		await page.locator("#services").scrollIntoViewIfNeeded()
+		await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 5_000 })
+			.toBeGreaterThan(500)
+		await expect(page.locator("#backToTop")).toHaveClass(/visible/)
+		await expect(page.locator("#backToTop")).toBeVisible()
+		const backToTopPosition = await page.locator("#backToTop").evaluate((button) => {
+			const style = getComputedStyle(button)
+			return { position: style.position, bottom: style.bottom, right: style.right }
+		})
+		expect(backToTopPosition).toEqual({
+			position: "fixed",
+			bottom: (page.viewportSize()?.width ?? 1280) <= 767 ? "76px" : "30px",
+			right: (page.viewportSize()?.width ?? 1280) <= 767 ? "16px" : "30px",
+		})
+		if ((page.viewportSize()?.width ?? 1280) <= 767) {
+			const clearOfMobileActions = await page.evaluate(() => {
+				const backToTop = document.querySelector("#backToTop")
+				const actions = document.querySelector("nav.saas-tenant-mobile-actions")
+				if (!backToTop || !actions) return false
+				return backToTop.getBoundingClientRect().bottom <= actions.getBoundingClientRect().top
+			})
+			expect(clearOfMobileActions).toBe(true)
+		}
+		await page.locator("#backToTop").click()
+		await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 4_000 })
+			.toBeLessThan(5)
+	})
+
+	test("service category panels contain independent cards with aligned actions", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 1280, height: 900 })
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "attached",
+			timeout: 15_000,
+		})
+		const result = await page.locator("#servicesGrid").evaluate((grid) => {
+			const groups = Array.from(grid.querySelectorAll(":scope > .services-category-group"))
+			const cards = Array.from(grid.querySelectorAll(".service-card"))
+			const nestedCards = grid.querySelectorAll(".service-card .service-card").length
+			const actionRows = groups.flatMap((group) => {
+				const cardsInGroup = Array.from(group.querySelectorAll(":scope .services-category-grid > .service-card"))
+				return cardsInGroup.map((card) => {
+					const actions = card.querySelector(".service-card-actions")
+					const rect = actions?.getBoundingClientRect()
+					return rect ? Math.round(rect.bottom) : -1
+				})
+			})
+			return { grouped: grid.classList.contains("is-grouped"), groupCount: groups.length, cardCount: cards.length, nestedCards, actionRows }
+		})
+		expect(result.grouped).toBe(true)
+		expect(result.groupCount).toBeGreaterThan(1)
+		expect(result.cardCount).toBeGreaterThan(result.groupCount)
+		expect(result.nestedCards).toBe(0)
+		for (const group of await page.locator(".services-category-group").all()) {
+			const rows = await group.locator(":scope .services-category-grid > .service-card").evaluateAll((cards) => {
+				const byTop = new Map<number, number[]>()
+				for (const card of cards) {
+					const top = Math.round(card.getBoundingClientRect().top)
+					const actions = card.querySelector(".service-card-actions")
+					if (!actions) continue
+					const bottoms = byTop.get(top) ?? []
+					bottoms.push(Math.round(actions.getBoundingClientRect().bottom))
+					byTop.set(top, bottoms)
+				}
+				return Array.from(byTop.values())
+			})
+			for (const actionBottoms of rows) {
+				if (actionBottoms.length > 1) {
+					expect(Math.max(...actionBottoms) - Math.min(...actionBottoms)).toBeLessThanOrEqual(2)
+				}
+			}
 		}
 	})
 
@@ -251,12 +443,9 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 	test("uses the Beauty Sphia logo as the favicon and keeps platform auth readable", async ({
 		page,
 	}) => {
-		await page.goto("/", { waitUntil: "domcontentloaded" })
-		await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
-			"href",
-			/Beauty%20Sphia%20logo\.png|Beauty Sphia logo\.png/,
-		)
-
+		await page.addInitScript(() => {
+			sessionStorage.setItem("beauty-sphia-platform-splash-seen", "1")
+		})
 		await page.goto("/login", { waitUntil: "domcontentloaded" })
 		await expect(page.locator("#login-title")).toHaveText(
 			"Sign in to your salon workspace",
@@ -271,8 +460,13 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		expect(authState.opacity).toBe("1")
 
 		await page.goto("/", { waitUntil: "domcontentloaded" })
-		await page.waitForTimeout(5_250)
+		await page.setViewportSize({ width: 1280, height: 900 })
+		await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+			"href",
+			/Beauty%20Sphia%20logo\.png|Beauty Sphia logo\.png/,
+		)
 		const platformLink = page.locator('.platform-nav a[href="/stores"]').first()
+		await expect(platformLink).toBeVisible({ timeout: 10_000 })
 		await platformLink.hover()
 		await expect
 			.poll(() => platformLink.evaluate((link) => getComputedStyle(link).color))

@@ -29,6 +29,22 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(documentWidth).toBeLessThanOrEqual(viewportWidth + 1)
 	})
 
+	test("storefront in-page navigation links point to rendered sections", async ({
+		page,
+	}) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const brokenTargets = await page.locator('a[href^="#"]').evaluateAll((links) =>
+			links.flatMap((link) => {
+				const href = link.getAttribute("href") ?? ""
+				const targetId = decodeURIComponent(href.slice(1))
+				return targetId && !document.getElementById(targetId)
+					? [{ text: link.textContent?.trim() ?? "", href }]
+					: []
+			}),
+		)
+		expect(brokenTargets).toEqual([])
+	})
+
 	test("storefront does not load archived reference runtime assets", async ({
 		page,
 	}) => {
@@ -51,6 +67,12 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(response?.status()).toBe(404)
 		await expect(page.locator("#page-title")).toContainText("not found")
 		await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible()
+		expect(await page.locator(".lead").innerText()).toContain(
+			"Royal Braids Vercel-hosted website",
+		)
+		expect(await page.locator(".footer-note").innerText()).toContain(
+			"All rights reserved. This custom 404 page",
+		)
 	})
 
 	test("unauthenticated admin access redirects to login", async ({ page }) => {

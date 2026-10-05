@@ -41,6 +41,7 @@ export interface ClientAccountSnapshot {
   }[];
   readonly favorites: readonly {
     readonly id: string;
+    readonly galleryStyleId: string;
     readonly styleName: string;
     readonly imageUrl: string;
     readonly category: string | null;
@@ -112,6 +113,7 @@ export async function getClientAccountSnapshot(
       take: 50,
       select: {
         id: true,
+        galleryStyleId: true,
         galleryStyle: {
           select: {
             styleName: true,
@@ -158,6 +160,7 @@ export async function getClientAccountSnapshot(
     })),
     favorites: favorites.map((favorite) => ({
       id: favorite.id,
+      galleryStyleId: favorite.galleryStyleId,
       styleName: favorite.galleryStyle.styleName,
       imageUrl: favorite.galleryStyle.imageUrl,
       category: favorite.galleryStyle.category?.label ?? null,

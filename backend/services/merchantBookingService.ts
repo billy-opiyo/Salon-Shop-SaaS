@@ -45,7 +45,22 @@ export async function listBookingsForUser(userId: string, tenantSlug: string) {
   return prisma.booking.findMany({
     where: { tenantId: membership.tenantId },
     orderBy: [{ appointmentDate: "asc" }, { timeLabel: "asc" }],
-    select: { id: true, firstName: true, lastName: true, email: true, phone: true, serviceName: true, appointmentDate: true, timeLabel: true, status: true, specialRequests: true, createdAt: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      serviceName: true,
+      stylist: { select: { name: true } },
+      appointmentDate: true,
+      timeLabel: true,
+      status: true,
+      specialRequests: true,
+      inspirationImageUrl: true,
+      waitlistEntry: { select: { id: true } },
+      createdAt: true,
+    },
   });
 }
 
@@ -69,7 +84,11 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
     });
     if (result.count !== 1) throw new MerchantBookingError("The booking changed before this action completed.");
 
-    if (input.status === BookingStatus.CANCELLED && current.bookingSlot) {
+    if (
+      (input.status === BookingStatus.CANCELLED ||
+        input.status === BookingStatus.COMPLETED) &&
+      current.bookingSlot
+    ) {
       await transaction.bookingSlot.update({ where: { id: current.bookingSlot.id }, data: { bookingId: null, lockedUntil: null } });
     }
     await transaction.adminAuditLog.create({

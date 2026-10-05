@@ -58,6 +58,7 @@ const fixtureTenant: TenantStorefront = {
 		isCosmeticProduct: service.orderOnly,
 	})),
 	gallery: DEFAULT_SALON_GALLERY.map((item, index) => ({
+		id: `fallback-${index}`,
 		title: item.title,
 		category: item.serviceCategory,
 		tone: `gallery-tone--${["gold", "rose", "plum", "sand"][index % 4]}`,

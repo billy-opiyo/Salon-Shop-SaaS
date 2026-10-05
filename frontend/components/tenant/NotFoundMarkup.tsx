@@ -42,7 +42,7 @@ export function NotFoundMarkup(): ReactNode {
 						<p className="script-line">Let’s get you back glowing.</p>
 						<p className="lead">
 							The link you opened is unavailable, moved, or typed incorrectly. This page
-							keeps the <span data-client-text="brand.businessName">Royal Braids</span>
+							keeps the <span data-client-text="brand.businessName">Royal Braids</span>{" "}
 							Vercel-hosted website graceful whenever a route returns a 404.
 						</p>
 						<p className="hosting-note">
@@ -75,7 +75,7 @@ export function NotFoundMarkup(): ReactNode {
 				</div>
 
 				<p className="footer-note">
-					<span data-client-text="brand.copyright">© Royal Braids. All rights reserved.</span>
+					<span data-client-text="brand.copyright">© Royal Braids. All rights reserved.</span>{" "}
 					This custom 404 page is configured as the Vercel Hosting fallback for missing links.
 				</p>
 			</section>
