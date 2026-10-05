@@ -8438,7 +8438,7 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
 @media (max-width: 767px) {
     .salon-storefront-root .floating-whatsapp,
     .salon-storefront-root .back-to-top {
-        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -8450,7 +8450,7 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
 
     .back-to-top,
     .floating-whatsapp {
-        bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

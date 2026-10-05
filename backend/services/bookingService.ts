@@ -105,7 +105,7 @@ export async function createPublicBooking(
 	}
 	let paymentPlan
 	try {
-		paymentPlan = resolveBookingPaymentPlan({
+		paymentPlan = input.waitlistId ? null : resolveBookingPaymentPlan({
 			enabled: tenant.settings?.bookingPaymentsEnabled === true,
 			configuredModes: tenant.settings?.bookingPaymentModes,
 			depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
@@ -153,13 +153,69 @@ export async function createPublicBooking(
 		}
 	}
 	try {
-		booking = await prisma.$transaction(async (transaction) => {
+	booking = await prisma.$transaction(async (transaction) => {
+			if (!input.waitlistId) {
+				const occupiedSlots = await transaction.bookingSlot.findMany({
+					where: {
+						tenantId: tenant.id,
+						date: appointmentDate,
+						timeLabel: input.timeLabel,
+						OR: [
+							{ lockedUntil: { gt: new Date() } },
+							{ booking: { is: { status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } } } },
+						],
+					},
+					select: { booking: { select: { stylistId: true } } },
+				})
+				const unavailable = occupiedSlots.some((slot) =>
+					!input.stylistId || !slot.booking?.stylistId || slot.booking.stylistId === input.stylistId,
+				)
+				if (unavailable) throw new BookingSlotUnavailableError()
+			}
+			let linkedWaitlistStylistId: string | undefined
+			if (input.waitlistId) {
+				const entry = await transaction.waitlistEntry.findFirst({
+					where: { id: input.waitlistId, tenantId: tenant.id, linkedBookingId: null },
+					select: {
+						status: true,
+						email: true,
+						phone: true,
+						serviceName: true,
+						preferredDate: true,
+						preferredTime: true,
+						preferredStylist: true,
+					},
+				})
+				if (!entry || !["WAITING", "NOTIFIED", "CONTACTED", "NOTIFICATION_FAILED"].includes(entry.status)) {
+					throw new BookingRequestError("This waitlist request is no longer available to confirm.")
+				}
+				const normalizePhone = (value: string): string => value.replace(/\D/g, "")
+				if (
+					entry.email.toLowerCase() !== input.email.toLowerCase() ||
+					normalizePhone(entry.phone) !== normalizePhone(input.phone) ||
+					entry.serviceName.trim().toLowerCase() !== (input.customService || input.serviceName).trim().toLowerCase() ||
+					entry.preferredDate?.toISOString().slice(0, 10) !== input.appointmentDate ||
+					entry.preferredTime !== input.timeLabel
+				) {
+					throw new BookingRequestError("The booking details must match the waitlist request.")
+				}
+				if (entry.preferredStylist && entry.preferredStylist !== "Booked") {
+					const requestedStylist = await transaction.stylist.findFirst({
+						where: { tenantId: tenant.id, name: entry.preferredStylist, active: true },
+						select: { id: true },
+					})
+					if (!requestedStylist || (input.stylistId && input.stylistId !== requestedStylist.id)) {
+						throw new BookingRequestError("The selected stylist must match the waitlist request.")
+					}
+					linkedWaitlistStylistId = requestedStylist.id
+				}
+			}
 			const created = await transaction.booking.create({
 				data: {
 					tenantId: tenant.id,
 					userId,
 					serviceId: service?.id,
-					stylistId: input.stylistId,
+					stylistId: input.stylistId ?? linkedWaitlistStylistId,
 					firstName: input.firstName,
 					lastName: input.lastName,
 					email: input.email.toLowerCase(),
@@ -168,13 +224,13 @@ export async function createPublicBooking(
 					customService: input.customService,
 					appointmentDate,
 					timeLabel: input.timeLabel,
-					status: BookingStatus.PENDING,
+					status: input.waitlistId ? BookingStatus.WAITLISTED : BookingStatus.PENDING,
 					specialRequests: input.specialRequests,
 				},
 				select: { id: true, status: true },
 			})
 
-			await transaction.bookingSlot.create({
+			if (!input.waitlistId) await transaction.bookingSlot.create({
 				data: {
 					tenantId: tenant.id,
 					slotKey,
@@ -206,7 +262,13 @@ export async function createPublicBooking(
 					})
 				: null
 
-			await transaction.notificationDelivery.create({
+			if (input.waitlistId) {
+				const updated = await transaction.waitlistEntry.updateMany({
+					where: { id: input.waitlistId, tenantId: tenant.id, linkedBookingId: null },
+					data: { linkedBookingId: created.id },
+				})
+				if (updated.count !== 1) throw new BookingRequestError("This waitlist request has already been confirmed.")
+			} else await transaction.notificationDelivery.create({
 				data: {
 					tenantId: tenant.id,
 					bookingId: created.id,
@@ -228,12 +290,12 @@ export async function createPublicBooking(
 						}
 					: undefined,
 			}
-		})
+		}, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 	} catch (error) {
 		if (error instanceof BookingRequestError) throw error
 		if (
 			error instanceof Prisma.PrismaClientKnownRequestError &&
-			error.code === "P2002"
+			(error.code === "P2002" || error.code === "P2034")
 		) {
 			throw new BookingSlotUnavailableError()
 		}
@@ -254,7 +316,7 @@ export async function createPublicBooking(
 		phone: input.phone,
 	}
 
-	await Promise.allSettled([
+	if (!input.waitlistId) await Promise.allSettled([
 		dispatchNotification({
 			tenantId: tenant.id,
 			userId,
@@ -281,7 +343,7 @@ export async function createPublicBooking(
 
 	const salonEmail =
 		tenant.settings?.emailBookings || tenant.settings?.emailPrimary
-	if (salonEmail) {
+	if (salonEmail && !input.waitlistId) {
 		await dispatchNotification({
 			tenantId: tenant.id,
 			bookingId: booking.id,

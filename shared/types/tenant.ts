@@ -40,6 +40,12 @@ export interface TenantService {
 	readonly isCosmeticProduct?: boolean
 }
 
+export interface TenantStylist {
+	readonly id: string
+	readonly name: string
+	readonly title?: string
+}
+
 export interface TenantGalleryItem {
 	readonly id?: string
 	readonly imageUrl?: string
@@ -102,6 +108,7 @@ export interface TenantStorefront {
 	readonly openingHours?: Readonly<Record<string, string>>
 	readonly socialLinks?: Readonly<Record<string, string>>
 	readonly services: readonly TenantService[]
+	readonly stylists?: readonly TenantStylist[]
 	readonly gallery: readonly TenantGalleryItem[]
 	readonly reviews: readonly TenantReview[]
 	readonly blogPosts: readonly TenantBlogPost[]

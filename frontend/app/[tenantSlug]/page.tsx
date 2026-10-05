@@ -181,7 +181,7 @@ function buildReferenceClientConfig(
 			whatsapp: tenant.socialLinks?.whatsapp ?? tenant.actionLinks.whatsappUrl,
 		},
 		storefront: design,
-		catalog: { services, gallery, testimonials, blogs },
+		catalog: { services, stylists: tenant.stylists ?? [], gallery, testimonials, blogs },
 	} satisfies Readonly<Record<string, unknown>>
 }
 

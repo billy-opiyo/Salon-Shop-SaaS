@@ -11,6 +11,7 @@ export interface SalonStorefrontMarkupProps {
 	readonly testimonialsContent?: ReactNode
 	readonly blogContent?: ReactNode
 	readonly serviceOptions?: ReactNode
+	readonly stylistOptions?: ReactNode
 	readonly bookingPaymentContent?: ReactNode
 	readonly reviewServiceOptions?: ReactNode
 }
@@ -23,6 +24,7 @@ export function SalonStorefrontMarkup({
 	testimonialsContent,
 	blogContent,
 	serviceOptions,
+	stylistOptions,
 	bookingPaymentContent,
 	reviewServiceOptions,
 }: SalonStorefrontMarkupProps): ReactNode {
@@ -732,21 +734,7 @@ export function SalonStorefrontMarkup({
 										<label>Preferred Stylist</label>
 									<select name="stylist" id="stylistSelect">
 										<option value="">Any Available</option>
-										<option value="fatima">
-											Fatima Hassan - Master Braider
-										</option>
-										<option value="zainab">
-											Zainab Mohamed - Senior Stylist
-										</option>
-										<option value="grace">
-											Grace Wanjiku - Natural Hair Expert
-										</option>
-										<option value="amina">
-											Amina Diallo - Braiding Specialist
-										</option>
-										<option value="sarah">
-											Sarah Omondi - Kids Specialist
-										</option>
+						{stylistOptions}
 									</select>
 								</div>
 									<div className="form-group appointment-only">

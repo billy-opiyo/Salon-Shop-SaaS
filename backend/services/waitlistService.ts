@@ -81,6 +81,35 @@ export async function createPublicWaitlistEntry(
 			"Please choose a current or future preferred date.",
 		)
 	}
+	if (!preferredDate || !input.preferredTime) {
+		throw new WaitlistRequestError("Choose a booked date and time to join the waitlist.")
+	}
+	{
+		const requestedStylist = input.preferredStylist && input.preferredStylist !== "Booked"
+			? await prisma.stylist.findFirst({
+					where: { tenantId: tenant.id, name: input.preferredStylist, active: true },
+					select: { id: true },
+				})
+			: null
+		const occupiedSlots = await prisma.bookingSlot.findMany({
+			where: {
+				tenantId: tenant.id,
+				date: preferredDate,
+				timeLabel: input.preferredTime,
+				OR: [
+					{ lockedUntil: { gt: new Date() } },
+					{ booking: { is: { status: { in: ["PENDING", "CONFIRMED"] } } } },
+				],
+			},
+			select: { booking: { select: { stylistId: true } } },
+		})
+		const hasRequestedSlot = occupiedSlots.some((slot) =>
+			!requestedStylist || !slot.booking?.stylistId || slot.booking.stylistId === requestedStylist.id,
+		)
+		if (!hasRequestedSlot) {
+			throw new WaitlistRequestError("That time is no longer booked. Refresh availability and choose another time.")
+		}
+	}
 
 	let entry: { id: string; queuePosition: number; status: WaitlistStatus }
 	try {

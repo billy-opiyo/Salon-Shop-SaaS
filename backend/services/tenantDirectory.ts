@@ -57,6 +57,7 @@ const fixtureTenant: TenantStorefront = {
 		category: service.categoryKey,
 		isCosmeticProduct: service.orderOnly,
 	})),
+	stylists: [],
 	gallery: DEFAULT_SALON_GALLERY.map((item, index) => ({
 		id: `fallback-${index}`,
 		title: item.title,
@@ -151,6 +152,11 @@ export async function getTenantStorefront(
 						orderOnly: true,
 						category: { select: { label: true } },
 					},
+				},
+				stylists: {
+					where: { active: true },
+					orderBy: { createdAt: "asc" },
+					select: { id: true, name: true, title: true },
 				},
 				galleryStyles: {
 					where: { published: true, category: { enabled: true } },
@@ -299,6 +305,11 @@ export async function getTenantStorefront(
 				priceMinor: service.priceMinor ?? undefined,
 				category: service.category.label,
 				isCosmeticProduct: service.orderOnly,
+			})),
+			stylists: tenant.stylists.map((stylist) => ({
+				id: stylist.id,
+				name: stylist.name,
+				title: stylist.title ?? undefined,
 			})),
 			gallery: tenant.galleryStyles.map((item, index) => ({
 				id: item.id,

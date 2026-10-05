@@ -10,6 +10,7 @@ import {
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
 import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
+import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
 import type {
 	SalonBlogItem,
@@ -70,6 +71,7 @@ export interface SalonClientConfig {
 	}
 	readonly catalog?: {
 		readonly services?: readonly SalonServiceItem[]
+		readonly stylists?: readonly { readonly id: string; readonly name: string; readonly title?: string }[]
 		readonly gallery?: readonly SalonGalleryItem[]
 		readonly testimonials?: readonly SalonReviewItem[]
 		readonly blogs?: readonly SalonBlogItem[]
@@ -3497,6 +3499,141 @@ function bindBookingAdapter(
 	if (!(form instanceof HTMLFormElement)) return () => undefined
 
 	ensureTurnstile(form, turnstileSiteKey)
+	const timeInput = document.getElementById("timeSelect")
+	const timeDropdown = document.getElementById("bookingTimeDropdown")
+	const timeOptions = document.getElementById("bookingTimeOptions")
+	const timeTrigger = document.getElementById("timePickerTrigger")
+	const datePicker = document.getElementById("datePicker")
+	const stylistSelect = document.getElementById("stylistSelect")
+	const waitlistPanel = document.getElementById("waitlistPanel")
+	const waitlistSelect = document.getElementById("waitlistTimeSelect")
+	let availabilityRequest = 0
+	let availabilityTimer: ReturnType<typeof setTimeout> | undefined
+	let availabilityReady = false
+	let bookedSlots: { slotId: string; timeLabel: string; stylistId: string | null; stylistLabel: string }[] = []
+	let pendingWaitlist: { waitlistId: string; date: string; timeLabel: string; serviceName: string; stylistId: string | null } | null = null
+
+	const setPickerOpen = (open: boolean): void => {
+		if (timeDropdown instanceof HTMLElement) timeDropdown.hidden = !open
+		if (timeInput instanceof HTMLInputElement) timeInput.setAttribute("aria-expanded", String(open))
+		if (timeTrigger instanceof HTMLButtonElement) timeTrigger.setAttribute("aria-expanded", String(open))
+	}
+	const togglePicker = (): void => setPickerOpen(timeDropdown instanceof HTMLElement && timeDropdown.hidden)
+	const openPicker = (): void => setPickerOpen(true)
+	const closePickerOnOutside = (event: Event): void => {
+		if (event.target instanceof Node && !document.querySelector('[data-time-picker="booking"]')?.contains(event.target)) setPickerOpen(false)
+	}
+	const renderAvailability = (times: readonly string[], occupied: typeof bookedSlots): void => {
+		bookedSlots = occupied
+		if (timeOptions instanceof HTMLDataListElement) {
+			timeOptions.replaceChildren(...times.filter((time) => !occupied.some((slot) => slot.timeLabel === time)).map((time) => {
+				const option = document.createElement("option")
+				option.value = time
+				return option
+			}))
+		}
+		if (timeDropdown instanceof HTMLElement) {
+			timeDropdown.replaceChildren(...times.map((time) => {
+				const isWaitlisted = pendingWaitlist?.timeLabel === time && pendingWaitlist.date === (datePicker instanceof HTMLInputElement ? datePicker.value : "")
+				const isBooked = !isWaitlisted && occupied.some((slot) => slot.timeLabel === time)
+				const option = document.createElement("button")
+				option.type = "button"
+				option.className = `time-picker-option${isBooked ? " is-booked" : isWaitlisted ? " is-waitlisted" : ""}`
+				option.setAttribute("role", "option")
+				option.disabled = isBooked
+				option.textContent = isWaitlisted ? `${time} — Waitlisted (booked)` : isBooked ? `${time} — Booked` : time
+				if (!isBooked) option.addEventListener("click", () => {
+					if (timeInput instanceof HTMLInputElement) {
+						timeInput.value = time
+						timeInput.dispatchEvent(new Event("change", { bubbles: true }))
+					}
+					setPickerOpen(false)
+				})
+				return option
+			}))
+		}
+		if (waitlistSelect instanceof HTMLSelectElement) {
+			const placeholder = document.createElement("option")
+			placeholder.value = ""
+			placeholder.textContent = "Select booked time"
+			waitlistSelect.replaceChildren(placeholder, ...occupied.map((slot) => {
+				const option = document.createElement("option")
+				option.value = slot.slotId
+				option.dataset.time = slot.timeLabel
+				option.dataset.stylistId = slot.stylistId ?? ""
+				option.dataset.stylistLabel = slot.stylistLabel
+				option.textContent = `${slot.timeLabel} — ${slot.stylistLabel}`
+				return option
+			}))
+		}
+		waitlistPanel?.classList.toggle("hidden", occupied.length === 0)
+	}
+	const refreshAvailability = (): void => {
+		if (availabilityTimer) clearTimeout(availabilityTimer)
+		const date = datePicker instanceof HTMLInputElement ? datePicker.value : ""
+		const time = timeInput instanceof HTMLInputElement ? timeInput.value : ""
+		if (timeInput instanceof HTMLInputElement) timeInput.value = ""
+		if (!date) {
+			availabilityRequest += 1
+			availabilityReady = false
+			renderAvailability(BOOKING_TIME_SLOTS, [])
+			return
+		}
+		availabilityReady = false
+		renderAvailability(BOOKING_TIME_SLOTS, [])
+		const requestId = ++availabilityRequest
+		const selectedStylist = stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
+		const query = new URLSearchParams({ tenantSlug, date })
+		if (selectedStylist) query.set("stylistId", selectedStylist)
+		availabilityTimer = setTimeout(() => {
+			void fetch(`/api/bookings/availability?${query.toString()}`, { cache: "no-store" })
+				.then(async (response) => {
+					const payload: unknown = await response.json()
+					if (!response.ok || typeof payload !== "object" || payload === null) throw new Error("Availability unavailable")
+					const record = payload as { timeSlots?: unknown; bookedSlots?: unknown }
+					if (requestId !== availabilityRequest) return
+					const times = Array.isArray(record.timeSlots) ? record.timeSlots.filter((value): value is string => typeof value === "string") : BOOKING_TIME_SLOTS
+					const occupied = Array.isArray(record.bookedSlots) ? record.bookedSlots.filter((value): value is typeof bookedSlots[number] => typeof value === "object" && value !== null && "slotId" in value && "timeLabel" in value && "stylistLabel" in value && typeof value.slotId === "string" && typeof value.timeLabel === "string" && typeof value.stylistLabel === "string" && (value.stylistId === null || typeof value.stylistId === "string")) : []
+					renderAvailability(times, occupied)
+					availabilityReady = true
+					if (timeInput instanceof HTMLInputElement) {
+						timeInput.value = occupied.some((slot) => slot.timeLabel === time) ? "" : time
+					}
+				})
+				.catch(() => {
+					if (requestId !== availabilityRequest) return
+					renderAvailability(BOOKING_TIME_SLOTS, [])
+					if (timeInput instanceof HTMLInputElement) timeInput.value = ""
+					availabilityReady = false
+					setBookingMessage("Available times could not be refreshed. Your booking will still be checked before it is saved.", "error")
+				})
+		}, 250)
+	}
+	const getPendingWaitlist = () => {
+		const date = datePicker instanceof HTMLInputElement ? datePicker.value : ""
+		const time = timeInput instanceof HTMLInputElement ? timeInput.value.trim() : ""
+		const serviceName = getFormValue(form, "customService") || getFormValue(form, "service")
+		const selectedStylistId = stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
+		const stylistMatches = !pendingWaitlist?.stylistId || !selectedStylistId || pendingWaitlist.stylistId === selectedStylistId
+		return pendingWaitlist?.date === date && pendingWaitlist.timeLabel === time && pendingWaitlist.serviceName === serviceName && stylistMatches ? pendingWaitlist : null
+	}
+	const clearPendingWaitlistIfChanged = (): void => {
+		if (pendingWaitlist && !getPendingWaitlist()) {
+			pendingWaitlist = null
+			renderAvailability(BOOKING_TIME_SLOTS, bookedSlots)
+		}
+	}
+	datePicker?.addEventListener("change", refreshAvailability)
+	stylistSelect?.addEventListener("change", refreshAvailability)
+	datePicker?.addEventListener("change", clearPendingWaitlistIfChanged)
+	stylistSelect?.addEventListener("change", clearPendingWaitlistIfChanged)
+	timeInput?.addEventListener("input", clearPendingWaitlistIfChanged)
+	form.querySelector('[name="service"]')?.addEventListener("change", clearPendingWaitlistIfChanged)
+	form.querySelector('[name="customService"]')?.addEventListener("input", clearPendingWaitlistIfChanged)
+	timeTrigger?.addEventListener("click", togglePicker)
+	timeInput?.addEventListener("focus", openPicker)
+	document.addEventListener("click", closePickerOnOutside)
+	renderAvailability(BOOKING_TIME_SLOTS, [])
 
 	const submit = async (event: Event): Promise<void> => {
 		event.preventDefault()
@@ -3515,6 +3652,8 @@ function bindBookingAdapter(
 				? serviceSelect.options[serviceSelect.selectedIndex]
 				: undefined
 		const serviceId = selectedOption?.dataset.serviceId || undefined
+		const stylistElement = document.getElementById("stylistSelect")
+		const stylistId = stylistElement instanceof HTMLSelectElement ? stylistElement.value || undefined : undefined
 		if (selectedOption?.dataset.orderOnly === "true") {
 			openReferenceWhatsAppOrder(
 				serviceName,
@@ -3529,6 +3668,10 @@ function bindBookingAdapter(
 		const button = document.getElementById("submitBtn")
 
 		if (!(button instanceof HTMLButtonElement)) return
+		if (appointmentDate && !availabilityReady) {
+			setBookingMessage("Please wait for this date’s availability to load before confirming.", "error")
+			return
+		}
 		if (!turnstileToken) {
 			setBookingMessage(
 				"Security verification is required before submitting your booking.",
@@ -3551,6 +3694,8 @@ function bindBookingAdapter(
 					email,
 					phone,
 					serviceId,
+					stylistId,
+					waitlistId: getPendingWaitlist()?.waitlistId,
 					serviceName: customService || serviceName,
 					customService: customService || undefined,
 					paymentMode: paymentMode || undefined,
@@ -3584,8 +3729,12 @@ function bindBookingAdapter(
 					? (payload.payment as { status?: string })
 					: undefined
 			const paymentPending = paymentRecord?.status === "pending"
+			const bookingStatus = typeof payload === "object" && payload !== null && "status" in payload ? payload.status : undefined
+			const isWaitlisted = bookingStatus === "WAITLISTED"
 			setBookingMessage(
-				paymentPending
+				isWaitlisted
+					? "Your waitlisted booking is saved. The salon will contact you when they can confirm a slot."
+					: paymentPending
 					? "Booking received. Approve the M-Pesa prompt to confirm your appointment."
 					: "Booking request received. We will confirm your appointment shortly.",
 				"success",
@@ -3594,10 +3743,13 @@ function bindBookingAdapter(
 				"#bookingSuccess h3",
 			)
 			if (successHeading)
-				successHeading.textContent = paymentPending
+			successHeading.textContent = isWaitlisted
+				? "You’re on the Waitlist"
+				: paymentPending
 					? "Payment Pending"
 					: "Booking Confirmed!"
 			showBookingSuccess()
+			pendingWaitlist = null
 		} catch {
 			setBookingMessage(
 				"The booking service could not be reached. Please try again.",
@@ -3613,6 +3765,10 @@ function bindBookingAdapter(
 		event.preventDefault()
 		event.stopImmediatePropagation()
 		if (!(waitlistButton instanceof HTMLButtonElement)) return
+		if (pendingWaitlist) {
+			setBookingMessage("You have already joined this waitlist. Confirm the booking request below.", "error")
+			return
+		}
 
 		const turnstileToken = getTurnstileToken(form)
 		if (!turnstileToken) {
@@ -3630,10 +3786,14 @@ function bindBookingAdapter(
 			.filter(Boolean)
 			.join(" ")
 		const preferredTimeElement = document.getElementById("waitlistTimeSelect")
-		const preferredTime =
-			preferredTimeElement instanceof HTMLSelectElement
-				? preferredTimeElement.value.trim()
-				: ""
+		const selectedWaitlistOption = preferredTimeElement instanceof HTMLSelectElement
+			? preferredTimeElement.options[preferredTimeElement.selectedIndex]
+			: undefined
+		const preferredTime = selectedWaitlistOption?.dataset.time?.trim() ?? ""
+		if (!preferredTime || !selectedWaitlistOption?.value) {
+			setBookingMessage("Choose a booked time before joining the waitlist.", "error")
+			return
+		}
 
 		waitlistButton.disabled = true
 		waitlistButton.setAttribute("aria-busy", "true")
@@ -3652,7 +3812,9 @@ function bindBookingAdapter(
 					preferredDate: getFormValue(form, "date") || undefined,
 					preferredTime:
 						preferredTime || getFormValue(form, "time") || undefined,
-					preferredStylist: getFormValue(form, "stylist") || undefined,
+					preferredStylist: preferredTimeElement instanceof HTMLSelectElement
+							? preferredTimeElement.options[preferredTimeElement.selectedIndex]?.dataset.stylistLabel || undefined
+							: undefined,
 					turnstileToken,
 				}),
 			})
@@ -3670,10 +3832,18 @@ function bindBookingAdapter(
 				return
 			}
 
-			setBookingMessage(
-				"You have been added to the waitlist. We will notify you if the time opens.",
-				"success",
-			)
+			const waitlistId = typeof payload === "object" && payload !== null && "waitlistId" in payload && typeof payload.waitlistId === "string" ? payload.waitlistId : ""
+			if (!waitlistId) throw new Error("The waitlist response did not include its request ID.")
+			pendingWaitlist = {
+				waitlistId,
+				date: getFormValue(form, "date"),
+				timeLabel: preferredTime,
+				serviceName: getFormValue(form, "customService") || getFormValue(form, "service"),
+				stylistId: selectedWaitlistOption.dataset.stylistId || null,
+			}
+			if (timeInput instanceof HTMLInputElement) timeInput.value = preferredTime
+			renderAvailability(BOOKING_TIME_SLOTS, bookedSlots)
+			setBookingMessage("You’ve joined the waitlist. Confirm below to save this as a waitlisted booking.", "success")
 		} catch {
 			setBookingMessage(
 				"The waitlist service could not be reached. Please try again.",
@@ -3688,6 +3858,17 @@ function bindBookingAdapter(
 	form.addEventListener("submit", submit, true)
 	waitlistButton?.addEventListener("click", joinWaitlist, true)
 	return () => {
+		if (availabilityTimer) clearTimeout(availabilityTimer)
+		datePicker?.removeEventListener("change", refreshAvailability)
+		stylistSelect?.removeEventListener("change", refreshAvailability)
+		datePicker?.removeEventListener("change", clearPendingWaitlistIfChanged)
+		stylistSelect?.removeEventListener("change", clearPendingWaitlistIfChanged)
+		timeInput?.removeEventListener("input", clearPendingWaitlistIfChanged)
+		form.querySelector('[name="service"]')?.removeEventListener("change", clearPendingWaitlistIfChanged)
+		form.querySelector('[name="customService"]')?.removeEventListener("input", clearPendingWaitlistIfChanged)
+		timeTrigger?.removeEventListener("click", togglePicker)
+		timeInput?.removeEventListener("focus", openPicker)
+		document.removeEventListener("click", closePickerOnOutside)
 		form.removeEventListener("submit", submit, true)
 		waitlistButton?.removeEventListener("click", joinWaitlist, true)
 	}
@@ -4527,6 +4708,7 @@ export function SalonStorefrontRuntime({
 	}, [clientConfig, tenantSlug, turnstileSiteKey])
 
 	const services = clientConfig.catalog?.services ?? []
+	const stylists = clientConfig.catalog?.stylists ?? []
 	const gallery = clientConfig.catalog?.gallery ?? []
 	const testimonials = clientConfig.catalog?.testimonials ?? []
 	const blogs = clientConfig.catalog?.blogs ?? []
@@ -4576,6 +4758,11 @@ export function SalonStorefrontRuntime({
 				testimonialsContent={<SalonTestimonials items={testimonials} />}
 				blogContent={<SalonBlogs items={blogs} />}
 				serviceOptions={<SalonServiceOptions items={services} />}
+				stylistOptions={stylists.map((stylist) => (
+					<option value={stylist.id} key={stylist.id}>
+						{stylist.name}{stylist.title ? ` - ${stylist.title}` : ""}
+					</option>
+				))}
 				bookingPaymentContent={bookingPaymentContent}
 				reviewServiceOptions={services.map((service) => (
 					<option value={service.name} key={service.name}>

@@ -235,17 +235,21 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		})
 		expect(backToTopPosition).toEqual({
 			position: "fixed",
-			bottom: (page.viewportSize()?.width ?? 1280) <= 767 ? "76px" : "30px",
+			bottom: (page.viewportSize()?.width ?? 1280) <= 767 ? "92px" : "30px",
 			right: (page.viewportSize()?.width ?? 1280) <= 767 ? "16px" : "30px",
 		})
 		if ((page.viewportSize()?.width ?? 1280) <= 767) {
-			const clearOfMobileActions = await page.evaluate(() => {
+			const mobileActionClearance = await page.evaluate(() => {
 				const backToTop = document.querySelector("#backToTop")
 				const actions = document.querySelector("nav.saas-tenant-mobile-actions")
-				if (!backToTop || !actions) return false
-				return backToTop.getBoundingClientRect().bottom <= actions.getBoundingClientRect().top
+				if (!backToTop || !actions) return { clear: false, buttonBottom: null, actionsTop: null }
+				return {
+					clear: backToTop.getBoundingClientRect().bottom <= actions.getBoundingClientRect().top,
+					buttonBottom: backToTop.getBoundingClientRect().bottom,
+					actionsTop: actions.getBoundingClientRect().top,
+				}
 			})
-			expect(clearOfMobileActions).toBe(true)
+			expect(mobileActionClearance.clear, JSON.stringify(mobileActionClearance)).toBe(true)
 		}
 		await page.locator("#backToTop").click()
 		await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 4_000 })
@@ -352,7 +356,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			height: "40px",
 		})
 		expect(backToTopState.right).toBe(backToTopState.mobile ? "16px" : "30px")
-		expect(backToTopState.bottom).toBe(backToTopState.mobile ? "76px" : "30px")
+		expect(backToTopState.bottom).toBe(backToTopState.mobile ? "92px" : "30px")
 
 		await page.locator('.services-tab[data-filter="braids-services"]').click()
 		await expect(page.locator("#servicesGrid .services-category-group")).toHaveCount(0)
