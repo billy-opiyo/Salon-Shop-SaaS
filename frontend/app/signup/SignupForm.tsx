@@ -2,7 +2,9 @@
 
 import Link from "next/link"
 import { FormEvent, useState } from "react"
+import { signIn } from "next-auth/react"
 
+import { GoogleIcon } from "@/components/shared/GoogleIcon"
 import { TurnstileWidget } from "@/components/shared/TurnstileWidget"
 
 import { registerAccount } from "./actions"
@@ -11,6 +13,17 @@ export function SignupForm() {
 	const [message, setMessage] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [turnstileToken, setTurnstileToken] = useState("")
+
+	async function handleGoogleSignUp() {
+		setMessage("")
+		setIsSubmitting(true)
+		try {
+			await signIn("google", { callbackUrl: "/manage" })
+		} catch {
+			setIsSubmitting(false)
+			setMessage("Google sign-up is temporarily unavailable. Please try again.")
+		}
+	}
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
@@ -30,13 +43,37 @@ export function SignupForm() {
 
 	return (
 		<form className="auth-form auth-form--salon-parity" onSubmit={handleSubmit}>
+			<button
+				className="auth-provider-btn auth-provider-btn--google"
+				type="button"
+				onClick={handleGoogleSignUp}
+				disabled={isSubmitting}
+			>
+				<GoogleIcon />
+				Continue with Google
+			</button>
+			<div className="auth-separator" aria-hidden="true">
+				<span>or</span>
+			</div>
 			<div className="form-group">
 				<label htmlFor="platformSignupName">Your name</label>
-				<input id="platformSignupName" name="name" type="text" autoComplete="name" required />
+				<input
+					id="platformSignupName"
+					name="name"
+					type="text"
+					autoComplete="name"
+					required
+				/>
 			</div>
 			<div className="form-group">
 				<label htmlFor="platformSignupEmail">Email address</label>
-				<input id="platformSignupEmail" name="email" type="email" autoComplete="email" required />
+				<input
+					id="platformSignupEmail"
+					name="email"
+					type="email"
+					autoComplete="email"
+					required
+				/>
 			</div>
 			<div className="form-group">
 				<label htmlFor="platformSignupPassword">Create a password</label>
@@ -70,7 +107,8 @@ export function SignupForm() {
 			)}
 			<div className="auth-links">
 				<p className="auth-form__switch">
-					Already have a Beauty Sphia account? <Link href="/login">Sign in</Link>
+					Already have a Beauty Sphia account?{" "}
+					<Link href="/login">Sign in</Link>
 				</p>
 			</div>
 		</form>
