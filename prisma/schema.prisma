@@ -700,6 +700,7 @@ model WaitlistEntry {
   preferredStylist String?
   email            String
   phone            String
+  inspirationImageUrl String?       @db.Text
   queuePosition    Int            @default(0)
   status           WaitlistStatus @default(WAITING)
   createdAt        DateTime       @default(now())
@@ -837,6 +838,7 @@ model LoginActivity {
   email     String?
   provider  String
   status    String
+  failureCode String?
   riskLevel String?
   riskScore Int?
   ipHash    String?

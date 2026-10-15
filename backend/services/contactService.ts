@@ -1,6 +1,6 @@
 import "server-only"
 
-import { NotificationChannel } from "@prisma/client"
+import { NotificationChannel, Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
 import {
@@ -53,20 +53,35 @@ export async function createPublicContactMessage(
 		intervalMs: 60_000,
 	})
 
-	const message = await prisma.contactMessage.create({
-		data: {
-			tenantId: tenant.id,
-			userId,
-			name: input.name,
-			email: input.email.toLowerCase(),
-			subject: input.subject,
-			message: input.message,
-		},
-		select: { id: true, status: true },
+	const message = await prisma.$transaction(async (transaction) => {
+		const created = await transaction.contactMessage.create({
+			data: {
+				tenantId: tenant.id,
+				userId,
+				name: input.name,
+				email: input.email.toLowerCase(),
+				subject: input.subject,
+				message: input.message,
+			},
+			select: { id: true, status: true },
+		})
+		if (userId) {
+			await transaction.activityTimeline.create({
+				data: {
+					tenantId: tenant.id,
+					userId,
+					eventType: "contact.submitted",
+					summary: "Client submitted a contact message.",
+					metadata: { messageId: created.id } as Prisma.InputJsonValue,
+				},
+			})
+		}
+		return created
 	})
 
 	// Notify the salon owner, matching the legacy contact-message email.
-	const salonEmail = tenant.settings?.emailBookings || tenant.settings?.emailPrimary
+	const salonEmail =
+		tenant.settings?.emailBookings || tenant.settings?.emailPrimary
 	if (salonEmail) {
 		await dispatchNotification({
 			tenantId: tenant.id,

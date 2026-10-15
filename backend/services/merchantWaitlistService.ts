@@ -58,6 +58,7 @@ export async function listWaitlistForUser(userId: string, tenantSlug: string) {
 			id: true,
 			email: true,
 			phone: true,
+			inspirationImageUrl: true,
 			serviceName: true,
 			preferredDate: true,
 			preferredTime: true,

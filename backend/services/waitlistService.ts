@@ -11,6 +11,10 @@ import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { hasEntitlement } from "@shared/constants/plans"
 import { dispatchNotification } from "@backend/services/notificationService"
 import { recalculateWaitlistQueuePositions } from "@backend/services/waitlistQueueService"
+import {
+	uploadPublicBookingInspiration,
+	verifyPublicBookingInspiration,
+} from "@backend/services/mediaService"
 import type { WaitlistRequestInput } from "@shared/validation/booking"
 
 export class WaitlistRequestError extends Error {
@@ -30,6 +34,7 @@ export async function createPublicWaitlistEntry(
 	input: WaitlistRequestInput,
 	remoteAddress?: string,
 	userId?: string,
+	inspirationFile?: { readonly file: Buffer; readonly mimeType: string },
 ) {
 	if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
 		throw new WaitlistRequestError(
@@ -110,6 +115,16 @@ export async function createPublicWaitlistEntry(
 			throw new WaitlistRequestError("That time is no longer booked. Refresh availability and choose another time.")
 		}
 	}
+	const inspirationImage = inspirationFile
+		? await verifyPublicBookingInspiration(
+			tenant.id,
+			(await uploadPublicBookingInspiration(
+				tenant.id,
+				inspirationFile.file,
+				inspirationFile.mimeType,
+			)).assetId,
+		)
+		: null
 
 	let entry: { id: string; queuePosition: number; status: WaitlistStatus }
 	try {
@@ -141,11 +156,27 @@ export async function createPublicWaitlistEntry(
 					preferredStylist: input.preferredStylist,
 					email: input.email.toLowerCase(),
 					phone: input.phone,
+					inspirationImageUrl: inspirationImage?.publicUrl,
 					queuePosition,
 					status: WaitlistStatus.WAITING,
 				},
 				select: { id: true, queuePosition: true, status: true },
 			})
+			if (inspirationImage) {
+				const finalized = await transaction.mediaAsset.updateMany({
+					where: {
+						id: inspirationImage.id,
+						tenantId: tenant.id,
+						kind: "BOOKING_INSPIRATION",
+						status: "PENDING",
+						pendingExpiresAt: { gt: new Date() },
+					},
+					data: { status: "READY", pendingExpiresAt: null },
+				})
+				if (finalized.count !== 1) {
+					throw new WaitlistRequestError("The inspiration image expired. Please upload it again.")
+				}
+			}
 			await transaction.notificationDelivery.create({
 				data: {
 					tenantId: tenant.id,

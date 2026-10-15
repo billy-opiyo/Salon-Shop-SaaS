@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { signIn, signOut } from "next-auth/react"
 
 import { registerAccount } from "@/app/signup/actions"
@@ -71,7 +72,11 @@ export interface SalonClientConfig {
 	}
 	readonly catalog?: {
 		readonly services?: readonly SalonServiceItem[]
-		readonly stylists?: readonly { readonly id: string; readonly name: string; readonly title?: string }[]
+		readonly stylists?: readonly {
+			readonly id: string
+			readonly name: string
+			readonly title?: string
+		}[]
 		readonly gallery?: readonly SalonGalleryItem[]
 		readonly testimonials?: readonly SalonReviewItem[]
 		readonly blogs?: readonly SalonBlogItem[]
@@ -173,6 +178,26 @@ function renderAdminSnapshotList(
 			.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
 			.join(" · ")
 		row.append(details)
+		const inspirationImageUrl =
+			typeof record.inspirationImageUrl === "string"
+				? record.inspirationImageUrl.trim()
+				: ""
+		if (inspirationImageUrl) {
+			try {
+				const safeUrl = new URL(inspirationImageUrl, window.location.origin)
+				if (safeUrl.protocol === "http:" || safeUrl.protocol === "https:") {
+					const imageLink = document.createElement("a")
+					imageLink.className = "admin-inline-link"
+					imageLink.href = safeUrl.href
+					imageLink.target = "_blank"
+					imageLink.rel = "noopener noreferrer"
+					imageLink.textContent = "Open inspiration image"
+					row.append(imageLink)
+				}
+			} catch {
+				// Ignore malformed legacy image URLs.
+			}
+		}
 		const recordId =
 			elementId === "adminAdminsList" && typeof record.userId === "string"
 				? record.userId
@@ -283,7 +308,9 @@ function formatAdminSnapshotValue(value: unknown): string {
 }
 
 function formField(form: HTMLFormElement, id: string): string {
-	const element = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#${id}`)
+	const element = form.querySelector<
+		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+	>(`#${id}`)
 	return element?.value.trim() ?? ""
 }
 
@@ -302,8 +329,11 @@ function bindImageSizeGuard(): () => void {
 }
 
 function setFormField(form: HTMLFormElement, id: string, value: unknown): void {
-	const element = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`#${id}`)
-	if (element) element.value = typeof value === "string" ? value : String(value ?? "")
+	const element = form.querySelector<
+		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+	>(`#${id}`)
+	if (element)
+		element.value = typeof value === "string" ? value : String(value ?? "")
 }
 
 async function uploadLegacyAdminImage(
@@ -313,17 +343,20 @@ async function uploadLegacyAdminImage(
 ): Promise<string> {
 	const imageError = getImageUploadError(file.size, file.type)
 	if (imageError) throw new Error(imageError)
-	const prepare = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
-		method: "POST",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({
-			fileName: file.name,
-			mimeType: file.type,
-			byteSize: file.size,
-			kind,
-		}),
-	})
+	const prepare = await fetch(
+		`/api/manage/${encodeURIComponent(tenantSlug)}/media`,
+		{
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				fileName: file.name,
+				mimeType: file.type,
+				byteSize: file.size,
+				kind,
+			}),
+		},
+	)
 	const prepared = (await prepare.json()) as {
 		readonly uploadUrl?: string
 		readonly assetId?: string
@@ -336,16 +369,25 @@ async function uploadLegacyAdminImage(
 		headers: { "content-type": file.type },
 		body: file,
 	})
-	if (!uploaded.ok) throw new Error("The image could not be uploaded to storage.")
-	const finalized = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
-		method: "PATCH",
-		credentials: "same-origin",
-		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ assetId: prepared.assetId }),
-	})
-	const result = (await finalized.json()) as { readonly publicUrl?: string | null; readonly error?: string }
+	if (!uploaded.ok)
+		throw new Error("The image could not be uploaded to storage.")
+	const finalized = await fetch(
+		`/api/manage/${encodeURIComponent(tenantSlug)}/media`,
+		{
+			method: "PATCH",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ assetId: prepared.assetId }),
+		},
+	)
+	const result = (await finalized.json()) as {
+		readonly publicUrl?: string | null
+		readonly error?: string
+	}
 	if (!finalized.ok || !result.publicUrl)
-		throw new Error(result.error ?? "The uploaded image has no public URL configured.")
+		throw new Error(
+			result.error ?? "The uploaded image has no public URL configured.",
+		)
 	return result.publicUrl
 }
 
@@ -371,7 +413,8 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		const styleName = formField(galleryForm, "galleryStyleName")
 		const styleType = formField(galleryForm, "galleryStyleType")
 		const serviceName = formField(galleryForm, "galleryServiceName")
-		const serviceCategory = formField(galleryForm, "galleryServiceCategory") || "braids-services"
+		const serviceCategory =
+			formField(galleryForm, "galleryServiceCategory") || "braids-services"
 		const length = formField(galleryForm, "galleryLength")
 		const size = formField(galleryForm, "gallerySize")
 		const priceRange = formField(galleryForm, "galleryPriceRange")
@@ -380,42 +423,49 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		const stylist = formField(galleryForm, "galleryStylistName")
 		const timeTaken = formField(galleryForm, "galleryTimeTaken")
 		setGalleryText("adminGalleryPreviewName", styleName || "Style name preview")
-		const serviceLabel = serviceName || ({
-			"braids-services": "Braids",
-			"hair-services": "Hair",
-			"beauty-spa-services": "Beauty Spa",
-			"nail-services": "Nails",
-			"makeup-services": "Makeup",
-			"barber-services": "Barber",
-			"massage-wellness": "Massage",
-			"eyebrow-lash-services": "Eyebrows & Lash",
-			"bridal-event-packages": "Bridal / Event Packages",
-			"cosmetics-products": "Cosmetics",
-		} as Readonly<Record<string, string>>)[serviceCategory] || "Braids"
-		const previewMeta = serviceCategory === "braids-services"
-			? `${serviceLabel} • ${styleType || "Type"} • ${length || "Length"} • ${size || "Size"}`
-			: serviceCategory === "hair-services"
-				? `${serviceLabel} • ${styleType || hairServiceType || "Type"} • ${hairTechnique || "Technique"}`
-				: `${serviceLabel} • ${styleType || "Type"}`
-		setGalleryText(
-			"adminGalleryPreviewMeta",
-			previewMeta,
-		)
+		const serviceLabel =
+			serviceName ||
+			(
+				{
+					"braids-services": "Braids",
+					"hair-services": "Hair",
+					"beauty-spa-services": "Beauty Spa",
+					"nail-services": "Nails",
+					"makeup-services": "Makeup",
+					"barber-services": "Barber",
+					"massage-wellness": "Massage",
+					"eyebrow-lash-services": "Eyebrows & Lash",
+					"bridal-event-packages": "Bridal / Event Packages",
+					"cosmetics-products": "Cosmetics",
+				} as Readonly<Record<string, string>>
+			)[serviceCategory] ||
+			"Braids"
+		const previewMeta =
+			serviceCategory === "braids-services"
+				? `${serviceLabel} • ${styleType || "Type"} • ${length || "Length"} • ${size || "Size"}`
+				: serviceCategory === "hair-services"
+					? `${serviceLabel} • ${styleType || hairServiceType || "Type"} • ${hairTechnique || "Technique"}`
+					: `${serviceLabel} • ${styleType || "Type"}`
+		setGalleryText("adminGalleryPreviewMeta", previewMeta)
 		setGalleryText(
 			"adminGalleryPreviewDetails",
 			`Stylist: ${stylist || "N/A"} • Time: ${timeTaken || "N/A"}`,
 		)
-		const file = galleryForm.querySelector<HTMLInputElement>("#galleryMainImage")?.files?.[0] ?? null
+		const file =
+			galleryForm.querySelector<HTMLInputElement>("#galleryMainImage")
+				?.files?.[0] ?? null
 		if (file !== galleryPreviewFile) {
 			if (galleryPreviewObjectUrl) URL.revokeObjectURL(galleryPreviewObjectUrl)
 			galleryPreviewObjectUrl = file ? URL.createObjectURL(file) : ""
 			galleryPreviewFile = file
 		}
 		const previewImage = document.getElementById("adminGalleryPreviewImage")
-		const placeholder = document.getElementById("adminGalleryPreviewPlaceholder")
+		const placeholder = document.getElementById(
+			"adminGalleryPreviewPlaceholder",
+		)
 		const imageUrl = file
 			? galleryPreviewObjectUrl
-			: galleryForm.dataset.imageUrl ?? ""
+			: (galleryForm.dataset.imageUrl ?? "")
 		if (previewImage instanceof HTMLImageElement && imageUrl) {
 			previewImage.src = imageUrl
 			previewImage.style.display = "block"
@@ -428,32 +478,40 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			if (placeholder) placeholder.style.display = "block"
 		}
 		const hasBefore = Boolean(
-			galleryForm.querySelector<HTMLInputElement>("#galleryBeforeImage")?.files?.[0] ||
-			galleryForm.dataset.beforeImageUrl,
+			galleryForm.querySelector<HTMLInputElement>("#galleryBeforeImage")
+				?.files?.[0] || galleryForm.dataset.beforeImageUrl,
 		)
 		const badge = document.getElementById("adminGalleryPreviewBeforeAfterBadge")
 		if (badge) badge.style.display = hasBefore ? "inline-flex" : "none"
 		const previewTags = document.getElementById("adminGalleryPreviewTags")
 		if (previewTags) {
 			const tags = [
-				...(galleryForm.querySelector<HTMLInputElement>("#galleryFeaturedTrending")?.checked ? ["Trending"] : []),
-				...(galleryForm.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")?.checked ? ["Most Booked"] : []),
+				...(galleryForm.querySelector<HTMLInputElement>(
+					"#galleryFeaturedTrending",
+				)?.checked
+					? ["Trending"]
+					: []),
+				...(galleryForm.querySelector<HTMLInputElement>(
+					"#galleryFeaturedMostBooked",
+				)?.checked
+					? ["Most Booked"]
+					: []),
 				...(priceRange ? [priceRange] : []),
 			]
 			previewTags.replaceChildren(
 				...(tags.length
 					? tags.map((tag) => {
-						const element = document.createElement("span")
-						element.className = "admin-gallery-preview-tag"
-						element.textContent = tag
-						return element
-					})
+							const element = document.createElement("span")
+							element.className = "admin-gallery-preview-tag"
+							element.textContent = tag
+							return element
+						})
 					: (() => {
-						const element = document.createElement("span")
-						element.className = "admin-gallery-preview-tag is-empty"
-						element.textContent = "No tags yet"
-						return [element]
-					})()),
+							const element = document.createElement("span")
+							element.className = "admin-gallery-preview-tag is-empty"
+							element.textContent = "No tags yet"
+							return [element]
+						})()),
 			)
 		}
 		const checks: Readonly<Record<string, boolean>> = {
@@ -465,18 +523,24 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		}
 		let complete = 0
 		Object.entries(checks).forEach(([key, checked]) => {
-			const item = galleryForm.querySelector<HTMLElement>(`[data-check="${key}"]`)
+			const item = galleryForm.querySelector<HTMLElement>(
+				`[data-check="${key}"]`,
+			)
 			item?.classList.toggle("completed", checked)
 			item?.querySelector(".check-dot")?.classList.toggle("completed", checked)
 			if (checked) complete += 1
 		})
-		setGalleryText("adminGalleryChecklistProgressText", `${complete}/5 completed`)
+		setGalleryText(
+			"adminGalleryChecklistProgressText",
+			`${complete}/5 completed`,
+		)
 		const fill = document.getElementById("adminGalleryChecklistProgressFill")
 		if (fill instanceof HTMLElement) fill.style.width = `${complete * 20}%`
 	}
 	const updateGalleryHairFields = (): void => {
 		if (!(galleryForm instanceof HTMLFormElement)) return
-		const isHair = formField(galleryForm, "galleryServiceCategory") === "hair-services"
+		const isHair =
+			formField(galleryForm, "galleryServiceCategory") === "hair-services"
 		const rules = getHairGalleryFieldRules(
 			formField(galleryForm, "galleryHairServiceType"),
 		)
@@ -516,9 +580,14 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 	const updateGalleryCategory = (category: string): void => {
 		if (!(galleryForm instanceof HTMLFormElement)) return
 		setFormField(galleryForm, "galleryServiceCategory", category)
-		document.querySelectorAll<HTMLElement>("[data-admin-gallery-service]").forEach((button) => {
-			button.classList.toggle("active", button.dataset.adminGalleryService === category)
-		})
+		document
+			.querySelectorAll<HTMLElement>("[data-admin-gallery-service]")
+			.forEach((button) => {
+				button.classList.toggle(
+					"active",
+					button.dataset.adminGalleryService === category,
+				)
+			})
 		const isBraids = category === "braids-services"
 		const isHair = category === "hair-services"
 		const isCosmetics = category === "cosmetics-products"
@@ -539,11 +608,19 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		if (serviceNameInput instanceof HTMLInputElement)
 			serviceNameInput.placeholder = `e.g. ${categoryLabel} Style`
 		const setLabel = (id: string, text: string): void => {
-			const label = document.querySelector<HTMLLabelElement>(`label[for="${id}"]`)
+			const label = document.querySelector<HTMLLabelElement>(
+				`label[for="${id}"]`,
+			)
 			if (label) label.textContent = text
 		}
-		setLabel("galleryStyleName", isCosmetics ? "Product Name *" : "Style Name *")
-		setLabel("galleryStyleType", isCosmetics ? "Product Type *" : "Style Type *")
+		setLabel(
+			"galleryStyleName",
+			isCosmetics ? "Product Name *" : "Style Name *",
+		)
+		setLabel(
+			"galleryStyleType",
+			isCosmetics ? "Product Type *" : "Style Type *",
+		)
 		setLabel("galleryPriceRange", isCosmetics ? "Price" : "Price Range")
 		setLabel(
 			"galleryMainImage",
@@ -555,7 +632,9 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		}
 		setPlaceholder(
 			"galleryStyleName",
-			isCosmetics ? "e.g. Nourish & Shine Hair Oil" : "e.g. Boho Knotless Braids",
+			isCosmetics
+				? "e.g. Nourish & Shine Hair Oil"
+				: "e.g. Boho Knotless Braids",
 		)
 		setPlaceholder(
 			"galleryStyleType",
@@ -565,10 +644,15 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			"galleryPriceRange",
 			isCosmetics ? "e.g. KSh 1,200" : "e.g. KSh 4,000 - 6,000",
 		)
-		const trendingLabel = document.getElementById("galleryFeaturedTrendingLabel")
-		const mostBookedLabel = document.getElementById("galleryFeaturedMostBookedLabel")
+		const trendingLabel = document.getElementById(
+			"galleryFeaturedTrendingLabel",
+		)
+		const mostBookedLabel = document.getElementById(
+			"galleryFeaturedMostBookedLabel",
+		)
 		if (trendingLabel) trendingLabel.textContent = `Trending ${categoryLabel}`
-		if (mostBookedLabel) mostBookedLabel.textContent = `Most Booked ${categoryLabel}`
+		if (mostBookedLabel)
+			mostBookedLabel.textContent = `Most Booked ${categoryLabel}`
 		const setGroupVisibility = (
 			selector: string,
 			visible: boolean,
@@ -577,18 +661,31 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			document.querySelectorAll<HTMLElement>(selector).forEach((group) => {
 				group.style.display = visible ? "" : "none"
 				if (visible || !clearWhenHidden) return
-				group.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea").forEach((control) => {
-					control.required = false
-					if (control instanceof HTMLInputElement && control.type === "checkbox")
-						control.checked = false
-					else if (!(control instanceof HTMLInputElement && control.type === "file"))
-						control.value = ""
-				})
+				group
+					.querySelectorAll<
+						HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+					>("input, select, textarea")
+					.forEach((control) => {
+						control.required = false
+						if (
+							control instanceof HTMLInputElement &&
+							control.type === "checkbox"
+						)
+							control.checked = false
+						else if (
+							!(control instanceof HTMLInputElement && control.type === "file")
+						)
+							control.value = ""
+					})
 			})
 		}
 		setGroupVisibility(".admin-braids-field", isBraids, true)
 		setGroupVisibility(".admin-hair-field", isHair, true)
-		document.querySelectorAll<HTMLElement>(".admin-cosmetics-field").forEach((field) => { field.style.display = isCosmetics ? "" : "none" })
+		document
+			.querySelectorAll<HTMLElement>(".admin-cosmetics-field")
+			.forEach((field) => {
+				field.style.display = isCosmetics ? "" : "none"
+			})
 		for (const [id, visible] of [
 			["galleryServiceNameGroup", !isCosmetics],
 			["galleryTimeTakenGroup", !isCosmetics],
@@ -596,11 +693,17 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			["galleryBeforeImageGroup", !isCosmetics],
 		] as const) {
 			const group = document.getElementById(id)
-			if (group instanceof HTMLElement) group.style.display = visible ? "" : "none"
+			if (group instanceof HTMLElement)
+				group.style.display = visible ? "" : "none"
 		}
 		const setRequired = (id: string, required: boolean): void => {
 			const element = document.getElementById(id)
-			if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) element.required = required
+			if (
+				element instanceof HTMLInputElement ||
+				element instanceof HTMLSelectElement ||
+				element instanceof HTMLTextAreaElement
+			)
+				element.required = required
 		}
 		setRequired("galleryServiceName", !isCosmetics)
 		setRequired("galleryTimeTaken", !isCosmetics)
@@ -618,48 +721,86 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			updateGalleryHairFields()
 			updateGalleryPreview()
 		}
-		window.addEventListener("admin-gallery-refresh-preview", refreshGalleryPreview)
-		removers.push(() =>
-			window.removeEventListener("admin-gallery-refresh-preview", refreshGalleryPreview),
+		window.addEventListener(
+			"admin-gallery-refresh-preview",
+			refreshGalleryPreview,
 		)
-		document.querySelectorAll<HTMLElement>("[data-admin-gallery-service]").forEach((button) => {
-			const handler = () => updateGalleryCategory(button.dataset.adminGalleryService ?? "braids-services")
-			button.addEventListener("click", handler)
-			removers.push(() => button.removeEventListener("click", handler))
-		})
-		galleryForm.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((field) => {
-			const handler = () => {
-				if (field.id === "galleryHairServiceType") updateGalleryHairFields()
-				updateGalleryPreview()
-			}
-			field.addEventListener("input", handler)
-			field.addEventListener("change", handler)
-			removers.push(() => {
-				field.removeEventListener("input", handler)
-				field.removeEventListener("change", handler)
+		removers.push(() =>
+			window.removeEventListener(
+				"admin-gallery-refresh-preview",
+				refreshGalleryPreview,
+			),
+		)
+		document
+			.querySelectorAll<HTMLElement>("[data-admin-gallery-service]")
+			.forEach((button) => {
+				const handler = () =>
+					updateGalleryCategory(
+						button.dataset.adminGalleryService ?? "braids-services",
+					)
+				button.addEventListener("click", handler)
+				removers.push(() => button.removeEventListener("click", handler))
 			})
-		})
-		updateGalleryCategory(formField(galleryForm, "galleryServiceCategory") || "braids-services")
+		galleryForm
+			.querySelectorAll<
+				HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+			>("input, textarea, select")
+			.forEach((field) => {
+				const handler = () => {
+					if (field.id === "galleryHairServiceType") updateGalleryHairFields()
+					updateGalleryPreview()
+				}
+				field.addEventListener("input", handler)
+				field.addEventListener("change", handler)
+				removers.push(() => {
+					field.removeEventListener("input", handler)
+					field.removeEventListener("change", handler)
+				})
+			})
+		updateGalleryCategory(
+			formField(galleryForm, "galleryServiceCategory") || "braids-services",
+		)
 	}
-	const bind = (formId: string, handler: (form: HTMLFormElement) => Promise<void>) => {
+	const bind = (
+		formId: string,
+		handler: (form: HTMLFormElement) => Promise<void>,
+	) => {
 		const form = document.getElementById(formId)
 		if (!(form instanceof HTMLFormElement)) return
 		const submit = (event: SubmitEvent) => {
 			event.preventDefault()
-			const saveButton = form.querySelector<HTMLButtonElement>("button[type=submit]")
+			const saveButton = form.querySelector<HTMLButtonElement>(
+				"button[type=submit]",
+			)
 			const originalText = saveButton?.textContent ?? "Save"
 			if (saveButton instanceof HTMLButtonElement) {
 				saveButton.disabled = true
 				saveButton.setAttribute("aria-busy", "true")
-				saveButton.textContent = formField(form, formId === "adminGalleryForm" ? "galleryEditId" : formId === "adminBlogsForm" ? "blogEditId" : "adminAdminEditUid") ? "Updating..." : "Saving..."
+				saveButton.textContent = formField(
+					form,
+					formId === "adminGalleryForm"
+						? "galleryEditId"
+						: formId === "adminBlogsForm"
+							? "blogEditId"
+							: "adminAdminEditUid",
+				)
+					? "Updating..."
+					: "Saving..."
 			}
 			void handler(form).catch((error: unknown) => {
-				const messageId = formId === "adminGalleryForm"
-					? "adminGalleryMessage"
-					: formId === "adminBlogsForm"
-						? "adminBlogsMessage"
-						: "adminAdminsMessage"
-				message(messageId, error instanceof Error ? error.message : "The content could not be saved.", true)
+				const messageId =
+					formId === "adminGalleryForm"
+						? "adminGalleryMessage"
+						: formId === "adminBlogsForm"
+							? "adminBlogsMessage"
+							: "adminAdminsMessage"
+				message(
+					messageId,
+					error instanceof Error
+						? error.message
+						: "The content could not be saved.",
+					true,
+				)
 				if (saveButton instanceof HTMLButtonElement) {
 					saveButton.disabled = false
 					saveButton.removeAttribute("aria-busy")
@@ -671,85 +812,122 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		removers.push(() => form.removeEventListener("submit", submit))
 	}
 	bind("adminGalleryForm", async (form) => {
-		const file = form.querySelector<HTMLInputElement>("#galleryMainImage")?.files?.[0]
+		const file =
+			form.querySelector<HTMLInputElement>("#galleryMainImage")?.files?.[0]
 		const imageUrl = file
 			? await uploadLegacyAdminImage(tenantSlug, file, "GALLERY")
-			: form.dataset.imageUrl ?? ""
+			: (form.dataset.imageUrl ?? "")
 		if (!imageUrl) throw new Error("Select a gallery image before saving.")
-		const beforeFile = form.querySelector<HTMLInputElement>("#galleryBeforeImage")?.files?.[0]
+		const beforeFile = form.querySelector<HTMLInputElement>(
+			"#galleryBeforeImage",
+		)?.files?.[0]
 		const beforeImageUrl = beforeFile
 			? await uploadLegacyAdminImage(tenantSlug, beforeFile, "GALLERY")
-			: form.dataset.beforeImageUrl ?? ""
+			: (form.dataset.beforeImageUrl ?? "")
 		const id = formField(form, "galleryEditId")
-		const categoryKey = formField(form, "galleryServiceCategory") || "braids-services"
+		const categoryKey =
+			formField(form, "galleryServiceCategory") || "braids-services"
 		const isBraids = categoryKey === "braids-services"
 		const isHair = categoryKey === "hair-services"
 		const isCosmetics = categoryKey === "cosmetics-products"
-		const hairRules = getHairGalleryFieldRules(formField(form, "galleryHairServiceType"))
-		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
-			method: "POST",
-			credentials: "same-origin",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				action: id ? "gallery-update" : "gallery-create",
-				id,
-				categoryKey,
-				styleName: formField(form, "galleryStyleName"),
-				imageUrl,
-				beforeImageUrl,
-				styleType: formField(form, "galleryStyleType"),
-				serviceName: isCosmetics ? "Cosmetics Products" : formField(form, "galleryServiceName"),
-				length: isBraids ? formField(form, "galleryLength") : "",
-				size: isBraids ? formField(form, "gallerySize") : "",
-				timeTaken: isCosmetics ? "" : formField(form, "galleryTimeTaken"),
-				priceRange: formField(form, "galleryPriceRange"),
-				productBrand: isCosmetics ? formField(form, "galleryProductBrand") : "",
-				productSize: isCosmetics ? formField(form, "galleryProductSize") : "",
-				productDescription: isCosmetics ? formField(form, "galleryProductDescription") : "",
-				hairType: isBraids ? formField(form, "galleryHairType") : "",
-				hairServiceType: isHair ? formField(form, "galleryHairServiceType") : "",
-				hairTechnique: isHair ? formField(form, "galleryHairTechnique") : "",
-				hairLengthDensity: isHair ? formField(form, "galleryHairLengthDensity") : "",
-				hairProductsUsed: isHair && hairRules.showProductsUsed ? formField(form, "galleryHairProductsUsed") : "",
-				stylistName: isCosmetics ? "" : formField(form, "galleryStylistName"),
-				featuredTrending: form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")?.checked === true,
-				featuredMostBooked: form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")?.checked === true,
-				published: true,
-			}),
-		})
+		const hairRules = getHairGalleryFieldRules(
+			formField(form, "galleryHairServiceType"),
+		)
+		const response = await fetch(
+			`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+			{
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					action: id ? "gallery-update" : "gallery-create",
+					id,
+					categoryKey,
+					styleName: formField(form, "galleryStyleName"),
+					imageUrl,
+					beforeImageUrl,
+					styleType: formField(form, "galleryStyleType"),
+					serviceName: isCosmetics
+						? "Cosmetics Products"
+						: formField(form, "galleryServiceName"),
+					length: isBraids ? formField(form, "galleryLength") : "",
+					size: isBraids ? formField(form, "gallerySize") : "",
+					timeTaken: isCosmetics ? "" : formField(form, "galleryTimeTaken"),
+					priceRange: formField(form, "galleryPriceRange"),
+					productBrand: isCosmetics
+						? formField(form, "galleryProductBrand")
+						: "",
+					productSize: isCosmetics ? formField(form, "galleryProductSize") : "",
+					productDescription: isCosmetics
+						? formField(form, "galleryProductDescription")
+						: "",
+					hairType: isBraids ? formField(form, "galleryHairType") : "",
+					hairServiceType: isHair
+						? formField(form, "galleryHairServiceType")
+						: "",
+					hairTechnique: isHair ? formField(form, "galleryHairTechnique") : "",
+					hairLengthDensity: isHair
+						? formField(form, "galleryHairLengthDensity")
+						: "",
+					hairProductsUsed:
+						isHair && hairRules.showProductsUsed
+							? formField(form, "galleryHairProductsUsed")
+							: "",
+					stylistName: isCosmetics ? "" : formField(form, "galleryStylistName"),
+					featuredTrending:
+						form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")
+							?.checked === true,
+					featuredMostBooked:
+						form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")
+							?.checked === true,
+					published: true,
+				}),
+			},
+		)
 		if (!response.ok) {
 			const result = (await response.json()) as { readonly error?: string }
 			throw new Error(result.error ?? "The gallery style could not be saved.")
 		}
-		message("adminGalleryMessage", id ? "Gallery style updated successfully." : "Gallery style created successfully.")
+		message(
+			"adminGalleryMessage",
+			id
+				? "Gallery style updated successfully."
+				: "Gallery style created successfully.",
+		)
 		window.setTimeout(() => window.location.reload(), 650)
 	})
 	bind("adminBlogsForm", async (form) => {
 		const file = form.querySelector<HTMLInputElement>("#blogImage")?.files?.[0]
 		const imageUrl = file
 			? await uploadLegacyAdminImage(tenantSlug, file, "BLOG")
-			: form.dataset.imageUrl ?? ""
+			: (form.dataset.imageUrl ?? "")
 		if (!imageUrl) throw new Error("Select a blog image before saving.")
 		const title = formField(form, "blogTitle")
-		const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+		const slug = title
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/(^-|-$)/g, "")
 		const id = formField(form, "blogEditId")
-		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
-			method: "POST",
-			credentials: "same-origin",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				action: id ? "blog-update" : "blog-create",
-				id,
-				title,
-				slug,
-				excerpt: formField(form, "blogExcerpt"),
-				imageUrl,
-				readTime: formField(form, "blogReadTime"),
-				publishDate: formField(form, "blogDate"),
-				readMoreUrl: formField(form, "blogReadMoreUrl"),
-				published: true,
-			}),
-		})
+		const response = await fetch(
+			`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+			{
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					action: id ? "blog-update" : "blog-create",
+					id,
+					title,
+					slug,
+					excerpt: formField(form, "blogExcerpt"),
+					imageUrl,
+					readTime: formField(form, "blogReadTime"),
+					publishDate: formField(form, "blogDate"),
+					readMoreUrl: formField(form, "blogReadMoreUrl"),
+					published: true,
+				}),
+			},
+		)
 		if (!response.ok) {
 			const result = (await response.json()) as { readonly error?: string }
 			throw new Error(result.error ?? "The blog post could not be saved.")
@@ -758,23 +936,57 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 	})
 	bind("adminAdminsForm", async (form) => {
 		const email = formField(form, "adminManageEmail")
-		const role = formField(form, "adminManageRole") === "super_admin" ? "ADMIN" : "STAFF"
-		const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`, {
-			method: "POST",
-			credentials: "same-origin",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				email,
-				role,
-				canManageAdmins: document.getElementById("adminPermManageAdmins") instanceof HTMLInputElement && (document.getElementById("adminPermManageAdmins") as HTMLInputElement).checked,
-				canManageBookings: document.getElementById("adminPermManageBookings") instanceof HTMLInputElement && (document.getElementById("adminPermManageBookings") as HTMLInputElement).checked,
-				canManageContent: document.getElementById("adminPermManageContent") instanceof HTMLInputElement && (document.getElementById("adminPermManageContent") as HTMLInputElement).checked,
-				canManageSecurity: document.getElementById("adminPermManageSecurity") instanceof HTMLInputElement && (document.getElementById("adminPermManageSecurity") as HTMLInputElement).checked,
-			}),
-		})
+		const role =
+			formField(form, "adminManageRole") === "super_admin" ? "ADMIN" : "STAFF"
+		const response = await fetch(
+			`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
+			{
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					email,
+					role,
+					canManageAdmins:
+						document.getElementById("adminPermManageAdmins") instanceof
+							HTMLInputElement &&
+						(
+							document.getElementById(
+								"adminPermManageAdmins",
+							) as HTMLInputElement
+						).checked,
+					canManageBookings:
+						document.getElementById("adminPermManageBookings") instanceof
+							HTMLInputElement &&
+						(
+							document.getElementById(
+								"adminPermManageBookings",
+							) as HTMLInputElement
+						).checked,
+					canManageContent:
+						document.getElementById("adminPermManageContent") instanceof
+							HTMLInputElement &&
+						(
+							document.getElementById(
+								"adminPermManageContent",
+							) as HTMLInputElement
+						).checked,
+					canManageSecurity:
+						document.getElementById("adminPermManageSecurity") instanceof
+							HTMLInputElement &&
+						(
+							document.getElementById(
+								"adminPermManageSecurity",
+							) as HTMLInputElement
+						).checked,
+				}),
+			},
+		)
 		if (!response.ok) {
 			const result = (await response.json()) as { readonly error?: string }
-			throw new Error(result.error ?? "The team invitation could not be created.")
+			throw new Error(
+				result.error ?? "The team invitation could not be created.",
+			)
 		}
 		window.location.reload()
 	})
@@ -786,7 +998,11 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 	cancelMap.forEach(([buttonId, formId, titleId]) => {
 		const button = document.getElementById(buttonId)
 		const form = document.getElementById(formId)
-		if (!(button instanceof HTMLButtonElement) || !(form instanceof HTMLFormElement)) return
+		if (
+			!(button instanceof HTMLButtonElement) ||
+			!(form instanceof HTMLFormElement)
+		)
+			return
 		const handler = () => {
 			form.reset()
 			delete form.dataset.imageUrl
@@ -797,11 +1013,21 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 					galleryPreviewObjectUrl = ""
 				}
 				galleryPreviewFile = null
-				document.querySelector<HTMLButtonElement>('[data-admin-gallery-service="braids-services"]')?.click()
+				document
+					.querySelector<HTMLButtonElement>(
+						'[data-admin-gallery-service="braids-services"]',
+					)
+					?.click()
 				updateGalleryPreview()
 			}
 			const title = document.getElementById(titleId)
-			if (title) title.textContent = formId === "adminGalleryForm" ? "Add New Gallery Style" : formId === "adminBlogsForm" ? "Add New Blog" : "Create Admin Access"
+			if (title)
+				title.textContent =
+					formId === "adminGalleryForm"
+						? "Add New Gallery Style"
+						: formId === "adminBlogsForm"
+							? "Add New Blog"
+							: "Create Admin Access"
 			button.style.display = "none"
 		}
 		button.addEventListener("click", handler)
@@ -818,7 +1044,8 @@ function bindAdminSnapshotFilters(): () => void {
 	const removers: Array<() => void> = []
 	const getValue = (id: string): string => {
 		const element = document.getElementById(id)
-		return element instanceof HTMLInputElement || element instanceof HTMLSelectElement
+		return element instanceof HTMLInputElement ||
+			element instanceof HTMLSelectElement
 			? element.value.trim().toLowerCase()
 			: ""
 	}
@@ -831,7 +1058,9 @@ function bindAdminSnapshotFilters(): () => void {
 		const from = getValue("adminSecurityDateFromFilter")
 		const to = getValue("adminSecurityDateToFilter")
 		const exactDate = getValue("adminSecurityDateFilter")
-		const rows = document.querySelectorAll<HTMLElement>("#adminSecurityActivityList .admin-snapshot-row")
+		const rows = document.querySelectorAll<HTMLElement>(
+			"#adminSecurityActivityList .admin-snapshot-row",
+		)
 		rows.forEach((row) => {
 			const date = row.dataset.createdAt?.slice(0, 10) ?? ""
 			row.hidden = Boolean(
@@ -848,33 +1077,67 @@ function bindAdminSnapshotFilters(): () => void {
 		const sortRows = (selector: string, mode: string) => {
 			const container = document.querySelector<HTMLElement>(selector)
 			if (!container) return
-			const rows = Array.from(container.querySelectorAll<HTMLElement>(".admin-snapshot-row"))
+			const rows = Array.from(
+				container.querySelectorAll<HTMLElement>(".admin-snapshot-row"),
+			)
 			rows.sort((left, right) => {
 				if (mode.includes("oldest"))
-					return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
-				if (mode.includes("failed")) return Number(right.dataset.status === "failure") - Number(left.dataset.status === "failure")
-				if (mode.includes("suspicious")) return Number(right.dataset.risk === "high") - Number(left.dataset.risk === "high")
-				if (mode.includes("high")) return Number(right.dataset.severity === "high") - Number(left.dataset.severity === "high")
-				if (mode.includes("open")) return Number(right.dataset.status !== "resolved") - Number(left.dataset.status !== "resolved")
-				return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
+					return (left.dataset.createdAt ?? "").localeCompare(
+						right.dataset.createdAt ?? "",
+					)
+				if (mode.includes("failed"))
+					return (
+						Number(right.dataset.status === "failure") -
+						Number(left.dataset.status === "failure")
+					)
+				if (mode.includes("suspicious"))
+					return (
+						Number(right.dataset.risk === "high") -
+						Number(left.dataset.risk === "high")
+					)
+				if (mode.includes("high"))
+					return (
+						Number(right.dataset.severity === "high") -
+						Number(left.dataset.severity === "high")
+					)
+				if (mode.includes("open"))
+					return (
+						Number(right.dataset.status !== "resolved") -
+						Number(left.dataset.status !== "resolved")
+					)
+				return (right.dataset.createdAt ?? "").localeCompare(
+					left.dataset.createdAt ?? "",
+				)
 			})
 			rows.forEach((row) => container.append(row))
 		}
 		sortRows("#adminSecurityActivityList", getValue("adminSecuritySortSelect"))
-		sortRows("#adminSecurityAlertsList", getValue("adminSecurityAlertsSortSelect"))
-		sortRows("#adminAccountHistoryList", getValue("adminAccountHistorySortSelect"))
+		sortRows(
+			"#adminSecurityAlertsList",
+			getValue("adminSecurityAlertsSortSelect"),
+		)
+		sortRows(
+			"#adminAccountHistoryList",
+			getValue("adminAccountHistorySortSelect"),
+		)
 		sortRows("#adminTimelineList", getValue("adminTimelineSortSelect"))
 		sortRows("#adminSessionsList", getValue("adminSessionsSortSelect"))
 		const teamSearch = getValue("adminAdminsSearchInput")
 		const teamRole = getValue("adminAdminsRoleFilter")
 		const teamStatus = getValue("adminAdminsStatusFilter")
-		document.querySelectorAll<HTMLElement>("#adminAdminsList .admin-snapshot-row").forEach((row) => {
-			row.hidden = Boolean(
-				(teamSearch && !row.dataset.searchText?.includes(teamSearch)) ||
-				(teamRole && teamRole !== "all" && !row.dataset.searchText?.includes(teamRole)) ||
-				(teamStatus && teamStatus !== "all" && row.dataset.status !== teamStatus),
-			)
-		})
+		document
+			.querySelectorAll<HTMLElement>("#adminAdminsList .admin-snapshot-row")
+			.forEach((row) => {
+				row.hidden = Boolean(
+					(teamSearch && !row.dataset.searchText?.includes(teamSearch)) ||
+					(teamRole &&
+						teamRole !== "all" &&
+						!row.dataset.searchText?.includes(teamRole)) ||
+					(teamStatus &&
+						teamStatus !== "all" &&
+						row.dataset.status !== teamStatus),
+				)
+			})
 	}
 	const ids = [
 		"adminSecuritySortSelect",
@@ -896,8 +1159,17 @@ function bindAdminSnapshotFilters(): () => void {
 	]
 	ids.forEach((id) => {
 		const element = document.getElementById(id)
-		if (!(element instanceof HTMLInputElement || element instanceof HTMLSelectElement)) return
-		const eventName = element instanceof HTMLInputElement && element.type === "search" ? "input" : "change"
+		if (
+			!(
+				element instanceof HTMLInputElement ||
+				element instanceof HTMLSelectElement
+			)
+		)
+			return
+		const eventName =
+			element instanceof HTMLInputElement && element.type === "search"
+				? "input"
+				: "change"
 		element.addEventListener(eventName, apply)
 		removers.push(() => element.removeEventListener(eventName, apply))
 	})
@@ -906,7 +1178,10 @@ function bindAdminSnapshotFilters(): () => void {
 		const handler = () => {
 			ids.forEach((id) => {
 				const element = document.getElementById(id)
-				if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
+				if (
+					element instanceof HTMLInputElement ||
+					element instanceof HTMLSelectElement
+				) {
 					element.value = element instanceof HTMLSelectElement ? "all" : ""
 				}
 			})
@@ -927,19 +1202,28 @@ function recordValue(value: unknown): Record<string, unknown> {
 
 function setDesignControl(id: string, value: unknown): void {
 	const element = document.getElementById(id)
-	if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
+	if (
+		element instanceof HTMLInputElement ||
+		element instanceof HTMLTextAreaElement ||
+		element instanceof HTMLSelectElement
+	) {
 		element.value = typeof value === "string" ? value : String(value ?? "")
 	}
 }
 
 function getDesignControl(id: string): string {
 	const element = document.getElementById(id)
-	return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement
+	return element instanceof HTMLInputElement ||
+		element instanceof HTMLTextAreaElement ||
+		element instanceof HTMLSelectElement
 		? element.value.trim()
 		: ""
 }
 
-function setDesignMessage(message: string, type: "error" | "success" = "success"): void {
+function setDesignMessage(
+	message: string,
+	type: "error" | "success" = "success",
+): void {
 	const element = document.getElementById("adminDesignMessage")
 	if (!element) return
 	element.textContent = message
@@ -972,7 +1256,8 @@ function bindStorefrontDesignEditor(
 			...savedVisibility,
 		},
 		mapEmbedUrl:
-			typeof savedDesign.mapEmbedUrl === "string" && savedDesign.mapEmbedUrl.trim()
+			typeof savedDesign.mapEmbedUrl === "string" &&
+			savedDesign.mapEmbedUrl.trim()
 				? savedDesign.mapEmbedUrl
 				: DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
 	}
@@ -981,17 +1266,36 @@ function bindStorefrontDesignEditor(
 	setDesignControl(
 		"adminDesignLogoUrl",
 		settings.logoUrl ??
-			(tenantSlug === "royal-braids" ? "/assets/salon/RoyalBraidsnewlogo.png" : ""),
+			(tenantSlug === "royal-braids"
+				? "/assets/salon/RoyalBraidsnewlogo.png"
+				: ""),
 	)
 	setDesignControl(
 		"adminDesignHeroUrl",
-		settings.heroImageUrl ?? "/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
+		settings.heroImageUrl ??
+			"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
 	)
-	setDesignControl("adminDesignHeroTitle", settings.heroTitle ?? "Celebrate Your Crown with <span>Beautiful Braids</span>")
-	setDesignControl("adminDesignHeroSubtitle", settings.heroSubtitle ?? "Premium African Hair Braiding & Beauty")
+	setDesignControl(
+		"adminDesignHeroTitle",
+		settings.heroTitle ??
+			"Celebrate Your Crown with <span>Beautiful Braids</span>",
+	)
+	setDesignControl(
+		"adminDesignHeroSubtitle",
+		settings.heroSubtitle ?? "Premium African Hair Braiding & Beauty",
+	)
 	setDesignControl("adminDesignHeroDescription", design.heroDescription)
-	for (const key of ["phonePrimary", "phoneSecondary", "emailPrimary", "emailBookings", "address"] as const)
-		setDesignControl(`adminDesign${key[0].toUpperCase()}${key.slice(1)}`, settings[key] ?? "")
+	for (const key of [
+		"phonePrimary",
+		"phoneSecondary",
+		"emailPrimary",
+		"emailBookings",
+		"address",
+	] as const)
+		setDesignControl(
+			`adminDesign${key[0].toUpperCase()}${key.slice(1)}`,
+			settings[key] ?? "",
+		)
 	setDesignControl("adminDesignWhatsappUrl", settings.whatsappUrl ?? "")
 	const copyMap: Record<string, string> = {
 		gallerySubtitle: "adminDesigngallerySubtitle",
@@ -1018,16 +1322,28 @@ function bindStorefrontDesignEditor(
 		copyright: "adminDesignCopyright",
 		craftedBy: "adminDesignCraftedBy",
 	}
-	Object.entries(copyMap).forEach(([key, id]) => setDesignControl(id, design.sectionCopy[key as keyof typeof design.sectionCopy]))
+	Object.entries(copyMap).forEach(([key, id]) =>
+		setDesignControl(
+			id,
+			design.sectionCopy[key as keyof typeof design.sectionCopy],
+		),
+	)
 	STOREFRONT_SECTION_KEYS.forEach((section) => {
 		const input = document.getElementById(`adminDesignVisible${section}`)
-		if (input instanceof HTMLInputElement) input.checked = design.sectionVisibility[section]
+		if (input instanceof HTMLInputElement)
+			input.checked = design.sectionVisibility[section]
 	})
 	const openingHours = recordValue(settings.openingHours)
 	for (const key of ["weekday", "saturday", "sunday", "publicHoliday"] as const)
 		setDesignControl(`adminDesignHours${key}`, openingHours[key] ?? "")
 	const socialLinks = recordValue(settings.socialLinks)
-	for (const key of ["instagram", "facebook", "twitter", "tiktok", "whatsapp"] as const)
+	for (const key of [
+		"instagram",
+		"facebook",
+		"twitter",
+		"tiktok",
+		"whatsapp",
+	] as const)
 		setDesignControl(`adminDesignSocial${key}`, socialLinks[key] ?? "")
 	setDesignControl("adminDesignMapEmbedUrl", design.mapEmbedUrl)
 
@@ -1046,28 +1362,61 @@ function bindStorefrontDesignEditor(
 			}
 			setDesignMessage("Uploading image…")
 			try {
-				const prepare = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
-					method: "POST",
-					credentials: "same-origin",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({ fileName: file.name, mimeType: file.type, byteSize: file.size, kind }),
+				const prepare = await fetch(
+					`/api/manage/${encodeURIComponent(tenantSlug)}/media`,
+					{
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({
+							fileName: file.name,
+							mimeType: file.type,
+							byteSize: file.size,
+							kind,
+						}),
+					},
+				)
+				const prepared = (await prepare.json()) as {
+					uploadUrl?: string
+					assetId?: string
+					publicUrl?: string | null
+					error?: string
+				}
+				if (!prepare.ok || !prepared.uploadUrl || !prepared.assetId)
+					throw new Error(
+						prepared.error ?? "The image upload could not be prepared.",
+					)
+				const uploaded = await fetch(prepared.uploadUrl, {
+					method: "PUT",
+					headers: { "content-type": file.type },
+					body: file,
 				})
-				const prepared = (await prepare.json()) as { uploadUrl?: string; assetId?: string; publicUrl?: string | null; error?: string }
-				if (!prepare.ok || !prepared.uploadUrl || !prepared.assetId) throw new Error(prepared.error ?? "The image upload could not be prepared.")
-				const uploaded = await fetch(prepared.uploadUrl, { method: "PUT", headers: { "content-type": file.type }, body: file })
-				if (!uploaded.ok) throw new Error("The image could not be uploaded to storage.")
-				const finalized = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/media`, {
-					method: "PATCH",
-					credentials: "same-origin",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({ assetId: prepared.assetId }),
-				})
-				const result = (await finalized.json()) as { publicUrl?: string | null; error?: string }
-				if (!finalized.ok || !result.publicUrl) throw new Error(result.error ?? "The uploaded image has no public URL configured.")
+				if (!uploaded.ok)
+					throw new Error("The image could not be uploaded to storage.")
+				const finalized = await fetch(
+					`/api/manage/${encodeURIComponent(tenantSlug)}/media`,
+					{
+						method: "PATCH",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ assetId: prepared.assetId }),
+					},
+				)
+				const result = (await finalized.json()) as {
+					publicUrl?: string | null
+					error?: string
+				}
+				if (!finalized.ok || !result.publicUrl)
+					throw new Error(
+						result.error ?? "The uploaded image has no public URL configured.",
+					)
 				setDesignControl(urlId, result.publicUrl)
 				setDesignMessage("Image uploaded. Save Store Design to publish it.")
 			} catch (error) {
-				setDesignMessage(error instanceof Error ? error.message : "The image upload failed.", "error")
+				setDesignMessage(
+					error instanceof Error ? error.message : "The image upload failed.",
+					"error",
+				)
 			}
 		}
 		input.addEventListener("change", handler)
@@ -1076,12 +1425,24 @@ function bindStorefrontDesignEditor(
 	bindUpload("adminDesignLogoFile", "adminDesignLogoUrl", "LOGO")
 	bindUpload("adminDesignHeroFile", "adminDesignHeroUrl", "HERO")
 	const saveButton = document.getElementById("adminSaveStoreDesignBtn")
-	if (!(saveButton instanceof HTMLButtonElement)) return () => fileUploads.forEach((remove) => remove())
+	if (!(saveButton instanceof HTMLButtonElement))
+		return () => fileUploads.forEach((remove) => remove())
 	const saveHandler = async () => {
 		saveButton.disabled = true
 		setDesignMessage("Saving Store Design…")
-		const sectionCopy = Object.fromEntries(Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]))
-		const sectionVisibility = Object.fromEntries(STOREFRONT_SECTION_KEYS.map((section) => [section, (document.getElementById(`adminDesignVisible${section}`) as HTMLInputElement | null)?.checked === true]))
+		const sectionCopy = Object.fromEntries(
+			Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]),
+		)
+		const sectionVisibility = Object.fromEntries(
+			STOREFRONT_SECTION_KEYS.map((section) => [
+				section,
+				(
+					document.getElementById(
+						`adminDesignVisible${section}`,
+					) as HTMLInputElement | null
+				)?.checked === true,
+			]),
+		)
 		const body = {
 			action: "storefront-design",
 			themePreset: getDesignControl("adminDesignThemePreset"),
@@ -1096,18 +1457,46 @@ function bindStorefrontDesignEditor(
 			emailBookings: getDesignControl("adminDesignEmailBookings"),
 			address: getDesignControl("adminDesignAddress"),
 			whatsappUrl: getDesignControl("adminDesignWhatsappUrl"),
-			storefrontConfig: { heroDescription: getDesignControl("adminDesignHeroDescription"), sectionCopy, sectionVisibility, mapEmbedUrl: getDesignControl("adminDesignMapEmbedUrl") },
-			openingHours: Object.fromEntries(["weekday", "saturday", "sunday", "publicHoliday"].map((key) => [key, getDesignControl(`adminDesignHours${key}`)])),
-			socialLinks: Object.fromEntries(["instagram", "facebook", "twitter", "tiktok", "whatsapp"].map((key) => [key, getDesignControl(`adminDesignSocial${key}`)])),
+			storefrontConfig: {
+				heroDescription: getDesignControl("adminDesignHeroDescription"),
+				sectionCopy,
+				sectionVisibility,
+				mapEmbedUrl: getDesignControl("adminDesignMapEmbedUrl"),
+			},
+			openingHours: Object.fromEntries(
+				["weekday", "saturday", "sunday", "publicHoliday"].map((key) => [
+					key,
+					getDesignControl(`adminDesignHours${key}`),
+				]),
+			),
+			socialLinks: Object.fromEntries(
+				["instagram", "facebook", "twitter", "tiktok", "whatsapp"].map(
+					(key) => [key, getDesignControl(`adminDesignSocial${key}`)],
+				),
+			),
 		}
 		try {
-			const response = await fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+			const response = await fetch(
+				`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+				{
+					method: "POST",
+					credentials: "same-origin",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify(body),
+				},
+			)
 			const result = (await response.json()) as { error?: string }
-			if (!response.ok) throw new Error(result.error ?? "Store Design could not be saved.")
+			if (!response.ok)
+				throw new Error(result.error ?? "Store Design could not be saved.")
 			setDesignMessage("Store Design saved successfully.")
 			window.setTimeout(() => window.location.reload(), 450)
 		} catch (error) {
-			setDesignMessage(error instanceof Error ? error.message : "Store Design could not be saved.", "error")
+			setDesignMessage(
+				error instanceof Error
+					? error.message
+					: "Store Design could not be saved.",
+				"error",
+			)
 			saveButton.disabled = false
 		}
 	}
@@ -1134,6 +1523,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	if (authMessage) authMessage.textContent = ""
 
 	const removeTabHandlers: Array<() => void> = []
+	let removeSnapshotFilters: () => void = () => undefined
 	const adminBackToTop = document.getElementById("backToTop")
 	if (adminBackToTop) {
 		const updateAdminBackToTopVisibility = (): void => {
@@ -1143,12 +1533,15 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			event.preventDefault()
 			window.scrollTo({
 				top: 0,
-				behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+				behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
+					.matches
 					? "auto"
 					: "smooth",
 			})
 		}
-		window.addEventListener("scroll", updateAdminBackToTopVisibility, { passive: true })
+		window.addEventListener("scroll", updateAdminBackToTopVisibility, {
+			passive: true,
+		})
 		adminBackToTop.addEventListener("click", handleAdminBackToTopClick)
 		updateAdminBackToTopVisibility()
 		removeTabHandlers.push(() => {
@@ -1165,16 +1558,27 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		const id = button.dataset.adminId
 		if (!action || !id) return
 		if (action === "gallery-edit" || action === "blog-edit") {
-			const formId = action === "gallery-edit" ? "adminGalleryForm" : "adminBlogsForm"
+			const formId =
+				action === "gallery-edit" ? "adminGalleryForm" : "adminBlogsForm"
 			const form = document.getElementById(formId)
-			if (!(form instanceof HTMLFormElement) || !button.dataset.adminDetail) return
+			if (!(form instanceof HTMLFormElement) || !button.dataset.adminDetail)
+				return
 			try {
-				const record = JSON.parse(button.dataset.adminDetail) as AdminSnapshotRecord
+				const record = JSON.parse(
+					button.dataset.adminDetail,
+				) as AdminSnapshotRecord
 				if (action === "gallery-edit") {
 					setFormField(form, "galleryEditId", id)
-					const category = record.category && typeof record.category === "object" ? record.category as AdminSnapshotRecord : {}
+					const category =
+						record.category && typeof record.category === "object"
+							? (record.category as AdminSnapshotRecord)
+							: {}
 					setFormField(form, "galleryServiceCategory", category.key)
-					document.querySelector<HTMLButtonElement>(`[data-admin-gallery-service="${String(category.key ?? "braids-services")}"]`)?.click()
+					document
+						.querySelector<HTMLButtonElement>(
+							`[data-admin-gallery-service="${String(category.key ?? "braids-services")}"]`,
+						)
+						?.click()
 					setFormField(form, "galleryStyleName", record.styleName)
 					setFormField(form, "galleryStyleType", record.styleType)
 					setFormField(form, "galleryServiceName", record.serviceName)
@@ -1184,19 +1588,36 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					setFormField(form, "galleryPriceRange", record.priceRange)
 					setFormField(form, "galleryProductBrand", record.productBrand)
 					setFormField(form, "galleryProductSize", record.productSize)
-					setFormField(form, "galleryProductDescription", record.productDescription)
+					setFormField(
+						form,
+						"galleryProductDescription",
+						record.productDescription,
+					)
 					setFormField(form, "galleryHairType", record.hairType)
 					setFormField(form, "galleryHairServiceType", record.hairServiceType)
 					setFormField(form, "galleryHairTechnique", record.hairTechnique)
-					setFormField(form, "galleryHairLengthDensity", record.hairLengthDensity)
+					setFormField(
+						form,
+						"galleryHairLengthDensity",
+						record.hairLengthDensity,
+					)
 					setFormField(form, "galleryHairProductsUsed", record.hairProductsUsed)
 					setFormField(form, "galleryStylistName", record.stylistName)
-					form.dataset.imageUrl = typeof record.imageUrl === "string" ? record.imageUrl : ""
-					form.dataset.beforeImageUrl = typeof record.beforeImageUrl === "string" ? record.beforeImageUrl : ""
-					const trending = form.querySelector<HTMLInputElement>("#galleryFeaturedTrending")
-					const mostBooked = form.querySelector<HTMLInputElement>("#galleryFeaturedMostBooked")
+					form.dataset.imageUrl =
+						typeof record.imageUrl === "string" ? record.imageUrl : ""
+					form.dataset.beforeImageUrl =
+						typeof record.beforeImageUrl === "string"
+							? record.beforeImageUrl
+							: ""
+					const trending = form.querySelector<HTMLInputElement>(
+						"#galleryFeaturedTrending",
+					)
+					const mostBooked = form.querySelector<HTMLInputElement>(
+						"#galleryFeaturedMostBooked",
+					)
 					if (trending) trending.checked = record.featuredTrending === true
-					if (mostBooked) mostBooked.checked = record.featuredMostBooked === true
+					if (mostBooked)
+						mostBooked.checked = record.featuredMostBooked === true
 					window.dispatchEvent(new Event("admin-gallery-refresh-preview"))
 					const title = document.getElementById("adminGalleryFormTitle")
 					if (title) title.textContent = "Edit Gallery Style"
@@ -1208,8 +1629,15 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					setFormField(form, "blogExcerpt", record.excerpt)
 					setFormField(form, "blogReadTime", record.readTime)
 					setFormField(form, "blogReadMoreUrl", record.readMoreUrl)
-					setFormField(form, "blogDate", typeof record.publishDate === "string" ? record.publishDate.slice(0, 10) : "")
-					form.dataset.imageUrl = typeof record.imageUrl === "string" ? record.imageUrl : ""
+					setFormField(
+						form,
+						"blogDate",
+						typeof record.publishDate === "string"
+							? record.publishDate.slice(0, 10)
+							: "",
+					)
+					form.dataset.imageUrl =
+						typeof record.imageUrl === "string" ? record.imageUrl : ""
 					const title = document.getElementById("adminBlogsFormTitle")
 					if (title) title.textContent = "Edit Blog"
 					const cancel = document.getElementById("adminBlogsCancelEdit")
@@ -1412,7 +1840,11 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		return Number.isNaN(date.getTime()) ? "" : scheduleDateKey(date)
 	}
 	const bookingTimeMinutes = (value: unknown): number => {
-		const text = String(value ?? "").trim().toLowerCase().replace(/\./g, "").replace(/\s+/g, "")
+		const text = String(value ?? "")
+			.trim()
+			.toLowerCase()
+			.replace(/\./g, "")
+			.replace(/\s+/g, "")
 		const match = text.match(/^(\d{1,2})(?::?(\d{2}))?(am|pm)?$/)
 		if (!match) return 9 * 60
 		let hours = Number(match[1])
@@ -1427,14 +1859,17 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		`${String(booking.firstName ?? "")} ${String(booking.lastName ?? "")}`.trim() ||
 		String(booking.name ?? "Unknown Customer")
 	const scheduleStatus = (booking: AdminSnapshotRecord): string =>
-		String(booking.status ?? "PENDING").toLowerCase().replace(/[_-]+/g, " ")
+		String(booking.status ?? "PENDING")
+			.toLowerCase()
+			.replace(/[_-]+/g, " ")
 	const renderScheduleDetails = (booking?: AdminSnapshotRecord): void => {
 		const details = document.getElementById("adminScheduleDetails")
 		if (!details) return
 		if (!booking) {
 			const empty = document.createElement("div")
 			empty.className = "admin-empty-state"
-			empty.textContent = "Click a calendar event to view booking details and quick actions."
+			empty.textContent =
+				"Click a calendar event to view booking details and quick actions."
 			details.replaceChildren(empty)
 			return
 		}
@@ -1458,10 +1893,13 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		meta.className = "admin-booking-meta"
 		const dateKey = bookingDateKey(booking.appointmentDate)
 		const date = dateKey ? new Date(`${dateKey}T12:00:00`) : null
-		const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "N/A"
+		const dateLabel =
+			date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : "N/A"
 		const stylist =
-			typeof booking.stylist === "object" && booking.stylist !== null &&
-			"name" in booking.stylist && typeof booking.stylist.name === "string"
+			typeof booking.stylist === "object" &&
+			booking.stylist !== null &&
+			"name" in booking.stylist &&
+			typeof booking.stylist.name === "string"
 				? booking.stylist.name
 				: "Any Available"
 		const fields: Array<[string, unknown]> = [
@@ -1484,19 +1922,28 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		const requestLabel = document.createElement("span")
 		requestLabel.textContent = "Special Request:"
 		const requestText = document.createElement("p")
-		requestText.textContent = String(booking.specialRequests || "No special request provided.")
+		requestText.textContent = String(
+			booking.specialRequests || "No special request provided.",
+		)
 		request.append(requestLabel, requestText)
 		const inspiration = document.createElement("div")
 		inspiration.className = "admin-booking-inspiration"
 		const inspirationLabel = document.createElement("span")
 		inspirationLabel.textContent = "Inspiration Image: "
-		const inspirationUrl = typeof booking.inspirationImageUrl === "string"
-			? booking.inspirationImageUrl.trim()
-			: ""
+		const inspirationUrl =
+			typeof booking.inspirationImageUrl === "string"
+				? booking.inspirationImageUrl.trim()
+				: ""
 		if (inspirationUrl) {
 			try {
-				const safeInspirationUrl = new URL(inspirationUrl, window.location.origin)
-				if (safeInspirationUrl.protocol === "http:" || safeInspirationUrl.protocol === "https:") {
+				const safeInspirationUrl = new URL(
+					inspirationUrl,
+					window.location.origin,
+				)
+				if (
+					safeInspirationUrl.protocol === "http:" ||
+					safeInspirationUrl.protocol === "https:"
+				) {
 					const link = document.createElement("a")
 					link.className = "admin-inline-link"
 					link.href = safeInspirationUrl.href
@@ -1505,17 +1952,29 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					link.textContent = "Open full image"
 					inspiration.append(inspirationLabel, link)
 				} else {
-				inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+					inspiration.append(
+						inspirationLabel,
+						document.createTextNode("Not provided"),
+					)
 				}
 			} catch {
-				inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+				inspiration.append(
+					inspirationLabel,
+					document.createTextNode("Not provided"),
+				)
 			}
 		} else {
-			inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+			inspiration.append(
+				inspirationLabel,
+				document.createTextNode("Not provided"),
+			)
 		}
 		const actions = document.createElement("div")
 		actions.className = "admin-booking-actions admin-schedule-detail-actions"
-		const addNavigation = (direction: "previous" | "next", label: string): void => {
+		const addNavigation = (
+			direction: "previous" | "next",
+			label: string,
+		): void => {
 			const button = document.createElement("button")
 			button.type = "button"
 			button.className = `admin-action-btn admin-schedule-${direction}-btn`
@@ -1526,7 +1985,11 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		addNavigation("previous", "← Previous Booking")
 		addNavigation("next", "Next Booking →")
 		const status = String(booking.status ?? "PENDING")
-		const addStatusAction = (label: string, nextStatus: string, danger = false): void => {
+		const addStatusAction = (
+			label: string,
+			nextStatus: string,
+			danger = false,
+		): void => {
 			const button = document.createElement("button")
 			button.type = "button"
 			button.className = `admin-action-btn admin-platform-action${danger ? " danger" : ""}`
@@ -1545,8 +2008,10 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		} else if (status === "WAITLISTED") {
 			const waitlistEntry = booking.waitlistEntry
 			const waitlistEntryId =
-				typeof waitlistEntry === "object" && waitlistEntry !== null &&
-				"id" in waitlistEntry && typeof waitlistEntry.id === "string"
+				typeof waitlistEntry === "object" &&
+				waitlistEntry !== null &&
+				"id" in waitlistEntry &&
+				typeof waitlistEntry.id === "string"
 					? waitlistEntry.id
 					: ""
 			if (waitlistEntryId) {
@@ -1560,7 +2025,8 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			} else {
 				const note = document.createElement("span")
 				note.className = "admin-empty-state"
-				note.textContent = "This booking is not linked to an actionable waitlist entry."
+				note.textContent =
+					"This booking is not linked to an actionable waitlist entry."
 				actions.append(note)
 			}
 		} else {
@@ -1596,9 +2062,17 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const header = document.createElement("div")
 			header.className = "admin-schedule-day-header"
 			const heading = document.createElement("h4")
-			heading.textContent = date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
-			const dayItems = scheduleBookings.filter((record) => bookingDateKey(record.appointmentDate) === key)
-				.sort((a, b) => bookingTimeMinutes(a.timeLabel) - bookingTimeMinutes(b.timeLabel))
+			heading.textContent = date.toLocaleDateString(undefined, {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			})
+			const dayItems = scheduleBookings
+				.filter((record) => bookingDateKey(record.appointmentDate) === key)
+				.sort(
+					(a, b) =>
+						bookingTimeMinutes(a.timeLabel) - bookingTimeMinutes(b.timeLabel),
+				)
 			const dayCount = document.createElement("p")
 			dayCount.textContent = `${dayItems.length} appointment${dayItems.length === 1 ? "" : "s"}`
 			header.append(heading, dayCount)
@@ -1639,7 +2113,10 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					event.type = "button"
 					event.className = `admin-schedule-event admin-status-${scheduleStatus(record).replace(/\s+/g, "-")}${id === selectedScheduleBookingId ? " is-selected" : ""}`
 					event.dataset.scheduleBooking = id
-					event.setAttribute("aria-pressed", String(id === selectedScheduleBookingId))
+					event.setAttribute(
+						"aria-pressed",
+						String(id === selectedScheduleBookingId),
+					)
 					const time = document.createElement("span")
 					time.className = "admin-schedule-event-time"
 					time.textContent = String(record.timeLabel ?? "Time")
@@ -1658,26 +2135,41 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			grid.append(column)
 			column.append(eventList)
 		}
-		visibleScheduleBookingIds = visibleBookings.map((booking) => String(booking.id ?? ""))
+		visibleScheduleBookingIds = visibleBookings.map((booking) =>
+			String(booking.id ?? ""),
+		)
 		if (!visibleScheduleBookingIds.includes(selectedScheduleBookingId))
 			selectedScheduleBookingId = visibleScheduleBookingIds[0] ?? ""
-		grid.querySelectorAll<HTMLButtonElement>("[data-schedule-booking]").forEach((button) => {
-			const isSelected = button.dataset.scheduleBooking === selectedScheduleBookingId
-			button.classList.toggle("is-selected", isSelected)
-			button.setAttribute("aria-pressed", String(isSelected))
-		})
-		const selected = scheduleBookings.find((booking) => String(booking.id ?? "") === selectedScheduleBookingId)
+		grid
+			.querySelectorAll<HTMLButtonElement>("[data-schedule-booking]")
+			.forEach((button) => {
+				const isSelected =
+					button.dataset.scheduleBooking === selectedScheduleBookingId
+				button.classList.toggle("is-selected", isSelected)
+				button.setAttribute("aria-pressed", String(isSelected))
+			})
+		const selected = scheduleBookings.find(
+			(booking) => String(booking.id ?? "") === selectedScheduleBookingId,
+		)
 		renderScheduleDetails(selected)
 		const label = document.getElementById("adminScheduleRangeLabel")
 		if (label)
-			label.textContent = scheduleMode === "day"
-				? start.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
-				: `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+			label.textContent =
+				scheduleMode === "day"
+					? start.toLocaleDateString(undefined, {
+							weekday: "long",
+							month: "long",
+							day: "numeric",
+							year: "numeric",
+						})
+					: `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} - ${new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
 	}
 	const scheduleHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
-		const scheduleEvent = target.closest<HTMLButtonElement>("[data-schedule-booking]")
+		const scheduleEvent = target.closest<HTMLButtonElement>(
+			"[data-schedule-booking]",
+		)
 		if (scheduleEvent?.dataset.scheduleBooking) {
 			selectedScheduleBookingId = scheduleEvent.dataset.scheduleBooking
 			renderSchedule()
@@ -1686,9 +2178,12 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		const scheduleNav = target.closest<HTMLButtonElement>("[data-schedule-nav]")
 		if (scheduleNav?.dataset.scheduleNav && visibleScheduleBookingIds.length) {
 			const index = visibleScheduleBookingIds.indexOf(selectedScheduleBookingId)
-			const nextIndex = scheduleNav.dataset.scheduleNav === "previous"
-				? index <= 0 ? visibleScheduleBookingIds.length - 1 : index - 1
-				: (index + 1) % visibleScheduleBookingIds.length
+			const nextIndex =
+				scheduleNav.dataset.scheduleNav === "previous"
+					? index <= 0
+						? visibleScheduleBookingIds.length - 1
+						: index - 1
+					: (index + 1) % visibleScheduleBookingIds.length
 			selectedScheduleBookingId = visibleScheduleBookingIds[nextIndex]
 			renderSchedule()
 			return
@@ -1706,11 +2201,13 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			.scheduleView
 		if (view === "day" || view === "week") {
 			scheduleMode = view
-			document.querySelectorAll<HTMLButtonElement>("[data-schedule-view]").forEach((button) => {
-				const active = button.dataset.scheduleView === view
-				button.classList.toggle("active", active)
-				button.setAttribute("aria-pressed", String(active))
-			})
+			document
+				.querySelectorAll<HTMLButtonElement>("[data-schedule-view]")
+				.forEach((button) => {
+					const active = button.dataset.scheduleView === view
+					button.classList.toggle("active", active)
+					button.setAttribute("aria-pressed", String(active))
+				})
 		}
 		if (
 			target.id === "adminScheduleToday" ||
@@ -1864,7 +2361,8 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				securityTimeline,
 				"No activity timeline events found.",
 			)
-			removeTabHandlers.push(bindAdminSnapshotFilters())
+			removeSnapshotFilters = bindAdminSnapshotFilters()
+			removeTabHandlers.push(() => removeSnapshotFilters())
 			const exportButton = document.getElementById("adminSecurityExportCsvBtn")
 			if (exportButton instanceof HTMLButtonElement) {
 				exportButton.onclick = () => {
@@ -1958,6 +2456,278 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			Object.entries(counts).forEach(([id, count]) => {
 				const element = document.getElementById(id)
 				if (element) element.textContent = String(count)
+			})
+			let snapshotRefreshInFlight = false
+			const refreshSnapshot = async (): Promise<void> => {
+				if (
+					cancelled ||
+					document.visibilityState !== "visible" ||
+					snapshotRefreshInFlight
+				)
+					return
+				snapshotRefreshInFlight = true
+				try {
+					const response = await fetch(
+						`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`,
+						{ credentials: "same-origin", cache: "no-store" },
+					)
+					if (!response.ok) return
+					const latest = (await response.json()) as AdminSnapshotRecord
+					const latestBookings = Array.isArray(latest.bookings)
+						? latest.bookings
+						: []
+					const latestWaitlist = Array.isArray(latest.waitlist)
+						? latest.waitlist
+						: []
+					const latestReviews = Array.isArray(latest.reviews)
+						? latest.reviews
+						: []
+					const latestMessages = Array.isArray(latest.messages)
+						? latest.messages
+						: []
+					const latestGallery = Array.isArray(latest.gallery)
+						? latest.gallery
+						: []
+					const latestBlogs = Array.isArray(latest.blogs) ? latest.blogs : []
+					const latestServices = Array.isArray(latest.services)
+						? latest.services
+						: []
+					const latestTeam = Array.isArray(latest.team) ? latest.team : []
+					const latestSecurity = recordValue(latest.security)
+					const latestLogins = Array.isArray(latestSecurity.logins)
+						? latestSecurity.logins
+						: []
+					const latestAlerts = Array.isArray(latestSecurity.alerts)
+						? latestSecurity.alerts
+						: []
+					const latestChanges = Array.isArray(latestSecurity.changes)
+						? latestSecurity.changes
+						: []
+					const latestSessions = Array.isArray(latestSecurity.sessions)
+						? latestSecurity.sessions
+						: []
+					const latestTimeline = Array.isArray(latestSecurity.timeline)
+						? latestSecurity.timeline
+						: []
+					const latestStats = recordValue(latestSecurity.stats)
+					scheduleBookings = latestBookings.filter(
+						(item): item is AdminSnapshotRecord =>
+							typeof item === "object" && item !== null,
+					)
+					renderSchedule()
+					renderAdminSnapshotList(
+						"adminBookingsList",
+						latestBookings,
+						"No bookings found.",
+					)
+					renderAdminSnapshotList(
+						"adminWaitlistList",
+						latestWaitlist,
+						"No waitlist entries found.",
+					)
+					renderAdminSnapshotList(
+						"adminReviewsList",
+						latestReviews,
+						"No reviews found.",
+					)
+					renderAdminSnapshotList(
+						"adminContactList",
+						latestMessages,
+						"No messages found.",
+					)
+					renderAdminSnapshotList(
+						"adminGalleryList",
+						latestGallery,
+						"No gallery styles found.",
+					)
+					renderAdminSnapshotList(
+						"adminBlogsList",
+						latestBlogs,
+						"No blog posts found.",
+					)
+					renderAdminSnapshotList(
+						"adminServicesList",
+						latestServices,
+						"No services found.",
+					)
+					const categoryMount = document.getElementById(
+						"adminServiceCategoryToggles",
+					)
+					if (categoryMount) {
+						categoryMount.replaceChildren()
+						latestServices.forEach((item) => {
+							const category = recordValue(item)
+							if (typeof category.id !== "string") return
+							const label = document.createElement("label")
+							label.className = "admin-service-toggle"
+							const input = document.createElement("input")
+							input.type = "checkbox"
+							input.checked = category.enabled === true
+							input.addEventListener("change", () => {
+								void fetch(
+									`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+									{
+										method: "POST",
+										credentials: "same-origin",
+										headers: { "content-type": "application/json" },
+										body: JSON.stringify({
+											action: "category-visibility",
+											id: category.id,
+											enabled: input.checked,
+										}),
+									},
+								).catch(() => {
+									input.checked = !input.checked
+								})
+							})
+							label.append(
+								input,
+								document.createTextNode(
+									String(category.label ?? "Service category"),
+								),
+							)
+							categoryMount.append(label)
+						})
+					}
+					renderAdminSnapshotList(
+						"adminAdminsList",
+						latestTeam,
+						"No team members found.",
+					)
+					renderAdminSnapshotList(
+						"adminSecurityActivityList",
+						latestLogins,
+						"No security activity found.",
+					)
+					renderAdminSnapshotList(
+						"adminSecurityAlertsList",
+						latestAlerts,
+						"No security alerts found.",
+					)
+					renderAdminSnapshotList(
+						"adminAccountHistoryList",
+						latestChanges,
+						"No account changes found.",
+					)
+					renderAdminSnapshotList(
+						"adminSessionsList",
+						latestSessions,
+						"No active session data found.",
+					)
+					renderAdminSnapshotList(
+						"adminTimelineList",
+						latestTimeline,
+						"No activity timeline events found.",
+					)
+					const latestCounts: Record<string, number> = {
+						adminTotalCount: latestBookings.length,
+						adminPendingCount: latestBookings.filter(
+							(item) => recordValue(item).status === "PENDING",
+						).length,
+						adminConfirmedCount: latestBookings.filter(
+							(item) => recordValue(item).status === "CONFIRMED",
+						).length,
+						adminWaitlistedBookingCount: latestBookings.filter(
+							(item) => recordValue(item).status === "WAITLISTED",
+						).length,
+						adminCompletedCount: latestBookings.filter(
+							(item) => recordValue(item).status === "COMPLETED",
+						).length,
+						adminCancelledCount: latestBookings.filter(
+							(item) => recordValue(item).status === "CANCELLED",
+						).length,
+						adminReviewsTotalCount: latestReviews.length,
+						adminReviewsPendingCount: latestReviews.filter(
+							(item) => recordValue(item).status === "PENDING",
+						).length,
+						adminReviewsApprovedCount: latestReviews.filter(
+							(item) => recordValue(item).status === "APPROVED",
+						).length,
+						adminMessagesTotalCount: latestMessages.length,
+						adminMessagesNewCount: latestMessages.filter(
+							(item) => recordValue(item).status === "NEW",
+						).length,
+						adminWaitlistTotalCount: latestWaitlist.length,
+						adminWaitlistWaitingCount: latestWaitlist.filter(
+							(item) => recordValue(item).status === "WAITING",
+						).length,
+						adminAdminsTotalCount: latestTeam.length,
+						adminAdminsActiveCount: latestTeam.filter(
+							(item) => recordValue(item).status === "ACTIVE",
+						).length,
+						adminAdminsSuperCount: latestTeam.filter(
+							(item) =>
+								recordValue(item).role === "OWNER" ||
+								recordValue(item).role === "ADMIN",
+						).length,
+						adminAdminsStandardCount: latestTeam.filter(
+							(item) => recordValue(item).role === "STAFF",
+						).length,
+						adminSecurityTotalCount: Number(
+							latestStats.totalLogins ?? latestLogins.length,
+						),
+						adminSecuritySuccessCount: Number(
+							latestStats.successfulLogins ?? 0,
+						),
+						adminSecurityFailedCount: Number(latestStats.failedLogins ?? 0),
+						adminSecurityHighRiskCount: Number(latestStats.highRiskLogins ?? 0),
+						adminSecurityAlertsTotalCount: Number(
+							latestStats.totalAlerts ?? latestAlerts.length,
+						),
+						adminSecurityAlertsOpenCount: Number(latestStats.openAlerts ?? 0),
+						adminSecurityAlertsHighCount: Number(
+							latestStats.highSeverityAlerts ?? 0,
+						),
+						adminAccountHistoryTotalCount: Number(
+							latestStats.totalAccountChanges ?? latestChanges.length,
+						),
+						adminSessionsTotalCount: latestSessions.length,
+						adminSessionsOnlineCount: Number(
+							latestStats.activeSessions ?? latestSessions.length,
+						),
+						adminSessionsOnlineUsersCount: Number(latestStats.activeUsers ?? 0),
+						adminTimelineTotalCount: Number(
+							latestStats.totalTimelineEvents ?? latestTimeline.length,
+						),
+						adminSecurityWidgetTotalLoginsToday: Number(
+							latestStats.totalLoginsToday ?? 0,
+						),
+						adminSecurityWidgetActiveUsersNow: Number(
+							latestStats.activeUsers ?? 0,
+						),
+						adminSecurityWidgetFailedLoginAttempts: Number(
+							latestStats.failedLogins ?? 0,
+						),
+						adminSecurityWidgetGoogleSignIns: Number(
+							latestStats.googleSignIns ?? 0,
+						),
+						adminSecurityWidgetEmailSignIns: Number(
+							latestStats.emailSignIns ?? 0,
+						),
+					}
+					Object.entries(latestCounts).forEach(([id, count]) => {
+						const element = document.getElementById(id)
+						if (element) element.textContent = String(count)
+					})
+					removeSnapshotFilters()
+					removeSnapshotFilters = bindAdminSnapshotFilters()
+				} catch (error) {
+					console.error("Admin snapshot refresh failed", error)
+				} finally {
+					snapshotRefreshInFlight = false
+				}
+			}
+			const refreshTimer = window.setInterval(
+				() => void refreshSnapshot(),
+				30_000,
+			)
+			const refreshOnVisibility = (): void => {
+				if (document.visibilityState === "visible") void refreshSnapshot()
+			}
+			document.addEventListener("visibilitychange", refreshOnVisibility)
+			removeTabHandlers.push(() => {
+				window.clearInterval(refreshTimer)
+				document.removeEventListener("visibilitychange", refreshOnVisibility)
 			})
 			const actionMessage = document.getElementById("adminActionMessage")
 			if (actionMessage)
@@ -2145,7 +2915,10 @@ function showTransientPopup(id: string, durationMs: number): () => void {
 	popup.classList.remove("show")
 	void popup.offsetWidth
 	popup.classList.add("show")
-	const timer = window.setTimeout(() => popup.classList.remove("show"), durationMs)
+	const timer = window.setTimeout(
+		() => popup.classList.remove("show"),
+		durationMs,
+	)
 	return () => window.clearTimeout(timer)
 }
 
@@ -2180,19 +2953,25 @@ function bindPublicParityAdapters(
 	const termsModal = document.getElementById("termsModal")
 	const termsCheckbox = document.getElementById("termsConsentCheckbox")
 	const termsAcceptButton = document.getElementById("acceptTermsBtn")
-	const contactSuccessClose = document.getElementById("contactSuccessPopupClose")
+	const contactSuccessClose = document.getElementById(
+		"contactSuccessPopupClose",
+	)
 	const closeTermsModal = () => {
 		termsModal?.classList.remove("active")
 		termsModal?.setAttribute("aria-hidden", "true")
 		document.body.style.overflow = ""
 	}
 	const updateTermsAcceptance = (): void => {
-		if (termsAcceptButton instanceof HTMLButtonElement && termsCheckbox instanceof HTMLInputElement) {
+		if (
+			termsAcceptButton instanceof HTMLButtonElement &&
+			termsCheckbox instanceof HTMLInputElement
+		) {
 			termsAcceptButton.disabled = !termsCheckbox.checked
 		}
 	}
 	const acceptTerms = (): void => {
-		if (!(termsCheckbox instanceof HTMLInputElement) || !termsCheckbox.checked) return
+		if (!(termsCheckbox instanceof HTMLInputElement) || !termsCheckbox.checked)
+			return
 		try {
 			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
 		} catch {
@@ -2208,7 +2987,8 @@ function bindPublicParityAdapters(
 	}
 	try {
 		if (localStorage.getItem("royal_braids_terms_accepted_v1") !== "true") {
-			if (termsCheckbox instanceof HTMLInputElement) termsCheckbox.checked = false
+			if (termsCheckbox instanceof HTMLInputElement)
+				termsCheckbox.checked = false
 			updateTermsAcceptance()
 			setModalState("termsModal", true)
 		}
@@ -2354,10 +3134,14 @@ function bindPublicParityAdapters(
 			}
 			setFavoriteButtonsState(galleryStyleId, !isSaved)
 			stateUpdated = true
-			showFavoritesToast(isSaved ? "Removed from favorites" : "Saved to favorites")
+			showFavoritesToast(
+				isSaved ? "Removed from favorites" : "Saved to favorites",
+			)
 			void loadReferenceDashboardData(tenantSlug)
 		} catch {
-			showFavoritesToast("The gallery favorite could not be updated. Please try again.")
+			showFavoritesToast(
+				"The gallery favorite could not be updated. Please try again.",
+			)
 		} finally {
 			if (button instanceof HTMLButtonElement) {
 				button.disabled = false
@@ -2447,7 +3231,7 @@ function bindPublicParityAdapters(
 			message.classList.toggle("error", !response.ok)
 			message.classList.toggle("success", response.ok)
 		}
-	if (response.ok) closeReschedule()
+		if (response.ok) closeReschedule()
 		if (save instanceof HTMLButtonElement) save.disabled = false
 	}
 
@@ -2617,7 +3401,7 @@ function bindPublicParityAdapters(
 			.getElementById("manageAccountDeleteBtn")
 			?.removeEventListener("click", openDeleteAccount)
 		document
-		.getElementById("deleteAccountConfirmProceedBtn")
+			.getElementById("deleteAccountConfirmProceedBtn")
 			?.removeEventListener("click", deleteAccount)
 		document
 			.getElementById("deleteAccountConfirmCloseBtn")
@@ -2888,7 +3672,10 @@ function setDashboardList(
 	element.innerHTML = html || "<li>" + escapeClientHtml(emptyText) + "</li>"
 }
 
-function setFavoriteButtonsState(galleryStyleId: string, favorited: boolean): void {
+function setFavoriteButtonsState(
+	galleryStyleId: string,
+	favorited: boolean,
+): void {
 	const buttons = document.querySelectorAll<HTMLElement>(
 		".gallery-save-favorite-btn, #lightboxFavoriteBtn",
 	)
@@ -2898,7 +3685,9 @@ function setFavoriteButtonsState(galleryStyleId: string, favorited: boolean): vo
 		button.setAttribute("aria-pressed", String(favorited))
 		button.setAttribute(
 			"aria-label",
-			favorited ? "Remove saved gallery style from favorites" : "Save gallery style to favorites",
+			favorited
+				? "Remove saved gallery style from favorites"
+				: "Save gallery style to favorites",
 		)
 		button.textContent = favorited ? "♥ Saved" : "♡ Save"
 	}
@@ -2935,7 +3724,9 @@ function renderReferenceDashboard(
 				status +
 				(booking.waitlistPosition
 					? ' · <span class="dashboard-waitlist-position">Waitlist: ' +
-						escapeClientHtml(booking.waitlistLabel || String(booking.waitlistPosition)) +
+						escapeClientHtml(
+							booking.waitlistLabel || String(booking.waitlistPosition),
+						) +
 						(booking.waitlistQueueSize
 							? " of " + escapeClientHtml(String(booking.waitlistQueueSize))
 							: "") +
@@ -3042,7 +3833,10 @@ function renderReferenceDashboard(
 	)) {
 		const galleryStyleId = button.dataset.favStyleId
 		if (galleryStyleId)
-			setFavoriteButtonsState(galleryStyleId, savedGalleryIds.has(galleryStyleId))
+			setFavoriteButtonsState(
+				galleryStyleId,
+				savedGalleryIds.has(galleryStyleId),
+			)
 	}
 	setDashboardMessage("", "success")
 }
@@ -3073,7 +3867,8 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 							{ cache: "no-store", credentials: "same-origin" },
 						)
 						if (!queueResponse.ok) return [booking.id, null] as const
-						const queue = (await queueResponse.json()) as ClientWaitlistQueuePayload
+						const queue =
+							(await queueResponse.json()) as ClientWaitlistQueuePayload
 						return [booking.id, queue] as const
 					} catch {
 						return [booking.id, null] as const
@@ -3112,7 +3907,9 @@ function bindAccountMutationAdapter(): () => void {
 	const preferencesButton = document.getElementById(
 		"manageAccountSavePreferencesBtn",
 	)
-	const confirmDeleteButton = document.getElementById("deleteAccountConfirmProceedBtn")
+	const confirmDeleteButton = document.getElementById(
+		"deleteAccountConfirmProceedBtn",
+	)
 	const closeDeleteButton = document.getElementById(
 		"deleteAccountConfirmCloseBtn",
 	)
@@ -3476,8 +4273,27 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	// state on screen when Auth.js is slow or unavailable.
 	updateReferenceAuthUi(null)
 	void refreshReferenceAuthUi(tenantSlug)
+	let dashboardRefreshInFlight = false
+	const refreshDashboardWhenVisible = (): void => {
+		if (document.visibilityState !== "visible" || dashboardRefreshInFlight)
+			return
+		dashboardRefreshInFlight = true
+		void refreshReferenceAuthUi(tenantSlug).finally(() => {
+			dashboardRefreshInFlight = false
+		})
+	}
+	const dashboardRefreshTimer = window.setInterval(
+		refreshDashboardWhenVisible,
+		30_000,
+	)
+	document.addEventListener("visibilitychange", refreshDashboardWhenVisible)
 
 	return () => {
+		window.clearInterval(dashboardRefreshTimer)
+		document.removeEventListener(
+			"visibilitychange",
+			refreshDashboardWhenVisible,
+		)
 		form.removeEventListener("submit", submit, true)
 		openButton?.removeEventListener("click", openAuth, true)
 		closeButton?.removeEventListener("click", closeAuth, true)
@@ -3510,61 +4326,124 @@ function bindBookingAdapter(
 	let availabilityRequest = 0
 	let availabilityTimer: ReturnType<typeof setTimeout> | undefined
 	let availabilityReady = false
-	let bookedSlots: { slotId: string; timeLabel: string; stylistId: string | null; stylistLabel: string }[] = []
-	let pendingWaitlist: { waitlistId: string; date: string; timeLabel: string; serviceName: string; stylistId: string | null } | null = null
+	let bookedSlots: {
+		slotId: string
+		timeLabel: string
+		stylistId: string | null
+		stylistLabel: string
+	}[] = []
+	let pendingWaitlist: {
+		waitlistId: string
+		date: string
+		timeLabel: string
+		serviceName: string
+		stylistId: string | null
+		inspirationImageUploaded: boolean
+	} | null = null
 
 	const setPickerOpen = (open: boolean): void => {
 		if (timeDropdown instanceof HTMLElement) timeDropdown.hidden = !open
-		if (timeInput instanceof HTMLInputElement) timeInput.setAttribute("aria-expanded", String(open))
-		if (timeTrigger instanceof HTMLButtonElement) timeTrigger.setAttribute("aria-expanded", String(open))
+		if (timeInput instanceof HTMLInputElement)
+			timeInput.setAttribute("aria-expanded", String(open))
+		if (timeTrigger instanceof HTMLButtonElement)
+			timeTrigger.setAttribute("aria-expanded", String(open))
 	}
-	const togglePicker = (): void => setPickerOpen(timeDropdown instanceof HTMLElement && timeDropdown.hidden)
+	const togglePicker = (): void =>
+		setPickerOpen(timeDropdown instanceof HTMLElement && timeDropdown.hidden)
 	const openPicker = (): void => setPickerOpen(true)
 	const closePickerOnOutside = (event: Event): void => {
-		if (event.target instanceof Node && !document.querySelector('[data-time-picker="booking"]')?.contains(event.target)) setPickerOpen(false)
+		if (
+			event.target instanceof Node &&
+			!document
+				.querySelector('[data-time-picker="booking"]')
+				?.contains(event.target)
+		)
+			setPickerOpen(false)
 	}
-	const renderAvailability = (times: readonly string[], occupied: typeof bookedSlots): void => {
+	const getSelectedInspirationFile = async (): Promise<File | undefined> => {
+		const imageInput = document.getElementById("inspirationImage")
+		const file =
+			imageInput instanceof HTMLInputElement ? imageInput.files?.[0] : undefined
+		if (!file) return undefined
+		const validationError = getImageUploadError(file.size, file.type)
+		if (validationError) throw new Error(validationError)
+		return file
+	}
+	const makePublicRequestBody = (
+		values: Readonly<Record<string, string | undefined>>,
+		inspirationFile?: File,
+	): BodyInit => {
+		if (!inspirationFile) return JSON.stringify(values)
+		const formData = new FormData()
+		Object.entries(values).forEach(([key, value]) => {
+			if (value !== undefined) formData.set(key, value)
+		})
+		formData.set("inspirationImage", inspirationFile)
+		return formData
+	}
+	const renderAvailability = (
+		times: readonly string[],
+		occupied: typeof bookedSlots,
+	): void => {
 		bookedSlots = occupied
 		if (timeOptions instanceof HTMLDataListElement) {
-			timeOptions.replaceChildren(...times.filter((time) => !occupied.some((slot) => slot.timeLabel === time)).map((time) => {
-				const option = document.createElement("option")
-				option.value = time
-				return option
-			}))
+			timeOptions.replaceChildren(
+				...times
+					.filter((time) => !occupied.some((slot) => slot.timeLabel === time))
+					.map((time) => {
+						const option = document.createElement("option")
+						option.value = time
+						return option
+					}),
+			)
 		}
 		if (timeDropdown instanceof HTMLElement) {
-			timeDropdown.replaceChildren(...times.map((time) => {
-				const isWaitlisted = pendingWaitlist?.timeLabel === time && pendingWaitlist.date === (datePicker instanceof HTMLInputElement ? datePicker.value : "")
-				const isBooked = !isWaitlisted && occupied.some((slot) => slot.timeLabel === time)
-				const option = document.createElement("button")
-				option.type = "button"
-				option.className = `time-picker-option${isBooked ? " is-booked" : isWaitlisted ? " is-waitlisted" : ""}`
-				option.setAttribute("role", "option")
-				option.disabled = isBooked
-				option.textContent = isWaitlisted ? `${time} — Waitlisted (booked)` : isBooked ? `${time} — Booked` : time
-				if (!isBooked) option.addEventListener("click", () => {
-					if (timeInput instanceof HTMLInputElement) {
-						timeInput.value = time
-						timeInput.dispatchEvent(new Event("change", { bubbles: true }))
-					}
-					setPickerOpen(false)
-				})
-				return option
-			}))
+			timeDropdown.replaceChildren(
+				...times.map((time) => {
+					const isWaitlisted =
+						pendingWaitlist?.timeLabel === time &&
+						pendingWaitlist.date ===
+							(datePicker instanceof HTMLInputElement ? datePicker.value : "")
+					const isBooked =
+						!isWaitlisted && occupied.some((slot) => slot.timeLabel === time)
+					const option = document.createElement("button")
+					option.type = "button"
+					option.className = `time-picker-option${isBooked ? " is-booked" : isWaitlisted ? " is-waitlisted" : ""}`
+					option.setAttribute("role", "option")
+					option.disabled = isBooked
+					option.textContent = isWaitlisted
+						? `${time} — Waitlisted (booked)`
+						: isBooked
+							? `${time} — Booked`
+							: time
+					if (!isBooked)
+						option.addEventListener("click", () => {
+							if (timeInput instanceof HTMLInputElement) {
+								timeInput.value = time
+								timeInput.dispatchEvent(new Event("change", { bubbles: true }))
+							}
+							setPickerOpen(false)
+						})
+					return option
+				}),
+			)
 		}
 		if (waitlistSelect instanceof HTMLSelectElement) {
 			const placeholder = document.createElement("option")
 			placeholder.value = ""
 			placeholder.textContent = "Select booked time"
-			waitlistSelect.replaceChildren(placeholder, ...occupied.map((slot) => {
-				const option = document.createElement("option")
-				option.value = slot.slotId
-				option.dataset.time = slot.timeLabel
-				option.dataset.stylistId = slot.stylistId ?? ""
-				option.dataset.stylistLabel = slot.stylistLabel
-				option.textContent = `${slot.timeLabel} — ${slot.stylistLabel}`
-				return option
-			}))
+			waitlistSelect.replaceChildren(
+				placeholder,
+				...occupied.map((slot) => {
+					const option = document.createElement("option")
+					option.value = slot.slotId
+					option.dataset.time = slot.timeLabel
+					option.dataset.stylistId = slot.stylistId ?? ""
+					option.dataset.stylistLabel = slot.stylistLabel
+					option.textContent = `${slot.timeLabel} — ${slot.stylistLabel}`
+					return option
+				}),
+			)
 		}
 		waitlistPanel?.classList.toggle("hidden", occupied.length === 0)
 	}
@@ -3582,22 +4461,49 @@ function bindBookingAdapter(
 		availabilityReady = false
 		renderAvailability(BOOKING_TIME_SLOTS, [])
 		const requestId = ++availabilityRequest
-		const selectedStylist = stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
+		const selectedStylist =
+			stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
 		const query = new URLSearchParams({ tenantSlug, date })
 		if (selectedStylist) query.set("stylistId", selectedStylist)
 		availabilityTimer = setTimeout(() => {
-			void fetch(`/api/bookings/availability?${query.toString()}`, { cache: "no-store" })
+			void fetch(`/api/bookings/availability?${query.toString()}`, {
+				cache: "no-store",
+			})
 				.then(async (response) => {
 					const payload: unknown = await response.json()
-					if (!response.ok || typeof payload !== "object" || payload === null) throw new Error("Availability unavailable")
-					const record = payload as { timeSlots?: unknown; bookedSlots?: unknown }
+					if (!response.ok || typeof payload !== "object" || payload === null)
+						throw new Error("Availability unavailable")
+					const record = payload as {
+						timeSlots?: unknown
+						bookedSlots?: unknown
+					}
 					if (requestId !== availabilityRequest) return
-					const times = Array.isArray(record.timeSlots) ? record.timeSlots.filter((value): value is string => typeof value === "string") : BOOKING_TIME_SLOTS
-					const occupied = Array.isArray(record.bookedSlots) ? record.bookedSlots.filter((value): value is typeof bookedSlots[number] => typeof value === "object" && value !== null && "slotId" in value && "timeLabel" in value && "stylistLabel" in value && typeof value.slotId === "string" && typeof value.timeLabel === "string" && typeof value.stylistLabel === "string" && (value.stylistId === null || typeof value.stylistId === "string")) : []
+					const times = Array.isArray(record.timeSlots)
+						? record.timeSlots.filter(
+								(value): value is string => typeof value === "string",
+							)
+						: BOOKING_TIME_SLOTS
+					const occupied = Array.isArray(record.bookedSlots)
+						? record.bookedSlots.filter(
+								(value): value is (typeof bookedSlots)[number] =>
+									typeof value === "object" &&
+									value !== null &&
+									"slotId" in value &&
+									"timeLabel" in value &&
+									"stylistLabel" in value &&
+									typeof value.slotId === "string" &&
+									typeof value.timeLabel === "string" &&
+									typeof value.stylistLabel === "string" &&
+									(value.stylistId === null ||
+										typeof value.stylistId === "string"),
+							)
+						: []
 					renderAvailability(times, occupied)
 					availabilityReady = true
 					if (timeInput instanceof HTMLInputElement) {
-						timeInput.value = occupied.some((slot) => slot.timeLabel === time) ? "" : time
+						timeInput.value = occupied.some((slot) => slot.timeLabel === time)
+							? ""
+							: time
 					}
 				})
 				.catch(() => {
@@ -3605,17 +4511,31 @@ function bindBookingAdapter(
 					renderAvailability(BOOKING_TIME_SLOTS, [])
 					if (timeInput instanceof HTMLInputElement) timeInput.value = ""
 					availabilityReady = false
-					setBookingMessage("Available times could not be refreshed. Your booking will still be checked before it is saved.", "error")
+					setBookingMessage(
+						"Available times could not be refreshed. Your booking will still be checked before it is saved.",
+						"error",
+					)
 				})
 		}, 250)
 	}
 	const getPendingWaitlist = () => {
 		const date = datePicker instanceof HTMLInputElement ? datePicker.value : ""
-		const time = timeInput instanceof HTMLInputElement ? timeInput.value.trim() : ""
-		const serviceName = getFormValue(form, "customService") || getFormValue(form, "service")
-		const selectedStylistId = stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
-		const stylistMatches = !pendingWaitlist?.stylistId || !selectedStylistId || pendingWaitlist.stylistId === selectedStylistId
-		return pendingWaitlist?.date === date && pendingWaitlist.timeLabel === time && pendingWaitlist.serviceName === serviceName && stylistMatches ? pendingWaitlist : null
+		const time =
+			timeInput instanceof HTMLInputElement ? timeInput.value.trim() : ""
+		const serviceName =
+			getFormValue(form, "customService") || getFormValue(form, "service")
+		const selectedStylistId =
+			stylistSelect instanceof HTMLSelectElement ? stylistSelect.value : ""
+		const stylistMatches =
+			!pendingWaitlist?.stylistId ||
+			!selectedStylistId ||
+			pendingWaitlist.stylistId === selectedStylistId
+		return pendingWaitlist?.date === date &&
+			pendingWaitlist.timeLabel === time &&
+			pendingWaitlist.serviceName === serviceName &&
+			stylistMatches
+			? pendingWaitlist
+			: null
 	}
 	const clearPendingWaitlistIfChanged = (): void => {
 		if (pendingWaitlist && !getPendingWaitlist()) {
@@ -3623,13 +4543,33 @@ function bindBookingAdapter(
 			renderAvailability(BOOKING_TIME_SLOTS, bookedSlots)
 		}
 	}
+	const refreshAvailabilityWhenIdle = (): void => {
+		if (
+			document.visibilityState !== "visible" ||
+			!availabilityReady ||
+			!(datePicker instanceof HTMLInputElement) ||
+			!datePicker.value ||
+			(form.contains(document.activeElement) && document.activeElement !== form)
+		)
+			return
+		refreshAvailability()
+	}
+	const availabilityRefreshTimer = window.setInterval(
+		refreshAvailabilityWhenIdle,
+		30_000,
+	)
+	document.addEventListener("visibilitychange", refreshAvailabilityWhenIdle)
 	datePicker?.addEventListener("change", refreshAvailability)
 	stylistSelect?.addEventListener("change", refreshAvailability)
 	datePicker?.addEventListener("change", clearPendingWaitlistIfChanged)
 	stylistSelect?.addEventListener("change", clearPendingWaitlistIfChanged)
 	timeInput?.addEventListener("input", clearPendingWaitlistIfChanged)
-	form.querySelector('[name="service"]')?.addEventListener("change", clearPendingWaitlistIfChanged)
-	form.querySelector('[name="customService"]')?.addEventListener("input", clearPendingWaitlistIfChanged)
+	form
+		.querySelector('[name="service"]')
+		?.addEventListener("change", clearPendingWaitlistIfChanged)
+	form
+		.querySelector('[name="customService"]')
+		?.addEventListener("input", clearPendingWaitlistIfChanged)
 	timeTrigger?.addEventListener("click", togglePicker)
 	timeInput?.addEventListener("focus", openPicker)
 	document.addEventListener("click", closePickerOnOutside)
@@ -3653,7 +4593,10 @@ function bindBookingAdapter(
 				: undefined
 		const serviceId = selectedOption?.dataset.serviceId || undefined
 		const stylistElement = document.getElementById("stylistSelect")
-		const stylistId = stylistElement instanceof HTMLSelectElement ? stylistElement.value || undefined : undefined
+		const stylistId =
+			stylistElement instanceof HTMLSelectElement
+				? stylistElement.value || undefined
+				: undefined
 		if (selectedOption?.dataset.orderOnly === "true") {
 			openReferenceWhatsAppOrder(
 				serviceName,
@@ -3669,7 +4612,10 @@ function bindBookingAdapter(
 
 		if (!(button instanceof HTMLButtonElement)) return
 		if (appointmentDate && !availabilityReady) {
-			setBookingMessage("Please wait for this date’s availability to load before confirming.", "error")
+			setBookingMessage(
+				"Please wait for this date’s availability to load before confirming.",
+				"error",
+			)
 			return
 		}
 		if (!turnstileToken) {
@@ -3684,26 +4630,32 @@ function bindBookingAdapter(
 		setBookingMessage("", "success")
 
 		try {
+			const inspirationFile = pendingWaitlist?.inspirationImageUploaded
+				? undefined
+				: await getSelectedInspirationFile()
+			const bookingPayload = {
+				tenantSlug,
+				firstName,
+				lastName,
+				email,
+				phone,
+				serviceId,
+				stylistId,
+				waitlistId: getPendingWaitlist()?.waitlistId,
+				serviceName: customService || serviceName,
+				customService: customService || undefined,
+				paymentMode: paymentMode || undefined,
+				appointmentDate,
+				timeLabel,
+				specialRequests: specialRequests || undefined,
+				turnstileToken,
+			}
 			const response = await fetch("/api/bookings", {
 				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					tenantSlug,
-					firstName,
-					lastName,
-					email,
-					phone,
-					serviceId,
-					stylistId,
-					waitlistId: getPendingWaitlist()?.waitlistId,
-					serviceName: customService || serviceName,
-					customService: customService || undefined,
-					paymentMode: paymentMode || undefined,
-					appointmentDate,
-					timeLabel,
-					specialRequests: specialRequests || undefined,
-					turnstileToken,
-				}),
+				headers: inspirationFile
+					? undefined
+					: { "content-type": "application/json" },
+				body: makePublicRequestBody(bookingPayload, inspirationFile),
 			})
 
 			const payload: unknown = await response.json().catch(() => ({}))
@@ -3729,25 +4681,27 @@ function bindBookingAdapter(
 					? (payload.payment as { status?: string })
 					: undefined
 			const paymentPending = paymentRecord?.status === "pending"
-			const bookingStatus = typeof payload === "object" && payload !== null && "status" in payload ? payload.status : undefined
+			const bookingStatus =
+				typeof payload === "object" && payload !== null && "status" in payload
+					? payload.status
+					: undefined
 			const isWaitlisted = bookingStatus === "WAITLISTED"
 			setBookingMessage(
 				isWaitlisted
 					? "Your waitlisted booking is saved. The salon will contact you when they can confirm a slot."
 					: paymentPending
-					? "Booking received. Approve the M-Pesa prompt to confirm your appointment."
-					: "Booking request received. We will confirm your appointment shortly.",
+						? "Booking received. Approve the M-Pesa prompt to confirm your appointment."
+						: "Booking request received. We will confirm your appointment shortly.",
 				"success",
 			)
-			const successHeading = document.querySelector<HTMLHeadingElement>(
-				"#bookingSuccess h3",
-			)
+			const successHeading =
+				document.querySelector<HTMLHeadingElement>("#bookingSuccess h3")
 			if (successHeading)
-			successHeading.textContent = isWaitlisted
-				? "You’re on the Waitlist"
-				: paymentPending
-					? "Payment Pending"
-					: "Booking Confirmed!"
+				successHeading.textContent = isWaitlisted
+					? "You’re on the Waitlist"
+					: paymentPending
+						? "Payment Pending"
+						: "Booking Confirmed!"
 			showBookingSuccess()
 			pendingWaitlist = null
 		} catch {
@@ -3766,7 +4720,10 @@ function bindBookingAdapter(
 		event.stopImmediatePropagation()
 		if (!(waitlistButton instanceof HTMLButtonElement)) return
 		if (pendingWaitlist) {
-			setBookingMessage("You have already joined this waitlist. Confirm the booking request below.", "error")
+			setBookingMessage(
+				"You have already joined this waitlist. Confirm the booking request below.",
+				"error",
+			)
 			return
 		}
 
@@ -3786,37 +4743,45 @@ function bindBookingAdapter(
 			.filter(Boolean)
 			.join(" ")
 		const preferredTimeElement = document.getElementById("waitlistTimeSelect")
-		const selectedWaitlistOption = preferredTimeElement instanceof HTMLSelectElement
-			? preferredTimeElement.options[preferredTimeElement.selectedIndex]
-			: undefined
+		const selectedWaitlistOption =
+			preferredTimeElement instanceof HTMLSelectElement
+				? preferredTimeElement.options[preferredTimeElement.selectedIndex]
+				: undefined
 		const preferredTime = selectedWaitlistOption?.dataset.time?.trim() ?? ""
 		if (!preferredTime || !selectedWaitlistOption?.value) {
-			setBookingMessage("Choose a booked time before joining the waitlist.", "error")
+			setBookingMessage(
+				"Choose a booked time before joining the waitlist.",
+				"error",
+			)
 			return
 		}
 
 		waitlistButton.disabled = true
 		waitlistButton.setAttribute("aria-busy", "true")
 		try {
+			const inspirationFile = await getSelectedInspirationFile()
+			const waitlistPayload = {
+				tenantSlug,
+				name,
+				email: getFormValue(form, "email"),
+				phone: getFormValue(form, "phone"),
+				serviceName:
+					getFormValue(form, "customService") || getFormValue(form, "service"),
+				preferredDate: getFormValue(form, "date") || undefined,
+				preferredTime,
+				preferredStylist:
+					preferredTimeElement instanceof HTMLSelectElement
+						? preferredTimeElement.options[preferredTimeElement.selectedIndex]
+								?.dataset.stylistLabel || undefined
+						: undefined,
+				turnstileToken,
+			}
 			const response = await fetch("/api/waitlist", {
 				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					tenantSlug,
-					name,
-					email: getFormValue(form, "email"),
-					phone: getFormValue(form, "phone"),
-					serviceName:
-						getFormValue(form, "customService") ||
-						getFormValue(form, "service"),
-					preferredDate: getFormValue(form, "date") || undefined,
-					preferredTime:
-						preferredTime || getFormValue(form, "time") || undefined,
-					preferredStylist: preferredTimeElement instanceof HTMLSelectElement
-							? preferredTimeElement.options[preferredTimeElement.selectedIndex]?.dataset.stylistLabel || undefined
-							: undefined,
-					turnstileToken,
-				}),
+				headers: inspirationFile
+					? undefined
+					: { "content-type": "application/json" },
+				body: makePublicRequestBody(waitlistPayload, inspirationFile),
 			})
 			const payload: unknown = await response.json().catch(() => ({}))
 			const error =
@@ -3832,18 +4797,30 @@ function bindBookingAdapter(
 				return
 			}
 
-			const waitlistId = typeof payload === "object" && payload !== null && "waitlistId" in payload && typeof payload.waitlistId === "string" ? payload.waitlistId : ""
-			if (!waitlistId) throw new Error("The waitlist response did not include its request ID.")
+			const waitlistId =
+				typeof payload === "object" &&
+				payload !== null &&
+				"waitlistId" in payload &&
+				typeof payload.waitlistId === "string"
+					? payload.waitlistId
+					: ""
+			if (!waitlistId)
+				throw new Error("The waitlist response did not include its request ID.")
 			pendingWaitlist = {
 				waitlistId,
 				date: getFormValue(form, "date"),
 				timeLabel: preferredTime,
-				serviceName: getFormValue(form, "customService") || getFormValue(form, "service"),
+				serviceName:
+					getFormValue(form, "customService") || getFormValue(form, "service"),
 				stylistId: selectedWaitlistOption.dataset.stylistId || null,
+				inspirationImageUploaded: Boolean(inspirationFile),
 			}
 			if (timeInput instanceof HTMLInputElement) timeInput.value = preferredTime
 			renderAvailability(BOOKING_TIME_SLOTS, bookedSlots)
-			setBookingMessage("You’ve joined the waitlist. Confirm below to save this as a waitlisted booking.", "success")
+			setBookingMessage(
+				"You’ve joined the waitlist. Confirm below to save this as a waitlisted booking.",
+				"success",
+			)
 		} catch {
 			setBookingMessage(
 				"The waitlist service could not be reached. Please try again.",
@@ -3859,13 +4836,22 @@ function bindBookingAdapter(
 	waitlistButton?.addEventListener("click", joinWaitlist, true)
 	return () => {
 		if (availabilityTimer) clearTimeout(availabilityTimer)
+		window.clearInterval(availabilityRefreshTimer)
+		document.removeEventListener(
+			"visibilitychange",
+			refreshAvailabilityWhenIdle,
+		)
 		datePicker?.removeEventListener("change", refreshAvailability)
 		stylistSelect?.removeEventListener("change", refreshAvailability)
 		datePicker?.removeEventListener("change", clearPendingWaitlistIfChanged)
 		stylistSelect?.removeEventListener("change", clearPendingWaitlistIfChanged)
 		timeInput?.removeEventListener("input", clearPendingWaitlistIfChanged)
-		form.querySelector('[name="service"]')?.removeEventListener("change", clearPendingWaitlistIfChanged)
-		form.querySelector('[name="customService"]')?.removeEventListener("input", clearPendingWaitlistIfChanged)
+		form
+			.querySelector('[name="service"]')
+			?.removeEventListener("change", clearPendingWaitlistIfChanged)
+		form
+			.querySelector('[name="customService"]')
+			?.removeEventListener("input", clearPendingWaitlistIfChanged)
 		timeTrigger?.removeEventListener("click", togglePicker)
 		timeInput?.removeEventListener("focus", openPicker)
 		document.removeEventListener("click", closePickerOnOutside)
@@ -3896,40 +4882,50 @@ function sanitizeInlineMarkup(value: unknown): string {
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;")
 	return escaped
-		.replace(/&lt;(\/?)span&gt;/gi, (_, closing: string) => "<" + closing + "span>")
 		.replace(
-		/&lt;(\/?)(br\s*\/?)&gt;/gi,
-		(_, closing: string) => `<${closing}br />`,
-	)
+			/&lt;(\/?)span&gt;/gi,
+			(_, closing: string) => "<" + closing + "span>",
+		)
+		.replace(
+			/&lt;(\/?)(br\s*\/?)&gt;/gi,
+			(_, closing: string) => `<${closing}br />`,
+		)
 }
 
 function applyNativeClientConfig(config: SalonClientConfig): void {
-	document.querySelectorAll<HTMLElement>("[data-client-text]").forEach((element) => {
-		const path = element.dataset.clientText
-		const value = path ? readConfigValue(config, path) : undefined
-		if (value !== undefined && value !== null) element.textContent = String(value)
-	})
-	document.querySelectorAll<HTMLElement>("[data-client-html]").forEach((element) => {
-		const path = element.dataset.clientHtml
-		const value = path ? readConfigValue(config, path) : undefined
-		if (value !== undefined && value !== null) {
-			element.innerHTML = sanitizeInlineMarkup(value)
-		}
-	})
-	document.querySelectorAll<HTMLElement>("[data-client-attr]").forEach((element) => {
-		const bindings = (element.dataset.clientAttr ?? "")
-			.split(";")
-			.map((binding) => binding.trim())
-			.filter(Boolean)
-		for (const binding of bindings) {
-			const [attribute, path] = binding.split(":").map((part) => part.trim())
-			if (!attribute || !path) continue
-			const value = readConfigValue(config, path)
-			if (value !== undefined && value !== null && value !== "") {
-				element.setAttribute(attribute, String(value))
+	document
+		.querySelectorAll<HTMLElement>("[data-client-text]")
+		.forEach((element) => {
+			const path = element.dataset.clientText
+			const value = path ? readConfigValue(config, path) : undefined
+			if (value !== undefined && value !== null)
+				element.textContent = String(value)
+		})
+	document
+		.querySelectorAll<HTMLElement>("[data-client-html]")
+		.forEach((element) => {
+			const path = element.dataset.clientHtml
+			const value = path ? readConfigValue(config, path) : undefined
+			if (value !== undefined && value !== null) {
+				element.innerHTML = sanitizeInlineMarkup(value)
 			}
-		}
-	})
+		})
+	document
+		.querySelectorAll<HTMLElement>("[data-client-attr]")
+		.forEach((element) => {
+			const bindings = (element.dataset.clientAttr ?? "")
+				.split(";")
+				.map((binding) => binding.trim())
+				.filter(Boolean)
+			for (const binding of bindings) {
+				const [attribute, path] = binding.split(":").map((part) => part.trim())
+				if (!attribute || !path) continue
+				const value = readConfigValue(config, path)
+				if (value !== undefined && value !== null && value !== "") {
+					element.setAttribute(attribute, String(value))
+				}
+			}
+		})
 
 	const appearance = config.appearance ?? {}
 	let mode = appearance.mode === "light" ? "light" : "dark"
@@ -3979,7 +4975,9 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 		["og:image", seo.ogImage],
 	] as const) {
 		if (!value) continue
-		let meta = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)
+		let meta = document.querySelector<HTMLMetaElement>(
+			`meta[property="${property}"]`,
+		)
 		if (!meta) {
 			meta = document.createElement("meta")
 			meta.setAttribute("property", property)
@@ -3988,7 +4986,10 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 		meta.content = value
 	}
 	const favicon = config.brand?.favicon
-	if (favicon) document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.setAttribute("href", favicon)
+	if (favicon)
+		document
+			.querySelector<HTMLLinkElement>('link[rel="icon"]')
+			?.setAttribute("href", favicon)
 	const year = document.getElementById("footerYearFallback")
 	if (year) year.textContent = String(new Date().getFullYear())
 }
@@ -4011,7 +5012,9 @@ function initializeNativeSplash(skipSplash = false): () => void {
 		}
 	}
 	const duration = Math.max(0, Number(splash.dataset.splashDuration) || 3200)
-	const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+	const reducedMotion = window.matchMedia?.(
+		"(prefers-reduced-motion: reduce)",
+	).matches
 	const effectiveDuration = reducedMotion ? 700 : duration
 	let frame = 0
 	let completed = false
@@ -4062,19 +5065,27 @@ function setModalState(id: string, open: boolean): void {
 	if (!modal) return
 	modal.classList.toggle("active", open)
 	modal.setAttribute("aria-hidden", String(!open))
-	if ([
-		"authModal",
-		"manageAccountModal",
-		"lightbox",
-		"termsModal",
-		"dashboardRescheduleModal",
-		"deleteAccountConfirmModal",
-	].includes(id)) {
+	if (
+		[
+			"authModal",
+			"manageAccountModal",
+			"lightbox",
+			"termsModal",
+			"dashboardRescheduleModal",
+			"deleteAccountConfirmModal",
+		].includes(id)
+	) {
 		document.body.style.overflow = open ? "hidden" : ""
 	}
 }
 
-type NativeGalleryFilter = "service" | "subService" | "length" | "size" | "styleType" | "technique"
+type NativeGalleryFilter =
+	| "service"
+	| "subService"
+	| "length"
+	| "size"
+	| "styleType"
+	| "technique"
 
 function nativeGalleryDate(value: string | undefined): number {
 	if (!value) return 0
@@ -4121,19 +5132,22 @@ function bindNativeGalleryControls(
 		}
 		return values[group]
 	}
-	const labelFor = (group: NativeGalleryFilter): string => ({
-		service: "Services",
-		subService: "Services",
-		length: "Lengths",
-		size: "Sizes",
-		styleType: "Style Types",
-		technique: "Techniques / Finishes",
-	})[group]
+	const labelFor = (group: NativeGalleryFilter): string =>
+		({
+			service: "Services",
+			subService: "Services",
+			length: "Lengths",
+			size: "Sizes",
+			styleType: "Style Types",
+			technique: "Techniques / Finishes",
+		})[group]
 
 	const setChipState = (group: NativeGalleryFilter, value: string): void => {
-		document.querySelectorAll<HTMLElement>(`[data-filter-group="${group}"]`).forEach((chip) => {
-			chip.classList.toggle("active", chip.dataset.filterValue === value)
-		})
+		document
+			.querySelectorAll<HTMLElement>(`[data-filter-group="${group}"]`)
+			.forEach((chip) => {
+				chip.classList.toggle("active", chip.dataset.filterValue === value)
+			})
 	}
 	const renderGroup = (
 		mountId: string,
@@ -4150,8 +5164,6 @@ function bindNativeGalleryControls(
 		}
 		mount.style.display = "flex"
 		const title = document.createElement("span")
-		title.className = "sr-only"
-		title.textContent = labelFor(group)
 		mount.appendChild(title)
 		const allValues = ["all", ...values]
 		for (const value of allValues) {
@@ -4175,21 +5187,43 @@ function bindNativeGalleryControls(
 		const service = filters.service
 		const configs: readonly [string, NativeGalleryFilter][] =
 			service === "braids-services"
-				? [["galleryLengthFilters", "length"], ["gallerySizeFilters", "size"], ["galleryStyleTypeFilters", "styleType"]]
-			: service === "hair-services"
-				? [["galleryLengthFilters", "subService"], ["gallerySizeFilters", "technique"], ["galleryStyleTypeFilters", "styleType"]]
-				: service === "all"
-					? []
-					: [["galleryLengthFilters", "subService"], ["galleryStyleTypeFilters", "styleType"]]
+				? [
+						["galleryLengthFilters", "length"],
+						["gallerySizeFilters", "size"],
+						["galleryStyleTypeFilters", "styleType"],
+					]
+				: service === "hair-services"
+					? [
+							["galleryLengthFilters", "subService"],
+							["gallerySizeFilters", "technique"],
+							["galleryStyleTypeFilters", "styleType"],
+						]
+					: service === "all"
+						? []
+						: [
+								["galleryLengthFilters", "subService"],
+								["galleryStyleTypeFilters", "styleType"],
+							]
 		const configured = new Set(configs.map(([, group]) => group))
-		for (const [mountId, group] of [["galleryLengthFilters", "length"], ["gallerySizeFilters", "size"], ["galleryStyleTypeFilters", "styleType"]] as const) {
+		for (const [mountId, group] of [
+			["galleryLengthFilters", "length"],
+			["gallerySizeFilters", "size"],
+			["galleryStyleTypeFilters", "styleType"],
+		] as const) {
 			if (!configured.has(group)) renderGroup(mountId, group, [])
 		}
 		for (const [mountId, group] of configs) {
-			const values = [...new Set(cards
-				.filter((card) => service === "all" || valueFor(card, "service") === service)
-				.map((card) => valueFor(card, group).trim())
-				.filter(Boolean))].sort((a, b) => a.localeCompare(b))
+			const values = [
+				...new Set(
+					cards
+						.filter(
+							(card) =>
+								service === "all" || valueFor(card, "service") === service,
+						)
+						.map((card) => valueFor(card, group).trim())
+						.filter(Boolean),
+				),
+			].sort((a, b) => a.localeCompare(b))
 			renderGroup(mountId, group, values)
 		}
 		const note = document.getElementById("galleryBraidsOnlyNote")
@@ -4201,15 +5235,37 @@ function bindNativeGalleryControls(
 		(card.dataset.featuredMostBooked === "true" ? 2 : 0)
 	const compare = (a: HTMLElement, b: HTMLElement): number => {
 		if (sortBy === "name-asc" || sortBy === "name-desc") {
-			const result = (a.querySelector("h4")?.textContent ?? "").localeCompare(b.querySelector("h4")?.textContent ?? "")
+			const result = (a.querySelector("h4")?.textContent ?? "").localeCompare(
+				b.querySelector("h4")?.textContent ?? "",
+			)
 			return sortBy === "name-desc" ? -result : result
 		}
-		if (sortBy === "date-modified-desc" || sortBy === "new") return nativeGalleryDate(b.dataset.galleryUpdatedAt) - nativeGalleryDate(a.dataset.galleryUpdatedAt)
-		if (sortBy === "date-modified-asc" || sortBy === "old") return nativeGalleryDate(a.dataset.galleryUpdatedAt) - nativeGalleryDate(b.dataset.galleryUpdatedAt)
-		if (sortBy === "date-created-desc") return nativeGalleryDate(b.dataset.galleryCreatedAt) - nativeGalleryDate(a.dataset.galleryCreatedAt)
-		if (sortBy === "date-created-asc") return nativeGalleryDate(a.dataset.galleryCreatedAt) - nativeGalleryDate(b.dataset.galleryCreatedAt)
+		if (sortBy === "date-modified-desc" || sortBy === "new")
+			return (
+				nativeGalleryDate(b.dataset.galleryUpdatedAt) -
+				nativeGalleryDate(a.dataset.galleryUpdatedAt)
+			)
+		if (sortBy === "date-modified-asc" || sortBy === "old")
+			return (
+				nativeGalleryDate(a.dataset.galleryUpdatedAt) -
+				nativeGalleryDate(b.dataset.galleryUpdatedAt)
+			)
+		if (sortBy === "date-created-desc")
+			return (
+				nativeGalleryDate(b.dataset.galleryCreatedAt) -
+				nativeGalleryDate(a.dataset.galleryCreatedAt)
+			)
+		if (sortBy === "date-created-asc")
+			return (
+				nativeGalleryDate(a.dataset.galleryCreatedAt) -
+				nativeGalleryDate(b.dataset.galleryCreatedAt)
+			)
 		const scoreDiff = score(b) - score(a)
-		return scoreDiff || nativeGalleryDate(b.dataset.galleryUpdatedAt) - nativeGalleryDate(a.dataset.galleryUpdatedAt)
+		return (
+			scoreDiff ||
+			nativeGalleryDate(b.dataset.galleryUpdatedAt) -
+				nativeGalleryDate(a.dataset.galleryUpdatedAt)
+		)
 	}
 
 	const updateFeatured = (): void => {
@@ -4220,8 +5276,11 @@ function bindNativeGalleryControls(
 			const list = document.getElementById(id)
 			if (!list) continue
 			list.replaceChildren()
-			const selected = galleryItems.filter((item) =>
-				Boolean(item[property]) && (filters.service === "all" || item.serviceCategory === filters.service),
+			const selected = galleryItems.filter(
+				(item) =>
+					Boolean(item[property]) &&
+					(filters.service === "all" ||
+						item.serviceCategory === filters.service),
 			)
 			if (!selected.length) {
 				const empty = document.createElement("span")
@@ -4236,7 +5295,10 @@ function bindNativeGalleryControls(
 				button.className = "gallery-feature-pill"
 				button.textContent = item.styleName
 				add(button, "click", () => {
-					const card = cards.find((candidate) => candidate.dataset.galleryId === (item.id ?? item.styleName))
+					const card = cards.find(
+						(candidate) =>
+							candidate.dataset.galleryId === (item.id ?? item.styleName),
+					)
 					card?.click()
 				})
 				list.appendChild(button)
@@ -4246,33 +5308,50 @@ function bindNativeGalleryControls(
 
 	const apply = (): void => {
 		const matches = cards.filter((card) =>
-			(Object.entries(filters) as [NativeGalleryFilter, string][]).every(([group, value]) => value === "all" || valueFor(card, group) === value),
+			(Object.entries(filters) as [NativeGalleryFilter, string][]).every(
+				([group, value]) => value === "all" || valueFor(card, group) === value,
+			),
 		)
 		matches.sort(compare).forEach((card) => grid.appendChild(card))
 		cards.forEach((card) => {
-			const visible = matches.includes(card) && (showAll || matches.indexOf(card) < 8)
+			const visible =
+				matches.includes(card) && (showAll || matches.indexOf(card) < 8)
 			card.style.display = visible ? "" : "none"
-			if (visible) card.style.animationDelay = `${Math.max(0, matches.indexOf(card)) * 0.1}s`
+			if (visible)
+				card.style.animationDelay = `${Math.max(0, matches.indexOf(card)) * 0.1}s`
 		})
 		const empty = document.getElementById("galleryEmptyState")
 		if (empty) empty.style.display = matches.length ? "none" : "block"
 		const actions = document.getElementById("galleryActions")
 		if (actions) actions.style.display = matches.length > 8 ? "block" : "none"
 		const button = document.getElementById("viewAllGallery")
-		if (button) button.textContent = showAll ? "View Less Gallery" : "View All Gallery"
+		if (button)
+			button.textContent = showAll ? "View Less Gallery" : "View All Gallery"
 		updateFeatured()
 	}
 
-	document.querySelectorAll<HTMLElement>('[data-filter-group="service"]').forEach((chip) => add(chip, "click", () => {
-		filters.service = chip.dataset.filterValue ?? "all"
-		for (const group of ["subService", "length", "size", "styleType", "technique"] as const) filters[group] = "all"
-		setChipState("service", filters.service)
-		renderSubfilters()
-		apply()
-	}))
+	document
+		.querySelectorAll<HTMLElement>('[data-filter-group="service"]')
+		.forEach((chip) =>
+			add(chip, "click", () => {
+				filters.service = chip.dataset.filterValue ?? "all"
+				for (const group of [
+					"subService",
+					"length",
+					"size",
+					"styleType",
+					"technique",
+				] as const)
+					filters[group] = "all"
+				setChipState("service", filters.service)
+				renderSubfilters()
+				apply()
+			}),
+		)
 	const sortSelect = document.getElementById("gallerySortSelect")
 	add(sortSelect, "change", () => {
-		if (sortSelect instanceof HTMLSelectElement) sortBy = sortSelect.value || "recommended"
+		if (sortSelect instanceof HTMLSelectElement)
+			sortBy = sortSelect.value || "recommended"
 		apply()
 	})
 	add(document.getElementById("viewAllGallery"), "click", () => {
@@ -4286,7 +5365,11 @@ function bindNativeGalleryControls(
 
 function bindNativeContentControls(): () => void {
 	const cleanup: Array<() => void> = []
-	const add = <T extends EventTarget>(target: T | null, type: string, listener: EventListener): void => {
+	const add = <T extends EventTarget>(
+		target: T | null,
+		type: string,
+		listener: EventListener,
+	): void => {
 		if (!target) return
 		target.addEventListener(type, listener)
 		cleanup.push(() => target.removeEventListener(type, listener))
@@ -4294,14 +5377,27 @@ function bindNativeContentControls(): () => void {
 
 	const reviewGrid = document.getElementById("testimonialsGrid")
 	if (reviewGrid) {
-		const reviewCards = Array.from(reviewGrid.querySelectorAll<HTMLElement>(".testimonial-card"))
+		const reviewCards = Array.from(
+			reviewGrid.querySelectorAll<HTMLElement>(".testimonial-card"),
+		)
 		let showAllReviews = false
 		let reviewSort = "featured"
 		const applyReviews = (): void => {
 			const sorted = [...reviewCards].sort((a, b) => {
-				if (reviewSort === "highest-rated") return Number(b.dataset.reviewRating ?? 0) - Number(a.dataset.reviewRating ?? 0)
-				if (reviewSort === "newest") return Date.parse(b.dataset.reviewCreatedAt ?? "") - Date.parse(a.dataset.reviewCreatedAt ?? "")
-				return Number(b.dataset.reviewRating ?? 0) - Number(a.dataset.reviewRating ?? 0)
+				if (reviewSort === "highest-rated")
+					return (
+						Number(b.dataset.reviewRating ?? 0) -
+						Number(a.dataset.reviewRating ?? 0)
+					)
+				if (reviewSort === "newest")
+					return (
+						Date.parse(b.dataset.reviewCreatedAt ?? "") -
+						Date.parse(a.dataset.reviewCreatedAt ?? "")
+					)
+				return (
+					Number(b.dataset.reviewRating ?? 0) -
+					Number(a.dataset.reviewRating ?? 0)
+				)
 			})
 			sorted.forEach((card) => reviewGrid.appendChild(card))
 			reviewCards.forEach((card, index) => {
@@ -4310,13 +5406,21 @@ function bindNativeContentControls(): () => void {
 			const viewAll = document.getElementById("viewAllReviewsBtn")
 			const viewLess = document.getElementById("viewLessReviewsBtn")
 			const controls = document.getElementById("reviewsToggleControls")
-			if (controls) controls.style.display = reviewCards.length > 6 ? "flex" : "none"
-			viewAll?.classList.toggle("hidden", showAllReviews || reviewCards.length <= 6)
-			viewLess?.classList.toggle("hidden", !showAllReviews || reviewCards.length <= 6)
+			if (controls)
+				controls.style.display = reviewCards.length > 6 ? "flex" : "none"
+			viewAll?.classList.toggle(
+				"hidden",
+				showAllReviews || reviewCards.length <= 6,
+			)
+			viewLess?.classList.toggle(
+				"hidden",
+				!showAllReviews || reviewCards.length <= 6,
+			)
 		}
 		const reviewSortSelect = document.getElementById("reviewsSortSelect")
 		add(reviewSortSelect, "change", () => {
-			if (reviewSortSelect instanceof HTMLSelectElement) reviewSort = reviewSortSelect.value || "featured"
+			if (reviewSortSelect instanceof HTMLSelectElement)
+				reviewSort = reviewSortSelect.value || "featured"
 			applyReviews()
 		})
 		add(document.getElementById("viewAllReviewsBtn"), "click", () => {
@@ -4332,7 +5436,9 @@ function bindNativeContentControls(): () => void {
 
 	const blogGrid = document.getElementById("blogGrid")
 	if (blogGrid) {
-		const blogCards = Array.from(blogGrid.querySelectorAll<HTMLElement>(".blog-card"))
+		const blogCards = Array.from(
+			blogGrid.querySelectorAll<HTMLElement>(".blog-card"),
+		)
 		let showAllBlogs = false
 		const applyBlogs = (): void => {
 			blogCards.forEach((card, index) => {
@@ -4341,9 +5447,13 @@ function bindNativeContentControls(): () => void {
 			const viewAll = document.getElementById("viewAllBlogsBtn")
 			const viewLess = document.getElementById("viewLessBlogsBtn")
 			const controls = document.getElementById("blogToggleControls")
-			if (controls) controls.style.display = blogCards.length > 3 ? "flex" : "none"
+			if (controls)
+				controls.style.display = blogCards.length > 3 ? "flex" : "none"
 			viewAll?.classList.toggle("hidden", showAllBlogs || blogCards.length <= 3)
-			viewLess?.classList.toggle("hidden", !showAllBlogs || blogCards.length <= 3)
+			viewLess?.classList.toggle(
+				"hidden",
+				!showAllBlogs || blogCards.length <= 3,
+			)
 		}
 		add(document.getElementById("viewAllBlogsBtn"), "click", () => {
 			showAllBlogs = true
@@ -4353,8 +5463,12 @@ function bindNativeContentControls(): () => void {
 			showAllBlogs = false
 			applyBlogs()
 		})
-		add(document.getElementById("blogPrevBtn"), "click", () => blogGrid.scrollBy({ left: -blogGrid.clientWidth, behavior: "smooth" }))
-		add(document.getElementById("blogNextBtn"), "click", () => blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" }))
+		add(document.getElementById("blogPrevBtn"), "click", () =>
+			blogGrid.scrollBy({ left: -blogGrid.clientWidth, behavior: "smooth" }),
+		)
+		add(document.getElementById("blogNextBtn"), "click", () =>
+			blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" }),
+		)
 		applyBlogs()
 	}
 
@@ -4363,25 +5477,32 @@ function bindNativeContentControls(): () => void {
 	const animateCounters = (): void => {
 		if (countersAnimated) return
 		countersAnimated = true
-		document.querySelectorAll<HTMLElement>("[data-count]").forEach((element) => {
-			const target = Number(element.dataset.count ?? 0)
-			if (!Number.isFinite(target)) return
-			const start = performance.now()
-			const tick = (now: number): void => {
-				const ratio = Math.min(1, (now - start) / 1200)
-				element.textContent = String(Math.round(target * ratio))
-				if (ratio < 1) animationTimers.push(window.requestAnimationFrame(tick))
-			}
-			animationTimers.push(window.requestAnimationFrame(tick))
-		})
+		document
+			.querySelectorAll<HTMLElement>("[data-count]")
+			.forEach((element) => {
+				const target = Number(element.dataset.count ?? 0)
+				if (!Number.isFinite(target)) return
+				const start = performance.now()
+				const tick = (now: number): void => {
+					const ratio = Math.min(1, (now - start) / 1200)
+					element.textContent = String(Math.round(target * ratio))
+					if (ratio < 1)
+						animationTimers.push(window.requestAnimationFrame(tick))
+				}
+				animationTimers.push(window.requestAnimationFrame(tick))
+			})
 	}
-	const counterObserver = "IntersectionObserver" in window
-		? new IntersectionObserver((entries, observer) => {
-			if (!entries.some((entry) => entry.isIntersecting)) return
-			animateCounters()
-			observer.disconnect()
-		}, { threshold: 0.2 })
-		: null
+	const counterObserver =
+		"IntersectionObserver" in window
+			? new IntersectionObserver(
+					(entries, observer) => {
+						if (!entries.some((entry) => entry.isIntersecting)) return
+						animateCounters()
+						observer.disconnect()
+					},
+					{ threshold: 0.2 },
+				)
+			: null
 	const counters = document.querySelectorAll<HTMLElement>("[data-count]")
 	if (counterObserver && counters.length) {
 		counters.forEach((counter) => counterObserver.observe(counter))
@@ -4396,10 +5517,15 @@ function bindNativeContentControls(): () => void {
 	if (counterObserver) cleanup.push(() => counterObserver.disconnect())
 
 	const slideshowTimers: number[] = []
-	document.querySelectorAll<HTMLElement>(".gallery-slideshow").forEach((slideshow) => {
-		const timer = window.setInterval(() => slideshow.classList.toggle("is-showing-after"), 4000)
-		slideshowTimers.push(timer)
-	})
+	document
+		.querySelectorAll<HTMLElement>(".gallery-slideshow")
+		.forEach((slideshow) => {
+			const timer = window.setInterval(
+				() => slideshow.classList.toggle("is-showing-after"),
+				4000,
+			)
+			slideshowTimers.push(timer)
+		})
 	cleanup.push(() => {
 		animationTimers.forEach((frame) => window.cancelAnimationFrame(frame))
 		slideshowTimers.forEach((timer) => window.clearInterval(timer))
@@ -4411,7 +5537,11 @@ function bindNativeSalonInteractions(
 	galleryItems: readonly SalonGalleryItem[],
 ): () => void {
 	const cleanup: Array<() => void> = []
-	const add = <T extends EventTarget>(target: T | null, type: string, listener: EventListener): void => {
+	const add = <T extends EventTarget>(
+		target: T | null,
+		type: string,
+		listener: EventListener,
+	): void => {
 		if (!target) return
 		target.addEventListener(type, listener)
 		cleanup.push(() => target.removeEventListener(type, listener))
@@ -4422,7 +5552,9 @@ function bindNativeSalonInteractions(
 	const toggleNav = (): void => {
 		navToggle?.classList.toggle("active")
 		nav?.classList.toggle("active")
-		document.body.style.overflow = nav?.classList.contains("active") ? "hidden" : ""
+		document.body.style.overflow = nav?.classList.contains("active")
+			? "hidden"
+			: ""
 	}
 	add(navToggle, "click", toggleNav)
 	nav?.querySelectorAll("a").forEach((link) =>
@@ -4470,14 +5602,22 @@ function bindNativeSalonInteractions(
 	syncThemeToggle()
 	add(darkModeToggle, "click", applyThemeToggle)
 	add(darkModeToggle, "keydown", (event) => {
-		if (!(event instanceof KeyboardEvent) || (event.key !== "Enter" && event.key !== " ")) return
+		if (
+			!(event instanceof KeyboardEvent) ||
+			(event.key !== "Enter" && event.key !== " ")
+		)
+			return
 		applyThemeToggle(event)
 	})
 
 	const openAuth = (): void => setModalState("authModal", true)
 	add(document.getElementById("openAuthModalBtn"), "click", openAuth)
-	add(document.getElementById("closeAuthModalBtn"), "click", () => setModalState("authModal", false))
-	add(document.getElementById("authModalBackdrop"), "click", () => setModalState("authModal", false))
+	add(document.getElementById("closeAuthModalBtn"), "click", () =>
+		setModalState("authModal", false),
+	)
+	add(document.getElementById("authModalBackdrop"), "click", () =>
+		setModalState("authModal", false),
+	)
 	add(document.getElementById("dashboardAuthBtn"), "click", openAuth)
 	add(document.getElementById("reviewAuthHintBtn"), "click", openAuth)
 	add(document.getElementById("reviewSubmitAuthGateBtn"), "click", openAuth)
@@ -4488,15 +5628,28 @@ function bindNativeSalonInteractions(
 			serviceSelect.value = serviceName
 			serviceSelect.dispatchEvent(new Event("change", { bubbles: true }))
 		}
-		document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })
+		document
+			.getElementById("booking")
+			?.scrollIntoView({ behavior: "smooth", block: "start" })
 	}
 	const openWhatsApp = (serviceName: string, price: string): void => {
 		const value = window.CLIENT_CONFIG?.social
-		const base = typeof value === "object" && value !== null && "whatsapp" in value && typeof value.whatsapp === "string"
-			? value.whatsapp
-			: "https://wa.me/254740470381"
+		const base =
+			typeof value === "object" &&
+			value !== null &&
+			"whatsapp" in value &&
+			typeof value.whatsapp === "string"
+				? value.whatsapp
+				: "https://wa.me/254740470381"
 		const separator = base.includes("?") ? "&" : "?"
-		window.open(base + separator + "text=" + encodeURIComponent(`Hello, I would like to ${serviceName}. ${price}`), "_blank", "noopener,noreferrer")
+		window.open(
+			base +
+				separator +
+				"text=" +
+				encodeURIComponent(`Hello, I would like to ${serviceName}. ${price}`),
+			"_blank",
+			"noopener,noreferrer",
+		)
 	}
 
 	const root = document.querySelector<HTMLElement>(".salon-storefront-root")
@@ -4520,10 +5673,16 @@ function bindNativeSalonInteractions(
 		const gallery = galleryItems[index]
 		if (!gallery) return
 		activeGalleryIndex = index
-		const image = document.getElementById("lightboxImg") as HTMLImageElement | null
+		const image = document.getElementById(
+			"lightboxImg",
+		) as HTMLImageElement | null
 		const beforeAfter = document.getElementById("lightboxBeforeAfter")
-		const before = document.getElementById("lightboxBeforeImg") as HTMLImageElement | null
-		const after = document.getElementById("lightboxAfterImg") as HTMLImageElement | null
+		const before = document.getElementById(
+			"lightboxBeforeImg",
+		) as HTMLImageElement | null
+		const after = document.getElementById(
+			"lightboxAfterImg",
+		) as HTMLImageElement | null
 		if (image) {
 			image.src = gallery.imageUrl
 			image.alt = gallery.styleName
@@ -4546,7 +5705,8 @@ function bindNativeSalonInteractions(
 		favorite?.setAttribute("data-fav-style-id", gallery.id ?? "")
 		const whatsapp = document.getElementById("lightboxWhatsAppBtn")
 		if (whatsapp instanceof HTMLElement) {
-			whatsapp.dataset.whatsappService = gallery.serviceName ?? gallery.styleName
+			whatsapp.dataset.whatsappService =
+				gallery.serviceName ?? gallery.styleName
 			whatsapp.dataset.whatsappPrice = gallery.priceRange ?? ""
 		}
 		if (gallery.beforeImageUrl && beforeAfter && before && after) {
@@ -4574,7 +5734,10 @@ function bindNativeSalonInteractions(
 		}
 		const whatsappButton = target.closest<HTMLElement>(".service-whatsapp-btn")
 		if (whatsappButton?.dataset.whatsappService) {
-			openWhatsApp(whatsappButton.dataset.whatsappService, whatsappButton.dataset.whatsappPrice ?? "")
+			openWhatsApp(
+				whatsappButton.dataset.whatsappService,
+				whatsappButton.dataset.whatsappPrice ?? "",
+			)
 			return
 		}
 		const item = target.closest<HTMLElement>(".gallery-item")
@@ -4584,22 +5747,39 @@ function bindNativeSalonInteractions(
 		}
 	})
 	const openAdjacentGalleryItem = (direction: number): void => {
-		const visibleIndexes = Array.from(document.querySelectorAll<HTMLElement>("#galleryGrid .gallery-item"))
+		const visibleIndexes = Array.from(
+			document.querySelectorAll<HTMLElement>("#galleryGrid .gallery-item"),
+		)
 			.filter((card) => card.style.display !== "none")
 			.map((card) => Number(card.dataset.galleryIndex))
-		const currentPosition = Math.max(0, visibleIndexes.indexOf(activeGalleryIndex))
-		const nextIndex = visibleIndexes[(currentPosition + direction + visibleIndexes.length) % visibleIndexes.length]
+		const currentPosition = Math.max(
+			0,
+			visibleIndexes.indexOf(activeGalleryIndex),
+		)
+		const nextIndex =
+			visibleIndexes[
+				(currentPosition + direction + visibleIndexes.length) %
+					visibleIndexes.length
+			]
 		if (Number.isInteger(nextIndex)) openGalleryItem(nextIndex)
 	}
-	add(document.getElementById("lightboxPrev"), "click", () => openAdjacentGalleryItem(-1))
-	add(document.getElementById("lightboxNext"), "click", () => openAdjacentGalleryItem(1))
+	add(document.getElementById("lightboxPrev"), "click", () =>
+		openAdjacentGalleryItem(-1),
+	)
+	add(document.getElementById("lightboxNext"), "click", () =>
+		openAdjacentGalleryItem(1),
+	)
 	add(document.getElementById("lightboxBookNow"), "click", () => {
 		const gallery = galleryItems[activeGalleryIndex]
 		if (gallery?.serviceName) selectService(gallery.serviceName)
 	})
 	add(document.getElementById("lightboxWhatsAppBtn"), "click", () => {
 		const gallery = galleryItems[activeGalleryIndex]
-		if (gallery) openWhatsApp(gallery.serviceName ?? gallery.styleName, gallery.priceRange ?? "")
+		if (gallery)
+			openWhatsApp(
+				gallery.serviceName ?? gallery.styleName,
+				gallery.priceRange ?? "",
+			)
 	})
 
 	const servicesGrid = document.getElementById("servicesGrid")
@@ -4626,15 +5806,17 @@ function bindNativeSalonInteractions(
 		servicesGrid.classList.remove("is-grouped")
 		servicesGrid.replaceChildren(
 			...(selectedGroup
-				? Array.from(selectedGroup.querySelectorAll<HTMLElement>(".service-card")).map(
-						(card) => card.cloneNode(true),
-					)
+				? Array.from(
+						selectedGroup.querySelectorAll<HTMLElement>(".service-card"),
+					).map((card) => card.cloneNode(true))
 				: []),
 		)
 	}
-	document.querySelectorAll<HTMLElement>(".services-tab").forEach((tab) =>
-		add(tab, "click", () => filterServices(tab.dataset.filter ?? "all")),
-	)
+	document
+		.querySelectorAll<HTMLElement>(".services-tab")
+		.forEach((tab) =>
+			add(tab, "click", () => filterServices(tab.dataset.filter ?? "all")),
+		)
 
 	const closeLightbox = (): void => setModalState("lightbox", false)
 	add(document.getElementById("lightboxClose"), "click", closeLightbox)
@@ -4657,13 +5839,27 @@ function bindNativeSalonInteractions(
 	}
 	add(root, "click", (event) => {
 		const target = event.target
-		if (target instanceof Element && target.closest('[data-action="reset-booking"]')) handleResetBooking()
+		if (
+			target instanceof Element &&
+			target.closest('[data-action="reset-booking"]')
+		)
+			handleResetBooking()
 	})
 
-	const observer = "IntersectionObserver" in window
-		? new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("visible")), { threshold: 0.1, rootMargin: "0px 0px -50px 0px" })
-		: null
-	root?.querySelectorAll(".animate-on-scroll").forEach((element) => observer?.observe(element))
+	const observer =
+		"IntersectionObserver" in window
+			? new IntersectionObserver(
+					(entries) =>
+						entries.forEach(
+							(entry) =>
+								entry.isIntersecting && entry.target.classList.add("visible"),
+						),
+					{ threshold: 0.1, rootMargin: "0px 0px -50px 0px" },
+				)
+			: null
+	root
+		?.querySelectorAll(".animate-on-scroll")
+		.forEach((element) => observer?.observe(element))
 	if (observer) cleanup.push(() => observer.disconnect())
 
 	return () => {
@@ -4677,6 +5873,7 @@ export function SalonStorefrontRuntime({
 	turnstileSiteKey,
 	clientConfig,
 }: SalonStorefrontRuntimeProps) {
+	const router = useRouter()
 	useEffect(() => {
 		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
 		applyNativeClientConfig(clientConfig)
@@ -4688,12 +5885,50 @@ export function SalonStorefrontRuntime({
 		const removeInteractions = bindNativeSalonInteractions(gallery)
 		const removeGalleryControls = bindNativeGalleryControls(gallery)
 		const removeContentControls = bindNativeContentControls()
-		const removeBooking = bindBookingAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
+		const removeBooking = bindBookingAdapter(
+			tenantSlug ?? "",
+			turnstileSiteKey ?? "",
+		)
 		const removeAuth = bindAuthAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
-		const removePublic = bindPublicParityAdapters(tenantSlug ?? "", turnstileSiteKey ?? "")
+		const removePublic = bindPublicParityAdapters(
+			tenantSlug ?? "",
+			turnstileSiteKey ?? "",
+		)
 		const removeAccount = bindAccountMutationAdapter()
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
+		const markFormDirty = (event: Event): void => {
+			const target = event.target
+			if (target instanceof Element)
+				target.closest("form")?.setAttribute("data-saas-refresh-dirty", "true")
+		}
+		const clearFormDirty = (event: Event): void => {
+			const form = event.target
+			if (form instanceof HTMLFormElement)
+				window.setTimeout(
+					() => form.removeAttribute("data-saas-refresh-dirty"),
+					0,
+				)
+		}
+		const refreshPublicData = (): void => {
+			if (
+				document.visibilityState !== "visible" ||
+				document.querySelector('[data-saas-refresh-dirty="true"]') ||
+				document.querySelector('[aria-modal="true"][aria-hidden="false"]')
+			)
+				return
+			router.refresh()
+		}
+		document.addEventListener("input", markFormDirty, true)
+		document.addEventListener("change", markFormDirty, true)
+		document.addEventListener("reset", clearFormDirty, true)
+		const publicRefreshTimer = window.setInterval(refreshPublicData, 60_000)
+		document.addEventListener("visibilitychange", refreshPublicData)
 		return () => {
+			window.clearInterval(publicRefreshTimer)
+			document.removeEventListener("input", markFormDirty, true)
+			document.removeEventListener("change", markFormDirty, true)
+			document.removeEventListener("reset", clearFormDirty, true)
+			document.removeEventListener("visibilitychange", refreshPublicData)
 			removeSplash()
 			removeImageSizeGuard()
 			removeInteractions()
@@ -4705,7 +5940,7 @@ export function SalonStorefrontRuntime({
 			removeAccount()
 			removeNavigation()
 		}
-	}, [clientConfig, tenantSlug, turnstileSiteKey])
+	}, [clientConfig, router, tenantSlug, turnstileSiteKey])
 
 	const services = clientConfig.catalog?.services ?? []
 	const stylists = clientConfig.catalog?.stylists ?? []
@@ -4719,7 +5954,10 @@ export function SalonStorefrontRuntime({
 		after_service: "Pay after service",
 	}
 	const bookingPaymentContent = bookingPayment?.enabled ? (
-		<div className="form-group full booking-payment-options" id="bookingPaymentGroup">
+		<div
+			className="form-group full booking-payment-options"
+			id="bookingPaymentGroup"
+		>
 			<label htmlFor="bookingPaymentMode">Payment option</label>
 			<select
 				name="paymentMode"
@@ -4737,7 +5975,7 @@ export function SalonStorefrontRuntime({
 			</select>
 			<small id="bookingPaymentHint">
 				{bookingPayment.currency} payment instructions will be sent to the phone
-				 number entered above. WhatsApp orders and bookings do not use online
+				number entered above. WhatsApp orders and bookings do not use online
 				payments.
 			</small>
 		</div>
@@ -4760,7 +5998,8 @@ export function SalonStorefrontRuntime({
 				serviceOptions={<SalonServiceOptions items={services} />}
 				stylistOptions={stylists.map((stylist) => (
 					<option value={stylist.id} key={stylist.id}>
-						{stylist.name}{stylist.title ? ` - ${stylist.title}` : ""}
+						{stylist.name}
+						{stylist.title ? ` - ${stylist.title}` : ""}
 					</option>
 				))}
 				bookingPaymentContent={bookingPaymentContent}

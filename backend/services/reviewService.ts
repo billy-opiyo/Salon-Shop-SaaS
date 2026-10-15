@@ -1,6 +1,6 @@
 import "server-only"
 
-import { ReviewStatus } from "@prisma/client"
+import { Prisma, ReviewStatus } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
 import {
@@ -58,17 +58,29 @@ export async function createClientReview(
 		intervalMs: 86_400_000,
 	})
 
-	const review = await prisma.review.create({
-		data: {
-			tenantId: tenant.id,
-			userId,
-			name: user.name?.trim() || user.email.split("@")[0] || "Client",
-			rating: input.rating,
-			serviceName: input.serviceName,
-			text: input.text,
-			status: ReviewStatus.PENDING,
-		},
-		select: { id: true, status: true },
+	const review = await prisma.$transaction(async (transaction) => {
+		const created = await transaction.review.create({
+			data: {
+				tenantId: tenant.id,
+				userId,
+				name: user.name?.trim() || user.email.split("@")[0] || "Client",
+				rating: input.rating,
+				serviceName: input.serviceName,
+				text: input.text,
+				status: ReviewStatus.PENDING,
+			},
+			select: { id: true, status: true },
+		})
+		await transaction.activityTimeline.create({
+			data: {
+				tenantId: tenant.id,
+				userId,
+				eventType: "review.posted",
+				summary: "Client posted a review.",
+				metadata: { reviewId: created.id } as Prisma.InputJsonValue,
+			},
+		})
+		return created
 	})
 	return { id: review.id, status: review.status.toLowerCase() }
 }
@@ -83,18 +95,29 @@ export async function editClientReview(
 			userId,
 			tenant: { slug: input.tenantSlug.toLowerCase(), status: "ACTIVE" },
 		},
-		select: { id: true },
+		select: { id: true, tenantId: true },
 	})
 	if (!review) throw new ReviewRequestError("Review not found.")
-	await prisma.review.update({
-		where: { id: review.id },
-		data: {
-			rating: input.rating,
-			serviceName: input.serviceName,
-			text: input.text,
-			status: ReviewStatus.PENDING,
-			editedAt: new Date(),
-		},
+	await prisma.$transaction(async (transaction) => {
+		await transaction.review.update({
+			where: { id: review.id },
+			data: {
+				rating: input.rating,
+				serviceName: input.serviceName,
+				text: input.text,
+				status: ReviewStatus.PENDING,
+				editedAt: new Date(),
+			},
+		})
+		await transaction.activityTimeline.create({
+			data: {
+				tenantId: review.tenantId,
+				userId,
+				eventType: "review.edited",
+				summary: "Client edited a review.",
+				metadata: { reviewId: review.id } as Prisma.InputJsonValue,
+			},
+		})
 	})
 }
 

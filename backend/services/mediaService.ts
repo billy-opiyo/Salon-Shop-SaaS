@@ -7,6 +7,7 @@ import {
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3"
+import { MediaKind } from "@prisma/client"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 import { prisma } from "@backend/db/prisma"
@@ -151,10 +152,114 @@ export async function uploadGalleryImage(
 	return uploadDirectToR2(tenantId, uploadedById, "GALLERY", file, metadata)
 }
 
+export async function uploadPublicBookingInspiration(
+	tenantId: string,
+	file: Buffer,
+	mimeType: string,
+): Promise<{ readonly assetId: string }> {
+	validateImageMetadata(file.length, mimeType)
+	const publicBase = process.env.R2_PUBLIC_BASE_URL?.trim().replace(/\/$/, "")
+	if (!publicBase)
+		throw new MediaProviderConfigurationError(
+			"Public image delivery is not configured for this salon.",
+		)
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError(
+			"R2 media storage is not configured.",
+		)
+	try {
+		await assertStorageCapacity(tenantId, file.length)
+	} catch (error) {
+		if (error instanceof UsageLimitError)
+			throw new MediaUploadError(error.message)
+		throw error
+	}
+
+	const objectKey = `${tenantId}/booking-inspiration/${randomUUID()}`
+	await r2Client().send(
+		new PutObjectCommand({
+			Bucket: bucket,
+			Key: objectKey,
+			Body: file,
+			ContentType: mimeType,
+			ContentLength: file.length,
+		}),
+	)
+	try {
+		const asset = await prisma.mediaAsset.create({
+			data: {
+				tenantId,
+				kind: MediaKind.BOOKING_INSPIRATION,
+				objectKey,
+				publicUrl: `${publicBase}/${objectKey}`,
+				mimeType,
+				byteSize: file.length,
+				status: "PENDING",
+				pendingExpiresAt: new Date(Date.now() + 900_000),
+			},
+			select: { id: true },
+		})
+		return { assetId: asset.id }
+	} catch (error) {
+		await r2Client()
+			.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }))
+			.catch(() => undefined)
+		throw error
+	}
+}
+
+export async function verifyPublicBookingInspiration(
+	tenantId: string,
+	assetId: string,
+): Promise<{ readonly id: string; readonly publicUrl: string }> {
+	const asset = await prisma.mediaAsset.findFirst({
+		where: {
+			id: assetId,
+			tenantId,
+			kind: MediaKind.BOOKING_INSPIRATION,
+			status: "PENDING",
+			pendingExpiresAt: { gt: new Date() },
+		},
+		select: {
+			id: true,
+			objectKey: true,
+			publicUrl: true,
+			mimeType: true,
+			byteSize: true,
+		},
+	})
+	if (!asset || !asset.publicUrl)
+		throw new MediaUploadError("The inspiration image is invalid or has expired. Please upload it again.")
+	const bucket = process.env.R2_BUCKET_NAME?.trim()
+	if (!bucket)
+		throw new MediaProviderConfigurationError("R2 media storage is not configured.")
+	const head = await r2Client().send(
+		new HeadObjectCommand({ Bucket: bucket, Key: asset.objectKey }),
+	)
+	if (
+		head.ContentLength !== asset.byteSize ||
+		head.ContentLength === undefined ||
+		head.ContentLength > MAX_IMAGE_UPLOAD_BYTES ||
+		head.ContentType !== asset.mimeType ||
+		!ALLOWED_IMAGE_TYPES.includes(
+			head.ContentType as (typeof ALLOWED_IMAGE_TYPES)[number],
+		)
+	) {
+		await r2Client()
+			.send(new DeleteObjectCommand({ Bucket: bucket, Key: asset.objectKey }))
+		await prisma.mediaAsset.deleteMany({
+			where: { id: asset.id, tenantId, status: "PENDING" },
+		})
+		throw new MediaUploadError("Uploaded inspiration image failed verification.")
+	}
+	return { id: asset.id, publicUrl: asset.publicUrl }
+}
+
 async function uploadDirectToR2(
 	tenantId: string,
 	uploadedById: string | undefined,
-	kind: "AVATAR" | "GALLERY",
+	kind: "AVATAR" | "GALLERY" | "BOOKING_INSPIRATION",
 	file: Buffer,
 	metadata: MediaMetadata,
 ): Promise<MediaUploadResult> {
