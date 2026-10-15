@@ -8345,6 +8345,98 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
     --text-muted: #93897b;
 }
 
+body.light-mode .salon-storefront-root {
+    --text-secondary: #49372a;
+    --text-muted: #66513f;
+}
+
+body.light-mode .salon-storefront-root .section-desc,
+body.light-mode .salon-storefront-root .service-card p,
+body.light-mode .salon-storefront-root .blog-card p,
+body.light-mode .salon-storefront-root .contact-item-text p {
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+body.light-mode .salon-storefront-root .booking-form small,
+body.light-mode .salon-storefront-root .dashboard-inline-note,
+body.light-mode .salon-storefront-root .footer-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+body.light-mode .salon-storefront-root .section-subtitle,
+body.light-mode .salon-storefront-root .service-price,
+body.light-mode .salon-storefront-root .service-book-btn,
+body.light-mode .salon-storefront-root .blog-card a.read-more,
+body.light-mode .salon-storefront-root .contact-item-text a,
+body.light-mode .salon-storefront-root .hero-stat .number,
+body.light-mode .salon-storefront-root .hero-float span,
+body.light-mode .salon-storefront-root .testimonial-avatar,
+body.light-mode .salon-storefront-root .waitlist-panel__header strong {
+    color: #704b12;
+}
+
+body.light-mode .salon-storefront-root .auth-btn,
+body.light-mode .salon-storefront-root .btn-outline,
+body.light-mode .salon-storefront-root .gallery-filter-chip:not(.active),
+body.light-mode .salon-storefront-root .services-tab:not(.active) {
+    color: #704b12;
+}
+
+body.light-mode .salon-storefront-root .hero-text h1 span {
+    background: none;
+    color: #704b12;
+    -webkit-text-fill-color: #704b12;
+}
+
+body.light-mode .salon-storefront-root .hero-badge .number,
+body.light-mode .salon-storefront-root .hero-badge .text {
+    color: #0a0a0a;
+}
+
+body.light-mode .salon-storefront-root .gallery-feature-pill {
+    color: #704b12;
+    background: color-mix(in srgb, var(--primary) 12%, #ffffff);
+    border-color: color-mix(in srgb, var(--primary) 42%, #d9c8b7);
+}
+
+body.light-mode .salon-storefront-root .gallery-feature-pill:hover,
+body.light-mode .salon-storefront-root .gallery-feature-pill:focus-visible,
+body.light-mode .salon-storefront-root .service-book-btn:hover,
+body.light-mode .salon-storefront-root .service-book-btn:focus-visible {
+    color: #0a0a0a;
+    background: var(--primary);
+    border-color: var(--primary-dark);
+}
+
+body.light-mode .salon-storefront-root .section-subtitle::before,
+body.light-mode .salon-storefront-root .section-subtitle::after {
+    background: #9a6b24;
+}
+
+body.light-mode .salon-storefront-root .main-section-heading,
+body.light-mode .salon-storefront-root .admin-console-heading {
+    background: #fffdf9;
+    box-shadow: 0 14px 30px rgba(56, 39, 22, 0.12);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.light-mode .salon-storefront-root .service-whatsapp-btn {
+    color: #155b34;
+    background: #e8f4eb;
+    border-color: #94bea0;
+}
+
+body.light-mode .salon-storefront-root .service-whatsapp-btn:hover,
+body.light-mode .salon-storefront-root .service-whatsapp-btn:focus-visible {
+    color: #10472a;
+    background: #d8eddf;
+    border-color: #6da982;
+}
+
 .salon-storefront-root .nav a,
 .salon-storefront-root .contact-mini,
 .salon-storefront-root .section-desc,
@@ -8436,6 +8528,7 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
 }
 
 @media (max-width: 767px) {
+
     .salon-storefront-root .floating-whatsapp,
     .salon-storefront-root .back-to-top {
         bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
@@ -11324,23 +11417,100 @@ body.reduced-motion *::after {
     object-fit: contain;
 }
 
-.salon-verify-brand span { display: grid; gap: 3px; }
-.salon-verify-brand strong { font-family: var(--font-heading); }
-.salon-verify-brand small { color: var(--primary-light); font-size: .67rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.salon-verify-icon { width: 84px; height: 84px; margin: 38px auto 20px; display: grid; place-items: center; border: 1px solid var(--primary-border-strong); border-radius: 50%; color: var(--primary-light); background: var(--primary-soft); font-size: 38px; }
-.salon-verify-eyebrow { margin: 0 0 8px; color: var(--primary-light); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
-.salon-verify-card h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.06; }
-.salon-verify-card h1 span { color: var(--primary-light); }
-.salon-verify-message { max-width: 530px; min-height: 3.2em; margin: 18px auto 0; color: var(--text-secondary); line-height: 1.65; }
-.salon-verify-message--error { color: #ffb6ad; }
-.salon-verify-message--success { color: #aee9c6; }
-.salon-verify-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
-.salon-verify-note { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: .79rem; line-height: 1.6; }
+.salon-verify-brand span {
+    display: grid;
+    gap: 3px;
+}
+
+.salon-verify-brand strong {
+    font-family: var(--font-heading);
+}
+
+.salon-verify-brand small {
+    color: var(--primary-light);
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+.salon-verify-icon {
+    width: 84px;
+    height: 84px;
+    margin: 38px auto 20px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--primary-border-strong);
+    border-radius: 50%;
+    color: var(--primary-light);
+    background: var(--primary-soft);
+    font-size: 38px;
+}
+
+.salon-verify-eyebrow {
+    margin: 0 0 8px;
+    color: var(--primary-light);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.salon-verify-card h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.06;
+}
+
+.salon-verify-card h1 span {
+    color: var(--primary-light);
+}
+
+.salon-verify-message {
+    max-width: 530px;
+    min-height: 3.2em;
+    margin: 18px auto 0;
+    color: var(--text-secondary);
+    line-height: 1.65;
+}
+
+.salon-verify-message--error {
+    color: #ffb6ad;
+}
+
+.salon-verify-message--success {
+    color: #aee9c6;
+}
+
+.salon-verify-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.salon-verify-note {
+    margin: 28px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: .79rem;
+    line-height: 1.6;
+}
 
 @media (max-width: 560px) {
-    .salon-verify-card { border-radius: 22px; }
-    .salon-verify-actions { flex-direction: column; }
-    .salon-verify-actions .btn { width: 100%; }
+    .salon-verify-card {
+        border-radius: 22px;
+    }
+
+    .salon-verify-actions {
+        flex-direction: column;
+    }
+
+    .salon-verify-actions .btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 720px) {
