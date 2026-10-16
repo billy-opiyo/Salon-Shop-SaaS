@@ -3928,3 +3928,12 @@ main {
     font-size: 3rem;
   }
 }
+
+.platform-footer__links a:link,
+.platform-footer__links a:visited {
+  color: var(--platform-ivory, #fff6e6) !important;
+}
+
+:is(.platform-home-shell, .platform-footer, .platform-admin-page, .auth-page, .onboarding-page, .policy-page) :is(a, button):hover {
+  cursor: pointer;
+}

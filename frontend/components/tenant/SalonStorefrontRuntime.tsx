@@ -10,6 +10,7 @@ import {
 	STOREFRONT_SECTION_KEYS,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
 import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
 import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
@@ -4941,10 +4942,9 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 	document.documentElement.style.colorScheme = mode
 	document.body.classList.toggle("light-mode", mode === "light")
 	document.body.dataset.colorMode = mode
-	if (appearance.preset) {
-		document.documentElement.dataset.themePreset = appearance.preset
-		document.body.dataset.themePreset = appearance.preset
-	}
+	const themePreset = appearance.preset ?? DEFAULT_THEME_PRESET
+	document.documentElement.dataset.themePreset = themePreset
+	document.body.dataset.themePreset = themePreset
 	const visibility = config.storefront?.sectionVisibility
 	for (const section of STOREFRONT_SECTION_KEYS) {
 		const isVisible = visibility?.[section] ?? true
