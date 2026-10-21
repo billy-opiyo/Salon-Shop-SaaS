@@ -8,6 +8,7 @@ import {
 	createStylistForUser,
 	MerchantStylistError,
 	setStylistActiveForUser,
+	updateStylistForUser,
 } from "@backend/services/merchantStylistService"
 
 export async function addStylist(formData: FormData): Promise<void> {
@@ -58,6 +59,33 @@ export async function setStylistActive(formData: FormData): Promise<void> {
 			active === "true",
 		)
 		revalidatePath(`/manage/${tenantSlug}/staff`)
+	} catch (error) {
+		if (error instanceof MerchantStylistError) return
+		throw error
+	}
+}
+
+export async function updateStylist(formData: FormData): Promise<void> {
+	const session = await auth()
+	if (!session?.user?.id) redirect("/login")
+	const tenantSlug = formData.get("tenantSlug")
+	const stylistId = formData.get("stylistId")
+	const name = formData.get("name")
+	const title = formData.get("title")
+	if (
+		typeof tenantSlug !== "string" ||
+		typeof stylistId !== "string" ||
+		typeof name !== "string" ||
+		name.trim().length < 2
+	)
+		return
+	try {
+		await updateStylistForUser(session.user.id, tenantSlug, stylistId, {
+			name: name.trim(),
+			title: typeof title === "string" ? title.trim() : "",
+		})
+		revalidatePath(`/manage/${tenantSlug}/staff`)
+		revalidatePath(`/${tenantSlug}`)
 	} catch (error) {
 		if (error instanceof MerchantStylistError) return
 		throw error

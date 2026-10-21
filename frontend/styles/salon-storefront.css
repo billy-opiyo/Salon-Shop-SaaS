@@ -2668,6 +2668,10 @@ h6 {
 
 .submit-booking {
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     padding: 16px;
     background: var(--primary);
     color: #0A0A0A;

@@ -14,7 +14,7 @@ export function SalonAdminRuntime({ tenantSlug }: SalonAdminRuntimeProps) {
 
 	return (
 		<div className="salon-admin-root">
-			<SalonAdminMarkup homeHref={`/${tenantSlug}`} />
+			<SalonAdminMarkup homeHref={`/${tenantSlug}`} staffHref={`/manage/${tenantSlug}/staff`} />
 		</div>
 	)
 }

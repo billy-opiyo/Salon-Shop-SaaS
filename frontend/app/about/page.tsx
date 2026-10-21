@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformTeamCards } from "@/components/shared/PlatformTeamCards"
 import { getPublishedPlatformTeam } from "@backend/services/platformTeamService"
@@ -35,10 +34,9 @@ export default async function AboutPage() {
 				</section>
 				<section className="platform-section platform-about-cta" aria-label="Get started">
 					<h2>Build your next salon chapter with us.</h2>
-					<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Create a Store</Link><Link className="button button--ghost" href="/support">Salon Owner Support</Link></div>
+					<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="/support">Salon Owner Support</Link></div>
 				</section>
 			</main>
-			<PlatformFooter />
 		</>
 	)
 }

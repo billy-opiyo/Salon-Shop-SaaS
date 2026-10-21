@@ -2,6 +2,9 @@
 
 import type { ReactNode } from "react"
 import type React from "react"
+import Image from "next/image"
+import { Moon, Sun } from "lucide-react"
+import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 export interface SalonStorefrontMarkupProps {
 	readonly showSplash?: boolean
@@ -13,7 +16,9 @@ export interface SalonStorefrontMarkupProps {
 	readonly serviceOptions?: ReactNode
 	readonly stylistOptions?: ReactNode
 	readonly bookingPaymentContent?: ReactNode
+	readonly mpesaPaymentAvailable?: boolean
 	readonly reviewServiceOptions?: ReactNode
+	readonly searchEntries?: readonly SiteSearchEntry[]
 }
 
 export function SalonStorefrontMarkup({
@@ -26,7 +31,9 @@ export function SalonStorefrontMarkup({
 	serviceOptions,
 	stylistOptions,
 	bookingPaymentContent,
+	mpesaPaymentAvailable = false,
 	reviewServiceOptions,
+	searchEntries = [],
 }: SalonStorefrontMarkupProps): ReactNode {
 	return (
 		<>
@@ -152,14 +159,10 @@ export function SalonStorefrontMarkup({
 						aria-label="Toggle dark mode"
 						aria-pressed="false"
 					>
-						<svg className="sun" viewBox="0 0 24 24">
-							<path d="M12 2l3 7h7l-5.5 4 2 7-6.5-4-6.5 4 2-7L2 9h7z" />
-						</svg>
-						<svg className="moon" viewBox="0 0 24 24">
-							<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-						</svg>
+						<Sun className="sun" aria-hidden="true" />
+						<Moon className="moon" aria-hidden="true" />
 					</button>
-					<a href="#booking" className="book-btn">Book Now</a>
+					<SiteSearch entries={searchEntries} label="salon services and content" className="tenant-site-search" />
 					<button className="auth-btn" id="openAuthModalBtn" type="button">
 						Log In
 					</button>
@@ -839,7 +842,10 @@ export function SalonStorefrontMarkup({
 									<line x1="8" y1="2" x2="8" y2="6"></line>
 									<line x1="3" y1="10" x2="21" y2="10"></line>
 								</svg>
-								Confirm Booking
+								<span className="mpesa-payment-button__content">
+									<span data-booking-submit-label>Confirm Booking</span>
+									{mpesaPaymentAvailable && <Image src="/assets/salon/Mpesa_logo_image.png" alt="M-Pesa" className="mpesa-payment-button__logo" width={78} height={26} />}
+								</span>
 							</button>
 						</form>
 
@@ -1028,16 +1034,8 @@ export function SalonStorefrontMarkup({
 						<div className="form-group">
 							<label htmlFor="dashboardRescheduleStylist">Stylist</label>
 							<select id="dashboardRescheduleStylist">
-								<option value="any">Any Available</option>
-								<option value="fatima">Fatima Hassan - Master Braider</option>
-								<option value="zainab">Zainab Mohamed - Senior Stylist</option>
-								<option value="grace">
-									Grace Wanjiku - Natural Hair Expert
-								</option>
-								<option value="amina">
-									Amina Diallo - Braiding Specialist
-								</option>
-								<option value="sarah">Sarah Omondi - Kids Specialist</option>
+								<option value="">Any Available</option>
+								{stylistOptions}
 							</select>
 						</div>
 						<div className="form-group full">
