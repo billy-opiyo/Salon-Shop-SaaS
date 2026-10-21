@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 
 export const metadata = {
@@ -25,7 +24,6 @@ export default function SupportPage() {
 					<article><span className="eyebrow">Platform contact</span><h2>Tell us what you need.</h2><p>Share a question or product suggestion directly with the Beauty Sphia team.</p><a href={`mailto:${supportEmail}?subject=Beauty%20Sphia%20platform%20question`}>Email platform support</a></article>
 				</section>
 			</main>
-			<PlatformFooter />
 		</>
 	)
 }

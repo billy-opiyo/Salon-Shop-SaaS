@@ -7,9 +7,10 @@ import { THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
 
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
+	readonly staffHref: string
 }
 
-export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode {
+export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps): ReactNode {
 	return (
 		<>
 
@@ -32,6 +33,7 @@ export function SalonAdminMarkup({ homeHref }: SalonAdminMarkupProps): ReactNode
 						<a className="btn btn-outline" href={homeHref + "#home"} data-admin-home-link
 							>← Back to Homepage</a
 						>
+						<a className="btn btn-outline" href={staffHref}>Manage stylist names</a>
 					</p>
 				</div>
 

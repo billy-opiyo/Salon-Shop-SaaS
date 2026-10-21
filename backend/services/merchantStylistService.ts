@@ -89,6 +89,40 @@ export async function createStylistForUser(
 	})
 }
 
+export async function updateStylistForUser(
+	userId: string,
+	tenantSlug: string,
+	stylistId: string,
+	input: { name: string; title?: string },
+): Promise<void> {
+	const name = input.name.trim()
+	if (name.length < 2 || name.length > 160)
+		throw new MerchantStylistError("Enter a stylist name between 2 and 160 characters.")
+	const tenantId = await getTenantId(userId, tenantSlug)
+	await prisma.$transaction(async (transaction) => {
+		const existing = await transaction.stylist.findFirst({
+			where: { id: stylistId, tenantId },
+			select: { name: true },
+		})
+		if (!existing) throw new MerchantStylistError("Stylist not found.")
+		const title = input.title?.trim() || null
+		await transaction.stylist.update({
+			where: { id: stylistId },
+			data: { name, title },
+		})
+		await transaction.adminAuditLog.create({
+			data: {
+				tenantId,
+				actorUserId: userId,
+				action: "stylist.updated",
+				resourceType: "stylist",
+				resourceId: stylistId,
+				metadata: { previousName: existing.name, name, title } as Prisma.InputJsonValue,
+			},
+		})
+	})
+}
+
 export async function setStylistActiveForUser(
 	userId: string,
 	tenantSlug: string,

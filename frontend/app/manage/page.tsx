@@ -87,6 +87,11 @@ export default async function ManagePage() {
 						"Services, gallery, blog, reviews, and contact content.",
 						"/services",
 					],
+					[
+						"Stylists",
+						"Add, rename, and manage the stylists customers can select.",
+						"/staff",
+					],
 					["Team", "Memberships, roles, and staff access.", "/team"],
 					[
 						"Security",
@@ -132,6 +137,8 @@ export default async function ManagePage() {
 										? `/manage/${tenants[0].slug}/bookings`
 										: title === "Storefront"
 											? `/manage/${tenants[0].slug}/services`
+											: title === "Stylists"
+												? `/manage/${tenants[0].slug}/staff`
 											: title === "Team"
 												? `/manage/${tenants[0].slug}/team`
 												: title === "Security"

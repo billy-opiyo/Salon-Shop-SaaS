@@ -14,6 +14,7 @@ import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
 import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
 import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
+import type { SiteSearchEntry } from "@/components/shared/SiteSearch"
 import type {
 	SalonBlogItem,
 	SalonGalleryItem,
@@ -2765,7 +2766,9 @@ function setBookingMessage(message: string, type: "error" | "success"): void {
 function setBookingLoading(button: HTMLButtonElement, loading: boolean): void {
 	button.disabled = loading
 	button.setAttribute("aria-busy", String(loading))
-	button.textContent = loading ? "Processing..." : "Confirm Booking"
+	const label = button.querySelector<HTMLElement>("[data-booking-submit-label]")
+	if (label) label.textContent = loading ? "Processing..." : "Confirm Booking"
+	else button.textContent = loading ? "Processing..." : "Confirm Booking"
 }
 
 function showBookingSuccess(): void {
@@ -3204,10 +3207,12 @@ function bindPublicParityAdapters(
 	const saveRescheduledBooking = async (): Promise<void> => {
 		const date = document.getElementById("dashboardRescheduleDate")
 		const time = document.getElementById("dashboardRescheduleTime")
+		const stylist = document.getElementById("dashboardRescheduleStylist")
 		const save = document.getElementById("dashboardRescheduleSaveBtn")
 		if (
 			!(date instanceof HTMLInputElement) ||
 			!(time instanceof HTMLSelectElement) ||
+			!(stylist instanceof HTMLSelectElement) ||
 			!rescheduleBookingId
 		)
 			return
@@ -3220,6 +3225,7 @@ function bindPublicParityAdapters(
 				bookingId: rescheduleBookingId,
 				appointmentDate: date.value,
 				timeLabel: time.value,
+				stylistId: stylist.value || undefined,
 			}),
 		})
 		const result = await readReferenceJson(response)
@@ -5948,6 +5954,10 @@ export function SalonStorefrontRuntime({
 	const testimonials = clientConfig.catalog?.testimonials ?? []
 	const blogs = clientConfig.catalog?.blogs ?? []
 	const bookingPayment = clientConfig.bookingPayment
+	const mpesaPaymentAvailable = Boolean(
+		bookingPayment?.enabled &&
+		bookingPayment.modes.some((mode) => mode === "partial" || mode === "full"),
+	)
 	const paymentModeLabels: Readonly<Record<BookingPaymentMode, string>> = {
 		partial: "Partial payment deposit",
 		full: "Full payment",
@@ -5981,6 +5991,20 @@ export function SalonStorefrontRuntime({
 		</div>
 	) : null
 
+	const searchEntries: readonly SiteSearchEntry[] = [
+		{ label: "Home", description: "Storefront homepage", href: "#home", keywords: "salon home" },
+		{ label: "Services", description: "Browse salon services", href: "#services", keywords: "services prices" },
+		{ label: "Booking", description: "Book an appointment", href: "#booking", keywords: "appointment schedule" },
+		{ label: "Gallery", description: "Browse salon styles and photos", href: "#gallery", keywords: "styles photos braids" },
+		{ label: "Reviews", description: "Client testimonials", href: "#testimonials", keywords: "reviews testimonials" },
+		{ label: "Blog", description: "Salon tips and stories", href: "#blog", keywords: "articles tips content" },
+		{ label: "Visit Us", description: "Location and opening hours", href: "#visit", keywords: "location hours address" },
+		{ label: "Contact", description: "Get in touch with the salon", href: "#contact", keywords: "phone email whatsapp" },
+		...services.map((service) => ({ label: service.name, description: service.desc, href: "#services", keywords: service.category })),
+		...gallery.map((item) => ({ label: item.styleName, description: item.serviceName ?? item.styleType, href: "#gallery", keywords: item.hairType })),
+		...testimonials.map((item) => ({ label: item.name, description: item.text, href: "#testimonials", keywords: item.role })),
+		...blogs.map((item) => ({ label: item.title, description: item.excerpt, href: item.readMoreUrl ?? "#blog", keywords: item.category })),
+	]
 	return (
 		<div className="salon-storefront-root">
 			<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -6003,6 +6027,8 @@ export function SalonStorefrontRuntime({
 					</option>
 				))}
 				bookingPaymentContent={bookingPaymentContent}
+				mpesaPaymentAvailable={mpesaPaymentAvailable}
+				searchEntries={searchEntries}
 				reviewServiceOptions={services.map((service) => (
 					<option value={service.name} key={service.name}>
 						{service.name}

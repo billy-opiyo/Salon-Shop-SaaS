@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { headers } from "next/headers"
 
 import { getRequestHost } from "@backend/services/tenantDomainService"
@@ -8,6 +7,7 @@ import { renderTenantStorefront } from "@/app/[tenantSlug]/page"
 
 import { ExperienceSplash } from "@/components/shared/ExperienceSplash"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
+import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 import { ContactForm } from "@/components/shared/ContactForm"
@@ -17,59 +17,6 @@ import {
 	PLAN_PRICING,
 } from "@shared/constants/plans"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
-
-type PlatformIconName = "home" | "store" | "plans" | "create" | "contact"
-
-function PlatformIcon({ name }: { readonly name: PlatformIconName }) {
-	return (
-		<svg
-			className="mobile-action-icon"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			aria-hidden="true"
-			focusable="false"
-		>
-			{name === "home" && (
-				<>
-					<path d="m3 10 9-7 9 7" />
-					<path d="M5 9.5V21h14V9.5" />
-					<path d="M9 21v-6h6v6" />
-				</>
-			)}
-			{name === "store" && (
-				<>
-					<path d="M4 10h16v10H4z" />
-					<path d="M3 10 5 4h14l2 6" />
-					<path d="M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" />
-					<path d="M8 20v-5h8v5" />
-				</>
-			)}
-			{name === "plans" && (
-				<>
-					<rect x="3" y="5" width="18" height="14" rx="2" />
-					<path d="M3 10h18" />
-					<path d="M7 15h3" />
-				</>
-			)}
-			{name === "contact" && (
-				<>
-					<rect x="3" y="5" width="18" height="14" rx="2" />
-					<path d="m3 7 9 6 9-6" />
-				</>
-			)}
-			{name === "create" && (
-				<>
-					<rect x="4" y="4" width="16" height="16" rx="3" />
-					<path d="M12 8v8M8 12h8" />
-				</>
-			)}
-		</svg>
-	)
-}
 
 const plans = [
 	{
@@ -126,30 +73,21 @@ export default async function PlatformHome() {
 			<main id="home" className="platform-home-shell">
 				<PlatformHeader page="home" logoUrl={design.logoUrl} />
 
-				<section
-					className="platform-hero platform-hero--image"
-					aria-labelledby="platform-title"
-				>
-					<picture className="platform-hero__picture">
-						<source
-							media="(max-width: 1024px)"
-							srcSet={design.heroMobileUrl}
-						/>
-						<Image
-							className="platform-hero__image"
-							src={design.heroDesktopUrl}
-							alt={design.heroAlt}
-							unoptimized
-							width={836}
-							height={470}
-							priority
-							sizes="100vw"
-						/>
-					</picture>
-					<h1 id="platform-title" className="sr-only">
-						Beauty Sphia salon management platform
-					</h1>
-				</section>
+				<section className="platform-hero platform-hero--editorial" aria-labelledby="platform-title">
+<div className="platform-hero__copy">
+<p className="platform-hero__eyebrow">The All-in-One Salon Management Solution</p><p className="platform-hero__audience">Salons · Stylists · Beauty Businesses</p>
+<h1 id="platform-title">Everything Your Salon Needs to <span>Grow</span></h1>
+<p className="platform-hero__description">Beauty Sphia is the all-in-one platform that helps salons streamline bookings, manage clients, and run their business — so you can focus on what you do best: making people feel beautiful.</p>
+<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="#how-it-works">Explore the platform</Link></div>
+</div>
+<div className="platform-hero__benefits" aria-label="Platform benefits">
+<article><span aria-hidden="true">01</span><h2>Online Bookings</h2><p>Fill your schedule. Let clients book 24/7, anytime.</p></article>
+<article><span aria-hidden="true">02</span><h2>Client Management</h2><p>Build lasting relationships. Keep your clients organized and loyal.</p></article>
+<article><span aria-hidden="true">03</span><h2>Digital Storefront</h2><p>Showcase your services. Get a professional online presence.</p></article>
+<article><span aria-hidden="true">04</span><h2>Business Growth</h2><p>Make data-driven decisions. Track growth and make smarter decisions.</p></article>
+</div>
+<p className="platform-hero__signature">More Clients <span>·</span> Less Admin <span>·</span> Bigger Dreams</p>
+</section>
 
 				<section
 					className="platform-section platform-showcase"
@@ -357,20 +295,17 @@ export default async function PlatformHome() {
 				aria-label="Mobile platform navigation"
 			>
 				<Link href="#home">
-					<PlatformIcon name="home" />
+					<PlatformActionIcon name="home" />
 					<span>Home</span>
 				</Link>
 				<Link href="/stores">
-					<PlatformIcon name="store" />
-					<span>Browse Stores</span>
+					<PlatformActionIcon name="salons" />
+					<span>Salons</span>
 				</Link>
-				<Link href="#plans">
-					<PlatformIcon name="plans" />
-					<span>Plans</span>
-				</Link>
+
 				<Link href="/onboarding">
-					<PlatformIcon name="create" />
-					<span>Create Store</span>
+					<PlatformActionIcon name="start" />
+					<span>Start Your Salon</span>
 				</Link>
 			</nav>
 		</>

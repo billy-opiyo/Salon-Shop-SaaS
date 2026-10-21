@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import Image from "next/image"
 
 export function SetupPaymentForm({
 	tenantSlug,
@@ -57,11 +58,16 @@ export function SetupPaymentForm({
 				type="submit"
 				disabled={isSubmitting}
 			>
-				{isSubmitting
-					? "Sending STK Push..."
-					: mode === "setup"
-						? "Pay setup fee"
-						: "Pay monthly invoice"}
+				<span className="mpesa-payment-button__content">
+					<span>
+						{isSubmitting
+							? "Sending STK Push..."
+							: mode === "setup"
+								? "Pay setup fee"
+								: "Pay monthly invoice"}
+					</span>
+					<Image src="/platform/Mpesa_logo_image.png" alt="M-Pesa" className="mpesa-payment-button__logo" width={78} height={26} />
+				</span>
 			</button>
 			{message && (
 				<p className="form-message" role="status">
