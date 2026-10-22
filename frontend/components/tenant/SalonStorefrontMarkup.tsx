@@ -420,6 +420,13 @@ export function SalonStorefrontMarkup({
 							<button
 								className="gallery-filter-chip"
 								data-filter-group="service"
+								data-filter-value="massage-wellness"
+							>
+								Massage
+							</button>
+							<button
+								className="gallery-filter-chip"
+								data-filter-group="service"
 								data-filter-value="eyebrow-lash-services"
 							>
 								Eyebrows &amp; Lash
@@ -430,6 +437,13 @@ export function SalonStorefrontMarkup({
 								data-filter-value="bridal-event-packages"
 							>
 								Bridal / Event Packages
+							</button>
+							<button
+								className="gallery-filter-chip"
+								data-filter-group="service"
+								data-filter-value="cosmetics-products"
+							>
+								Cosmetics
 							</button>
 						</div>
 						<div className="gallery-sort-control">
