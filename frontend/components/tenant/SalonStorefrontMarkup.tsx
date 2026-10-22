@@ -2014,7 +2014,7 @@ export function SalonStorefrontMarkup({
 										type="password"
 										id="manageAccountNewPassword"
 										autoComplete="new-password"
-										placeholder="At least 6 characters"
+										placeholder="8+ characters, uppercase, lowercase, and number"
 									/>
 									<button
 										type="button"

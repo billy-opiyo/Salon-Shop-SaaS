@@ -2,11 +2,12 @@ import { z } from "zod"
 
 export const credentialsSchema = z.object({
 	email: z.string().trim().email().max(320),
-	password: z.string().min(12).max(128),
+	password: z.string().min(1).max(128),
 })
 
 export const signupSchema = credentialsSchema.extend({
 	name: z.string().trim().min(2).max(120),
+	password: z.string().min(12).max(128),
 	turnstileToken: z.string().trim().min(1).max(2048),
 })
 
@@ -18,8 +19,14 @@ export const profileUpdateSchema = z.object({
 })
 
 export const passwordChangeSchema = z.object({
-	currentPassword: z.string().min(12).max(128),
-	newPassword: z.string().min(12).max(128),
+	currentPassword: z.string().min(1).max(128),
+	newPassword: z
+		.string()
+		.min(8)
+		.max(128)
+		.regex(/[A-Z]/)
+		.regex(/[a-z]/)
+		.regex(/\d/),
 })
 
 export const preferencesSchema = z.object({
