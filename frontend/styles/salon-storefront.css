@@ -8633,6 +8633,16 @@ body.light-mode .salon-storefront-root .site-search__result strong {
 .salon-storefront-root .nav-toggle:focus-visible,
 .salon-storefront-root .nav-toggle.active { background: var(--primary-soft); color: var(--primary-dark); }
 .salon-storefront-root .nav-toggle svg { width: 1.35rem; height: 1.35rem; }
+.salon-storefront-root .nav-toggle__icon {
+	width: auto;
+	height: auto;
+	background: transparent;
+	transition: none;
+}
+.salon-storefront-root .nav-toggle.active .nav-toggle__icon { opacity: 1; transform: none; }
+.salon-storefront-root .nav-toggle__icon--close { display: none; }
+.salon-storefront-root .nav-toggle.active .nav-toggle__icon--menu { display: none; }
+.salon-storefront-root .nav-toggle.active .nav-toggle__icon--close { display: inline-flex; }
 .salon-storefront-root .nav .dark-mode-toggle {
     align-items: center;
     gap: .75rem;
@@ -8650,9 +8660,8 @@ body.light-mode .salon-storefront-root .site-search__result strong {
 .salon-storefront-root .nav .dark-mode-toggle .sun,
 .salon-storefront-root .nav .dark-mode-toggle .moon { position: static; width: 1.15rem; height: 1.15rem; }
 .salon-storefront-root .saas-tenant-mobile-actions svg { width: 1.35rem; height: 1.35rem; }
-.salon-storefront-root .nav-toggle { flex-direction: row; }
-.salon-storefront-root .nav-toggle svg { transition: transform .18s ease; }
-.salon-storefront-root .nav-toggle.active svg { transform: rotate(90deg); }
+.salon-storefront-root .nav-toggle__icon { display: inline-flex; align-items: center; justify-content: center; }
+.salon-storefront-root .nav-toggle__icon svg { width: 1.35rem; height: 1.35rem; }
 
 @media (max-width: 1199px) {
     .salon-storefront-root .nav-toggle { display: inline-flex; }
@@ -11682,3 +11691,137 @@ body.reduced-motion *::after {
 .salon-storefront-root .admin-section-tab:focus-visible {
     color: var(--primary-light);
 }
+
+/* Customer auth follows the tenant palette instead of the platform auth palette. */
+.salon-storefront-root .auth-modal .auth-card {
+    border-color: var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-shadow: 0 22px 56px rgba(0, 0, 0, .38);
+}
+.salon-storefront-root .auth-modal .auth-card h3,
+.salon-storefront-root .auth-modal .auth-card h4 {
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    line-height: 1.3;
+}
+.salon-storefront-root .auth-modal .auth-card p,
+.salon-storefront-root .auth-modal .auth-card label,
+.salon-storefront-root .auth-modal .auth-separator,
+.salon-storefront-root .auth-modal .auth-links button,
+.salon-storefront-root .auth-modal .auth-card small {
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+}
+.salon-storefront-root .auth-modal .auth-card .section-subtitle,
+.salon-storefront-root .auth-modal .auth-links button:hover,
+.salon-storefront-root .auth-modal .auth-links button:focus-visible {
+    color: var(--primary-dark);
+}
+.salon-storefront-root .auth-modal .auth-card input,
+.salon-storefront-root .auth-modal .auth-card select {
+    border-color: var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+}
+.salon-storefront-root .auth-modal .auth-card input::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+}
+.salon-storefront-root .auth-modal .auth-provider-btn,
+.salon-storefront-root .auth-modal .auth-close {
+    border-color: var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+.salon-storefront-root .auth-modal .auth-provider-btn:hover,
+.salon-storefront-root .auth-modal .auth-provider-btn:focus-visible,
+.salon-storefront-root .auth-modal .auth-close:hover,
+.salon-storefront-root .auth-modal .auth-close:focus-visible {
+    border-color: var(--primary-border-strong);
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+.salon-storefront-root .auth-modal .auth-card .btn-primary {
+    border-color: var(--primary-dark);
+    background: var(--primary);
+    color: var(--primary-contrast);
+}
+.salon-storefront-root .auth-modal .auth-card .auth-separator::before,
+.salon-storefront-root .auth-modal .auth-card .auth-separator::after {
+    background: var(--border);
+}
+.salon-storefront-root .auth-modal .auth-card :focus-visible {
+    outline-color: var(--primary-dark);
+}
+.salon-storefront-root .auth-modal-backdrop {
+    background: color-mix(in srgb, var(--bg-primary) 78%, #000 22%);
+}
+
+/* A consistent readable type scale across salon sections in light mode. */
+body.light-mode .salon-storefront-root {
+    color: var(--text-primary);
+}
+body.light-mode .salon-storefront-root .main-section-heading h2,
+body.light-mode .salon-storefront-root .admin-console-heading h2,
+body.light-mode .salon-storefront-root .section-title,
+body.light-mode .salon-storefront-root .section-heading h2,
+body.light-mode .salon-storefront-root .service-card h3,
+body.light-mode .salon-storefront-root .blog-card h3,
+body.light-mode .salon-storefront-root .testimonial-card h4,
+body.light-mode .salon-storefront-root .dashboard-card h3,
+body.light-mode .salon-storefront-root .contact-item-text h4 {
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+body.light-mode .salon-storefront-root .section-desc,
+body.light-mode .salon-storefront-root .service-card p,
+body.light-mode .salon-storefront-root .blog-card p,
+body.light-mode .salon-storefront-root .testimonial-card p,
+body.light-mode .salon-storefront-root .contact-item-text p,
+body.light-mode .salon-storefront-root .dashboard-card p,
+body.light-mode .salon-storefront-root .footer-desc {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.65;
+}
+body.light-mode .salon-storefront-root .form-group label,
+body.light-mode .salon-storefront-root .booking-form label,
+body.light-mode .salon-storefront-root .contact-form-grid label {
+    color: var(--text-primary);
+    font-weight: 650;
+    line-height: 1.45;
+}
+body.light-mode .salon-storefront-root .auth-modal .auth-card {
+    border-color: var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+body.light-mode .salon-storefront-root .auth-modal .auth-card h3,
+body.light-mode .salon-storefront-root .auth-modal .auth-card p,
+body.light-mode .salon-storefront-root .auth-modal .auth-card label,
+body.light-mode .salon-storefront-root .auth-modal .auth-card small,
+body.light-mode .salon-storefront-root .auth-modal .auth-links button {
+    color: var(--text-primary);
+}
+
+/* Keep the storefront's menu and close icons mutually exclusive despite the
+   legacy three-span hamburger rules that also target these wrapper spans. */
+.salon-storefront-root .nav-toggle .nav-toggle__icon {
+    position: static;
+    display: inline-flex;
+    width: auto;
+    height: auto;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    opacity: 1;
+    transform: none;
+    transition: none;
+}
+.salon-storefront-root .nav-toggle .nav-toggle__icon--close { display: none; }
+.salon-storefront-root .nav-toggle.active .nav-toggle__icon--menu { display: none; }
+.salon-storefront-root .nav-toggle.active .nav-toggle__icon--close { display: inline-flex; }
+.salon-storefront-root .nav-toggle .nav-toggle__icon svg { position: static; }

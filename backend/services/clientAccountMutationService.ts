@@ -7,6 +7,7 @@ import {
 	passwordChangeSchema,
 	preferencesSchema,
 	profileUpdateSchema,
+	themePreferenceSchema,
 } from "@shared/validation/auth"
 
 export class ClientAccountMutationError extends Error {
@@ -83,5 +84,17 @@ export async function updateClientPreferences(
 		where: { userId },
 		create: { userId, ...input },
 		update: input,
+	})
+}
+
+export async function updateClientThemePreference(
+	userId: string,
+	rawInput: unknown,
+): Promise<void> {
+	const input = themePreferenceSchema.parse(rawInput)
+	await prisma.userPreferences.upsert({
+		where: { userId },
+		create: { userId, theme: input.theme },
+		update: { theme: input.theme },
 	})
 }

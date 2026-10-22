@@ -5,6 +5,7 @@ import {
 	changeClientPassword,
 	ClientAccountMutationError,
 	deleteClientAccount,
+	updateClientThemePreference,
 	updateClientProfile,
 	updateClientPreferences,
 } from "@backend/services/clientAccountMutationService"
@@ -93,6 +94,13 @@ export async function PATCH(request: Request): Promise<NextResponse> {
 	try {
 		if (typeof body === "object" && body !== null && "currentPassword" in body)
 			await changeClientPassword(session.user.id, body)
+		else if (
+			typeof body === "object" &&
+			body !== null &&
+			"theme" in body &&
+			Object.keys(body).length === 1
+		)
+			await updateClientThemePreference(session.user.id, body)
 		else if (typeof body === "object" && body !== null && "theme" in body)
 			await updateClientPreferences(session.user.id, body)
 		else await updateClientProfile(session.user.id, body)

@@ -22,6 +22,15 @@ export interface ClientAccountSnapshot {
     readonly phone: string | null;
     readonly image: string | null;
   };
+  readonly preferences: {
+    readonly theme: "dark" | "light";
+    readonly fontSize: "small" | "medium" | "large";
+    readonly highContrast: boolean;
+    readonly reducedMotion: boolean;
+    readonly notifyEmail: boolean;
+    readonly notifySms: boolean;
+    readonly notifyPush: boolean;
+  } | null;
   readonly bookings: readonly {
     readonly id: string;
     readonly serviceName: string;
@@ -76,7 +85,19 @@ export async function getClientAccountSnapshot(
   });
   if (!user) throw new ClientAccountError("Your account could not be found.");
 
-  const [bookings, reviews, favorites, loginHistory] = await Promise.all([
+  const [preferences, bookings, reviews, favorites, loginHistory] = await Promise.all([
+    prisma.userPreferences.findUnique({
+      where: { userId },
+      select: {
+        theme: true,
+        fontSize: true,
+        highContrast: true,
+        reducedMotion: true,
+        notifyEmail: true,
+        notifySms: true,
+        notifyPush: true,
+      },
+    }),
     prisma.booking.findMany({
       where: {
         tenantId: tenant.id,
@@ -141,6 +162,13 @@ export async function getClientAccountSnapshot(
 
   return {
     profile: user,
+    preferences: preferences && (preferences.theme === "dark" || preferences.theme === "light")
+      ? {
+          ...preferences,
+          theme: preferences.theme,
+          fontSize: preferences.fontSize === "small" || preferences.fontSize === "large" ? preferences.fontSize : "medium",
+        }
+      : null,
     bookings: bookings.map((booking) => ({
       id: booking.id,
       serviceName: booking.serviceName,

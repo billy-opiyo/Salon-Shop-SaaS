@@ -3600,6 +3600,15 @@ interface ClientAccountSnapshotPayload {
 		readonly phone: string | null
 		readonly image: string | null
 	}
+	readonly preferences: {
+		readonly theme: "dark" | "light"
+		readonly fontSize: "small" | "medium" | "large"
+		readonly highContrast: boolean
+		readonly reducedMotion: boolean
+		readonly notifyEmail: boolean
+		readonly notifySms: boolean
+		readonly notifyPush: boolean
+	} | null
 	readonly bookings: readonly {
 		readonly id: string
 		readonly serviceName: string
@@ -3707,6 +3716,27 @@ function showFavoritesToast(message: string): void {
 function renderReferenceDashboard(
 	snapshot: ClientAccountSnapshotPayload,
 ): void {
+	const preferenceControls = {
+		theme: document.getElementById("manageAccountThemeSelect"),
+		fontSize: document.getElementById("manageAccountFontSizeSelect"),
+		highContrast: document.getElementById("manageAccountHighContrast"),
+		reducedMotion: document.getElementById("manageAccountReducedMotion"),
+		notifyEmail: document.getElementById("manageAccountNotifEmail"),
+		notifySms: document.getElementById("manageAccountNotifSms"),
+		notifyPush: document.getElementById("manageAccountNotifPush"),
+	}
+	if (snapshot.preferences) {
+		if (preferenceControls.theme instanceof HTMLSelectElement && !preferenceControls.theme.dataset.dirty) {
+			preferenceControls.theme.value = snapshot.preferences.theme
+			applyStorefrontColorMode(snapshot.preferences.theme)
+		}
+		if (preferenceControls.fontSize instanceof HTMLSelectElement) preferenceControls.fontSize.value = snapshot.preferences.fontSize
+		if (preferenceControls.highContrast instanceof HTMLInputElement) preferenceControls.highContrast.checked = snapshot.preferences.highContrast
+		if (preferenceControls.reducedMotion instanceof HTMLInputElement) preferenceControls.reducedMotion.checked = snapshot.preferences.reducedMotion
+		if (preferenceControls.notifyEmail instanceof HTMLInputElement) preferenceControls.notifyEmail.checked = snapshot.preferences.notifyEmail
+		if (preferenceControls.notifySms instanceof HTMLInputElement) preferenceControls.notifySms.checked = snapshot.preferences.notifySms
+		if (preferenceControls.notifyPush instanceof HTMLInputElement) preferenceControls.notifyPush.checked = snapshot.preferences.notifyPush
+	}
 	const bookingsHtml = snapshot.bookings
 		.map((booking) => {
 			const status = escapeClientHtml(booking.status)
@@ -3998,8 +4028,20 @@ function bindAccountMutationAdapter(): () => void {
 				notifySms: notifySms.checked,
 				notifyPush: notifyPush.checked,
 			})
-		)
+		) {
+			theme.dataset.dirty = ""
 			setMessage("Preferences saved.")
+		}
+	}
+	const updateThemeImmediately = async (): Promise<void> => {
+		const theme = document.getElementById("manageAccountThemeSelect")
+		if (!(theme instanceof HTMLSelectElement) || (theme.value !== "dark" && theme.value !== "light")) return
+		theme.dataset.dirty = "true"
+		applyStorefrontColorMode(theme.value)
+		if (await patchAccount({ theme: theme.value })) {
+			theme.dataset.dirty = ""
+			setMessage("Theme preference saved.")
+		}
 	}
 	const openDelete = (): void => {
 		const modal = document.getElementById("deleteAccountConfirmModal")
@@ -4027,6 +4069,8 @@ function bindAccountMutationAdapter(): () => void {
 	profileButton?.addEventListener("click", saveProfile)
 	passwordButton?.addEventListener("click", changePassword)
 	preferencesButton?.addEventListener("click", savePreferences)
+	const themeSelect = document.getElementById("manageAccountThemeSelect")
+	themeSelect?.addEventListener("change", updateThemeImmediately)
 	deleteButton?.addEventListener("click", openDelete)
 	confirmDeleteButton?.addEventListener("click", confirmDelete)
 	closeDeleteButton?.addEventListener("click", closeDelete)
@@ -4036,6 +4080,7 @@ function bindAccountMutationAdapter(): () => void {
 		profileButton?.removeEventListener("click", saveProfile)
 		passwordButton?.removeEventListener("click", changePassword)
 		preferencesButton?.removeEventListener("click", savePreferences)
+		themeSelect?.removeEventListener("change", updateThemeImmediately)
 		deleteButton?.removeEventListener("click", openDelete)
 		confirmDeleteButton?.removeEventListener("click", confirmDelete)
 		closeDeleteButton?.removeEventListener("click", closeDelete)
@@ -4056,6 +4101,12 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	const guestButton = document.getElementById("continueAsGuestBtn")
 	const googleButton = document.getElementById("continueWithGoogleBtn")
 	const verifyEmailLink = document.getElementById("authVerifyEmailLink")
+	const profileMenu = document.getElementById("authProfileMenu")
+	const profileTrigger = document.getElementById("authProfileTrigger")
+	const accountSettingsButton = document.getElementById("manageAccountOpenBtn")
+	const accountSettingsCloseButton = document.getElementById("manageAccountCloseBtn")
+	const accountSettingsBackdrop = document.getElementById("manageAccountBackdrop")
+	const profileDropdown = document.getElementById("authProfileDropdown")
 	if (!(form instanceof HTMLFormElement)) return () => undefined
 
 	ensureTurnstile(form, turnstileSiteKey)
@@ -4258,6 +4309,28 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 			}
 		}
 	}
+	const toggleProfileMenu = (): void => {
+		const open = profileMenu?.classList.toggle("open") ?? false
+		profileTrigger?.setAttribute("aria-expanded", String(open))
+	}
+	const closeProfileMenu = (): void => {
+		profileMenu?.classList.remove("open")
+		profileTrigger?.setAttribute("aria-expanded", "false")
+	}
+	const openAccountSettings = (): void => {
+		closeProfileMenu()
+		setModalState("manageAccountModal", true)
+	}
+	const closeAccountSettings = (): void => setModalState("manageAccountModal", false)
+	const closeProfileOnOutsideClick = (event: PointerEvent): void => {
+		if (event.target instanceof Node && !profileMenu?.contains(event.target)) closeProfileMenu()
+	}
+	const closeProfileOnEscape = (event: KeyboardEvent): void => {
+		if (event.key === "Escape") {
+			closeProfileMenu()
+			closeAccountSettings()
+		}
+	}
 
 	form.addEventListener("submit", submit, true)
 	openButton?.addEventListener("click", openAuth, true)
@@ -4270,6 +4343,13 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	logoutButton?.addEventListener("click", logout, true)
 	guestButton?.addEventListener("click", continueAsGuest, true)
 	googleButton?.addEventListener("click", continueWithGoogle, true)
+	profileTrigger?.addEventListener("click", toggleProfileMenu)
+	accountSettingsButton?.addEventListener("click", openAccountSettings)
+	accountSettingsCloseButton?.addEventListener("click", closeAccountSettings)
+	accountSettingsBackdrop?.addEventListener("click", closeAccountSettings)
+	profileDropdown?.querySelector('a[href="#clientDashboard"]')?.addEventListener("click", closeProfileMenu)
+	document.addEventListener("pointerdown", closeProfileOnOutsideClick)
+	document.addEventListener("keydown", closeProfileOnEscape)
 	// The legacy storefront starts in the guest state and then reconciles the
 	// authenticated session asynchronously. Keep guest-only review guidance
 	// visible during that request instead of leaving the server-rendered hidden
@@ -4308,6 +4388,13 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 		logoutButton?.removeEventListener("click", logout, true)
 		guestButton?.removeEventListener("click", continueAsGuest, true)
 		googleButton?.removeEventListener("click", continueWithGoogle, true)
+		profileTrigger?.removeEventListener("click", toggleProfileMenu)
+		accountSettingsButton?.removeEventListener("click", openAccountSettings)
+		accountSettingsCloseButton?.removeEventListener("click", closeAccountSettings)
+		accountSettingsBackdrop?.removeEventListener("click", closeAccountSettings)
+		profileDropdown?.querySelector('a[href="#clientDashboard"]')?.removeEventListener("click", closeProfileMenu)
+		document.removeEventListener("pointerdown", closeProfileOnOutsideClick)
+		document.removeEventListener("keydown", closeProfileOnEscape)
 	}
 }
 function bindBookingAdapter(
@@ -4895,6 +4982,35 @@ function sanitizeInlineMarkup(value: unknown): string {
 		)
 }
 
+function applyStorefrontColorMode(mode: "dark" | "light", persist = true): void {
+	const root = document.documentElement
+	const body = document.body
+	const isLight = mode === "light"
+	root.classList.add("theme-switching")
+	body.classList.add("theme-switching")
+	root.classList.toggle("light-mode", isLight)
+	body.classList.toggle("light-mode", isLight)
+	root.dataset.colorMode = mode
+	body.dataset.colorMode = mode
+	root.style.colorScheme = mode
+	body.style.colorScheme = mode
+	const themeSelect = document.getElementById("manageAccountThemeSelect")
+	if (themeSelect instanceof HTMLSelectElement) themeSelect.value = mode
+	if (persist) {
+		try {
+			const appearance = window.CLIENT_CONFIG as SalonClientConfig | undefined
+			const key = appearance?.appearance?.storageKey?.trim() || "theme"
+			localStorage.setItem(key, mode)
+		} catch {
+			// The selected color mode still applies for this page when storage is unavailable.
+		}
+	}
+	window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+		root.classList.remove("theme-switching")
+		body.classList.remove("theme-switching")
+	}))
+}
+
 function applyNativeClientConfig(config: SalonClientConfig): void {
 	document
 		.querySelectorAll<HTMLElement>("[data-client-text]")
@@ -4931,7 +5047,7 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 		})
 
 	const appearance = config.appearance ?? {}
-	let mode = appearance.mode === "light" ? "light" : "dark"
+	let mode: "dark" | "light" = appearance.mode === "light" ? "light" : "dark"
 	const themeStorageKey = appearance.storageKey?.trim() || "theme"
 	try {
 		const savedTheme = localStorage.getItem(themeStorageKey)
@@ -4939,11 +5055,7 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 	} catch {
 		// Use the tenant setting when browser storage is unavailable.
 	}
-	document.documentElement.classList.toggle("light-mode", mode === "light")
-	document.documentElement.dataset.colorMode = mode
-	document.documentElement.style.colorScheme = mode
-	document.body.classList.toggle("light-mode", mode === "light")
-	document.body.dataset.colorMode = mode
+	applyStorefrontColorMode(mode, false)
 	const themePreset = appearance.preset ?? DEFAULT_THEME_PRESET
 	document.documentElement.dataset.themePreset = themePreset
 	document.body.dataset.themePreset = themePreset
@@ -5627,51 +5739,6 @@ function bindNativeSalonInteractions(
 			document.body.style.overflow = ""
 		}),
 	)
-
-	const darkModeToggle = document.getElementById("darkModeToggle")
-	const syncThemeToggle = (): void => {
-		const isDark = !document.documentElement.classList.contains("light-mode")
-		darkModeToggle?.classList.toggle("active", isDark)
-		darkModeToggle?.setAttribute("aria-pressed", String(isDark))
-	}
-	const applyThemeToggle = (event: Event): void => {
-		event.preventDefault()
-		const nextMode = document.documentElement.classList.contains("light-mode")
-			? "dark"
-			: "light"
-		const isDark = nextMode === "dark"
-		document.documentElement.classList.toggle("light-mode", !isDark)
-		document.body.classList.toggle("light-mode", !isDark)
-		document.documentElement.dataset.colorMode = nextMode
-		document.body.dataset.colorMode = nextMode
-		document.documentElement.style.colorScheme = nextMode
-		document.body.style.colorScheme = nextMode
-		syncThemeToggle()
-		try {
-			const configuredAppearance = window.CLIENT_CONFIG?.appearance
-			const configuredStorageKey =
-				typeof configuredAppearance === "object" &&
-				configuredAppearance !== null &&
-				"storageKey" in configuredAppearance &&
-				typeof configuredAppearance.storageKey === "string" &&
-				configuredAppearance.storageKey.trim()
-					? configuredAppearance.storageKey.trim()
-					: "theme"
-			localStorage.setItem(configuredStorageKey, nextMode)
-		} catch {
-			// Theme remains active for the current page when storage is unavailable.
-		}
-	}
-	syncThemeToggle()
-	add(darkModeToggle, "click", applyThemeToggle)
-	add(darkModeToggle, "keydown", (event) => {
-		if (
-			!(event instanceof KeyboardEvent) ||
-			(event.key !== "Enter" && event.key !== " ")
-		)
-			return
-		applyThemeToggle(event)
-	})
 
 	const openAuth = (): void => setModalState("authModal", true)
 	add(document.getElementById("openAuthModalBtn"), "click", openAuth)
