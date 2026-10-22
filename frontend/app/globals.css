@@ -4312,6 +4312,113 @@ main {
 .site-search__result strong { color: #f1d59b; font-size: .95rem; }
 .site-search__result span, .site-search__empty { color: #d4c6ad; font-size: .82rem; line-height: 1.5; }
 .site-search__empty { margin: 0; padding: 1rem; }
+
+/* Beauty Sphia platform presentation refinements. */
+.platform-home-shell .platform-section,
+.platform-home-shell .platform-hero__copy,
+.platform-home-shell .platform-hero__benefits,
+.platform-home-shell .section-heading,
+.platform-home-shell .showcase-copy,
+.platform-home-shell .top-store__content,
+.platform-home-shell .plan-card,
+.platform-home-shell .contact-grid,
+.platform-about-page,
+.platform-support-page,
+.stores-directory {
+	text-align: left;
+}
+.platform-home-shell .platform-hero--editorial { text-align: left; }
+.platform-home-shell .section-heading--row { align-items: flex-end; }
+.platform-home-shell .platform-showcase {
+	display: block;
+	text-align: left;
+}
+.platform-home-shell .platform-showcase > .eyebrow { margin: 0 0 .85rem; }
+.platform-home-shell .platform-showcase .showcase-copy { max-width: 760px; padding-top: 0; }
+.platform-home-shell .platform-showcase .showcase-copy h2 { margin: 0 0 1rem; }
+.platform-home-shell .platform-showcase .showcase-copy > p { margin: 0 0 1.25rem; }
+.platform-home-shell .platform-showcase .platform-hero__actions { justify-content: flex-start; }
+.platform-home-shell .top-stores-actions { display: flex; justify-content: flex-start; margin-top: 1.5rem; }
+.platform-home-shell .plan-card__capabilities {
+	width: 100%;
+	margin: .6rem 0 1rem;
+	padding: .7rem 0;
+	border-top: 1px solid rgba(241,213,155,.18);
+	border-bottom: 1px solid rgba(241,213,155,.18);
+	list-style: none;
+}
+.platform-home-shell .plan-card__capabilities li {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: .75rem;
+	padding: .42rem 0;
+	font-size: .85rem;
+}
+.platform-home-shell .plan-card__capabilities li strong { font-weight: 600; }
+.platform-home-shell .plan-card__capabilities li span { flex: 0 0 auto; margin-right: 0; color: #f1d59b; text-align: right; }
+.platform-home-shell .plan-card__capabilities li[data-included="false"] span { color: #c8bda8; }
+.stores-directory .directory-cta,
+.platform-about-page .platform-about-cta { text-align: left; }
+.stores-directory .directory-cta p:not(.eyebrow) { margin-inline: 0; }
+.stores-directory .directory-cta .platform-hero__actions { justify-content: flex-start; }
+.platform-menu-toggle {
+	width: 2.25rem;
+	height: 2.25rem;
+	padding: 0;
+	border: 0;
+	border-radius: .55rem;
+	background: transparent;
+	color: #ffe7ad;
+	transition: color .2s ease, background .2s ease;
+}
+.platform-menu-toggle:hover,
+.platform-menu-toggle:focus-visible,
+.platform-menu-toggle.is-open { background: rgba(215,168,79,.14); color: #fff1cc; }
+.site-search__trigger,
+.tenant-site-search .site-search__trigger {
+	width: 2.2rem;
+	height: 2.2rem;
+	padding: 0;
+	border: 0;
+	border-radius: .55rem;
+	background: transparent;
+	color: #ffe7ad;
+	box-shadow: none;
+}
+.site-search__trigger:hover,
+.site-search__trigger:focus-visible,
+.site-search__trigger[aria-expanded="true"] {
+	transform: none;
+	background: rgba(215,168,79,.14);
+	color: #fff1cc;
+}
+.site-search__trigger svg { width: 1.35rem; height: 1.35rem; }
+.platform-header__actions { gap: .3rem; }
+.platform-nav { gap: clamp(.45rem,1vw,1rem); }
+.platform-nav a { padding-inline: .55rem; }
+.platform-nav .platform-nav__start { display: none; }
+@media (max-width: 1199px) {
+	.platform-header .platform-nav {
+		display: none;
+		position: absolute;
+		top: calc(100% + .55rem);
+		right: clamp(.65rem,2vw,1.2rem);
+		width: min(22rem,calc(100vw - 1.3rem));
+		max-height: calc(100dvh - 7rem);
+		overflow-y: auto;
+		align-items: stretch;
+		flex-direction: column;
+		gap: .25rem;
+		padding: .3rem;
+		border: 0;
+		border-radius: 1.1rem;
+		background: rgba(24,18,11,.97);
+		box-shadow: 0 1.3rem 3rem rgba(0,0,0,.42);
+	}
+	.platform-header .platform-nav.is-open { display: flex; }
+	.platform-header .platform-nav a { padding: .55rem .7rem; }
+}
 .tenant-site-search { order: -1; }
 .tenant-site-search .site-search__trigger { width: 2.6rem; height: 2.6rem; }
 .tenant-site-search .site-search__panel { top: max(6rem, calc(env(safe-area-inset-top, 0px) + 5rem)); }

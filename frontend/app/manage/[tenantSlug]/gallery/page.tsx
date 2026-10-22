@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	listGalleryForUser,
 	MerchantGalleryError,
@@ -20,9 +21,9 @@ interface GalleryPageProps {
 export default async function MerchantGalleryPage({
 	params,
 }: GalleryPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/gallery`))
 	let styles
 	try {
 		styles = await listGalleryForUser(session.user.id, tenantSlug)

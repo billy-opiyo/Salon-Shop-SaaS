@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	getSecuritySnapshot,
 	MerchantSecurityError,
@@ -12,9 +13,10 @@ interface SecurityPageProps {
 export default async function MerchantSecurityPage({
 	params,
 }: SecurityPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/security`))
 	let snapshot
 	try {
 		snapshot = await getSecuritySnapshot(session.user.id, tenantSlug)

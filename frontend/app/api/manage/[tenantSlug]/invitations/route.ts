@@ -30,7 +30,7 @@ export async function GET(
 	try {
 		const tenantId = await resolveTenantId(tenantSlug)
 		if (!tenantId)
-			return NextResponse.json({ error: "Store not found" }, { status: 404 })
+			return NextResponse.json({ error: "Salon not found" }, { status: 404 })
 		return NextResponse.json(
 			await listTeamInvitationsForUser(session.user.id, tenantId),
 			{
@@ -63,7 +63,7 @@ export async function POST(
 		const body = (await request.json()) as Record<string, unknown>
 		const tenantId = await resolveTenantId(tenantSlug)
 		if (!tenantId)
-			return NextResponse.json({ error: "Store not found" }, { status: 404 })
+			return NextResponse.json({ error: "Salon not found" }, { status: 404 })
 		if (body.action === "cancel" || body.action === "resend") {
 			if (typeof body.invitationId !== "string")
 				return NextResponse.json(

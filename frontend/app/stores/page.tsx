@@ -6,8 +6,8 @@ import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 
 export const metadata = {
 	title: "Salons | Beauty Sphia",
-	description:
-		"Explore top salons on Beauty Sphia — discover newly added, high-rated stores and step inside a live salon experience.",
+		description:
+		"Explore top salons on Beauty Sphia — discover newly added, high-rated salons and step inside a live salon experience.",
 }
 
 export default function StoresDirectoryPage() {
@@ -24,7 +24,7 @@ export default function StoresDirectoryPage() {
 					<h1 id="directory-title">Find your next favourite salon.</h1>
 					<p>
 						Browse independent salons already running on Beauty Sphia.
-						Discover freshly launched stores and community favourites,
+						Discover freshly launched salons and community favourites,
 						then step inside a live salon experience.
 					</p>
 				</div>
@@ -37,10 +37,10 @@ export default function StoresDirectoryPage() {
 			>
 				<div className="section-heading">
 					<p className="eyebrow">Curated picks</p>
-					<h2 id="top-stores-title">Top Stores Available</h2>
+						<h2 id="top-stores-title">Top Salons Available</h2>
 					<p>
 						Our most-loved and most recently added salons, ranked for
-						you. New stores are featured as they open their doors.
+						you. New salons are featured as they open their doors.
 					</p>
 				</div>
 				<TopStoresGrid />
@@ -49,7 +49,7 @@ export default function StoresDirectoryPage() {
 			<section className="platform-section platform-section--directory-cta">
 				<div className="directory-cta">
 					<p className="eyebrow">Own your corner of the platform</p>
-					<h2>Ready to open your own store?</h2>
+					<h2>Ready to open your own salon?</h2>
 					<p>
 						Join Royal Braids and the growing family of independent
 						salons bringing their brand online with Beauty Sphia.

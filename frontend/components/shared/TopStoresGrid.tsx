@@ -62,7 +62,7 @@ export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
 					<div className="top-store__content">
 						<span className="eyebrow">
 							{store.available
-								? `Available Store · ${store.location}`
+								? `Available Salon · ${store.location}`
 								: `Opening soon · ${store.location}`}
 						</span>
 						<h3>{store.name}</h3>
@@ -76,7 +76,7 @@ export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
 								className="top-store__link"
 								href={store.href}
 							>
-								Open {store.name} Store →
+								Open {store.name} Salon →
 							</StoreTransitionLink>
 						) : (
 							<span className="top-store__soon-label">

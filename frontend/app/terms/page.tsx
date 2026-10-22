@@ -10,7 +10,7 @@ export default function TermsPage() {
 			<h1>Terms of Service</h1>
 			<p>
 				These terms govern salon workspace creation, storefront publishing,
-				bookings, customer communication, and responsible use of the Salon Store
+				bookings, customer communication, and responsible use of the Beauty Sphia salon platform
 				Beauty Sphia.
 			</p>
 			<h2>Workspace responsibility</h2>

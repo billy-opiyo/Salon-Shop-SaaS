@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	listReviewsForUser,
 	MerchantReviewError,
@@ -13,9 +14,10 @@ interface ReviewsPageProps {
 export default async function MerchantReviewsPage({
 	params,
 }: ReviewsPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/reviews`))
 	let reviews
 	try {
 		reviews = await listReviewsForUser(session.user.id, tenantSlug)

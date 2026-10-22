@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	getBillingSnapshotForUser,
 	MerchantBillingError,
@@ -27,9 +28,9 @@ function formatAmount(amountMinor: number, currency: string): string {
 export default async function MerchantBillingPage({
 	params,
 }: BillingPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/billing`))
 	let billing
 	try {
 		billing = await getBillingSnapshotForUser(session.user.id, tenantSlug)
@@ -79,14 +80,14 @@ export default async function MerchantBillingPage({
 
 			{billing.subscription?.status === "setup_payment_required" && pricing && (
 				<section className="manage-card" aria-labelledby="setup-payment-title">
-					<p className="eyebrow">Store setup</p>
+					<p className="eyebrow">Salon setup</p>
 					<h2 id="setup-payment-title">
 						Pay {formatAmount(pricing.setupFeeMinor, billing.currency)} setup
 						fee
 					</h2>
 					<p>
 						Setup begins after payment. Your M-Pesa provider may charge the
-						sender a separate transaction fee. Your first six months of store
+						sender a separate transaction fee. Your first six months of salon
 						usage are free after the one-time setup fee; recurring billing starts
 						after that period.
 					</p>
@@ -103,7 +104,7 @@ export default async function MerchantBillingPage({
 					<h2 id="renewal-payment-title">Your monthly payment is due</h2>
 					<p>
 						Approve the M-Pesa STK Push to keep or restore your Beauty Sphia
-						store.
+						salon.
 					</p>
 					<SetupPaymentForm tenantSlug={tenantSlug} mode="renewal" />
 				</section>

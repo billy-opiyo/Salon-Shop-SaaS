@@ -38,10 +38,16 @@ export async function cancelClientBooking(
 	bookingId: string,
 ): Promise<void> {
 	const tenant = await resolveTenant(userId, tenantSlug)
-	await prisma.$transaction(async (transaction) => {
+	const releasedSlot = await prisma.$transaction(async (transaction) => {
 		const booking = await transaction.booking.findFirst({
 			where: { id: bookingId, tenantId: tenant.id, userId },
-			select: { status: true, bookingSlot: { select: { id: true } } },
+			select: {
+				status: true,
+				appointmentDate: true,
+				timeLabel: true,
+				stylist: { select: { name: true } },
+				bookingSlot: { select: { id: true } },
+			},
 		})
 		if (!booking) throw new ClientBookingError("Booking not found.")
 		const cancellableStatuses: readonly BookingStatus[] = [
@@ -83,6 +89,13 @@ export async function cancelClientBooking(
 				metadata: { bookingId, source: "client" } as Prisma.InputJsonValue,
 			},
 		})
+		return booking.bookingSlot && booking.status !== BookingStatus.WAITLISTED
+			? {
+					appointmentDate: booking.appointmentDate,
+					timeLabel: booking.timeLabel,
+					stylistName: booking.stylist?.name ?? null,
+				}
+			: null
 	})
 
 	// Legacy parity: after the commit, send the customer cancellation notice
@@ -116,5 +129,5 @@ export async function cancelClientBooking(
 			timeLabel: detail.timeLabel,
 		})
 	}
-	await notifyNextWaitlistedCustomer(tenant.id)
+	if (releasedSlot) await notifyNextWaitlistedCustomer(tenant.id, releasedSlot)
 }

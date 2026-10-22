@@ -33,7 +33,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 		new URL(request.url).searchParams.get("tenantSlug")?.trim() ?? ""
 	if (tenantSlug.length < 3 || tenantSlug.length > 48) {
 		return NextResponse.json(
-			{ error: "A valid salon store is required." },
+			{ error: "A valid salon is required." },
 			{ status: 400 },
 		)
 	}

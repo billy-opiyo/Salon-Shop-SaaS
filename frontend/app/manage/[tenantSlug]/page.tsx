@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { SalonAdminRuntime } from "@/components/tenant/SalonAdminRuntime"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import { prisma } from "@backend/db/prisma"
 import {
 	getMerchantAdminSnapshot,
@@ -13,12 +14,11 @@ interface AdminPageProps {
 }
 
 export default async function TenantAdminPage({ params }: AdminPageProps) {
-	const session = await auth()
-	const userId = session?.user?.id
-	if (!userId) redirect("/login")
-
 	const { tenantSlug } = await params
 	const normalizedSlug = tenantSlug.trim().toLowerCase()
+	const session = await auth()
+	const userId = session?.user?.id
+	if (!userId) redirect(getLoginUrlForPath(`/manage/${normalizedSlug}`))
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: normalizedSlug },
 		select: { id: true, status: true },

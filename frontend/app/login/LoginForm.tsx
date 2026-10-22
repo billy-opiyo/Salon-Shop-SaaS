@@ -6,8 +6,11 @@ import { FormEvent, useState } from "react"
 import { signIn } from "next-auth/react"
 
 import { GoogleIcon } from "@/components/shared/GoogleIcon"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
-export function LoginForm() {
+export function LoginForm({
+	callbackUrl,
+}: Readonly<{ callbackUrl: string }>) {
 	const router = useRouter()
 	const [message, setMessage] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,7 +31,8 @@ export function LoginForm() {
 				setMessage("Sign-in failed. Check your details and verify your email.")
 				return
 			}
-			router.push("/manage")
+			router.replace(getSafeAuthCallbackUrl(callbackUrl))
+			router.refresh()
 		} catch {
 			setMessage("Sign-in is temporarily unavailable. Please try again.")
 		} finally {
@@ -40,7 +44,9 @@ export function LoginForm() {
 		setMessage("")
 		setIsSubmitting(true)
 		try {
-			await signIn("google", { callbackUrl: "/manage" })
+			await signIn("google", {
+				callbackUrl: getSafeAuthCallbackUrl(callbackUrl),
+			})
 		} catch {
 			setIsSubmitting(false)
 			setMessage("Google sign-in is temporarily unavailable. Please try again.")

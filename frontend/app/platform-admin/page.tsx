@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	assertPlatformAdmin,
 	PlatformAuthorizationError,
@@ -34,7 +35,8 @@ export const metadata = {
 
 export default async function PlatformAdminPage() {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath("/platform-admin"))
 	try {
 		assertPlatformAdmin(session.user.id, session.user.email)
 	} catch (error) {
@@ -51,7 +53,7 @@ export default async function PlatformAdminPage() {
 	const metricCards = [
 		["Total salons", counts.totalTenants, "Across the Beauty Sphia platform"],
 		[
-			"Active stores",
+			"Active salons",
 			counts.activeTenants,
 			`${counts.activeSubscriptions} active or trial plans`,
 		],
@@ -84,7 +86,7 @@ export default async function PlatformAdminPage() {
 					<p className="eyebrow">Beauty Sphia operations</p>
 					<h1>Platform Admin</h1>
 					<p className="auth-card__intro">
-						Watch every salon store, subscription, notification, and security
+						Watch every salon, subscription, notification, and security
 						signal from one place.
 					</p>
 				</div>
@@ -117,7 +119,7 @@ export default async function PlatformAdminPage() {
 					<div className="section-heading section-heading--row">
 						<div>
 							<p className="eyebrow">Tenant directory</p>
-							<h2 id="stores-title">Recent salon stores</h2>
+						<h2 id="stores-title">Recent salons</h2>
 						</div>
 					</div>
 					<div className="platform-admin-list">
@@ -157,7 +159,7 @@ export default async function PlatformAdminPage() {
 							</article>
 						))}
 						{snapshot.recentTenants.length === 0 && (
-							<p className="manage-empty">No salon stores found.</p>
+							<p className="manage-empty">No salons found.</p>
 						)}
 					</div>
 				</section>

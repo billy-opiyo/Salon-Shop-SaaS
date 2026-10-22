@@ -3,6 +3,18 @@ import { expect, test } from "@playwright/test"
 test.describe("Requested Beauty Sphia parity fixes", () => {
 	test.setTimeout(60_000)
 
+	test("unauthenticated merchant deep links return to the requested admin page after sign-in", async ({
+		page,
+	}) => {
+		await page.goto("/manage/royal-braids/gallery", {
+			waitUntil: "domcontentloaded",
+		})
+		await expect(page).toHaveURL(
+			/login\?callbackUrl=%2Fmanage%2Froyal-braids%2Fgallery$/,
+		)
+		await expect(page.getByRole("heading", { name: "Sign in to your salon workspace" })).toBeVisible()
+	})
+
 	test("preserves storefront auth, hero, counters, theme, and WhatsApp states", async ({
 		page,
 	}) => {
@@ -31,6 +43,146 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			"aria-hidden",
 			"true",
 		)
+	})
+
+	test("floating WhatsApp shortcut follows the selected service and order mode", async ({
+		page,
+	}) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const shortcut = page.locator("#floatingWhatsAppButton")
+		const serviceSelect = page.locator("#serviceSelect")
+
+		await serviceSelect.selectOption("Hair Styling")
+		const bookingUrl = new URL((await shortcut.getAttribute("href")) ?? "")
+		expect(bookingUrl.searchParams.get("text")).toContain(
+			"I would like to book Hair Styling (From KSh 1,500).",
+		)
+
+		await serviceSelect.selectOption("Nourish & Shine Hair Oil")
+		const orderUrl = new URL((await shortcut.getAttribute("href")) ?? "")
+		expect(orderUrl.searchParams.get("text")).toContain(
+			"I would like to order Nourish & Shine Hair Oil (KSh 1,200).",
+		)
+	})
+
+	test("guest continuation closes storefront auth and confirms guest mode", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.locator("#openAuthModalBtn").click()
+		await expect(page.locator("#authModal")).toHaveAttribute(
+			"aria-hidden",
+			"false",
+		)
+
+		await page.locator("#continueAsGuestBtn").click()
+		await expect(page.locator("#authModal")).toHaveAttribute(
+			"aria-hidden",
+			"true",
+		)
+		await expect(page.locator("#favoritesToast")).toContainText(
+			"You're now continuing as guest",
+		)
+	})
+
+	test("blog controls toggle between three posts and the full list", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const cards = page.locator("#blogGrid .blog-card")
+		const totalCards = await cards.count()
+		expect(totalCards).toBeGreaterThan(3)
+		await expect(cards.nth(0)).toBeVisible()
+		await expect(cards.nth(2)).toBeVisible()
+		await expect(cards.nth(3)).toBeHidden()
+
+		await page.locator("#viewAllBlogsBtn").click()
+		await expect(cards.nth(3)).toBeVisible()
+		await page.locator("#viewLessBlogsBtn").click()
+		await expect(cards.nth(3)).toBeHidden()
+	})
+
+	test("gallery sorting restores the eight-item preview and sorts names predictably", async ({
+		page,
+	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
+		const cards = page.locator("#galleryGrid .gallery-item")
+		const totalCards = await cards.count()
+		expect(totalCards).toBeGreaterThan(8)
+
+		await page.locator("#viewAllGallery").click()
+		await expect(cards.nth(8)).toBeVisible()
+		await page.locator("#gallerySortSelect").selectOption("name-asc")
+		await expect(cards.nth(7)).toBeVisible()
+		await expect(cards.nth(8)).toBeHidden()
+
+		const visibleNames = await cards.evaluateAll((elements) =>
+			elements
+				.filter((element) => getComputedStyle(element).display !== "none")
+				.map((element) => element.querySelector("h4")?.textContent?.trim() ?? ""),
+		)
+		expect(visibleNames).toHaveLength(8)
+		expect(visibleNames).toEqual(
+			[...visibleNames].sort((a, b) =>
+				a.localeCompare(b, undefined, { sensitivity: "base" }),
+			),
+		)
+	})
+
+	test("review sort modes preserve featured, rating, and recency priorities", async ({
+		page,
+	}) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
+		const cards = page.locator("#testimonialsGrid .testimonial-card")
+		expect(await cards.count()).toBeGreaterThanOrEqual(3)
+		const names = await cards.evaluateAll((elements) =>
+			elements.map((element) => element.querySelector("h4")?.textContent?.trim() ?? ""),
+		)
+		await cards.evaluateAll((elements) => {
+			const setup = [
+				{ rating: "4", featured: "true", date: "2025-01-01" },
+				{ rating: "5", featured: "false", date: "2025-01-03" },
+				{ rating: "4", featured: "true", date: "2025-01-02" },
+			]
+			for (const card of elements) {
+				card.dataset.reviewRating = "1"
+				card.dataset.reviewFeatured = "false"
+				card.dataset.reviewCreatedAt = "2024-01-01"
+			}
+			for (const [index, card] of elements.slice(0, 3).entries()) {
+				const values = setup[index]
+				if (!values) continue
+				card.dataset.reviewRating = values.rating
+				card.dataset.reviewFeatured = values.featured
+				card.dataset.reviewCreatedAt = values.date
+			}
+		})
+
+		const visibleNames = async (): Promise<string[]> =>
+			cards.evaluateAll((elements) =>
+				elements.map((element) => element.querySelector("h4")?.textContent?.trim() ?? ""),
+			)
+		await page.locator("#reviewsSortSelect").selectOption("featured")
+		await expect.poll(visibleNames).toEqual([names[2], names[0], names[1], ...names.slice(3)])
+		await page.locator("#reviewsSortSelect").selectOption("highest-rated")
+		await expect.poll(visibleNames).toEqual([names[1], names[2], names[0], ...names.slice(3)])
+		await page.locator("#reviewsSortSelect").selectOption("newest")
+		await expect.poll(visibleNames).toEqual([names[1], names[2], names[0], ...names.slice(3)])
 	})
 
 	test("completes the platform splash and keeps the plan table horizontally scrollable", async ({
@@ -145,8 +297,28 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			"aria-hidden",
 			"false",
 		)
+		const category = await saveButton.evaluate(
+			(button) => button.closest<HTMLElement>(".gallery-item")?.dataset.galleryService ?? "",
+		)
+		const categoryLabels: Readonly<Record<string, string>> = {
+			"braids-services": "Braids",
+			"hair-services": "Hair",
+			"beauty-spa-services": "Beauty Spa",
+			"nail-services": "Nails",
+			"makeup-services": "Makeup",
+			"barber-services": "Barber",
+			"massage-wellness": "Massage",
+			"eyebrow-lash-services": "Eyebrows & Lash",
+			"bridal-event-packages": "Bridal / Event Packages",
+			"cosmetics-products": "Cosmetics",
+		}
+		const label = (categoryLabels[category] ?? (category || "Gallery"))
+			.replace(/\s+services$/i, "")
+			.trim()
+			.toLowerCase()
+			.replace(/s$/, "")
 		await expect(page.locator("#authMessage")).toHaveText(
-			"Log in to save this gallery style.",
+			"🔐 Log in to save this " + label + " style.",
 		)
 	})
 

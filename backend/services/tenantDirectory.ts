@@ -7,6 +7,7 @@ import {
 	DEFAULT_STOREFRONT_DESIGN,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import { safeMapEmbedUrl } from "@shared/safeMapEmbedUrl"
 import {
 	DEFAULT_SALON_BLOGS,
 	DEFAULT_SALON_GALLERY,
@@ -185,8 +186,8 @@ export async function getTenantStorefront(
 				reviews: {
 					where: { status: "APPROVED" },
 					orderBy: { createdAt: "desc" },
-					take: 6,
-					select: { id: true, name: true, rating: true, text: true, createdAt: true },
+					take: 100,
+					select: { id: true, name: true, rating: true, text: true, featured: true, createdAt: true },
 				},
 				blogPosts: {
 					where: { published: true },
@@ -269,10 +270,10 @@ export async function getTenantStorefront(
 				return {
 					...DEFAULT_STOREFRONT_DESIGN,
 					...stored,
-					mapEmbedUrl:
-						typeof stored?.mapEmbedUrl === "string" && stored.mapEmbedUrl.trim()
-							? stored.mapEmbedUrl
-							: DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+					mapEmbedUrl: safeMapEmbedUrl(
+						stored?.mapEmbedUrl,
+						DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+					),
 					sectionCopy: {
 						...DEFAULT_STOREFRONT_DESIGN.sectionCopy,
 						...(stored?.sectionCopy ?? {}),
@@ -336,6 +337,7 @@ export async function getTenantStorefront(
 				author: review.name,
 				rating: review.rating,
 				text: review.text,
+				featured: review.featured,
 				role: undefined,
 				createdAt: review.createdAt.toISOString(),
 			})),

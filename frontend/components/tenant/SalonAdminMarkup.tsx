@@ -207,7 +207,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 							role="tab"
 							aria-selected="false"
 						>
-							Store Design
+							Salon Design
 						</button>
 					</div>
 
@@ -217,7 +217,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 						role="tabpanel"
 					>
 						<div className="admin-section-card admin-store-design-card">
-							<h2>Store Design</h2>
+							<h2>Salon Design</h2>
 							<p>
 								Customize the public storefront without changing your existing
 								services, gallery, bookings, or customer records. Current values are
@@ -337,7 +337,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 									<div className="form-group"><label htmlFor="adminDesignCraftedBy">Footer attribution</label><input id="adminDesignCraftedBy" /></div>
 								</div>
 								<div className="admin-booking-actions">
-									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn">Save Store Design</button>
+									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn">Save Salon Design</button>
 									<a className="btn btn-outline" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
 								</div>
 							</form>

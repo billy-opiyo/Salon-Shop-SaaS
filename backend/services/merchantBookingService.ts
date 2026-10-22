@@ -68,10 +68,21 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
   const membership = await getBookingMembership(userId, input.tenantSlug);
   assertTenantPermission(membership, "canManageBookings");
 
+  let releasedSlot: {
+    readonly appointmentDate: Date;
+    readonly timeLabel: string;
+    readonly stylistName: string | null;
+  } | null = null;
   await prisma.$transaction(async (transaction) => {
     const current = await transaction.booking.findFirst({
       where: { id: input.bookingId, tenantId: membership.tenantId },
-      select: { status: true, bookingSlot: { select: { id: true } } },
+      select: {
+        status: true,
+        appointmentDate: true,
+        timeLabel: true,
+        stylist: { select: { name: true } },
+        bookingSlot: { select: { id: true } },
+      },
     });
     if (!current) throw new MerchantBookingError("Booking not found.");
     if (!ALLOWED_TRANSITIONS[current.status].includes(input.status)) {
@@ -90,6 +101,13 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
       current.bookingSlot
     ) {
       await transaction.bookingSlot.update({ where: { id: current.bookingSlot.id }, data: { bookingId: null, lockedUntil: null } });
+      if (current.status !== BookingStatus.WAITLISTED) {
+        releasedSlot = {
+          appointmentDate: current.appointmentDate,
+          timeLabel: current.timeLabel,
+          stylistName: current.stylist?.name ?? null,
+        };
+      }
     }
     await transaction.adminAuditLog.create({
       data: {
@@ -121,6 +139,7 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
           serviceName: true,
           appointmentDate: true,
           timeLabel: true,
+          stylist: { select: { name: true } },
         },
       }),
       prisma.tenant.findUnique({
@@ -151,8 +170,8 @@ export async function updateBookingStatusForUser(userId: string, input: BookingS
         timeLabel: booking.timeLabel,
       });
     }
-    if (input.status === BookingStatus.CANCELLED) {
-      await notifyNextWaitlistedCustomer(membership.tenantId);
+    if (releasedSlot) {
+      await notifyNextWaitlistedCustomer(membership.tenantId, releasedSlot);
     }
   }
 }

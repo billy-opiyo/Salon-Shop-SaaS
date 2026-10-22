@@ -40,7 +40,7 @@ export async function createStore(
 	if (!parsed.success) {
 		return {
 			ok: false,
-			message: "Please complete the store details correctly.",
+			message: "Please complete the salon details correctly.",
 		}
 	}
 
@@ -53,7 +53,7 @@ export async function createStore(
 		}
 		return {
 			ok: false,
-			message: "The store could not be created. Please try again.",
+			message: "The salon could not be created. Please try again.",
 		}
 	}
 }

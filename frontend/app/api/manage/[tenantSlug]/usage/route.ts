@@ -35,7 +35,7 @@ export async function GET(
 		},
 	})
 	if (!tenant)
-		return NextResponse.json({ error: "Store not found." }, { status: 404 })
+		return NextResponse.json({ error: "Salon not found." }, { status: 404 })
 	const membership = assertTenantMembership(
 		tenant.memberships[0] ?? null,
 		tenant.id,

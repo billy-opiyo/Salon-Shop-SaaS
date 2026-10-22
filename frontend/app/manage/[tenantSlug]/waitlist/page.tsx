@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	MerchantWaitlistError,
 	listWaitlistForUser,
@@ -16,9 +17,10 @@ const statuses = ["WAITING", "CONTACTED", "BOOKED", "CANCELLED"] as const
 export default async function MerchantWaitlistPage({
 	params,
 }: WaitlistPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/waitlist`))
 	let entries
 	try {
 		entries = await listWaitlistForUser(session.user.id, tenantSlug)

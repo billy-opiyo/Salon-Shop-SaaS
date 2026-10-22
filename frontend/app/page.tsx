@@ -55,6 +55,27 @@ const plans = [
 	},
 ] as const
 
+const planCapabilities = [
+	["Monthly bookings", "limit", "monthlyBookings"],
+	["Staff members", "limit", "staffMembers"],
+	["Gallery items", "limit", "galleryItems"],
+	["Storage", "limit", "storageMegabytes"],
+	["Waitlist", "feature", "waitlist"],
+	["Advanced scheduling", "feature", "advancedSchedule"],
+	["Staff permissions", "feature", "staffMembers"],
+	["WhatsApp and email automation", "feature", "whatsappAutomation"],
+	["Custom domains", "feature", "customDomains"],
+	["Multiple locations", "feature", "multipleLocations"],
+] as const
+
+function replaceStoreWording(value: string): string {
+	return value.replace(/\bstores?\b/gi, (word) => {
+		if (word === word.toUpperCase()) return word.toLowerCase() === "store" ? "SALON" : "SALONS"
+		if (word[0] === word[0].toUpperCase()) return word.toLowerCase() === "store" ? "Salon" : "Salons"
+		return word.toLowerCase() === "store" ? "salon" : "salons"
+	})
+}
+
 export default async function PlatformHome() {
 	const requestHost = getRequestHost(await headers())
 	if (requestHost) {
@@ -62,7 +83,19 @@ export default async function PlatformHome() {
 		if (customTenant) return renderTenantStorefront(customTenant.slug)
 	}
 	const design = await getPlatformStorefrontDesign()
-	const content = design.content
+	const content = Object.fromEntries(
+		Object.entries(design.content).map(([key, value]) => [
+			key,
+			Array.isArray(value)
+				? value.map((step) => ({
+						title: replaceStoreWording(step.title),
+						description: replaceStoreWording(step.description),
+					}))
+				: typeof value === "string"
+					? replaceStoreWording(value)
+					: value,
+		]),
+	) as typeof design.content
 	return (
 		<>
 			<ExperienceSplash
@@ -75,15 +108,15 @@ export default async function PlatformHome() {
 
 				<section className="platform-hero platform-hero--editorial" aria-labelledby="platform-title">
 <div className="platform-hero__copy">
-<p className="platform-hero__eyebrow">The All-in-One Salon Management Solution</p><p className="platform-hero__audience">Salons · Stylists · Beauty Businesses</p>
-<h1 id="platform-title">Everything Your Salon Needs to <span>Grow</span></h1>
-<p className="platform-hero__description">Beauty Sphia is the all-in-one platform that helps salons streamline bookings, manage clients, and run their business — so you can focus on what you do best: making people feel beautiful.</p>
-<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="#how-it-works">Explore the platform</Link></div>
+<p className="platform-hero__eyebrow">The salon platform for owners and customers</p><p className="platform-hero__audience">Salon Owners · Stylists · Customers</p>
+<h1 id="platform-title">A better salon experience for <span>everyone</span></h1>
+<p className="platform-hero__description">Beauty Sphia helps salon owners manage bookings, clients, and daily operations. Customers can discover salons, explore services, and book appointments with ease.</p>
+<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link></div>
 </div>
 <div className="platform-hero__benefits" aria-label="Platform benefits">
-<article><span aria-hidden="true">01</span><h2>Online Bookings</h2><p>Fill your schedule. Let clients book 24/7, anytime.</p></article>
+<article><span aria-hidden="true">01</span><h2>Online Bookings</h2><p>Help customers book anytime and keep your salon schedule organized.</p></article>
 <article><span aria-hidden="true">02</span><h2>Client Management</h2><p>Build lasting relationships. Keep your clients organized and loyal.</p></article>
-<article><span aria-hidden="true">03</span><h2>Digital Storefront</h2><p>Showcase your services. Get a professional online presence.</p></article>
+<article><span aria-hidden="true">03</span><h2>Salon Discovery</h2><p>Help customers find your salon, explore services, and book a visit.</p></article>
 <article><span aria-hidden="true">04</span><h2>Business Growth</h2><p>Make data-driven decisions. Track growth and make smarter decisions.</p></article>
 </div>
 <p className="platform-hero__signature">More Clients <span>·</span> Less Admin <span>·</span> Bigger Dreams</p>
@@ -117,16 +150,18 @@ export default async function PlatformHome() {
 					id="top-stores"
 					aria-labelledby="top-stores-title"
 				>
-					<div className="section-heading section-heading--row">
+					<div className="section-heading">
 						<div>
 							<p className="eyebrow">{content.topStoresEyebrow}</p>
 							<h2 id="top-stores-title">{content.topStoresTitle}</h2>
 						</div>
+					</div>
+					<TopStoresGrid />
+					<div className="top-stores-actions">
 						<Link className="button button--outline" href="/stores">
 							{content.topStoresViewAllLabel}
 						</Link>
 					</div>
-					<TopStoresGrid />
 				</section>
 
 				<section
@@ -204,72 +239,31 @@ export default async function PlatformHome() {
 										</li>
 									))}
 								</ul>
+								<ul className="plan-card__capabilities" aria-label={`${plan.name} plan capabilities`}>
+									{planCapabilities.map(([label, kind, key]) => {
+										const entitlement = PLAN_ENTITLEMENTS[plan.tier]
+										const included = kind === "feature"
+											? entitlement.features[key as keyof typeof entitlement.features]
+											: true
+										const rawValue = kind === "limit"
+											? entitlement.limits[key as keyof typeof entitlement.limits]
+											: undefined
+										const value = typeof rawValue === "number"
+											? rawValue === Number.MAX_SAFE_INTEGER
+												? "Negotiated"
+												: key === "storageMegabytes"
+													? rawValue >= 1000
+														? `${rawValue / 1000} GB`
+														: `${rawValue.toLocaleString("en-KE")} MB`
+													: rawValue.toLocaleString("en-KE")
+											: included ? "Included" : "Not included"
+										return <li key={label} data-included={included}><strong>{label}</strong><span>{value}</span></li>
+									})}
+								</ul>
 								<Link className="button button--outline" href="/onboarding">
 									Start with {plan.name}
 								</Link>
 							</article>
-						))}
-					</div>
-					<div className="plan-comparison" aria-label="Plan feature comparison">
-						<div className="plan-comparison__header">
-							<span>Capability</span>
-							<span>Starter</span>
-							<span>Business</span>
-							<span>Enterprise</span>
-						</div>
-						{(
-							[
-								["Monthly bookings", "monthlyBookings"],
-								["Staff members", "staffMembers"],
-								["Gallery items", "galleryItems"],
-								["Storage", "storageMegabytes"],
-							] as const
-						).map(([label, limitKey]) => (
-							<div className="plan-comparison__row" key={label}>
-								<strong>{label}</strong>
-								{(["starter", "business", "enterprise"] as const).map(
-									(tier) => {
-										const value = PLAN_ENTITLEMENTS[tier].limits[limitKey]
-										return (
-											<span key={tier}>
-												{value === Number.MAX_SAFE_INTEGER
-													? "Negotiated"
-													: limitKey === "storageMegabytes"
-														? value >= 1000
-															? `${value / 1000} GB`
-															: `${value.toLocaleString("en-KE")} MB`
-														: value.toLocaleString("en-KE")}
-											</span>
-										)
-									},
-								)}
-							</div>
-						))}
-						{(
-							[
-								["Waitlist", "waitlist"],
-								["Advanced scheduling", "advancedSchedule"],
-								["Staff permissions", "staffMembers"],
-								["WhatsApp and email automation", "whatsappAutomation"],
-								["Custom domains", "customDomains"],
-								["Multiple locations", "multipleLocations"],
-							] as const
-						).map(([label, feature]) => (
-							<div className="plan-comparison__row" key={label}>
-								<strong>{label}</strong>
-								{(["starter", "business", "enterprise"] as const).map(
-									(tier) => (
-										<span
-											key={tier}
-											aria-label={`${tier} ${PLAN_ENTITLEMENTS[tier].features[feature] ? "included" : "not included"}`}
-										>
-											{PLAN_ENTITLEMENTS[tier].features[feature]
-												? "Included"
-												: "Not included"}
-										</span>
-									),
-								)}
-							</div>
 						))}
 					</div>
 				</section>

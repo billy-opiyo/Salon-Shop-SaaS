@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import { listStylistsForUser, MerchantStylistError } from "@backend/services/merchantStylistService"
 import { addStylist, setStylistActive, updateStylist } from "./actions"
 
 interface StaffPageProps { readonly params: Promise<{ tenantSlug: string }> }
 
 export default async function MerchantStaffPage({ params }: StaffPageProps) {
-	const session = await auth(); if (!session?.user?.id) redirect("/login"); const { tenantSlug } = await params
+	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/staff`))
 	let stylists; try { stylists = await listStylistsForUser(session.user.id, tenantSlug) } catch (error) { if (error instanceof MerchantStylistError) redirect(`/manage/${tenantSlug}`); throw error }
 	return (
 		<main className="manage-page">
