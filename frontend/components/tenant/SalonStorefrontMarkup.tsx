@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import type React from "react"
 import Image from "next/image"
-import { CalendarDays, Heart, Images, Menu, Moon, Sun, UserRound, House } from "lucide-react"
+import { CalendarDays, Heart, Images, Menu, X, UserRound, House } from "lucide-react"
 import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 export interface SalonStorefrontMarkupProps {
@@ -149,17 +149,6 @@ export function SalonStorefrontMarkup({
 					<a href="#blog">Blog</a>
 					<a href="#visit">Visit Us</a>
 					<a href="#contact">Contact</a>
-					<button
-						type="button"
-						className="dark-mode-toggle"
-						id="darkModeToggle"
-						aria-label="Toggle dark mode"
-						aria-pressed="false"
-					>
-						<Sun className="sun" aria-hidden="true" />
-						<Moon className="moon" aria-hidden="true" />
-						<span>Dark mode</span>
-					</button>
 				</nav>
 
 				<div className="header-actions">
@@ -179,6 +168,7 @@ export function SalonStorefrontMarkup({
 						</button>
 						<div className="auth-profile-dropdown" id="authProfileDropdown">
 							<p id="authProfileName">Welcome back</p>
+							<button type="button" id="manageAccountOpenBtn">Account Settings</button>
 							<a href="#clientDashboard">My Dashboard</a>
 							<button type="button" id="logoutBtn">Log Out</button>
 						</div>
@@ -191,7 +181,8 @@ export function SalonStorefrontMarkup({
 						aria-expanded="false"
 						aria-controls="nav"
 					>
-						<Menu aria-hidden="true" />
+						<span className="nav-toggle__icon nav-toggle__icon--menu"><Menu aria-hidden="true" /></span>
+						<span className="nav-toggle__icon nav-toggle__icon--close"><X aria-hidden="true" /></span>
 					</button>
 				</div>
 			</div>
@@ -2084,9 +2075,9 @@ export function SalonStorefrontMarkup({
 								<div className="form-group">
 									<label htmlFor="manageAccountFontSizeSelect">Font Size</label>
 									<select id="manageAccountFontSizeSelect">
-										<option value="normal">Default</option>
+										<option value="medium">Default</option>
+										<option value="small">Small</option>
 										<option value="large">Large</option>
-										<option value="xlarge">Extra Large</option>
 									</select>
 								</div>
 							</div>

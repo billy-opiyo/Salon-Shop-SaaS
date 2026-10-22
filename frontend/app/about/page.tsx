@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
+import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 import { PlatformTeamCards } from "@/components/shared/PlatformTeamCards"
 import { getPublishedPlatformTeam } from "@backend/services/platformTeamService"
 
@@ -37,6 +38,11 @@ export default async function AboutPage() {
 					<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="/support">Salon Owner Support</Link></div>
 				</section>
 			</main>
+			<nav className="platform-mobile-actions" aria-label="Mobile platform navigation">
+				<Link href="/"><PlatformActionIcon name="home" /><span>Home</span></Link>
+				<Link href="/stores"><PlatformActionIcon name="salons" /><span>Salons</span></Link>
+				<Link href="/onboarding"><PlatformActionIcon name="start" /><span>Start Your Salon</span></Link>
+			</nav>
 		</>
 	)
 }

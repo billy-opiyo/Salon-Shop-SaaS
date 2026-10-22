@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
+import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 
 export const metadata = {
 	title: "Salon Owner Support | Beauty Sphia",
@@ -24,6 +25,11 @@ export default function SupportPage() {
 					<article><span className="eyebrow">Platform contact</span><h2>Tell us what you need.</h2><p>Share a question or product suggestion directly with the Beauty Sphia team.</p><a href={`mailto:${supportEmail}?subject=Beauty%20Sphia%20platform%20question`}>Email platform support</a></article>
 				</section>
 			</main>
+			<nav className="platform-mobile-actions" aria-label="Mobile platform navigation">
+				<Link href="/"><PlatformActionIcon name="home" /><span>Home</span></Link>
+				<Link href="/stores"><PlatformActionIcon name="salons" /><span>Salons</span></Link>
+				<Link href="/onboarding"><PlatformActionIcon name="start" /><span>Start Your Salon</span></Link>
+			</nav>
 		</>
 	)
 }

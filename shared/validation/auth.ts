@@ -31,3 +31,7 @@ export const preferencesSchema = z.object({
 	notifySms: z.boolean(),
 	notifyPush: z.boolean(),
 })
+
+export const themePreferenceSchema = z.object({
+	theme: z.enum(["dark", "light"]),
+})
