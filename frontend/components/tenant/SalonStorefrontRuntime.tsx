@@ -3951,6 +3951,41 @@ function bindAccountMutationAdapter(): () => void {
 	)
 	const backdrop = document.getElementById("deleteAccountConfirmBackdrop")
 	const message = document.getElementById("manageAccountMessage")
+	const newPasswordInput = document.getElementById("manageAccountNewPassword")
+	const passwordStrengthFill = document.getElementById("managePasswordStrengthFill")
+	const passwordStrengthText = document.getElementById("managePasswordStrengthText")
+	const passwordChecks = document.getElementById("managePasswordChecks")
+	const updatePasswordStrength = (): void => {
+		if (!(newPasswordInput instanceof HTMLInputElement)) return
+		const password = newPasswordInput.value
+		const rules: Record<string, boolean> = {
+			length: password.length >= 8,
+			upper: /[A-Z]/.test(password),
+			lower: /[a-z]/.test(password),
+			number: /\d/.test(password),
+		}
+		const score = Object.values(rules).filter(Boolean).length
+		passwordChecks?.querySelectorAll<HTMLElement>("li[data-rule]").forEach((item) => {
+			item.classList.toggle("met", Boolean(rules[item.dataset.rule ?? ""]))
+		})
+		if (passwordStrengthFill instanceof HTMLElement) {
+			passwordStrengthFill.style.width = `${score * 25}%`
+			passwordStrengthFill.classList.remove(
+				"strength-weak",
+				"strength-medium",
+				"strength-strong",
+			)
+			passwordStrengthFill.classList.add(
+				score <= 1 ? "strength-weak" : score <= 3 ? "strength-medium" : "strength-strong",
+			)
+		}
+		if (passwordStrengthText) {
+			passwordStrengthText.textContent =
+				score <= 1 ? "Strength: Too weak" : score <= 3 ? "Strength: Medium" : "Strength: Strong"
+		}
+	}
+	newPasswordInput?.addEventListener("input", updatePasswordStrength)
+	updatePasswordStrength()
 	const setMessage = (text: string, error = false): void => {
 		if (!message) return
 		message.textContent = text
@@ -4077,6 +4112,7 @@ function bindAccountMutationAdapter(): () => void {
 	cancelDeleteButton?.addEventListener("click", closeDelete)
 	backdrop?.addEventListener("click", closeDelete)
 	return () => {
+		newPasswordInput?.removeEventListener("input", updatePasswordStrength)
 		profileButton?.removeEventListener("click", saveProfile)
 		passwordButton?.removeEventListener("click", changePassword)
 		preferencesButton?.removeEventListener("click", savePreferences)
@@ -5595,9 +5631,20 @@ function bindNativeContentControls(): () => void {
 		add(document.getElementById("blogPrevBtn"), "click", () =>
 			blogGrid.scrollBy({ left: -blogGrid.clientWidth, behavior: "smooth" }),
 		)
-		add(document.getElementById("blogNextBtn"), "click", () =>
-			blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" }),
-		)
+		add(document.getElementById("blogNextBtn"), "click", () => {
+			if (!showAllBlogs && blogCards.length > 3) {
+				showAllBlogs = true
+				applyBlogs()
+				window.requestAnimationFrame(() =>
+					blogGrid.scrollBy({
+						left: blogGrid.clientWidth,
+						behavior: "smooth",
+					}),
+				)
+				return
+			}
+			blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" })
+		})
 		applyBlogs()
 	}
 
@@ -5755,13 +5802,45 @@ function bindNativeSalonInteractions(
 	const selectService = (serviceName: string): void => {
 		const serviceSelect = document.getElementById("serviceSelect")
 		if (serviceSelect instanceof HTMLSelectElement) {
-			serviceSelect.value = serviceName
+			const normalizedService = serviceName.trim()
+			const hasMatchingOption = Array.from(serviceSelect.options).some(
+				(option) => option.value === normalizedService,
+			)
+			const customServiceGroup = document.getElementById("customServiceGroup")
+			const customServiceInput = document.getElementById("customServiceInput")
+			const isCustomService = !hasMatchingOption && normalizedService.length > 0
+			serviceSelect.value = hasMatchingOption
+				? normalizedService
+				: isCustomService
+					? "__custom_service__"
+					: ""
+			if (customServiceGroup) {
+				customServiceGroup.classList.toggle("hidden", !isCustomService)
+			}
+			if (customServiceInput instanceof HTMLInputElement) {
+				customServiceInput.value = isCustomService ? normalizedService : ""
+				customServiceInput.required = isCustomService
+			}
 			serviceSelect.dispatchEvent(new Event("change", { bubbles: true }))
 		}
 		document
 			.getElementById("booking")
 			?.scrollIntoView({ behavior: "smooth", block: "start" })
 	}
+	const bookingServiceSelect = document.getElementById("serviceSelect")
+	const updateCustomServiceInput = (): void => {
+		if (!(bookingServiceSelect instanceof HTMLSelectElement)) return
+		const isCustomService = bookingServiceSelect.value === "__custom_service__"
+		const customServiceGroup = document.getElementById("customServiceGroup")
+		const customServiceInput = document.getElementById("customServiceInput")
+		customServiceGroup?.classList.toggle("hidden", !isCustomService)
+		if (customServiceInput instanceof HTMLInputElement) {
+			customServiceInput.required = isCustomService
+			if (!isCustomService) customServiceInput.value = ""
+		}
+	}
+	add(bookingServiceSelect, "change", updateCustomServiceInput)
+	updateCustomServiceInput()
 	const openWhatsApp = (serviceName: string, price: string): void => {
 		const value = window.CLIENT_CONFIG?.social
 		const base =

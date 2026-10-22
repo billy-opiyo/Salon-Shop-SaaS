@@ -87,7 +87,6 @@ export function LoginForm({
 						type={showPassword ? "text" : "password"}
 						placeholder="••••••••"
 						autoComplete="current-password"
-						minLength={12}
 						required
 					/>
 					<button

@@ -29,6 +29,49 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(documentWidth).toBeLessThanOrEqual(viewportWidth + 1)
 	})
 
+	test("blog Next reveals the remaining posts before advancing", async ({ page }) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const cards = page.locator("#blogGrid .blog-card")
+		const initiallyVisible = await cards.evaluateAll((items) =>
+			items.filter((item) => getComputedStyle(item).display !== "none").length,
+		)
+		expect(await cards.count()).toBeGreaterThan(3)
+		expect(initiallyVisible).toBe(3)
+		await page.locator("#blogNextBtn").click()
+		await expect(cards.nth(3)).toBeVisible()
+		await expect(page.locator("#viewLessBlogsBtn")).toBeVisible()
+	})
+
+	test("gallery Book Now carries unlisted service names into custom booking", async ({
+		page,
+	}) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const unmatchedGalleryIndex = await page.locator(".gallery-item").evaluateAll(
+			(items) => {
+				const serviceSelect = document.querySelector<HTMLSelectElement>("#serviceSelect")
+				if (!serviceSelect) return -1
+				return items.findIndex((item) => {
+					const serviceName = item.getAttribute("data-gallery-sub-service")?.trim()
+					return Boolean(
+						serviceName &&
+						!Array.from(serviceSelect.options).some(
+							(option) => option.value === serviceName,
+						),
+					)
+				})
+			},
+		)
+		expect(unmatchedGalleryIndex).toBeGreaterThanOrEqual(0)
+		const galleryItem = page.locator(".gallery-item").nth(unmatchedGalleryIndex)
+		const serviceName = await galleryItem.getAttribute("data-gallery-sub-service")
+		await galleryItem.click()
+		await page.locator("#lightboxBookNow").click()
+		await expect(page.locator("#serviceSelect")).toHaveValue("__custom_service__")
+		await expect(page.locator("#customServiceGroup")).toBeVisible()
+		await expect(page.locator("#customServiceInput")).toHaveValue(serviceName ?? "")
+		await expect(page.locator("#customServiceInput")).toHaveAttribute("required", "")
+	})
+
 	test("visit section preserves the legacy map embed and contact actions", async ({
 		page,
 	}) => {
