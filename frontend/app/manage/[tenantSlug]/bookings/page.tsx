@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	MerchantBookingError,
 	listBookingsForUser,
@@ -36,9 +37,9 @@ function nextStatuses(
 export default async function MerchantBookingsPage({
 	params,
 }: BookingsPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/bookings`))
 
 	let bookings
 	try {
@@ -83,7 +84,7 @@ export default async function MerchantBookingsPage({
 			<section className="admin-bookings-list" aria-label="Bookings">
 				{bookings.length === 0 ? (
 					<p className="manage-empty">
-						No bookings have been received for this store.
+						No bookings have been received for this salon.
 					</p>
 				) : (
 					bookings.map((booking) => {

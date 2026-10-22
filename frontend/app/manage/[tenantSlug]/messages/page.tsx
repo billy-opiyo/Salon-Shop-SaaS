@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	listMessagesForUser,
 	MerchantMessageError,
@@ -14,9 +15,10 @@ const statuses = ["NEW", "READ", "RESOLVED"] as const
 export default async function MerchantMessagesPage({
 	params,
 }: MessagesPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/messages`))
 	let messages
 	try {
 		messages = await listMessagesForUser(session.user.id, tenantSlug)

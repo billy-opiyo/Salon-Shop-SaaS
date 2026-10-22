@@ -14,14 +14,13 @@ interface PlatformHeaderProps {
 
 const platformSearchEntries: readonly SiteSearchEntry[] = [
 	{ label: "Home", description: "Beauty Sphia salon platform", href: "/", keywords: "platform salon management" },
-	{ label: "Salons", description: "Explore live salon storefronts", href: "/stores", keywords: "salons directory browse stores" },
+	{ label: "Salons", description: "Explore live salon storefronts", href: "/stores", keywords: "salons directory browse" },
 	{ label: "About Beauty Sphia", description: "Meet the people behind the platform", href: "/about", keywords: "team people" },
 	{ label: "Salon Owner Support", description: "Setup, bookings, billing, and account help", href: "/support", keywords: "help support" },
 	{ label: "Pricings", description: "Compare salon plans and included features", href: "/#plans", keywords: "plans prices pricing subscription" },
-	{ label: "Top Stores Available", description: "Discover salons on Beauty Sphia", href: "/#top-stores", keywords: "directory salons" },
+	{ label: "Top Salons Available", description: "Discover salons on Beauty Sphia", href: "/#top-stores", keywords: "directory salons" },
 	{ label: "How it works", description: "Create, customize, and grow your salon", href: "/#how-it-works", keywords: "create customize grow" },
 	{ label: "Contact", description: "Send a message to the Beauty Sphia team", href: "/#contact", keywords: "email message" },
-	{ label: "Start Your Salon", description: "Create your salon storefront", href: "/onboarding", keywords: "create store onboarding" },
 ]
 
 export function PlatformHeader({ page = "home", logoUrl = "/platform/Beauty Sphia logo.webp" }: PlatformHeaderProps) {
@@ -44,7 +43,6 @@ export function PlatformHeader({ page = "home", logoUrl = "/platform/Beauty Sphi
 			<Link href={plansHref} onClick={() => setMenuOpen(false)}>Pricings</Link>
 			<Link href="/about" onClick={() => setMenuOpen(false)}>About</Link>
 			<Link href="/support" onClick={() => setMenuOpen(false)}>Support</Link>
-			<Link className="platform-nav__start" href="/onboarding" onClick={() => setMenuOpen(false)}>Start Your Salon</Link>
 		</nav>
 		<div className="platform-header__actions">
 			<SiteSearch entries={platformSearchEntries} label="Beauty Sphia" />

@@ -1,8 +1,15 @@
 import Link from "next/link"
 
 import { LoginForm } from "./LoginForm"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
-export default function LoginPage() {
+interface LoginPageProps {
+	readonly searchParams: Promise<{ readonly callbackUrl?: string | string[] }>
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+	const { callbackUrl } = await searchParams
+	const safeCallbackUrl = getSafeAuthCallbackUrl(callbackUrl)
 	return (
 		<main className="auth-page">
 			<section className="auth-card" aria-labelledby="login-title">
@@ -19,7 +26,7 @@ export default function LoginPage() {
 						Manage your storefront, bookings, services, and team from one place.
 					</p>
 				</div>
-				<LoginForm />
+				<LoginForm callbackUrl={safeCallbackUrl} />
 			</section>
 		</main>
 	)

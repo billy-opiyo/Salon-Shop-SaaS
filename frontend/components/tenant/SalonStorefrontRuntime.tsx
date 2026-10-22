@@ -10,6 +10,7 @@ import {
 	STOREFRONT_SECTION_KEYS,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import { safeMapEmbedUrl } from "@shared/safeMapEmbedUrl"
 import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
 import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
 import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
@@ -1257,11 +1258,10 @@ function bindStorefrontDesignEditor(
 			...DEFAULT_STOREFRONT_DESIGN.sectionVisibility,
 			...savedVisibility,
 		},
-		mapEmbedUrl:
-			typeof savedDesign.mapEmbedUrl === "string" &&
-			savedDesign.mapEmbedUrl.trim()
-				? savedDesign.mapEmbedUrl
-				: DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+		mapEmbedUrl: safeMapEmbedUrl(
+			savedDesign.mapEmbedUrl,
+			DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+		),
 	}
 	setDesignControl("adminDesignThemePreset", settings.themePreset ?? "gold")
 	setDesignControl("adminDesignThemeMode", settings.themeMode ?? "dark")
@@ -1413,7 +1413,7 @@ function bindStorefrontDesignEditor(
 						result.error ?? "The uploaded image has no public URL configured.",
 					)
 				setDesignControl(urlId, result.publicUrl)
-				setDesignMessage("Image uploaded. Save Store Design to publish it.")
+				setDesignMessage("Image uploaded. Save Salon Design to publish it.")
 			} catch (error) {
 				setDesignMessage(
 					error instanceof Error ? error.message : "The image upload failed.",
@@ -1431,7 +1431,7 @@ function bindStorefrontDesignEditor(
 		return () => fileUploads.forEach((remove) => remove())
 	const saveHandler = async () => {
 		saveButton.disabled = true
-		setDesignMessage("Saving Store Design…")
+		setDesignMessage("Saving Salon Design…")
 		const sectionCopy = Object.fromEntries(
 			Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]),
 		)
@@ -1489,14 +1489,14 @@ function bindStorefrontDesignEditor(
 			)
 			const result = (await response.json()) as { error?: string }
 			if (!response.ok)
-				throw new Error(result.error ?? "Store Design could not be saved.")
-			setDesignMessage("Store Design saved successfully.")
+				throw new Error(result.error ?? "Salon Design could not be saved.")
+			setDesignMessage("Salon Design saved successfully.")
 			window.setTimeout(() => window.location.reload(), 450)
 		} catch (error) {
 			setDesignMessage(
 				error instanceof Error
 					? error.message
-					: "Store Design could not be saved.",
+					: "Salon Design could not be saved.",
 				"error",
 			)
 			saveButton.disabled = false
@@ -2793,35 +2793,11 @@ function getConfiguredWhatsAppUrl(): string {
 	return "https://wa.me/254740470381"
 }
 
-function getMobileActionIconSvg(
-	name: "home" | "gallery" | "book" | "favorite" | "account",
-): string {
-	const paths = {
-		home: '<path d="m3 10 9-7 9 7"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
-		gallery:
-			'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.4"/><path d="m3 16 4.5-4.5 3.5 3.5 2.5-2.5L21 19"/>',
-		book: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16M8 13h.01M12 13h.01M16 13h.01M8 16h.01M12 16h.01"/>',
-		favorite:
-			'<path d="M20.8 8.6c0 5.5-8.8 10.4-8.8 10.4S3.2 14.1 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"/>',
-		account:
-			'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
-	} as const
-	return `<svg class="mobile-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${paths[name]}</svg>`
-}
-
 function addTenantNavigationLinks(tenantSlug: string): () => void {
 	const root = document.querySelector<HTMLElement>(".salon-storefront-root")
 	if (!root) return () => undefined
-	const actionBar = document.createElement("nav")
-	actionBar.className = "saas-tenant-mobile-actions"
-	actionBar.setAttribute("aria-label", "Salon mobile navigation")
-	const actions = [
-		[null, "#home", "home", "Home"],
-		[null, "#gallery", "gallery", "Gallery"],
-		[null, "#booking", "book", "Book"],
-		["dashboardFavoritesCard", "#clientDashboard", "favorite", "Favorites"],
-		["dashboardProfileCard", "#clientDashboard", "account", "Account"],
-	] as const
+	const actionBar = root.querySelector<HTMLElement>(".saas-tenant-mobile-actions")
+	if (!actionBar) return () => undefined
 
 	// The dashboard section ships hidden (display:none) so anchors alone can't
 	// reveal it. For the Favorites/Account mobile tabs we reveal the section,
@@ -2849,20 +2825,16 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 		return true
 	}
 
-	actions.forEach(([cardId, href, icon, label]) => {
-		const link = document.createElement("a")
-		link.href = href
-		link.setAttribute("aria-label", label)
-		link.innerHTML = `${getMobileActionIconSvg(icon)}<small>${label}</small>`
-		if (cardId) {
-			link.addEventListener("click", (event) => {
-				event.preventDefault()
-				revealAndFocusDashboardCard(cardId)
-			})
+	const dashboardLinks = Array.from(actionBar.querySelectorAll<HTMLAnchorElement>("[data-dashboard-card]"))
+	const revealHandlers = dashboardLinks.map((link) => {
+		const handleClick = (event: MouseEvent): void => {
+			event.preventDefault()
+			const cardId = link.dataset.dashboardCard
+			if (cardId) revealAndFocusDashboardCard(cardId)
 		}
-		actionBar.append(link)
+		link.addEventListener("click", handleClick)
+		return () => link.removeEventListener("click", handleClick)
 	})
-	document.body.append(actionBar)
 
 	const footer = root.querySelector<HTMLElement>("footer.footer")
 	const footerLink = document.createElement("a")
@@ -2880,7 +2852,7 @@ function addTenantNavigationLinks(tenantSlug: string): () => void {
 	}
 
 	return () => {
-		actionBar.remove()
+		revealHandlers.forEach((cleanup) => cleanup())
 		footerLink.remove()
 	}
 }
@@ -2951,6 +2923,7 @@ async function readReferenceJson(
 function bindPublicParityAdapters(
 	tenantSlug: string,
 	turnstileSiteKey: string,
+	galleryItems: readonly SalonGalleryItem[],
 ): () => void {
 	const contactForm = document.getElementById("contactForm")
 	const reviewForm = document.getElementById("reviewForm")
@@ -3099,6 +3072,29 @@ function bindPublicParityAdapters(
 				submitButton.disabled = false
 		}
 	}
+	const favoriteLoginMessage = (galleryStyleId: string): string => {
+		const galleryItem = galleryItems.find((item) => item.id === galleryStyleId)
+		const category = galleryItem?.serviceCategory?.trim().toLowerCase() ?? ""
+		const displayLabels: Readonly<Record<string, string>> = {
+			"braids-services": "Braids",
+			"hair-services": "Hair",
+			"beauty-spa-services": "Beauty Spa",
+			"nail-services": "Nails",
+			"makeup-services": "Makeup",
+			"barber-services": "Barber",
+			"massage-wellness": "Massage",
+			"eyebrow-lash-services": "Eyebrows & Lash",
+			"bridal-event-packages": "Bridal / Event Packages",
+			"cosmetics-products": "Cosmetics",
+		}
+		const label = displayLabels[category] ?? galleryItem?.serviceCategory?.trim() ?? "Gallery"
+		const categoryText = label
+			.replace(/\s+services$/i, "")
+			.trim()
+			.toLowerCase()
+			.replace(/s$/, "")
+		return `🔐 Log in to save this ${categoryText || "gallery"} style.`
+	}
 
 	const toggleFavorite = async (event: Event): Promise<void> => {
 		const target = event.target
@@ -3128,7 +3124,7 @@ function bindPublicParityAdapters(
 			const result = await readReferenceJson(response)
 			if (!response.ok) {
 				if (response.status === 401 || response.status === 403) {
-					openSignInModal("Log in to save this gallery style.")
+					openSignInModal(favoriteLoginMessage(galleryStyleId))
 					return
 				}
 				showFavoritesToast(
@@ -5238,40 +5234,51 @@ function bindNativeGalleryControls(
 
 	const score = (card: HTMLElement): number =>
 		(card.dataset.featuredTrending === "true" ? 2 : 0) +
-		(card.dataset.featuredMostBooked === "true" ? 2 : 0)
+		(card.dataset.featuredMostBooked === "true" ? 2 : 0) +
+		(card.querySelector(".gallery-slideshow") ? 1 : 0)
+	const galleryDate = (
+		card: HTMLElement,
+		primary: "galleryUpdatedAt" | "galleryCreatedAt",
+		fallback: "galleryUpdatedAt" | "galleryCreatedAt",
+	): number =>
+		nativeGalleryDate(card.dataset[primary]) ||
+		nativeGalleryDate(card.dataset[fallback])
+	const byName = (a: HTMLElement, b: HTMLElement): number =>
+		(a.querySelector("h4")?.textContent ?? "").localeCompare(
+			b.querySelector("h4")?.textContent ?? "",
+			undefined,
+			{ sensitivity: "base" },
+		)
 	const compare = (a: HTMLElement, b: HTMLElement): number => {
 		if (sortBy === "name-asc" || sortBy === "name-desc") {
-			const result = (a.querySelector("h4")?.textContent ?? "").localeCompare(
-				b.querySelector("h4")?.textContent ?? "",
-			)
+			const result = byName(a, b)
 			return sortBy === "name-desc" ? -result : result
 		}
 		if (sortBy === "date-modified-desc" || sortBy === "new")
 			return (
-				nativeGalleryDate(b.dataset.galleryUpdatedAt) -
-				nativeGalleryDate(a.dataset.galleryUpdatedAt)
+				galleryDate(b, "galleryUpdatedAt", "galleryCreatedAt") -
+				galleryDate(a, "galleryUpdatedAt", "galleryCreatedAt")
 			)
 		if (sortBy === "date-modified-asc" || sortBy === "old")
 			return (
-				nativeGalleryDate(a.dataset.galleryUpdatedAt) -
-				nativeGalleryDate(b.dataset.galleryUpdatedAt)
+				galleryDate(a, "galleryUpdatedAt", "galleryCreatedAt") -
+				galleryDate(b, "galleryUpdatedAt", "galleryCreatedAt")
 			)
 		if (sortBy === "date-created-desc")
 			return (
-				nativeGalleryDate(b.dataset.galleryCreatedAt) -
-				nativeGalleryDate(a.dataset.galleryCreatedAt)
+				galleryDate(b, "galleryCreatedAt", "galleryUpdatedAt") -
+				galleryDate(a, "galleryCreatedAt", "galleryUpdatedAt")
 			)
 		if (sortBy === "date-created-asc")
 			return (
-				nativeGalleryDate(a.dataset.galleryCreatedAt) -
-				nativeGalleryDate(b.dataset.galleryCreatedAt)
+				galleryDate(a, "galleryCreatedAt", "galleryUpdatedAt") -
+				galleryDate(b, "galleryCreatedAt", "galleryUpdatedAt")
 			)
 		const scoreDiff = score(b) - score(a)
-		return (
-			scoreDiff ||
-			nativeGalleryDate(b.dataset.galleryUpdatedAt) -
-				nativeGalleryDate(a.dataset.galleryUpdatedAt)
-		)
+		const updatedDiff =
+			galleryDate(b, "galleryUpdatedAt", "galleryCreatedAt") -
+			galleryDate(a, "galleryUpdatedAt", "galleryCreatedAt")
+		return scoreDiff || updatedDiff || byName(a, b)
 	}
 
 	const updateFeatured = (): void => {
@@ -5358,6 +5365,7 @@ function bindNativeGalleryControls(
 	add(sortSelect, "change", () => {
 		if (sortSelect instanceof HTMLSelectElement)
 			sortBy = sortSelect.value || "recommended"
+		showAll = false
 		apply()
 	})
 	add(document.getElementById("viewAllGallery"), "click", () => {
@@ -5388,22 +5396,24 @@ function bindNativeContentControls(): () => void {
 		)
 		let showAllReviews = false
 		let reviewSort = "featured"
+		const reviewTime = (card: HTMLElement): number => {
+			const parsed = Date.parse(card.dataset.reviewCreatedAt ?? "")
+			return Number.isNaN(parsed) ? 0 : parsed
+		}
+		const featuredFirst = (a: HTMLElement, b: HTMLElement): number =>
+			Number(b.dataset.reviewFeatured === "true") -
+			Number(a.dataset.reviewFeatured === "true")
 		const applyReviews = (): void => {
 			const sorted = [...reviewCards].sort((a, b) => {
-				if (reviewSort === "highest-rated")
-					return (
+				const recencyDiff = reviewTime(b) - reviewTime(a)
+				if (reviewSort === "newest") return recencyDiff
+				if (reviewSort === "highest-rated") {
+					const ratingDiff =
 						Number(b.dataset.reviewRating ?? 0) -
 						Number(a.dataset.reviewRating ?? 0)
-					)
-				if (reviewSort === "newest")
-					return (
-						Date.parse(b.dataset.reviewCreatedAt ?? "") -
-						Date.parse(a.dataset.reviewCreatedAt ?? "")
-					)
-				return (
-					Number(b.dataset.reviewRating ?? 0) -
-					Number(a.dataset.reviewRating ?? 0)
-				)
+					return ratingDiff || featuredFirst(a, b) || recencyDiff
+				}
+				return featuredFirst(a, b) || recencyDiff
 			})
 			sorted.forEach((card) => reviewGrid.appendChild(card))
 			reviewCards.forEach((card, index) => {
@@ -5427,6 +5437,7 @@ function bindNativeContentControls(): () => void {
 		add(reviewSortSelect, "change", () => {
 			if (reviewSortSelect instanceof HTMLSelectElement)
 				reviewSort = reviewSortSelect.value || "featured"
+			showAllReviews = false
 			applyReviews()
 		})
 		add(document.getElementById("viewAllReviewsBtn"), "click", () => {
@@ -5553,11 +5564,55 @@ function bindNativeSalonInteractions(
 		cleanup.push(() => target.removeEventListener(type, listener))
 	}
 
+	const floatingWhatsApp = document.getElementById("floatingWhatsAppButton")
+	const serviceSelectForWhatsApp = document.getElementById("serviceSelect")
+	const updateFloatingWhatsAppLink = (): void => {
+		if (
+			!(floatingWhatsApp instanceof HTMLAnchorElement) ||
+			!(serviceSelectForWhatsApp instanceof HTMLSelectElement)
+		)
+			return
+		const selectedOption =
+			serviceSelectForWhatsApp.options[serviceSelectForWhatsApp.selectedIndex]
+		const serviceName = serviceSelectForWhatsApp.value || "[Service name]"
+		const price =
+			selectedOption?.textContent?.match(/\(([^)]+)\)/)?.[1]?.trim() ||
+			"[Price]"
+		const orderOnly = selectedOption?.dataset.orderOnly === "true"
+		const config = window.CLIENT_CONFIG as SalonClientConfig | undefined
+		const businessName =
+			config?.client?.name ??
+			config?.brand?.businessName ??
+			"the salon"
+		const action = orderOnly ? "order" : "book"
+		const text =
+			"Hello " +
+			businessName +
+			", I would like to " +
+			action +
+			" " +
+			serviceName +
+			" (" +
+			price +
+			"). Please confirm the next steps."
+		const baseUrl = getConfiguredWhatsAppUrl()
+		const separator = baseUrl.includes("?") ? "&" : "?"
+		floatingWhatsApp.href =
+			baseUrl + separator + "text=" + encodeURIComponent(text)
+	}
+	add(serviceSelectForWhatsApp, "change", updateFloatingWhatsAppLink)
+	updateFloatingWhatsAppLink()
+
 	const navToggle = document.getElementById("navToggle")
 	const nav = document.getElementById("nav")
 	const toggleNav = (): void => {
 		navToggle?.classList.toggle("active")
 		nav?.classList.toggle("active")
+		navToggle?.setAttribute("aria-expanded", String(nav?.classList.contains("active") ?? false))
+		navToggle?.setAttribute(
+			"aria-label",
+			nav?.classList.contains("active") ? "Close salon menu" : "Open salon menu",
+		)
 		document.body.style.overflow = nav?.classList.contains("active")
 			? "hidden"
 			: ""
@@ -5566,6 +5621,8 @@ function bindNativeSalonInteractions(
 	nav?.querySelectorAll("a").forEach((link) =>
 		add(link, "click", () => {
 			navToggle?.classList.remove("active")
+			navToggle?.setAttribute("aria-expanded", "false")
+			navToggle?.setAttribute("aria-label", "Open salon menu")
 			nav.classList.remove("active")
 			document.body.style.overflow = ""
 		}),
@@ -5899,6 +5956,7 @@ export function SalonStorefrontRuntime({
 		const removePublic = bindPublicParityAdapters(
 			tenantSlug ?? "",
 			turnstileSiteKey ?? "",
+			gallery,
 		)
 		const removeAccount = bindAccountMutationAdapter()
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")

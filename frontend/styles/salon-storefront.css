@@ -5996,6 +5996,12 @@ h6 {
     aspect-ratio: 1 / 1;
 }
 
+.salon-media-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+}
+
 .gallery-slideshow {
     position: relative;
     width: 100%;
@@ -8531,11 +8537,136 @@ body.light-mode .salon-storefront-root .service-whatsapp-btn:focus-visible {
     color: #f4fff7;
 }
 
+/* Salon storefront header controls follow the active theme and use compact icon buttons. */
+.salon-storefront-root .header-actions { gap: clamp(.35rem, 1vw, .7rem); }
+.salon-storefront-root .tenant-site-search { order: 0; }
+.salon-storefront-root .site-search__trigger {
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: .55rem;
+    background: transparent;
+    color: var(--text-primary);
+    box-shadow: none;
+}
+.salon-storefront-root .site-search__trigger:hover,
+.salon-storefront-root .site-search__trigger:focus-visible,
+.salon-storefront-root .site-search__trigger[aria-expanded="true"] {
+    transform: none;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+.salon-storefront-root .site-search__panel {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--bg-card) 96%, transparent);
+    color: var(--text-primary);
+}
+.salon-storefront-root .site-search__input-wrap {
+    border-bottom-color: var(--border);
+    background: var(--bg-card);
+}
+.salon-storefront-root .site-search__input-wrap input { color: var(--text-primary); }
+.salon-storefront-root .site-search__input-wrap input::placeholder { color: var(--text-muted); }
+.salon-storefront-root .site-search__input-wrap > button {
+    background: var(--primary-soft);
+    color: var(--text-primary);
+}
+.salon-storefront-root .site-search__result { color: var(--text-primary); }
+.salon-storefront-root .site-search__result:hover,
+.salon-storefront-root .site-search__result:focus-visible { background: var(--primary-soft); }
+.salon-storefront-root .site-search__result strong { color: var(--primary-dark); }
+.salon-storefront-root .site-search__result span,
+.salon-storefront-root .site-search__empty { color: var(--text-secondary); }
+body.light-mode .salon-storefront-root .site-search__trigger {
+	color: #70501f !important;
+}
+body.light-mode .salon-storefront-root .site-search__trigger:hover,
+body.light-mode .salon-storefront-root .site-search__trigger:focus-visible,
+body.light-mode .salon-storefront-root .site-search__trigger[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--primary) 12%, #ffffff);
+	color: #70501f !important;
+}
+body.light-mode .salon-storefront-root .site-search__panel {
+    border-color: #d9c8b7;
+    background: rgba(255, 253, 249, .98);
+    color: #1f140b;
+}
+body.light-mode .salon-storefront-root .site-search__input-wrap {
+    border-bottom-color: #d9c8b7;
+    background: #fffdf9;
+}
+body.light-mode .salon-storefront-root .site-search__input-wrap input,
+body.light-mode .salon-storefront-root .site-search__input-wrap > button,
+body.light-mode .salon-storefront-root .site-search__result {
+    color: #1f140b;
+}
+body.light-mode .salon-storefront-root .site-search__input-wrap input::placeholder,
+body.light-mode .salon-storefront-root .site-search__result span,
+body.light-mode .salon-storefront-root .site-search__empty {
+    color: #705845;
+}
+body.light-mode .salon-storefront-root .site-search__input-wrap > button {
+    background: color-mix(in srgb, var(--primary) 10%, #ffffff);
+}
+body.light-mode .salon-storefront-root .site-search__result:hover,
+body.light-mode .salon-storefront-root .site-search__result:focus-visible {
+    background: color-mix(in srgb, var(--primary) 9%, #ffffff);
+}
+body.light-mode .salon-storefront-root .site-search__result strong {
+    color: var(--primary-dark);
+}
+.salon-storefront-root .dark-mode-toggle { display: none; }
+.salon-storefront-root .nav-toggle {
+	display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: .55rem;
+    background: transparent;
+    color: var(--text-primary);
+}
+.salon-storefront-root .nav-toggle:hover,
+.salon-storefront-root .nav-toggle:focus-visible,
+.salon-storefront-root .nav-toggle.active { background: var(--primary-soft); color: var(--primary-dark); }
+.salon-storefront-root .nav-toggle svg { width: 1.35rem; height: 1.35rem; }
+.salon-storefront-root .nav .dark-mode-toggle {
+    align-items: center;
+    gap: .75rem;
+    width: 100%;
+    padding: .8rem .9rem;
+    border: 0;
+    border-radius: .65rem;
+    background: transparent;
+    color: var(--text-primary);
+    text-align: left;
+}
+.salon-storefront-root .nav .dark-mode-toggle:hover,
+.salon-storefront-root .nav .dark-mode-toggle:focus-visible { background: var(--primary-soft); }
+.salon-storefront-root .nav.active .dark-mode-toggle { display: flex; }
+.salon-storefront-root .nav .dark-mode-toggle .sun,
+.salon-storefront-root .nav .dark-mode-toggle .moon { position: static; width: 1.15rem; height: 1.15rem; }
+.salon-storefront-root .saas-tenant-mobile-actions svg { width: 1.35rem; height: 1.35rem; }
+.salon-storefront-root .nav-toggle { flex-direction: row; }
+.salon-storefront-root .nav-toggle svg { transition: transform .18s ease; }
+.salon-storefront-root .nav-toggle.active svg { transform: rotate(90deg); }
+
+@media (max-width: 1199px) {
+    .salon-storefront-root .nav-toggle { display: inline-flex; }
+}
+
+@media (min-width: 1200px) {
+    .salon-storefront-root .nav .dark-mode-toggle { display: none; }
+}
+
 @media (max-width: 767px) {
 
     .salon-storefront-root .floating-whatsapp,
     .salon-storefront-root .back-to-top {
-        bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -8547,7 +8678,7 @@ body.light-mode .salon-storefront-root .service-whatsapp-btn:focus-visible {
 
     .back-to-top,
     .floating-whatsapp {
-        bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

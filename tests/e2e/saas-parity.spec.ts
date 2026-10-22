@@ -29,6 +29,24 @@ test.describe("Royal Braids SaaS parity", () => {
 		expect(documentWidth).toBeLessThanOrEqual(viewportWidth + 1)
 	})
 
+	test("visit section preserves the legacy map embed and contact actions", async ({
+		page,
+	}) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const visit = page.locator("#visit")
+		const map = visit.locator("iframe")
+		await expect(map).toHaveAttribute(
+			"src",
+			/^https:\/\/www\.google\.com\/maps\/embed\?pb=/,
+		)
+		await expect(map).toHaveAttribute("src", /Westlands%2C\+Nairobi/)
+		await expect(visit.locator('a[href="tel:+254740470381"]')).toBeVisible()
+		await expect(visit.locator('a[href="mailto:info@royalbraids.ke"]')).toBeVisible()
+		await expect(
+			visit.locator('a[href="mailto:bookings@royalbraids.ke"]'),
+		).toBeVisible()
+	})
+
 	test("storefront in-page navigation links point to rendered sections", async ({
 		page,
 	}) => {

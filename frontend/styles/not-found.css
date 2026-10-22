@@ -321,7 +321,6 @@
 				color: var(--text-primary);
 				background:
 					linear-gradient(135deg, rgba(10, 10, 10, 0.96), rgba(10, 10, 10, 0.74), rgba(10, 10, 10, 0.94)),
-					url("/IMG/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg") center / cover fixed,
 					var(--bg-primary);
 				overflow-x: hidden;
 				scrollbar-width: thin;

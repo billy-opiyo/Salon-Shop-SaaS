@@ -38,6 +38,7 @@ export interface SalonReviewItem {
 	readonly source?: string
 	readonly rating: number
 	readonly text: string
+	readonly featured?: boolean
 	readonly status?: string
 	readonly createdAt?: string
 }
@@ -67,9 +68,6 @@ const CATEGORY_LABELS: Readonly<Record<string, string>> = {
 	"cosmetics-products": "Cosmetics Products",
 }
 
-const FALLBACK_IMAGE =
-	"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
-
 function slugify(value: string): string {
 	return value
 		.toLowerCase()
@@ -77,10 +75,10 @@ function slugify(value: string): string {
 		.replace(/^-|-$/g, "")
 }
 
-function safeImageUrl(value: string | undefined): string {
-	if (!value) return FALLBACK_IMAGE
+function safeImageUrl(value: string | undefined): string | undefined {
+	if (!value) return undefined
 	if (value.startsWith("/") || value.startsWith("https://")) return value
-	return FALLBACK_IMAGE
+	return undefined
 }
 
 function serviceIcon(): ReactNode {
@@ -191,7 +189,9 @@ export function SalonGallery({
 	items,
 }: Readonly<{ items: readonly SalonGalleryItem[] }>): ReactNode {
 	return items.map((item, index) => {
-		const hasBeforeAfter = Boolean(item.beforeImageUrl && item.imageUrl)
+		const beforeImageUrl = safeImageUrl(item.beforeImageUrl)
+		const imageUrl = safeImageUrl(item.imageUrl)
+		const hasBeforeAfter = Boolean(beforeImageUrl && imageUrl)
 		return (
 			<div
 				className="gallery-item"
@@ -217,26 +217,25 @@ export function SalonGallery({
 					>
 						<img
 							className="gallery-slideshow-image gallery-slideshow-before"
-							src={safeImageUrl(item.beforeImageUrl)}
+							src={beforeImageUrl!}
 							alt={item.styleName + " before"}
 							loading="lazy"
 							decoding="async"
 						/>
 						<img
 							className="gallery-slideshow-image gallery-slideshow-after"
-							src={safeImageUrl(item.imageUrl)}
+							src={imageUrl!}
 							alt={item.styleName + " after"}
 							loading="lazy"
 							decoding="async"
 						/>
 					</div>
 				) : (
-					<img
-						src={safeImageUrl(item.imageUrl)}
-						alt={item.styleName}
-						loading="lazy"
-						decoding="async"
-					/>
+					imageUrl ? (
+						<img src={imageUrl} alt={item.styleName} loading="lazy" decoding="async" />
+					) : (
+						<div className="salon-media-placeholder" aria-hidden="true" />
+					)
 				)}
 				<div className="gallery-overlay">
 					<h4>{item.styleName}</h4>
@@ -267,6 +266,7 @@ export function SalonTestimonials({
 			data-review-index={index}
 			data-review-rating={review.rating}
 			data-review-created-at={review.createdAt ?? ""}
+			data-review-featured={String(Boolean(review.featured))}
 			key={review.id ?? review.name + index}
 		>
 			<div className="testimonial-stars" aria-label={`${review.rating} out of 5 stars`}>
@@ -296,7 +296,9 @@ export function SalonTestimonials({
 export function SalonBlogs({
 	items,
 	}: Readonly<{ items: readonly SalonBlogItem[] }>): ReactNode {
-	return items.map((blog, index) => (
+	return items.map((blog, index) => {
+		const imageUrl = safeImageUrl(blog.imageUrl)
+		return (
 		<article
 			className="blog-card"
 			data-blog-index={index}
@@ -304,12 +306,11 @@ export function SalonBlogs({
 			key={blog.id ?? blog.slug ?? blog.title + index}
 		>
 			<div className="blog-card-image">
-				<img
-					src={safeImageUrl(blog.imageUrl)}
-					alt={blog.title}
-					loading="lazy"
-					decoding="async"
-				/>
+				{imageUrl ? (
+					<img src={imageUrl} alt={blog.title} loading="lazy" decoding="async" />
+				) : (
+					<div className="salon-media-placeholder" aria-hidden="true" />
+				)}
 			</div>
 			<div className="blog-card-content">
 				<div className="blog-card-meta">
@@ -327,7 +328,8 @@ export function SalonBlogs({
 				</a>
 			</div>
 		</article>
-	))
+		)
+	})
 }
 
 export function SalonServiceOptions({

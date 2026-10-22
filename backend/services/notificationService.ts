@@ -620,6 +620,7 @@ export async function notifyNextWaitlistedCustomer(
 	availableSlot?: {
 		readonly appointmentDate?: Date
 		readonly timeLabel?: string
+		readonly stylistName?: string | null
 	},
 ): Promise<void> {
 	const tenant = await prisma.tenant.findUnique({
@@ -636,6 +637,17 @@ export async function notifyNextWaitlistedCustomer(
 				: {}),
 			...(availableSlot?.timeLabel
 				? { preferredTime: availableSlot.timeLabel }
+				: {}),
+			...(availableSlot?.stylistName
+				? {
+						OR: [
+							{ preferredStylist: availableSlot.stylistName },
+							{ preferredStylist: null },
+							{ preferredStylist: "" },
+							{ preferredStylist: "Any Available" },
+							{ preferredStylist: "Booked" },
+						],
+					}
 				: {}),
 		},
 		orderBy: [{ queuePosition: "asc" }, { createdAt: "asc" }],

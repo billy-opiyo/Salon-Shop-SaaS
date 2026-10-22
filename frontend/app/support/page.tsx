@@ -4,7 +4,7 @@ import { PlatformHeader } from "@/components/shared/PlatformHeader"
 
 export const metadata = {
 	title: "Salon Owner Support | Beauty Sphia",
-	description: "Help for salon owners creating and operating Beauty Sphia stores.",
+	description: "Help for salon owners creating and operating Beauty Sphia salons.",
 }
 
 export default function SupportPage() {
@@ -15,7 +15,7 @@ export default function SupportPage() {
 				<PlatformHeader page="support" />
 				<section className="platform-section platform-about-hero" aria-labelledby="support-title">
 					<p className="eyebrow">Salon Owner Support</p>
-					<h1 id="support-title">A helpful partner for every store you build.</h1>
+					<h1 id="support-title">A helpful partner for every salon you build.</h1>
 					<p>Need help with setup, storefront content, bookings, billing, or your team workspace? We are here to help you keep your salon moving.</p>
 				</section>
 				<section className="platform-section platform-support-grid" aria-label="Support options">

@@ -56,6 +56,7 @@ function toView(member: PlatformTeamMemberView): PlatformTeamMemberView {
 export async function getPublishedPlatformTeam(): Promise<
 	readonly PlatformTeamMemberView[]
 > {
+	if (!process.env.DATABASE_URL?.trim()) return []
 	const members = await prisma.platformTeamMember.findMany({
 		where: { published: true },
 		orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],

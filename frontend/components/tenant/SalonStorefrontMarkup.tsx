@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import type React from "react"
 import Image from "next/image"
-import { Moon, Sun } from "lucide-react"
+import { CalendarDays, Heart, Images, Menu, Moon, Sun, UserRound, House } from "lucide-react"
 import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 export interface SalonStorefrontMarkupProps {
@@ -149,9 +149,6 @@ export function SalonStorefrontMarkup({
 					<a href="#blog">Blog</a>
 					<a href="#visit">Visit Us</a>
 					<a href="#contact">Contact</a>
-				</nav>
-
-				<div className="header-actions">
 					<button
 						type="button"
 						className="dark-mode-toggle"
@@ -161,7 +158,11 @@ export function SalonStorefrontMarkup({
 					>
 						<Sun className="sun" aria-hidden="true" />
 						<Moon className="moon" aria-hidden="true" />
+						<span>Dark mode</span>
 					</button>
+				</nav>
+
+				<div className="header-actions">
 					<SiteSearch entries={searchEntries} label="salon services and content" className="tenant-site-search" />
 					<button className="auth-btn" id="openAuthModalBtn" type="button">
 						Log In
@@ -182,8 +183,15 @@ export function SalonStorefrontMarkup({
 							<button type="button" id="logoutBtn">Log Out</button>
 						</div>
 					</div>
-					<button className="nav-toggle" id="navToggle" aria-label="Menu">
-						<span></span><span></span><span></span>
+					<button
+						type="button"
+						className="nav-toggle"
+						id="navToggle"
+						aria-label="Open salon menu"
+						aria-expanded="false"
+						aria-controls="nav"
+					>
+						<Menu aria-hidden="true" />
 					</button>
 				</div>
 			</div>
@@ -2246,6 +2254,13 @@ export function SalonStorefrontMarkup({
 		></div>
 
 		
+		<nav className="saas-tenant-mobile-actions" aria-label="Salon mobile navigation">
+			<a href="#home" aria-label="Home"><House aria-hidden="true" /><small>Home</small></a>
+			<a href="#gallery" aria-label="Gallery"><Images aria-hidden="true" /><small>Gallery</small></a>
+			<a href="#booking" aria-label="Book"><CalendarDays aria-hidden="true" /><small>Book</small></a>
+			<a href="#clientDashboard" aria-label="Favorites" data-dashboard-card="dashboardFavoritesCard"><Heart aria-hidden="true" /><small>Favorites</small></a>
+			<a href="#clientDashboard" aria-label="Account" data-dashboard-card="dashboardProfileCard"><UserRound aria-hidden="true" /><small>Account</small></a>
+		</nav>
 		<a href="#home" className="back-to-top" id="backToTop" aria-label="Back to top">
 			<svg
 				width="24"

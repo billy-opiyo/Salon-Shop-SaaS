@@ -106,6 +106,7 @@ function buildReferenceClientConfig(
 		source: review.source,
 		rating: review.rating,
 		text: review.text,
+		featured: review.featured,
 		status: "approved",
 		createdAt: review.createdAt,
 	}))
@@ -190,7 +191,7 @@ export async function generateMetadata({
 }: TenantPageProps): Promise<Metadata> {
 	const { tenantSlug } = await params
 	const tenant = await getTenantStorefront(tenantSlug)
-	if (!tenant) return { title: "Salon store not found" }
+	if (!tenant) return { title: "Salon not found" }
 
 	return {
 		title: tenant.businessName + " | Premium African Hair Braiding Salon",

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	listServiceCatalogForUser,
 	MerchantServiceCatalogError,
@@ -20,9 +21,10 @@ interface ServicesPageProps {
 export default async function MerchantServicesPage({
 	params,
 }: ServicesPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/services`))
 	let categories
 	try {
 		categories = await listServiceCatalogForUser(session.user.id, tenantSlug)

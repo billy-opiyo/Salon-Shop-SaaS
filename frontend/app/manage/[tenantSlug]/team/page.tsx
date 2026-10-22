@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	listTeamForUser,
 	MerchantTeamError,
@@ -21,9 +22,10 @@ interface TeamPageProps {
 }
 
 export default async function MerchantTeamPage({ params }: TeamPageProps) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/team`))
 	let members
 	try {
 		members = await listTeamForUser(session.user.id, tenantSlug)

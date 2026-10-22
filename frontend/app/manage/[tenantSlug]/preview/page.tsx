@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import { prisma } from "@backend/db/prisma"
 
 export default async function MerchantPreviewPage({
@@ -7,9 +8,10 @@ export default async function MerchantPreviewPage({
 }: {
 	params: Promise<{ tenantSlug: string }>
 }) {
-	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
 	const { tenantSlug } = await params
+	const session = await auth()
+	if (!session?.user?.id)
+		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/preview`))
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: tenantSlug.trim().toLowerCase() },
 		select: {

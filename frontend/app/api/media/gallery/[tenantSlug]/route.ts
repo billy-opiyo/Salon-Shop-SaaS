@@ -29,7 +29,7 @@ export async function POST(
 			select: { id: true },
 		})
 		if (!tenant) {
-			return NextResponse.json({ error: "Store not found" }, { status: 404 })
+			return NextResponse.json({ error: "Salon not found" }, { status: 404 })
 		}
 		const membership = await prisma.membership.findUnique({
 			where: {

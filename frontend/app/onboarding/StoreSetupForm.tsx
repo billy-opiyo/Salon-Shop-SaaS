@@ -49,7 +49,7 @@ export function StoreSetupForm() {
 				/>
 			</label>
 			<label>
-				Store address
+				Salon address
 				<input
 					name="slug"
 					type="text"
@@ -69,7 +69,7 @@ export function StoreSetupForm() {
 				</select>
 			</label>
 			<p className="form-help">
-				A one-time setup fee activates your store. The selected plan then
+				A one-time setup fee activates your salon. The selected plan then
 				includes six months of free usage before monthly billing begins.
 			</p>
 			<div className="onboarding-form__row">
@@ -122,7 +122,7 @@ export function StoreSetupForm() {
 				type="submit"
 				disabled={isSubmitting}
 			>
-				{isSubmitting ? "Creating store…" : "Create my store"}
+				{isSubmitting ? "Creating salon…" : "Create my salon"}
 			</button>
 			{message && (
 				<p className="form-message" role="alert">

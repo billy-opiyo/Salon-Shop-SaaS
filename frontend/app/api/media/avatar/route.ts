@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 			select: { id: true },
 		})
 		if (!tenant)
-			return NextResponse.json({ error: "Store not found." }, { status: 404 })
+			return NextResponse.json({ error: "Salon not found." }, { status: 404 })
 		const formData = await request.formData()
 		const file = formData.get("file")
 		if (!(file instanceof File) || file.size === 0) {

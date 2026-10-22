@@ -20,7 +20,7 @@ export default async function ManagePage() {
 				</div>
 				<div className="manage-header__actions">
 					<Link className="button button--primary" href="/onboarding">
-						Create a store
+						Create a salon
 					</Link>
 					<Link className="button button--outline" href="/royal-braids">
 						Preview demo
@@ -29,12 +29,12 @@ export default async function ManagePage() {
 			</header>
 			<section className="manage-stores" aria-labelledby="stores-title">
 				<div className="section-heading">
-					<p className="eyebrow">Your stores</p>
+					<p className="eyebrow">Your salons</p>
 					<h2 id="stores-title">Tenant workspaces</h2>
 				</div>
 				{tenants.length === 0 ? (
 					<p className="manage-empty">
-						You have not created a store yet. Start with a plan and your first
+						You have not created a salon yet. Start with a plan and your first
 						public address.
 					</p>
 				) : (
@@ -57,7 +57,7 @@ export default async function ManagePage() {
 												className="button button--primary button--small"
 												type="submit"
 											>
-												Publish store
+														Publish salon
 											</button>
 										</form>
 									)}

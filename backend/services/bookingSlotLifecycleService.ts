@@ -53,6 +53,7 @@ async function releaseExpiredSlot(slotId: string, now: Date): Promise<{
 	tenantId?: string
 	appointmentDate?: Date
 	timeLabel?: string
+	stylistName?: string | null
 }> {
 	return prisma.$transaction(async (transaction) => {
 		const slot = await transaction.bookingSlot.findUnique({
@@ -69,6 +70,7 @@ async function releaseExpiredSlot(slotId: string, now: Date): Promise<{
 						status: true,
 						appointmentDate: true,
 						timeLabel: true,
+						stylist: { select: { name: true } },
 					},
 				},
 			},
@@ -129,6 +131,7 @@ async function releaseExpiredSlot(slotId: string, now: Date): Promise<{
 			tenantId: slot.tenantId,
 			appointmentDate: slot.booking.appointmentDate,
 			timeLabel: slot.booking.timeLabel || slot.timeLabel,
+			stylistName: slot.booking.stylist?.name ?? null,
 		}
 	})
 }
@@ -144,7 +147,11 @@ export async function runBookingSlotExpirySweep(
 	const result = { candidates: slots.length, released: 0, skipped: 0, failed: 0 }
 	const openingsToNotify = new Map<
 		string,
-		{ readonly appointmentDate: Date; readonly timeLabel: string }
+		{
+			readonly appointmentDate: Date
+			readonly timeLabel: string
+			readonly stylistName: string | null
+		}
 	>()
 
 	for (const slot of slots) {
@@ -156,6 +163,7 @@ export async function runBookingSlotExpirySweep(
 					openingsToNotify.set(`${outcome.tenantId}:${slot.id}`, {
 						appointmentDate: outcome.appointmentDate,
 						timeLabel: outcome.timeLabel,
+						stylistName: outcome.stylistName ?? null,
 					})
 				}
 			} else {

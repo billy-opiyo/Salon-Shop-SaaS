@@ -13,6 +13,13 @@ const booleanFormValue = z.preprocess(
 	z.boolean(),
 )
 const bookingPaymentModeSchema = z.enum(BOOKING_PAYMENT_MODES)
+const mapEmbedUrlSchema = z
+	.string()
+	.url()
+	.refine((value) => new URL(value).protocol === "https:", {
+		message: "Map embed URLs must use HTTPS.",
+	})
+	.or(z.literal(""))
 
 const imageUrlSchema = z.union([
 	z.string().url(),
@@ -74,7 +81,7 @@ export const storefrontDesignConfigSchema = z.object({
 	heroDescription: z.string().trim().max(600).optional(),
 	sectionCopy: sectionCopySchema.optional(),
 	sectionVisibility: sectionVisibilitySchema.optional(),
-	mapEmbedUrl: z.string().url().or(z.literal("")).optional(),
+	mapEmbedUrl: mapEmbedUrlSchema.optional(),
 })
 
 export const storefrontDesignUpdateSchema = z.object({

@@ -28,7 +28,7 @@ export async function GET(
 			select: { id: true },
 		})
 		if (!tenant) {
-			return NextResponse.json({ error: "Store not found" }, { status: 404 })
+			return NextResponse.json({ error: "Salon not found" }, { status: 404 })
 		}
 		await assertAnalyticsAccess(session.user.id, tenant.id)
 
