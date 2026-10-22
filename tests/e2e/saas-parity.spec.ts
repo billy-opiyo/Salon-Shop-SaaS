@@ -42,6 +42,26 @@ test.describe("Royal Braids SaaS parity", () => {
 		await expect(page.locator("#viewLessBlogsBtn")).toBeVisible()
 	})
 
+	test("gallery service filters preserve every legacy category", async ({ page }) => {
+		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		const filterValues = await page
+			.locator('#galleryServiceFilters [data-filter-group="service"]')
+			.evaluateAll((chips) => chips.map((chip) => chip.getAttribute("data-filter-value")))
+		expect(filterValues).toEqual([
+			"all",
+			"braids-services",
+			"hair-services",
+			"beauty-spa-services",
+			"nail-services",
+			"makeup-services",
+			"barber-services",
+			"massage-wellness",
+			"eyebrow-lash-services",
+			"bridal-event-packages",
+			"cosmetics-products",
+		])
+	})
+
 	test("gallery Book Now carries unlisted service names into custom booking", async ({
 		page,
 	}) => {
