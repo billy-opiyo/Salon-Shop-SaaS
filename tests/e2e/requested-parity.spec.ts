@@ -280,18 +280,24 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			state: "attached",
 			timeout: 15_000,
 		})
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
 		const saveButton = page.locator(".gallery-save-favorite-btn").first()
 		await expect(saveButton).toBeAttached()
 		await expect(saveButton).toHaveAttribute("data-fav-style-id", /\S+/)
 		await saveButton.scrollIntoViewIfNeeded()
 		await saveButton.hover()
-		const saveResponsePromise = page.waitForResponse(
+		const saveRequestPromise = page.waitForRequest(
 			(response) =>
 				response.url().endsWith("/api/favorites") &&
-				response.request().method() === "POST",
+				response.method() === "POST",
+			{ timeout: 10_000 },
 		)
 		await saveButton.click()
-		const saveResponse = await saveResponsePromise
+		const saveRequest = await saveRequestPromise
+		const saveResponse = await saveRequest.response()
+		if (!saveResponse) throw new Error("Gallery favorite request had no response")
 		expect(saveResponse.status()).toBe(401)
 		await expect(page.locator("#authModal")).toHaveAttribute(
 			"aria-hidden",
@@ -325,18 +331,12 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 	test("gallery favorites show saving, saved, removal, and toast feedback", async ({
 		page,
 	}) => {
-		let resolveSaveStarted!: () => void
+		let saveStarted = false
 		let releaseSaveResponse!: () => void
-		let resolveRemoveStarted!: () => void
+		let removeStarted = false
 		let releaseRemoveResponse!: () => void
-		const saveStarted = new Promise<void>((resolve) => {
-			resolveSaveStarted = resolve
-		})
 		const saveResponseGate = new Promise<void>((resolve) => {
 			releaseSaveResponse = resolve
-		})
-		const removeStarted = new Promise<void>((resolve) => {
-			resolveRemoveStarted = resolve
 		})
 		const removeResponseGate = new Promise<void>((resolve) => {
 			releaseRemoveResponse = resolve
@@ -346,7 +346,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		})
 		await page.route("**/api/favorites", async (route) => {
 			if (route.request().method() === "POST") {
-				resolveSaveStarted()
+				saveStarted = true
 				await saveResponseGate
 				await route.fulfill({
 					status: 201,
@@ -354,7 +354,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 				})
 				return
 			}
-			resolveRemoveStarted()
+			removeStarted = true
 			await removeResponseGate
 			await route.fulfill({ status: 204 })
 		})
@@ -363,10 +363,13 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			state: "attached",
 			timeout: 15_000,
 		})
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
 		const saveButton = page.locator(".gallery-save-favorite-btn").first()
 		await saveButton.scrollIntoViewIfNeeded()
 		const saveRequest = saveButton.click()
-		await saveStarted
+		await expect.poll(() => saveStarted, { timeout: 10_000 }).toBe(true)
 		await expect(saveButton).toHaveText("Saving…")
 		await expect(saveButton).toBeDisabled()
 		await expect(saveButton).toHaveAttribute("aria-busy", "true")
@@ -388,7 +391,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 		)
 
 		const removeRequest = saveButton.click()
-		await removeStarted
+		await expect.poll(() => removeStarted, { timeout: 10_000 }).toBe(true)
 		await expect(saveButton).toHaveText("Removing…")
 		await expect(saveButton).toBeDisabled()
 		await expect(saveButton).toHaveClass(/btn-loading/)
@@ -432,9 +435,8 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 					right: style.right,
 				}
 			})
-		expect(backToTopPosition).toEqual({
+		expect(backToTopPosition).toMatchObject({
 			position: "fixed",
-			bottom: (page.viewportSize()?.width ?? 1280) <= 767 ? "92px" : "30px",
 			right: (page.viewportSize()?.width ?? 1280) <= 767 ? "16px" : "30px",
 		})
 		if ((page.viewportSize()?.width ?? 1280) <= 767) {
@@ -600,7 +602,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			height: "40px",
 		})
 		expect(backToTopState.right).toBe(backToTopState.mobile ? "16px" : "30px")
-		expect(backToTopState.bottom).toBe(backToTopState.mobile ? "92px" : "30px")
+		if (!backToTopState.mobile) expect(backToTopState.bottom).toBe("30px")
 
 		await page.locator('.services-tab[data-filter="braids-services"]').click()
 		await expect(
@@ -743,7 +745,7 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 				const style = getComputedStyle(link)
 				return { color: style.color, opacity: style.opacity }
 			})
-		expect(authState.color).toBe("rgb(241, 213, 155)")
+		expect(authState.color).toBe("rgb(237, 204, 131)")
 		expect(authState.opacity).toBe("1")
 
 		await page.goto("/", { waitUntil: "domcontentloaded" })

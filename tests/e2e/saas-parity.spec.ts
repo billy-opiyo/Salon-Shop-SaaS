@@ -174,7 +174,36 @@ test.describe("Royal Braids SaaS parity", () => {
 
 	test("unauthenticated admin access redirects to login", async ({ page }) => {
 		await page.goto("/manage/royal-braids", { waitUntil: "domcontentloaded" })
-		await expect(page).toHaveURL(/\/login$/)
+		await expect(page).toHaveURL(
+			/\/login\?callbackUrl=%2Fmanage%2Froyal-braids$/,
+		)
+	})
+
+	const ownerEmail = process.env.SAAS_E2E_OWNER_EMAIL
+	const ownerPassword = process.env.SAAS_E2E_OWNER_PASSWORD
+	test("authenticated owner can open the admin workspace and read its snapshot", async ({
+		page,
+	}) => {
+		test.skip(
+			!ownerEmail || !ownerPassword,
+			"Configure a dedicated non-production owner account to run this read-only workflow.",
+		)
+		await page.goto("/login?callbackUrl=%2Fmanage%2Froyal-braids", {
+			waitUntil: "domcontentloaded",
+		})
+		await page.getByLabel("Email", { exact: true }).fill(ownerEmail ?? "")
+		await page.getByLabel("Password", { exact: true }).fill(ownerPassword ?? "")
+		await page.getByRole("button", { name: "Log In", exact: true }).click()
+		await expect(page).toHaveURL(/\/manage\/royal-braids$/)
+		await expect(
+			page.getByRole("heading", {
+				name: "Content, Bookings & Security Management",
+			}),
+		).toBeVisible()
+		const sessionResponse = await page.request.get("/api/manage/royal-braids/snapshot")
+		expect(sessionResponse.status()).toBe(200)
+		const snapshot = await sessionResponse.json()
+		expect(snapshot).toHaveProperty("bookings")
 	})
 
 	test("admin action routes reject unauthenticated mutation", async ({
