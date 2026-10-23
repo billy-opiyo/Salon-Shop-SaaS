@@ -5030,6 +5030,9 @@ function applyStorefrontColorMode(mode: "dark" | "light", persist = true): void 
 	body.dataset.colorMode = mode
 	root.style.colorScheme = mode
 	body.style.colorScheme = mode
+	const darkModeToggle = document.getElementById("darkModeToggle")
+	darkModeToggle?.classList.toggle("active", !isLight)
+	darkModeToggle?.setAttribute("aria-pressed", String(!isLight))
 	const themeSelect = document.getElementById("manageAccountThemeSelect")
 	if (themeSelect instanceof HTMLSelectElement) themeSelect.value = mode
 	if (persist) {
@@ -5724,6 +5727,13 @@ function bindNativeSalonInteractions(
 	}
 
 	const floatingWhatsApp = document.getElementById("floatingWhatsAppButton")
+	const darkModeToggle = document.getElementById("darkModeToggle")
+	add(darkModeToggle, "click", () => {
+		const nextMode = document.documentElement.classList.contains("light-mode")
+			? "dark"
+			: "light"
+		applyStorefrontColorMode(nextMode)
+	})
 	const serviceSelectForWhatsApp = document.getElementById("serviceSelect")
 	const updateFloatingWhatsAppLink = (): void => {
 		if (

@@ -8616,7 +8616,7 @@ body.light-mode .salon-storefront-root .site-search__result:focus-visible {
 body.light-mode .salon-storefront-root .site-search__result strong {
     color: var(--primary-dark);
 }
-.salon-storefront-root .dark-mode-toggle { display: none; }
+.salon-storefront-root .dark-mode-toggle { display: flex; flex: 0 0 auto; }
 .salon-storefront-root .nav-toggle {
 	display: none;
     align-items: center;

@@ -153,6 +153,20 @@ export function SalonStorefrontMarkup({
 
 				<div className="header-actions">
 					<SiteSearch entries={searchEntries} label="salon services and content" className="tenant-site-search" />
+					<button
+						type="button"
+						className="dark-mode-toggle"
+						id="darkModeToggle"
+						aria-label="Toggle dark mode"
+						aria-pressed="true"
+					>
+						<svg className="sun" viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M12 2l3 7h7l-5.5 4 2 7-6.5-4-6.5 4 2-7L2 9h7z" />
+						</svg>
+						<svg className="moon" viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+						</svg>
+					</button>
 					<button className="auth-btn" id="openAuthModalBtn" type="button">
 						Log In
 					</button>
