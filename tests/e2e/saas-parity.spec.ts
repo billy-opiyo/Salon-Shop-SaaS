@@ -30,13 +30,21 @@ test.describe("Royal Braids SaaS parity", () => {
 	})
 
 	test("blog Next reveals the remaining posts before advancing", async ({ page }) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
 		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
 		const cards = page.locator("#blogGrid .blog-card")
-		const initiallyVisible = await cards.evaluateAll((items) =>
-			items.filter((item) => getComputedStyle(item).display !== "none").length,
-		)
 		expect(await cards.count()).toBeGreaterThan(3)
-		expect(initiallyVisible).toBe(3)
+		await expect
+			.poll(() =>
+				cards.evaluateAll(
+					(items) =>
+						items.filter((item) => getComputedStyle(item).display !== "none")
+							.length,
+				),
+			)
+			.toBe(3)
 		await page.locator("#blogNextBtn").click()
 		await expect(cards.nth(3)).toBeVisible()
 		await expect(page.locator("#viewLessBlogsBtn")).toBeVisible()
@@ -65,7 +73,13 @@ test.describe("Royal Braids SaaS parity", () => {
 	test("gallery Book Now carries unlisted service names into custom booking", async ({
 		page,
 	}) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
 		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
 		const unmatchedGalleryIndex = await page.locator(".gallery-item").evaluateAll(
 			(items) => {
 				const serviceSelect = document.querySelector<HTMLSelectElement>("#serviceSelect")
@@ -85,7 +99,9 @@ test.describe("Royal Braids SaaS parity", () => {
 		const galleryItem = page.locator(".gallery-item").nth(unmatchedGalleryIndex)
 		const serviceName = await galleryItem.getAttribute("data-gallery-sub-service")
 		await galleryItem.click()
+		await expect(page.locator("#lightbox")).toHaveClass(/active/)
 		await page.locator("#lightboxBookNow").click()
+		await expect(page.locator("#lightbox")).not.toHaveClass(/active/)
 		await expect(page.locator("#serviceSelect")).toHaveValue("__custom_service__")
 		await expect(page.locator("#customServiceGroup")).toBeVisible()
 		await expect(page.locator("#customServiceInput")).toHaveValue(serviceName ?? "")

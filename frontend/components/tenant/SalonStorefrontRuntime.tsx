@@ -5980,7 +5980,14 @@ function bindNativeSalonInteractions(
 	)
 	add(document.getElementById("lightboxBookNow"), "click", () => {
 		const gallery = galleryItems[activeGalleryIndex]
-		if (gallery?.serviceName) selectService(gallery.serviceName)
+		const serviceName =
+			gallery?.serviceName?.trim() ||
+			gallery?.styleName.trim() ||
+			gallery?.styleType?.trim() ||
+			""
+		if (!serviceName) return
+		selectService(serviceName)
+		setModalState("lightbox", false)
 	})
 	add(document.getElementById("lightboxWhatsAppBtn"), "click", () => {
 		const gallery = galleryItems[activeGalleryIndex]
