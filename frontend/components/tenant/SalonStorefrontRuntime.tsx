@@ -141,6 +141,17 @@ function renderAdminSnapshotList(
 			.join(" ")
 			.toLowerCase()
 		row.dataset.provider = String(record.provider ?? "").toLowerCase()
+		const userAgent = String(record.userAgent ?? "").toLowerCase()
+		row.dataset.device = /ipad|tablet|kindle|silk|android(?!.*mobile)/.test(userAgent)
+			? "tablet"
+			: /mobile|iphone|android/.test(userAgent)
+				? "mobile"
+				: userAgent
+					? "desktop"
+					: "unknown"
+		row.dataset.userType = typeof record.userId === "string" && record.userId
+			? "known-user"
+			: "anonymous"
 		row.dataset.risk = String(record.riskLevel ?? "").toLowerCase()
 		row.dataset.country = String(record.country ?? "").toLowerCase()
 		row.dataset.status = record.resolvedAt
@@ -249,25 +260,53 @@ function renderAdminSnapshotList(
 				addAction("booking-status", "Complete", { status: "COMPLETED" })
 		}
 		if (elementId === "adminWaitlistList") {
+			const isActiveWaitlistStatus = [
+				"WAITING",
+				"NOTIFIED",
+				"CONTACTED",
+				"NOTIFICATION_FAILED",
+			].includes(status)
+			const linkedBooking = record.linkedBooking
+			const linkedBookingStatus =
+				typeof linkedBooking === "object" &&
+				linkedBooking !== null &&
+				"status" in linkedBooking &&
+				typeof linkedBooking.status === "string"
+					? linkedBooking.status
+					: ""
 			if (status === "WAITING")
 				addAction("waitlist-status", "Contact", { status: "CONTACTED" })
-			if (status === "WAITING" || status === "CONTACTED")
+			if (isActiveWaitlistStatus)
 				addAction("waitlist-convert", "Book")
-			if (status !== "CANCELLED")
+			if (
+				isActiveWaitlistStatus &&
+				linkedBookingStatus !== "WAITLISTED"
+			)
+				addAction("waitlist-status", "Mark Booked / Close Waitlist", {
+					status: "BOOKED",
+				})
+			if (isActiveWaitlistStatus)
 				addAction("waitlist-status", "Cancel", { status: "CANCELLED" })
 		}
 		if (elementId === "adminContactList") {
-			if (status === "NEW")
+			if (status !== "NEW")
+				addAction("message-status", "Mark new", { status: "NEW" })
+			if (status !== "READ")
 				addAction("message-status", "Mark read", { status: "READ" })
 			if (status !== "RESOLVED")
 				addAction("message-status", "Resolve", { status: "RESOLVED" })
 			addAction("message-delete", "Delete")
 		}
 		if (elementId === "adminReviewsList") {
-			if (status === "PENDING")
-				addAction("review-update", "Approve", { status: "APPROVED" })
-			if (status === "PENDING")
-				addAction("review-update", "Reject", { status: "REJECTED" })
+			if (status !== "PENDING")
+				addAction("review-update", "Set pending", { status: "PENDING" })
+			addAction("review-update", "Approve", { status: "APPROVED" })
+			addAction("review-update", "Reject", { status: "REJECTED" })
+			addAction(
+				"review-update",
+				record.featured === true ? "Unfeature" : "Feature",
+				{ featured: String(record.featured !== true) },
+			)
 			addAction("review-delete", "Delete")
 		}
 		if (elementId === "adminGalleryList") {
@@ -1058,6 +1097,8 @@ function bindAdminSnapshotFilters(): () => void {
 		const risk = getValue("adminSecurityRiskFilterSelect")
 		const country = getValue("adminSecurityCountryFilterInput")
 		const status = getValue("adminSecurityStatusFilterSelect")
+		const device = getValue("adminSecurityDeviceFilterSelect")
+		const user = getValue("adminSecurityUserFilterSelect")
 		const from = getValue("adminSecurityDateFromFilter")
 		const to = getValue("adminSecurityDateToFilter")
 		const exactDate = getValue("adminSecurityDateFilter")
@@ -1072,6 +1113,8 @@ function bindAdminSnapshotFilters(): () => void {
 				(risk && risk !== "all" && row.dataset.risk !== risk) ||
 				(country && !row.dataset.country?.includes(country)) ||
 				(status && status !== "all" && row.dataset.status !== status) ||
+				(device && device !== "all" && row.dataset.device !== device) ||
+				(user && user !== "all" && row.dataset.userType !== user) ||
 				(from && date < from) ||
 				(to && date > to) ||
 				(exactDate && date !== exactDate),
@@ -1153,6 +1196,8 @@ function bindAdminSnapshotFilters(): () => void {
 		"adminSecurityRiskFilterSelect",
 		"adminSecurityCountryFilterInput",
 		"adminSecurityStatusFilterSelect",
+		"adminSecurityDeviceFilterSelect",
+		"adminSecurityUserFilterSelect",
 		"adminSecurityDateFromFilter",
 		"adminSecurityDateToFilter",
 		"adminSecurityDateFilter",
@@ -1195,6 +1240,48 @@ function bindAdminSnapshotFilters(): () => void {
 	}
 	apply()
 	return () => removers.forEach((remove) => remove())
+}
+
+function exportVisibleSecurityRows(format: "csv" | "excel"): void {
+	const rows = Array.from(
+		document.querySelectorAll<HTMLElement>(
+			"#adminSecurityActivityList .admin-snapshot-row:not([hidden])",
+		),
+	)
+	if (!rows.length) return
+	const values = rows.map((row) => [
+		row.dataset.createdAt ?? "",
+		row.querySelector("strong")?.textContent ?? "",
+		row.querySelector("p")?.textContent ?? "",
+	])
+	const escape = (value: string) => {
+		const spreadsheetSafe = /^[=+@\-\t\r]/.test(value) ? `'${value}` : value
+		return spreadsheetSafe.replaceAll('"', '""')
+	}
+	const date = new Date().toISOString().slice(0, 10)
+	let contents: string
+	let mimeType: string
+	let extension: string
+	if (format === "csv") {
+		contents = [
+			["Timestamp", "User", "Details"],
+			...values,
+		].map((line) => line.map((value) => `"${escape(value)}"`).join(",")).join("\r\n")
+		mimeType = "text/csv;charset=utf-8"
+		extension = "csv"
+	} else {
+		const cells = (line: readonly string[], tag: "td" | "th") =>
+			`<tr>${line.map((value) => `<${tag}>${escapeClientHtml(value)}</${tag}>`).join("")}</tr>`
+		contents = `<html><head><meta charset="UTF-8"></head><body><table>${cells(["Timestamp", "User", "Details"], "th")}${values.map((line) => cells(line, "td")).join("")}</table></body></html>`
+		mimeType = "application/vnd.ms-excel;charset=utf-8"
+		extension = "xls"
+	}
+	const url = URL.createObjectURL(new Blob([contents], { type: mimeType }))
+	const link = document.createElement("a")
+	link.href = url
+	link.download = `security-logs-${date}.${extension}`
+	link.click()
+	window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function recordValue(value: unknown): Record<string, unknown> {
@@ -1513,18 +1600,68 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	const loginForm = document.getElementById("adminLoginForm")
 	const panel = document.getElementById("adminPanel")
 	const confirmationModal = document.getElementById("adminConfirmModal")
+	let pendingConfirmationButton: HTMLButtonElement | null = null
+	let confirmedActionButton: HTMLButtonElement | null = null
 	const closeConfirmation = () => {
 		confirmationModal?.classList.remove("active")
 		confirmationModal?.setAttribute("aria-hidden", "true")
+		pendingConfirmationButton = null
 	}
 	const userState = document.getElementById("adminUserState")
 	const authMessage = document.getElementById("adminAuthMessage")
+	const removeTabHandlers: Array<() => void> = []
+	const profanityWordsInput = document.getElementById("adminProfanityWords")
+	const saveProfanityButton = document.getElementById("adminSaveProfanityList")
+	const profanityStorageKey = `rb_admin_profanity_words_${tenantSlug}`
+	const defaultProfanityWords = ["fuck", "shit", "bitch", "asshole", "idiot", "scam"]
+	const readProfanityWords = (): string[] => {
+		try {
+			const stored = window.localStorage.getItem(profanityStorageKey)
+			const parsed: unknown = stored ? JSON.parse(stored) : null
+			if (!Array.isArray(parsed)) return defaultProfanityWords
+			const cleaned = parsed
+				.filter((word): word is string => typeof word === "string")
+				.map((word) => word.trim().toLowerCase())
+				.filter((word) => word.length > 0 && word.length <= 64)
+			return cleaned.length > 0 ? cleaned.slice(0, 100) : defaultProfanityWords
+		} catch {
+			return defaultProfanityWords
+		}
+	}
+	if (profanityWordsInput instanceof HTMLTextAreaElement)
+		profanityWordsInput.value = readProfanityWords().join(", ")
+	const saveProfanityHandler = () => {
+		if (!(profanityWordsInput instanceof HTMLTextAreaElement)) return
+		const words = profanityWordsInput.value
+			.split(",")
+			.map((word) => word.trim().toLowerCase())
+			.filter(Boolean)
+		if (words.length > 100 || words.some((word) => word.length > 64)) {
+			const message = document.getElementById("adminReviewsMessage")
+			if (message) {
+				message.textContent = "Use at most 100 blocked terms, each no longer than 64 characters."
+				message.style.display = "block"
+			}
+			return
+		}
+		const normalized = words.length > 0 ? words : defaultProfanityWords
+		window.localStorage.setItem(profanityStorageKey, JSON.stringify(normalized))
+		profanityWordsInput.value = normalized.join(", ")
+		const message = document.getElementById("adminReviewsMessage")
+		if (message) {
+			message.textContent = "Review content filter saved for this salon on this device."
+			message.style.display = "block"
+		}
+	}
+	saveProfanityButton?.addEventListener("click", saveProfanityHandler)
+	removeTabHandlers.push(() =>
+		saveProfanityButton?.removeEventListener("click", saveProfanityHandler),
+	)
 	if (loginForm instanceof HTMLElement) loginForm.style.display = "none"
 	if (panel instanceof HTMLElement) panel.style.display = "block"
 	if (userState) userState.textContent = "Signed in with platform account"
 	if (authMessage) authMessage.textContent = ""
 
-	const removeTabHandlers: Array<() => void> = []
 	let removeSnapshotFilters: () => void = () => undefined
 	const adminBackToTop = document.getElementById("backToTop")
 	if (adminBackToTop) {
@@ -1559,6 +1696,42 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		const action = button.dataset.adminAction
 		const id = button.dataset.adminId
 		if (!action || !id) return
+		if (action === "review-update" && button.dataset.status === "APPROVED") {
+			try {
+				const record = JSON.parse(
+					button.dataset.adminDetail ?? "{}",
+				) as AdminSnapshotRecord
+				const text = typeof record.text === "string" ? record.text.toLowerCase() : ""
+				const flagged = readProfanityWords().filter((word) => text.includes(word))
+				if (flagged.length > 0) {
+					const message = document.getElementById("adminReviewsMessage")
+					if (message) {
+						message.textContent = `Cannot approve: flagged content found (${flagged.join(", ")}). Edit review text first.`
+						message.style.display = "block"
+					}
+					return
+				}
+			} catch {
+				return
+			}
+		}
+		const requiresConfirmation =
+			action.endsWith("-delete") || action === "team-member-remove"
+		if (requiresConfirmation && confirmedActionButton !== button) {
+			pendingConfirmationButton = button
+			const title = document.getElementById("adminConfirmTitle")
+			const message = document.getElementById("adminConfirmMessage")
+			if (title) title.textContent = "Confirm removal"
+			if (message)
+				message.textContent =
+					action === "team-member-remove"
+						? "Remove this team member’s access to the salon?"
+						: "Delete this item? This action cannot be undone."
+			confirmationModal?.classList.add("active")
+			confirmationModal?.setAttribute("aria-hidden", "false")
+			return
+		}
+		if (confirmedActionButton === button) confirmedActionButton = null
 		if (action === "gallery-edit" || action === "blog-edit") {
 			const formId =
 				action === "gallery-edit" ? "adminGalleryForm" : "adminBlogsForm"
@@ -1654,6 +1827,8 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		button.disabled = true
 		const payload: Record<string, unknown> = { action, id }
 		if (button.dataset.status) payload.status = button.dataset.status
+		if (button.dataset.featured)
+			payload.featured = button.dataset.featured === "true"
 		if (button.dataset.published)
 			payload.published = button.dataset.published === "true"
 		void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
@@ -1689,11 +1864,31 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	const confirmationBackdropHandler = (event: Event) => {
 		if (event.target === confirmationModal) closeConfirmation()
 	}
+	const confirmActionHandler = () => {
+		const button = pendingConfirmationButton
+		if (!button) return
+		pendingConfirmationButton = null
+		confirmedActionButton = button
+		closeConfirmation()
+		button.click()
+	}
+	document
+		.getElementById("adminConfirmCancel")
+		?.addEventListener("click", closeConfirmation)
+	document
+		.getElementById("adminConfirmOk")
+		?.addEventListener("click", confirmActionHandler)
 	confirmationModal?.addEventListener("click", confirmationBackdropHandler)
 	removeTabHandlers.push(() => {
 		document
 			.getElementById("adminConfirmClose")
 			?.removeEventListener("click", closeConfirmation)
+		document
+			.getElementById("adminConfirmCancel")
+			?.removeEventListener("click", closeConfirmation)
+		document
+			.getElementById("adminConfirmOk")
+			?.removeEventListener("click", confirmActionHandler)
 		confirmationModal?.removeEventListener("click", confirmationBackdropHandler)
 	})
 	const detailHandler = (event: Event) => {
@@ -1717,6 +1912,59 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				line.textContent = `${key}: ${formatAdminSnapshotValue(value)}`
 				panel.append(line)
 			})
+			if (typeof record.text === "string") {
+				const reviewText = document.createElement("textarea")
+				reviewText.value = record.text
+				reviewText.setAttribute("aria-label", "Edit review text")
+				reviewText.rows = 4
+				reviewText.addEventListener("input", () =>
+					reviewText.setCustomValidity(""),
+				)
+				const saveReview = document.createElement("button")
+				saveReview.type = "button"
+				saveReview.className = "btn btn-primary"
+				saveReview.textContent = "Save Edit"
+				saveReview.onclick = () => {
+					const text = reviewText.value.trim()
+					if (text.length < 10 || text.length > 3000) {
+						reviewText.setCustomValidity(
+							"Review text must be between 10 and 3000 characters.",
+						)
+						reviewText.reportValidity()
+						return
+					}
+					if (typeof record.id !== "string") return
+					saveReview.disabled = true
+					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({
+							action: "review-update",
+							id: record.id,
+							status: "PENDING",
+							text,
+						}),
+					})
+						.then((response) => {
+							if (!response.ok)
+								throw new Error("Review text could not be saved.")
+							window.location.reload()
+						})
+						.catch((error: unknown) => {
+							saveReview.disabled = false
+							const message = document.getElementById("adminActionMessage")
+							if (message) {
+								message.textContent =
+									error instanceof Error
+										? error.message
+										: "Review text could not be saved."
+								message.style.display = "block"
+							}
+						})
+				}
+				panel.append(reviewText, saveReview)
+			}
 			if (typeof record.replyText === "string" || "replyText" in record) {
 				const reply = document.createElement("textarea")
 				reply.value =
@@ -2365,11 +2613,13 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			)
 			removeSnapshotFilters = bindAdminSnapshotFilters()
 			removeTabHandlers.push(() => removeSnapshotFilters())
-			const exportButton = document.getElementById("adminSecurityExportCsvBtn")
-			if (exportButton instanceof HTMLButtonElement) {
-				exportButton.onclick = () => {
-					window.location.href = `/api/manage/${encodeURIComponent(tenantSlug)}/security/export`
-				}
+			const csvExportButton = document.getElementById("adminSecurityExportCsvBtn")
+			if (csvExportButton instanceof HTMLButtonElement) {
+				csvExportButton.onclick = () => exportVisibleSecurityRows("csv")
+			}
+			const excelExportButton = document.getElementById("adminSecurityExportExcelBtn")
+			if (excelExportButton instanceof HTMLButtonElement) {
+				excelExportButton.onclick = () => exportVisibleSecurityRows("excel")
 			}
 			const counts: Record<string, number> = {
 				adminTotalCount: bookings.length,

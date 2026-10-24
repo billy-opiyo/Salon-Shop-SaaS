@@ -72,9 +72,17 @@ export async function updateReviewForUser(
 	update: {
 		status?: ReviewStatus
 		featured?: boolean
+		text?: string
 		replyText?: string | null
 	},
 ): Promise<void> {
+	if (
+		update.text !== undefined &&
+		(update.text.trim().length < 10 || update.text.trim().length > 3000)
+	)
+		throw new MerchantReviewError(
+			"Review text must be between 10 and 3000 characters.",
+		)
 	const tenantId = await getTenantId(userId, tenantSlug)
 	await prisma.$transaction(async (transaction) => {
 		const result = await transaction.review.updateMany({

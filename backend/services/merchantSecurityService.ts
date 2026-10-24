@@ -49,9 +49,10 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 		prisma.loginActivity.findMany({
 			where: { tenantId: tenant.id },
 			orderBy: { createdAt: "desc" },
-			take: 50,
+			take: 400,
 			select: {
 				id: true,
+				userId: true,
 				email: true,
 				provider: true,
 				status: true,
