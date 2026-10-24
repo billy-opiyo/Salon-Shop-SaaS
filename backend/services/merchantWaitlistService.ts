@@ -66,6 +66,7 @@ export async function listWaitlistForUser(userId: string, tenantSlug: string) {
 			queuePosition: true,
 			status: true,
 			linkedBookingId: true,
+			linkedBooking: { select: { status: true } },
 			user: { select: { name: true } },
 		},
 	})

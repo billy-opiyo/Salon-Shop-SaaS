@@ -172,6 +172,24 @@ test.describe("Royal Braids SaaS parity", () => {
 		)
 	})
 
+	test("missing salon verification token shows the legacy recovery error", async ({
+		page,
+	}) => {
+		await page.goto("/verify-email?tenant=royal-braids", {
+			waitUntil: "domcontentloaded",
+		})
+		await expect(page.locator("#salonVerifyTitle")).toContainText(
+			"Verify your email",
+		)
+		await expect(page.locator(".salon-verify-message")).toHaveText(
+			"This verification link is incomplete. Request a new email and try again.",
+		)
+		await expect(page.getByRole("button", { name: "Verify email" })).toBeDisabled()
+		await expect(
+			page.getByRole("link", { name: "Return to website" }),
+		).toHaveAttribute("href", "/royal-braids#home")
+	})
+
 	test("unauthenticated admin access redirects to login", async ({ page }) => {
 		await page.goto("/manage/royal-braids", { waitUntil: "domcontentloaded" })
 		await expect(page).toHaveURL(

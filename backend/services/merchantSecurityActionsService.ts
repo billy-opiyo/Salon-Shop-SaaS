@@ -135,7 +135,7 @@ export async function clearTenantUserRestriction(
 			throw new MerchantSecurityActionError("Tenant user not found.")
 		await transaction.user.update({
 			where: { id: targetUserId },
-			data: { blockedUntil: null },
+			data: { blockedUntil: null, passwordResetRequired: false },
 		})
 		await transaction.adminAuditLog.create({
 			data: {

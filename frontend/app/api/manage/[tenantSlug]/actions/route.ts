@@ -134,12 +134,23 @@ export async function POST(
 						{ error: "Review id is required" },
 						{ status: 400 },
 					)
+				if (
+					input.text !== undefined &&
+					(typeof input.text !== "string" ||
+						input.text.trim().length < 10 ||
+						input.text.trim().length > 3000)
+				)
+					return NextResponse.json(
+						{ error: "Review text must be between 10 and 3000 characters" },
+						{ status: 400 },
+					)
 				await updateReviewForUser(session.user.id, tenantSlug, id, {
 					status: statusValues(Object.values(ReviewStatus), input.status)
 						? input.status
 						: undefined,
 					featured:
 						typeof input.featured === "boolean" ? input.featured : undefined,
+					text: typeof input.text === "string" ? input.text.trim() : undefined,
 					replyText:
 						typeof input.replyText === "string" ? input.replyText : undefined,
 				})

@@ -18,11 +18,13 @@ export function SalonVerifyEmailClient({
 	homeHref,
 	initialToken,
 }: SalonVerifyEmailClientProps) {
-	const [state, setState] = useState<VerificationState>("idle")
+	const [state, setState] = useState<VerificationState>(
+		initialToken ? "idle" : "error",
+	)
 	const [message, setMessage] = useState(
 		initialToken
 			? "Confirm that you want to verify this email address."
-			: "Open the verification link from your email to continue.",
+			: "This verification link is incomplete. Request a new email and try again.",
 	)
 
 	const verify = useCallback(async (token: string) => {
