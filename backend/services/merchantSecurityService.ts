@@ -45,11 +45,12 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 	const now = new Date()
 	const todayStart = new Date(now)
 	todayStart.setUTCHours(0, 0, 0, 0)
-	const [logins, alerts, changes, timeline, sessions, loginCounts, alertCounts] = await Promise.all([
+	const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60_000)
+	const [logins, alerts, changes, timeline, sessions, loginCounts, alertCounts, todayLogins, repeatedFailures, lockedAccounts, suspiciousLogins] = await Promise.all([
 		prisma.loginActivity.findMany({
 			where: { tenantId: tenant.id },
 			orderBy: { createdAt: "desc" },
-			take: 400,
+			take: 1000,
 			select: {
 				id: true,
 				userId: true,
@@ -91,7 +92,7 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 		prisma.session.findMany({
 			where: { userId: { in: tenantUserIds }, expires: { gt: now } },
 			orderBy: { expires: "desc" },
-			take: 100,
+			take: 800,
 			select: {
 				id: true,
 				userId: true,
@@ -105,8 +106,8 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 			prisma.loginActivity.count({ where: { tenantId: tenant.id, status: { not: "success" } } }),
 			prisma.loginActivity.count({ where: { tenantId: tenant.id, riskLevel: { equals: "high", mode: "insensitive" } } }),
 			prisma.loginActivity.count({ where: { tenantId: tenant.id, createdAt: { gte: todayStart } } }),
-			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "google", mode: "insensitive" } } }),
-			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "email/password", mode: "insensitive" } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "google", mode: "insensitive" }, createdAt: { gte: todayStart } } }),
+			prisma.loginActivity.count({ where: { tenantId: tenant.id, provider: { equals: "email/password", mode: "insensitive" }, createdAt: { gte: todayStart } } }),
 		]),
 		Promise.all([
 			prisma.securityAlert.count({ where: { tenantId: tenant.id } }),
@@ -115,7 +116,78 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 			prisma.accountChangeHistory.count({ where: { tenantId: tenant.id } }),
 			prisma.activityTimeline.count({ where: { tenantId: tenant.id } }),
 		]),
+		prisma.loginActivity.findMany({
+			where: { tenantId: tenant.id, createdAt: { gte: todayStart } },
+			orderBy: { createdAt: "desc" },
+			take: 2000,
+			select: {
+				id: true,
+				userId: true,
+				email: true,
+				provider: true,
+				status: true,
+				createdAt: true,
+				user: { select: { createdAt: true } },
+			},
+		}),
+		prisma.loginActivity.findMany({
+			where: {
+				tenantId: tenant.id,
+				status: { equals: "failure", mode: "insensitive" },
+				createdAt: { gte: fifteenMinutesAgo },
+			},
+			orderBy: { createdAt: "desc" },
+			take: 2000,
+			select: { id: true, userId: true, email: true, createdAt: true },
+		}),
+		prisma.user.count({
+			where: {
+				blockedUntil: { gt: now },
+				loginActivities: { some: { tenantId: tenant.id } },
+			},
+		}),
+		prisma.loginActivity.count({
+			where: {
+				tenantId: tenant.id,
+				riskLevel: { in: ["medium", "high"] },
+			},
+		}),
 	])
+	const todaySuccessfulLogins = todayLogins.filter(
+		(item) => item.status.toLowerCase() === "success",
+	)
+	const newRegistrations = new Set(
+		todaySuccessfulLogins
+			.filter((item) => item.userId && item.user?.createdAt && item.user.createdAt >= todayStart)
+			.map((item) => item.userId),
+	).size
+	const returningCustomers = new Set(
+		todaySuccessfulLogins
+			.filter((item) => item.userId && item.user?.createdAt && item.user.createdAt < todayStart)
+			.map((item) => item.userId),
+	).size
+	const anonymousUsers = new Set(
+		todayLogins
+			.filter((item) => item.provider.toLowerCase() === "anonymous")
+			.map((item) => item.userId ?? item.email?.toLowerCase() ?? item.id),
+	).size
+	const failureTimesByIdentity = new Map<string, Set<number>>()
+	for (const item of repeatedFailures) {
+		const identity = item.userId ?? item.email?.toLowerCase()
+		if (!identity) continue
+		const times = failureTimesByIdentity.get(identity) ?? new Set<number>()
+		times.add(item.createdAt.getTime())
+		failureTimesByIdentity.set(identity, times)
+	}
+	const repeatedWrongPasswords = [...failureTimesByIdentity.values()].filter(
+		(times) => {
+			const sortedTimes = [...times].sort((left, right) => right - left)
+			const failuresInFiveMinutes = sortedTimes.filter(
+				(time) => time >= now.getTime() - 5 * 60_000,
+			).length
+			return failuresInFiveMinutes >= 3 || sortedTimes.length >= 5
+		},
+	).length
 	return {
 		logins,
 		alerts,
@@ -126,10 +198,19 @@ export async function getSecuritySnapshot(userId: string, tenantSlug: string) {
 			totalLogins: loginCounts[0],
 			successfulLogins: loginCounts[1],
 			failedLogins: loginCounts[2],
+			failedLoginAttemptsToday: todayLogins.filter(
+				(item) => item.status.toLowerCase() === "failure",
+			).length,
+			suspiciousLogins,
+			lockedAccounts,
+			repeatedWrongPasswords,
 			highRiskLogins: loginCounts[3],
 			totalLoginsToday: loginCounts[4],
 			googleSignIns: loginCounts[5],
 			emailSignIns: loginCounts[6],
+			newRegistrations,
+			returningCustomers,
+			anonymousUsers,
 			activeSessions: sessions.length,
 			activeUsers: new Set(sessions.map((item) => item.userId)).size,
 			totalAlerts: alertCounts[0],

@@ -220,8 +220,61 @@ test.describe("Royal Braids SaaS parity", () => {
 		).toBeVisible()
 		const sessionResponse = await page.request.get("/api/manage/royal-braids/snapshot")
 		expect(sessionResponse.status()).toBe(200)
-		const snapshot = await sessionResponse.json()
+		const snapshot = (await sessionResponse.json()) as {
+			bookings?: Array<{ status?: string }>
+			waitlist?: Array<{ status?: string }>
+		}
 		expect(snapshot).toHaveProperty("bookings")
+		const expectedWaitlistedCount = snapshot.waitlist?.length
+			? snapshot.waitlist.length
+			: (snapshot.bookings ?? []).filter(
+					(booking) => booking.status === "WAITLISTED",
+				).length
+		await expect(page.locator("#adminWaitlistedBookingCount")).toHaveText(
+			String(expectedWaitlistedCount),
+		)
+
+		const activeWaitlistCount = (snapshot.waitlist ?? []).filter((entry) =>
+			["WAITING", "NOTIFIED", "CONTACTED", "NOTIFICATION_FAILED"].includes(
+				entry.status ?? "",
+			),
+		).length
+		await page
+			.getByRole("button", { name: "Waitlisted Only", exact: true })
+			.click()
+		await expect(
+			page.locator(
+				"#adminBookingsList [data-booking-waitlist-clone='true']",
+			),
+		).toHaveCount(activeWaitlistCount)
+		await page
+			.getByRole("button", { name: "All Bookings", exact: true })
+			.click()
+		await expect(
+			page.locator(
+				"#adminBookingsList [data-booking-waitlist-clone='true']",
+			),
+		).toHaveCount(0)
+
+		await page
+			.locator("#adminSessionsSortSelect")
+			.selectOption("multi-device-first")
+		const sessionUserCounts = await page
+			.locator("#adminSessionsList .admin-snapshot-row")
+			.evaluateAll((rows) => {
+				const counts = new Map<string, number>()
+				for (const row of rows) {
+					const userId = (row as HTMLElement).dataset.sessionUserId
+					if (userId) counts.set(userId, (counts.get(userId) ?? 0) + 1)
+				}
+				return rows.map(
+					(row) =>
+						counts.get((row as HTMLElement).dataset.sessionUserId ?? "") ?? 0,
+				)
+			})
+		expect(sessionUserCounts).toEqual(
+			[...sessionUserCounts].sort((left, right) => right - left),
+		)
 	})
 
 	test("admin action routes reject unauthenticated mutation", async ({
