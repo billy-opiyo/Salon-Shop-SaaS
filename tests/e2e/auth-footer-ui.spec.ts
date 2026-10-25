@@ -50,7 +50,7 @@ test.describe("Beauty Sphia authentication and footer presentation", () => {
 	test("footer labels remain readable and Policies has its own responsive column", async ({ page }) => {
 		await page.setViewportSize({ width: 1440, height: 1000 })
 		await page.goto("/", { waitUntil: "domcontentloaded" })
-		const hero = page.locator(".platform-hero--image")
+		const hero = page.locator(".platform-hero--editorial")
 		const desktopHero = await hero.boundingBox()
 		expect(desktopHero).not.toBeNull()
 		expect(desktopHero!.x).toBeGreaterThan(0)

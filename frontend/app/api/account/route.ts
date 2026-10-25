@@ -18,6 +18,20 @@ import {
 	getClientWaitlistQueueInfo,
 } from "@backend/services/clientWaitlistService"
 import { clientWaitlistQueueSchema } from "@shared/validation/clientWaitlist"
+import { emailChangeSchema } from "@shared/validation/auth"
+import {
+	AuthTokenError,
+	createEmailChangeToken,
+} from "@backend/services/authTokenService"
+import {
+	platformBaseUrl,
+	sendPlatformEmail,
+} from "@backend/services/notificationService"
+import {
+	consumeRateLimit,
+	hashRateLimitSubject,
+	RateLimitExceededError,
+} from "@backend/services/rateLimit"
 
 export const dynamic = "force-dynamic"
 
@@ -113,6 +127,67 @@ export async function PATCH(request: Request): Promise<NextResponse> {
 			return NextResponse.json({ error: error.message }, { status: 400 })
 		return NextResponse.json(
 			{ error: "Account changes could not be saved." },
+			{ status: 500 },
+		)
+	}
+}
+
+export async function POST(request: Request): Promise<NextResponse> {
+	const session = await auth()
+	const userId = session?.user?.id
+	if (!userId)
+		return NextResponse.json(
+			{ error: "Authentication required." },
+			{ status: 401 },
+		)
+	let body: unknown
+	try {
+		body = await request.json()
+	} catch {
+		return NextResponse.json(
+			{ error: "Invalid request body." },
+			{ status: 400 },
+		)
+	}
+	const parsed = emailChangeSchema.safeParse(body)
+	if (!parsed.success)
+		return NextResponse.json(
+			{ error: "Enter a valid email address." },
+			{ status: 400 },
+		)
+	try {
+		await consumeRateLimit({
+			subjectKey: hashRateLimitSubject(userId),
+			kind: "account-email-change",
+			intervalMs: 15 * 60 * 1000,
+		})
+		const { token } = await createEmailChangeToken(userId, parsed.data.email)
+		const tenantValue = new URL(request.url).searchParams.get("tenant") ?? ""
+		const tenantQuery = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(tenantValue)
+			? `&tenant=${encodeURIComponent(tenantValue)}`
+			: ""
+		const sent = await sendPlatformEmail({
+			templateKey: "verify.address",
+			destination: parsed.data.email,
+			subject: {
+				businessName: "Beauty Sphia",
+				customerName: session.user.name ?? "",
+				link: `${platformBaseUrl()}/verify-email?token=${encodeURIComponent(token)}${tenantQuery}`,
+			},
+		})
+		if (!sent.ok)
+			return NextResponse.json(
+				{ error: "The confirmation email could not be sent. Please try again later." },
+				{ status: 503 },
+			)
+		return NextResponse.json({ ok: true })
+	} catch (error) {
+		if (error instanceof RateLimitExceededError)
+			return NextResponse.json({ error: error.message }, { status: 429 })
+		if (error instanceof AuthTokenError)
+			return NextResponse.json({ error: error.message }, { status: 400 })
+		return NextResponse.json(
+			{ error: "Email change could not be requested." },
 			{ status: 500 },
 		)
 	}

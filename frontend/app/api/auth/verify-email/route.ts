@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
 				{ status: 400 },
 			)
 		}
-		await verifyEmailAddress(body.token.trim())
-		return NextResponse.json({ ok: true })
+		const purpose = await verifyEmailAddress(body.token.trim())
+		return NextResponse.json({ ok: true, purpose })
 	} catch (error) {
 		if (error instanceof AuthTokenError) {
 			return NextResponse.json({ error: error.message }, { status: 400 })

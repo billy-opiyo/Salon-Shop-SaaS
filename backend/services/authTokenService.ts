@@ -44,29 +44,109 @@ export async function createEmailVerificationToken(
 	return { token, expires: new Date(Date.now() + 30 * 60 * 1000) }
 }
 
-export async function verifyEmailAddress(token: string): Promise<void> {
+export async function createEmailChangeToken(
+	userId: string,
+	email: string,
+): Promise<{ readonly token: string; readonly expires: Date }> {
+	const normalizedEmail = email.trim().toLowerCase()
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { email: true },
+	})
+	if (!user) throw new AuthTokenError("Account not found.")
+	if (user.email.toLowerCase() === normalizedEmail)
+		throw new AuthTokenError("That is already your account email.")
+	const existingUser = await prisma.user.findUnique({
+		where: { email: normalizedEmail },
+		select: { id: true },
+	})
+	if (existingUser)
+		throw new AuthTokenError("An account already uses that email address.")
+	const identifierPrefix = `email-change:${userId}:`
+	await prisma.verificationToken.deleteMany({
+		where: { identifier: { startsWith: identifierPrefix } },
+	})
+	const token = createToken()
+	const expires = new Date(Date.now() + 30 * 60 * 1000)
+	await prisma.verificationToken.create({
+		data: {
+			identifier: `${identifierPrefix}${normalizedEmail}`,
+			token,
+			expires,
+		},
+	})
+	return { token, expires }
+}
+
+export async function verifyEmailAddress(
+	token: string,
+): Promise<"verification" | "email-change"> {
 	const record = await prisma.verificationToken.findFirst({
 		where: { token, identifier: { startsWith: "verify:" } },
 		select: { identifier: true, expires: true },
 	})
-	if (!record || record.expires <= new Date()) {
-		throw new AuthTokenError("Verification link is invalid or expired.")
+	if (record) {
+		if (record.expires <= new Date())
+			throw new AuthTokenError("Verification link is invalid or expired.")
+		const email = record.identifier.slice("verify:".length)
+		await prisma.$transaction(async (transaction) => {
+			const user = await transaction.user.findUnique({
+				where: { email },
+				select: { id: true },
+			})
+			if (!user) throw new AuthTokenError("Account not found.")
+			await transaction.user.update({
+				where: { id: user.id },
+				data: { emailVerified: new Date() },
+			})
+			await transaction.verificationToken.deleteMany({
+				where: { identifier: record.identifier },
+			})
+		})
+		return "verification"
 	}
-	const email = record.identifier.slice("verify:".length)
+
+	const changeRecord = await prisma.verificationToken.findFirst({
+		where: { token, identifier: { startsWith: "email-change:" } },
+		select: { identifier: true, expires: true },
+	})
+	if (!changeRecord || changeRecord.expires <= new Date())
+		throw new AuthTokenError("Verification link is invalid or expired.")
+	const change = changeRecord.identifier.slice("email-change:".length)
+	const separator = change.indexOf(":")
+	const userId = change.slice(0, separator)
+	const email = change.slice(separator + 1)
+	if (!userId || !email)
+		throw new AuthTokenError("Verification link is invalid or expired.")
 	await prisma.$transaction(async (transaction) => {
 		const user = await transaction.user.findUnique({
+			where: { id: userId },
+			select: { id: true, email: true },
+		})
+		if (!user) throw new AuthTokenError("Account not found.")
+		const emailOwner = await transaction.user.findUnique({
 			where: { email },
 			select: { id: true },
 		})
-		if (!user) throw new AuthTokenError("Account not found.")
+		if (emailOwner && emailOwner.id !== user.id)
+			throw new AuthTokenError("An account already uses that email address.")
 		await transaction.user.update({
 			where: { id: user.id },
-			data: { emailVerified: new Date() },
+			data: { email, emailVerified: new Date() },
+		})
+		await transaction.accountChangeHistory.create({
+			data: {
+				userId: user.id,
+				changeType: "email_changed",
+				summary: "Account email changed after verification.",
+				metadata: { previousEmail: user.email, email },
+			},
 		})
 		await transaction.verificationToken.deleteMany({
-			where: { identifier: record.identifier },
+			where: { identifier: changeRecord.identifier },
 		})
 	})
+	return "email-change"
 }
 
 export async function createPasswordResetToken(

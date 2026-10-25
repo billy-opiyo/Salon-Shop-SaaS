@@ -3666,86 +3666,6 @@ function bindPublicParityAdapters(
 		rescheduleBookingId = ""
 	}
 
-	const saveProfile = async (): Promise<void> => {
-		const name = document.getElementById("manageAccountName")
-		const phone = document.getElementById("manageAccountPhone")
-		if (
-			!(name instanceof HTMLInputElement) ||
-			!(phone instanceof HTMLInputElement)
-		)
-			return
-		const response = await fetch("/api/account", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ name: name.value, phone: phone.value }),
-		})
-		const result = await readReferenceJson(response)
-		setReferenceFormMessage(
-			"manageAccountMessage",
-			response.ok
-				? "Profile saved."
-				: (result.error ?? "Profile could not be saved."),
-			response.ok ? "success" : "error",
-		)
-		if (response.ok) await refreshReferenceAuthUi(tenantSlug)
-	}
-
-	const changePassword = async (): Promise<void> => {
-		const current = document.getElementById("manageAccountCurrentPassword")
-		const next = document.getElementById("manageAccountNewPassword")
-		if (
-			!(current instanceof HTMLInputElement) ||
-			!(next instanceof HTMLInputElement)
-		)
-			return
-		const response = await fetch("/api/account", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				currentPassword: current.value,
-				newPassword: next.value,
-			}),
-		})
-		const result = await readReferenceJson(response)
-		setReferenceFormMessage(
-			"manageAccountMessage",
-			response.ok
-				? "Password changed."
-				: (result.error ?? "Password could not be changed."),
-			response.ok ? "success" : "error",
-		)
-		if (response.ok) {
-			current.value = ""
-			next.value = ""
-		}
-	}
-
-	const deleteAccount = async (): Promise<void> => {
-		const response = await fetch("/api/account", { method: "DELETE" })
-		const result = await readReferenceJson(response)
-		const message = document.getElementById("deleteAccountConfirmMessage")
-		if (!response.ok) {
-			if (message)
-				message.textContent = result.error ?? "Account could not be deleted."
-			return
-		}
-		await signOut({ redirect: false })
-		window.location.assign("/")
-	}
-
-	const openDeleteAccount = (): void => {
-		const modal = document.getElementById("deleteAccountConfirmModal")
-		modal?.classList.add("active")
-		modal?.setAttribute("aria-hidden", "false")
-		document.body.style.overflow = "hidden"
-	}
-	const closeDeleteAccount = (): void => {
-		const modal = document.getElementById("deleteAccountConfirmModal")
-		modal?.classList.remove("active")
-		modal?.setAttribute("aria-hidden", "true")
-		document.body.style.overflow = ""
-	}
-
 	contactForm?.addEventListener("submit", submitContact, true)
 	reviewForm?.addEventListener("submit", submitReview, true)
 	termsCheckbox?.addEventListener("change", updateTermsAcceptance)
@@ -3766,27 +3686,6 @@ function bindPublicParityAdapters(
 	document
 		.getElementById("dashboardRescheduleBackdrop")
 		?.addEventListener("click", closeReschedule)
-	document
-		.getElementById("manageAccountSaveProfileBtn")
-		?.addEventListener("click", saveProfile)
-	document
-		.getElementById("manageAccountChangePasswordBtn")
-		?.addEventListener("click", changePassword)
-	document
-		.getElementById("manageAccountDeleteBtn")
-		?.addEventListener("click", openDeleteAccount)
-	document
-		.getElementById("deleteAccountConfirmProceedBtn")
-		?.addEventListener("click", deleteAccount)
-	document
-		.getElementById("deleteAccountConfirmCloseBtn")
-		?.addEventListener("click", closeDeleteAccount)
-	document
-		.getElementById("deleteAccountConfirmCancelBtn")
-		?.addEventListener("click", closeDeleteAccount)
-	document
-		.getElementById("deleteAccountConfirmBackdrop")
-		?.addEventListener("click", closeDeleteAccount)
 	document
 		.getElementById("termsModalCloseBtn")
 		?.addEventListener("click", closeTermsModal)
@@ -3814,27 +3713,6 @@ function bindPublicParityAdapters(
 		document
 			.getElementById("dashboardRescheduleBackdrop")
 			?.removeEventListener("click", closeReschedule)
-		document
-			.getElementById("manageAccountSaveProfileBtn")
-			?.removeEventListener("click", saveProfile)
-		document
-			.getElementById("manageAccountChangePasswordBtn")
-			?.removeEventListener("click", changePassword)
-		document
-			.getElementById("manageAccountDeleteBtn")
-			?.removeEventListener("click", openDeleteAccount)
-		document
-			.getElementById("deleteAccountConfirmProceedBtn")
-			?.removeEventListener("click", deleteAccount)
-		document
-			.getElementById("deleteAccountConfirmCloseBtn")
-			?.removeEventListener("click", closeDeleteAccount)
-		document
-			.getElementById("deleteAccountConfirmCancelBtn")
-			?.removeEventListener("click", closeDeleteAccount)
-		document
-			.getElementById("deleteAccountConfirmBackdrop")
-			?.removeEventListener("click", closeDeleteAccount)
 		document
 			.getElementById("termsModalCloseBtn")
 			?.removeEventListener("click", closeTermsModal)
@@ -4136,6 +4014,20 @@ function showFavoritesToast(message: string): void {
 function renderReferenceDashboard(
 	snapshot: ClientAccountSnapshotPayload,
 ): void {
+	const profileControls = {
+		name: document.getElementById("manageAccountName"),
+		email: document.getElementById("manageAccountEmail"),
+		phone: document.getElementById("manageAccountPhone"),
+	}
+	if (profileControls.name instanceof HTMLInputElement && !profileControls.name.dataset.dirty)
+		profileControls.name.value = snapshot.profile.name ?? ""
+	if (profileControls.email instanceof HTMLInputElement) {
+		profileControls.email.dataset.currentValue = snapshot.profile.email
+		if (!profileControls.email.dataset.dirty)
+			profileControls.email.value = snapshot.profile.email
+	}
+	if (profileControls.phone instanceof HTMLInputElement && !profileControls.phone.dataset.dirty)
+		profileControls.phone.value = snapshot.profile.phone ?? ""
 	const preferenceControls = {
 		theme: document.getElementById("manageAccountThemeSelect"),
 		fontSize: document.getElementById("manageAccountFontSizeSelect"),
@@ -4351,7 +4243,7 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 	}
 }
 
-function bindAccountMutationAdapter(): () => void {
+function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 	const profileButton = document.getElementById("manageAccountSaveProfileBtn")
 	const passwordButton = document.getElementById(
 		"manageAccountChangePasswordBtn",
@@ -4372,6 +4264,16 @@ function bindAccountMutationAdapter(): () => void {
 	const backdrop = document.getElementById("deleteAccountConfirmBackdrop")
 	const message = document.getElementById("manageAccountMessage")
 	const newPasswordInput = document.getElementById("manageAccountNewPassword")
+	const profileInputs = [
+		document.getElementById("manageAccountName"),
+		document.getElementById("manageAccountEmail"),
+		document.getElementById("manageAccountPhone"),
+	].filter((input): input is HTMLInputElement => input instanceof HTMLInputElement)
+	const markProfileInputDirty = (event: Event): void => {
+		const input = event.currentTarget
+		if (input instanceof HTMLInputElement) input.dataset.dirty = "true"
+	}
+	profileInputs.forEach((input) => input.addEventListener("input", markProfileInputDirty))
 	const passwordStrengthFill = document.getElementById("managePasswordStrengthFill")
 	const passwordStrengthText = document.getElementById("managePasswordStrengthText")
 	const passwordChecks = document.getElementById("managePasswordChecks")
@@ -4427,14 +4329,37 @@ function bindAccountMutationAdapter(): () => void {
 	}
 	const saveProfile = async (): Promise<void> => {
 		const name = document.getElementById("manageAccountName")
+		const email = document.getElementById("manageAccountEmail")
 		const phone = document.getElementById("manageAccountPhone")
 		if (
 			!(name instanceof HTMLInputElement) ||
+			!(email instanceof HTMLInputElement) ||
 			!(phone instanceof HTMLInputElement)
 		)
 			return
-		if (await patchAccount({ name: name.value, phone: phone.value }))
-			setMessage("Profile saved.")
+		if (!(await patchAccount({ name: name.value, phone: phone.value }))) return
+		profileInputs.forEach((input) => (input.dataset.dirty = ""))
+		const requestedEmail = email.value.trim().toLowerCase()
+		const currentEmail = (email.dataset.currentValue ?? "").trim().toLowerCase()
+		if (requestedEmail && requestedEmail !== currentEmail) {
+			const response = await fetch(
+				"/api/account?tenant=" + encodeURIComponent(tenantSlug),
+				{
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ email: requestedEmail }),
+				},
+			)
+			const result = await readReferenceJson(response)
+			if (!response.ok) {
+				setMessage(result.error ?? "Email change could not be requested.", true)
+				return
+			}
+			email.dataset.currentValue = requestedEmail
+			setMessage("Profile saved. Check your new email to confirm the address change.")
+			return
+		}
+		setMessage("Profile saved.")
 	}
 	const changePassword = async (): Promise<void> => {
 		const current = document.getElementById("manageAccountCurrentPassword")
@@ -4532,6 +4457,7 @@ function bindAccountMutationAdapter(): () => void {
 	cancelDeleteButton?.addEventListener("click", closeDelete)
 	backdrop?.addEventListener("click", closeDelete)
 	return () => {
+		profileInputs.forEach((input) => input.removeEventListener("input", markProfileInputDirty))
 		newPasswordInput?.removeEventListener("input", updatePasswordStrength)
 		profileButton?.removeEventListener("click", saveProfile)
 		passwordButton?.removeEventListener("click", changePassword)
@@ -6052,23 +5978,28 @@ function bindNativeContentControls(): () => void {
 			applyBlogs()
 		})
 		add(document.getElementById("blogPrevBtn"), "click", () =>
-			blogGrid.scrollBy({ left: -blogGrid.clientWidth, behavior: "smooth" }),
+			scrollBlogCards(-1),
 		)
 		add(document.getElementById("blogNextBtn"), "click", () => {
 			if (!showAllBlogs && blogCards.length > 3) {
 				showAllBlogs = true
 				applyBlogs()
 				window.requestAnimationFrame(() =>
-					blogGrid.scrollBy({
-						left: blogGrid.clientWidth,
-						behavior: "smooth",
-					}),
+					scrollBlogCards(1),
 				)
 				return
 			}
-			blogGrid.scrollBy({ left: blogGrid.clientWidth, behavior: "smooth" })
+			scrollBlogCards(1)
 		})
 		applyBlogs()
+	}
+	const scrollBlogCards = (direction: -1 | 1): void => {
+		const firstCard = blogGrid?.querySelector<HTMLElement>(".blog-card")
+		if (!blogGrid || !firstCard) return
+		const styles = window.getComputedStyle(blogGrid)
+		const gap = Number.parseFloat(styles.columnGap || styles.gap) || 24
+		const step = firstCard.getBoundingClientRect().width + gap
+		blogGrid.scrollBy({ left: direction * step, behavior: "smooth" })
 	}
 
 	const animationTimers: number[] = []
@@ -6541,7 +6472,7 @@ export function SalonStorefrontRuntime({
 			turnstileSiteKey ?? "",
 			gallery,
 		)
-		const removeAccount = bindAccountMutationAdapter()
+		const removeAccount = bindAccountMutationAdapter(tenantSlug ?? "")
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
 		const markFormDirty = (event: Event): void => {
 			const target = event.target

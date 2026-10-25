@@ -295,9 +295,9 @@ function buildTemplate(templateKey: string, data: TemplateLike): BuiltTemplate {
 			}
 		case "verify.address":
 			return {
-				subject: `Verify your email — ${business}`,
+				subject: `Confirm your email — ${business}`,
 				heading: "Confirm your email address",
-				bodyHtml: `<p>Hello ${name}, please confirm your email address to finish creating your account. The link will expire in 30 minutes.</p>`,
+				bodyHtml: `<p>Hello ${name}, confirm that you control this email address to finish setting up or changing your account email. The secure link will expire in 30 minutes.</p>`,
 				whatsapp: "",
 				link: stringValue(data.link),
 			}

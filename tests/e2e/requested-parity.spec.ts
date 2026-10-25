@@ -221,14 +221,15 @@ test.describe("Requested Beauty Sphia parity fixes", () => {
 			).display,
 		}))
 		expect(state.documentWidth).toBeLessThanOrEqual(state.viewportWidth + 1)
-		expect(state.navDisplay).toBe("flex")
+		expect(state.navDisplay).toBe("none")
+		await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible()
 	})
 
 	test("does not show a second splash after opening a store from the directory", async ({
 		page,
 	}) => {
 		await page.goto("/stores", { waitUntil: "domcontentloaded" })
-		await page.getByRole("link", { name: "Open Royal Braids Store →" }).click()
+		await page.getByRole("link", { name: "Open Royal Braids Salon →" }).click()
 		await expect(page).toHaveURL(/\/royal-braids$/, { timeout: 15_000 })
 		await page.waitForSelector("#home")
 		await page.waitForTimeout(250)

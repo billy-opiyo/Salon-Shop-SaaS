@@ -65,7 +65,28 @@ test.describe("storefront booking availability and waitlist", () => {
 		await page.locator('#bookingForm [name="lastName"]').fill("Client")
 		await page.locator('#bookingForm [name="email"]').fill("amina@example.com")
 		await page.locator('#bookingForm [name="phone"]').fill("+254700000000")
-		await page.locator("#serviceSelect").selectOption({ index: 1 })
+		const serviceSelect = page.locator("#serviceSelect")
+		const serviceOptions = await serviceSelect.locator("option").evaluateAll(
+			(options) =>
+				options
+					.filter(
+						(option) =>
+							!(option as HTMLOptionElement).disabled &&
+							Boolean((option as HTMLOptionElement).value),
+					)
+					.map((option) => (option as HTMLOptionElement).value),
+		)
+		const customServiceValue = "__custom_service__"
+		if (serviceOptions.includes(customServiceValue)) {
+			await serviceSelect.selectOption(customServiceValue)
+			await page.locator("#customServiceInput").fill("Protective Styling")
+		} else {
+			const firstService = serviceOptions.find(
+				(value) => value !== customServiceValue,
+			)
+			if (!firstService) throw new Error("No bookable service option is rendered")
+			await serviceSelect.selectOption(firstService)
+		}
 		await page.locator("#inspirationImage").setInputFiles({
 			name: "style-reference.png",
 			mimeType: "image/png",
@@ -111,8 +132,31 @@ test.describe("storefront booking availability and waitlist", () => {
 		await page.locator('#bookingForm [name="lastName"]').fill("Client")
 		await page.locator('#bookingForm [name="email"]').fill("amina@example.com")
 		await page.locator('#bookingForm [name="phone"]').fill("+254700000000")
-		await page.locator("#serviceSelect").selectOption({ index: 1 })
+		const serviceSelect = page.locator("#serviceSelect")
+		const serviceOptions = await serviceSelect.locator("option").evaluateAll(
+			(options) =>
+				options
+					.filter(
+						(option) =>
+							!(option as HTMLOptionElement).disabled &&
+							Boolean((option as HTMLOptionElement).value),
+					)
+					.map((option) => (option as HTMLOptionElement).value),
+		)
+		if (serviceOptions.includes("__custom_service__")) {
+			await serviceSelect.selectOption("__custom_service__")
+			await page.locator("#customServiceInput").fill("Protective Styling")
+		} else {
+			const firstService = serviceOptions[0]
+			if (!firstService) throw new Error("No bookable service option is rendered")
+			await serviceSelect.selectOption(firstService)
+		}
+		const availabilityResponse = page.waitForResponse((response) =>
+			response.url().includes("/api/bookings/availability?") &&
+			response.request().method() === "GET",
+		)
 		await page.locator("#datePicker").fill(appointmentDate)
+		await availabilityResponse
 		await expect(page.locator("#bookingTimeDropdown .time-picker-option").first()).toBeAttached()
 		await page.locator("#timePickerTrigger").click()
 		await page.locator("#bookingTimeDropdown").getByRole("option", { name: "9:00 AM" }).click()

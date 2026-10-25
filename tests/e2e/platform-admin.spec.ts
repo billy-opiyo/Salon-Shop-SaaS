@@ -5,7 +5,7 @@ test.describe("Beauty Sphia platform admin boundary", () => {
 
 	test("redirects unauthenticated operators to sign in", async ({ page }) => {
 		await page.goto("/platform-admin")
-		await expect(page).toHaveURL(/\/login$/)
+		await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fplatform-admin$/)
 	})
 
 	test("rejects unauthenticated operator mutations", async ({ request }) => {
