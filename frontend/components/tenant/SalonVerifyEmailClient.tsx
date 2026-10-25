@@ -38,6 +38,7 @@ export function SalonVerifyEmailClient({
 			})
 			const result = (await response.json().catch(() => null)) as {
 				error?: string
+				purpose?: string
 			} | null
 			if (!response.ok) {
 				setState("error")
@@ -45,7 +46,11 @@ export function SalonVerifyEmailClient({
 				return
 			}
 			setState("success")
-			setMessage("Your email has been verified. You can now sign in and manage your salon activity.")
+			setMessage(
+				result?.purpose === "email-change"
+					? "Your account email has been changed. Sign in again using your new email address."
+					: "Your email has been verified. You can now sign in and manage your salon activity.",
+			)
 		} catch {
 			setState("error")
 			setMessage("Email verification is temporarily unavailable. Please try again shortly.")

@@ -48,6 +48,75 @@ test.describe("Royal Braids SaaS parity", () => {
 		await page.locator("#blogNextBtn").click()
 		await expect(cards.nth(3)).toBeVisible()
 		await expect(page.locator("#viewLessBlogsBtn")).toBeVisible()
+		await expect
+			.poll(() => page.locator("#blogGrid").evaluate((grid) => grid.scrollLeft))
+			.toBeGreaterThan(0)
+	})
+
+	test("account profile loads saved values and requests email confirmation", async ({ page }) => {
+		await page.addInitScript(() => {
+			localStorage.setItem("royal_braids_terms_accepted_v1", "true")
+		})
+	let sessionRequested = false
+	await page.route("**/api/auth/session**", async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({
+				user: { name: "Test Client", email: "client@example.com" },
+			}),
+		})
+		sessionRequested = true
+	})
+	let changeEmailRequested = false
+	await page.route("**/api/account**", async (route) => {
+		const request = route.request()
+		const url = new URL(request.url())
+		if (request.method() === "GET" && url.searchParams.has("tenantSlug")) {
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({
+					profile: {
+						name: "Test Client",
+						email: "client@example.com",
+						phone: "+254 700 000 000",
+						image: null,
+					},
+					preferences: null,
+					bookings: [],
+					reviews: [],
+					favorites: [],
+					loginHistory: [],
+				}),
+			})
+			return
+		}
+		if (request.method() === "PATCH") {
+			await route.fulfill({ status: 204 })
+			return
+		}
+		if (request.method() === "POST") {
+			changeEmailRequested = true
+			await route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' })
+			return
+		}
+		await route.continue()
+	})
+	await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+	await expect.poll(() => sessionRequested).toBe(true)
+	await expect(page.locator("#authProfileMenu")).not.toHaveClass(/hidden/)
+	await page.locator("#authProfileTrigger").click()
+	await page.locator("#manageAccountOpenBtn").click()
+	await expect(page.locator("#manageAccountName")).toHaveValue("Test Client")
+	await expect(page.locator("#manageAccountEmail")).toHaveValue("client@example.com")
+	await expect(page.locator("#manageAccountPhone")).toHaveValue("+254 700 000 000")
+	await page.locator("#manageAccountEmail").fill("new-client@example.com")
+	await page.locator("#manageAccountSaveProfileBtn").click()
+	await expect(page.locator("#manageAccountMessage")).toContainText(
+		"Check your new email to confirm",
+	)
+	expect(changeEmailRequested).toBe(true)
 	})
 
 	test("gallery service filters preserve every legacy category", async ({ page }) => {
@@ -282,6 +351,15 @@ test.describe("Royal Braids SaaS parity", () => {
 	}) => {
 		const response = await request.post("/api/manage/royal-braids/actions", {
 			data: { action: "booking-status", id: "ckxxxxxxxxxxxxxxxxxxxxxxxx" },
+		})
+		expect(response.status()).toBe(401)
+	})
+
+	test("account email changes reject unauthenticated requests", async ({
+		request,
+	}) => {
+		const response = await request.post("/api/account", {
+			data: { email: "new-client@example.com" },
 		})
 		expect(response.status()).toBe(401)
 	})

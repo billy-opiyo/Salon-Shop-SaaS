@@ -18,6 +18,10 @@ export const profileUpdateSchema = z.object({
 	phone: z.string().trim().min(7).max(32).optional(),
 })
 
+export const emailChangeSchema = z.object({
+	email: z.string().trim().toLowerCase().email().max(320),
+})
+
 export const passwordChangeSchema = z.object({
 	currentPassword: z.string().min(1).max(128),
 	newPassword: z

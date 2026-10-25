@@ -266,6 +266,58 @@ export default async function PlatformHome() {
 							</article>
 						))}
 					</div>
+					<div
+						className="plan-comparison"
+						role="region"
+						aria-label="Compare salon plans"
+						tabIndex={0}
+					>
+						<div className="plan-comparison__header" role="row">
+							<span role="columnheader">Feature</span>
+							{plans.map((plan) => (
+								<span role="columnheader" key={plan.tier}>
+									{plan.name}
+								</span>
+							))}
+						</div>
+						{planCapabilities.map(([label, kind, key]) => (
+							<div className="plan-comparison__row" role="row" key={label}>
+								<strong role="rowheader">{label}</strong>
+								{plans.map((plan) => {
+									const entitlement = PLAN_ENTITLEMENTS[plan.tier]
+									const included =
+										kind === "feature"
+											? entitlement.features[
+												key as keyof typeof entitlement.features
+											]
+											: true
+									const rawValue =
+										kind === "limit"
+											? entitlement.limits[
+												key as keyof typeof entitlement.limits
+											]
+											: undefined
+									const value =
+										typeof rawValue === "number"
+											? rawValue === Number.MAX_SAFE_INTEGER
+												? "Negotiated"
+												: key === "storageMegabytes"
+													? rawValue >= 1000
+														? `${rawValue / 1000} GB`
+														: `${rawValue.toLocaleString("en-KE")} MB`
+													: rawValue.toLocaleString("en-KE")
+											: included
+												? "Included"
+												: "Not included"
+									return (
+										<span role="cell" key={`${plan.tier}-${label}`}>
+											{value}
+										</span>
+									)
+								})}
+							</div>
+						))}
+					</div>
 				</section>
 
 				<section

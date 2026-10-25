@@ -11,6 +11,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 	)
 	const [message, setMessage] = useState<string>("")
 	const [token, setToken] = useState<string>(initialToken)
+	const [emailChanged, setEmailChanged] = useState(false)
 
 	const submitToken = useCallback(async (value: string) => {
 		setState("verifying")
@@ -23,6 +24,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 			})
 			const data = (await response.json().catch(() => null)) as {
 				error?: string
+				purpose?: string
 			} | null
 			if (!response.ok) {
 				setState("error")
@@ -32,6 +34,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 				)
 				return
 			}
+			setEmailChanged(data?.purpose === "email-change")
 			setState("success")
 		} catch {
 			setState("error")
@@ -52,10 +55,11 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 	if (state === "success") {
 		return (
 			<>
-				<h1>Email verified 🎉</h1>
+				<h1>{emailChanged ? "Email updated 🎉" : "Email verified 🎉"}</h1>
 				<p className="auth-card__intro">
-					Your email address is confirmed. You can now sign in and use every
-					part of your account.
+					{emailChanged
+						? "Your account email has changed. Sign out, then sign in using your new email address."
+						: "Your email address is confirmed. You can now sign in and use every part of your account."}
 				</p>
 				<p className="auth-form__switch">
 					<Link href="/login">Continue to sign in</Link>
