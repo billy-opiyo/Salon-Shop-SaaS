@@ -152,6 +152,9 @@ function renderAdminSnapshotList(
 		row.dataset.userType = typeof record.userId === "string" && record.userId
 			? "known-user"
 			: "anonymous"
+		if (elementId === "adminSessionsList")
+			row.dataset.sessionUserId =
+				typeof record.userId === "string" ? record.userId : ""
 		row.dataset.risk = String(record.riskLevel ?? "").toLowerCase()
 		row.dataset.country = String(record.country ?? "").toLowerCase()
 		row.dataset.status = record.resolvedAt
@@ -1126,6 +1129,27 @@ function bindAdminSnapshotFilters(): () => void {
 			const rows = Array.from(
 				container.querySelectorAll<HTMLElement>(".admin-snapshot-row"),
 			)
+			if (selector === "#adminSessionsList" && mode === "multi-device-first") {
+				const sessionCountByUser = new Map<string, number>()
+				for (const row of rows) {
+					const userId = row.dataset.sessionUserId
+					if (userId)
+						sessionCountByUser.set(
+							userId,
+							(sessionCountByUser.get(userId) ?? 0) + 1,
+						)
+				}
+			rows.sort((left, right) => {
+				const leftCount = sessionCountByUser.get(left.dataset.sessionUserId ?? "") ?? 0
+				const rightCount = sessionCountByUser.get(right.dataset.sessionUserId ?? "") ?? 0
+				if (leftCount !== rightCount) return rightCount - leftCount
+				return (right.dataset.createdAt ?? "").localeCompare(
+					left.dataset.createdAt ?? "",
+				)
+			})
+			rows.forEach((row) => container.append(row))
+			return
+		}
 			rows.sort((left, right) => {
 				if (mode.includes("oldest"))
 					return (left.dataset.createdAt ?? "").localeCompare(
@@ -1240,6 +1264,113 @@ function bindAdminSnapshotFilters(): () => void {
 	}
 	apply()
 	return () => removers.forEach((remove) => remove())
+}
+
+function bindAdminBookingFilters(): {
+	apply: () => void
+	remove: () => void
+} {
+	const controls = document.getElementById("adminBookingFilterControls")
+	const list = document.getElementById("adminBookingsList")
+	const waitlistList = document.getElementById("adminWaitlistList")
+	let activeFilter = "all"
+	const allowedFilters = new Set([
+		"all",
+		"pending",
+		"confirmed",
+		"completed",
+		"cancelled",
+		"waitlisted",
+	])
+	const apply = (): void => {
+		if (!controls || !list) return
+		list
+			.querySelectorAll<HTMLElement>("[data-booking-waitlist-clone]")
+			.forEach((row) => row.remove())
+		const rows = Array.from(
+			list.querySelectorAll<HTMLElement>(
+				".admin-snapshot-row:not([data-booking-waitlist-clone])",
+			),
+		)
+		let visibleCount = 0
+		for (const row of rows) {
+			const status = row.dataset.status?.toLowerCase() ?? ""
+			const visible =
+				activeFilter !== "waitlisted" &&
+				(activeFilter === "all" || status === activeFilter)
+			row.hidden = !visible
+			if (visible) visibleCount += 1
+		}
+		if (activeFilter === "waitlisted" && waitlistList) {
+			const activeQueueStatuses = new Set([
+				"waiting",
+				"notified",
+				"contacted",
+				"notification_failed",
+			])
+			for (const sourceRow of waitlistList.querySelectorAll<HTMLElement>(
+				".admin-snapshot-row",
+			)) {
+				if (!activeQueueStatuses.has(sourceRow.dataset.status?.toLowerCase() ?? ""))
+					continue
+				const clone = sourceRow.cloneNode(true)
+				if (!(clone instanceof HTMLElement)) continue
+				clone.hidden = false
+				clone.dataset.status = "waitlisted"
+				clone.dataset.bookingWaitlistClone = "true"
+				list.append(clone)
+				visibleCount += 1
+			}
+		}
+		controls
+			.querySelectorAll<HTMLButtonElement>("[data-booking-status-filter]")
+			.forEach((button) => {
+				const filter = button.dataset.bookingStatusFilter?.toLowerCase() ?? "all"
+				const isActive = filter === activeFilter
+				button.classList.toggle("active", isActive)
+				button.setAttribute("aria-pressed", String(isActive))
+			})
+		let emptyState = list.querySelector<HTMLElement>(
+			"[data-booking-filter-empty]",
+		)
+		const defaultEmptyState = list.querySelector<HTMLElement>(
+			".admin-empty-state:not([data-booking-filter-empty])",
+		)
+		if (visibleCount === 0 && (rows.length > 0 || activeFilter === "waitlisted")) {
+			if (!emptyState) {
+				emptyState = document.createElement("p")
+				emptyState.className = "admin-empty-state"
+				emptyState.dataset.bookingFilterEmpty = "true"
+				list.append(emptyState)
+			}
+			emptyState.textContent =
+				activeFilter === "waitlisted"
+					? "No waitlist entries right now."
+					: `No ${activeFilter} bookings match this filter.`
+			if (defaultEmptyState) defaultEmptyState.hidden = true
+		} else {
+			emptyState?.remove()
+			if (defaultEmptyState)
+				defaultEmptyState.hidden = activeFilter !== "all" || visibleCount > 0
+		}
+	}
+	const clickHandler = (event: Event): void => {
+		const target = event.target
+		if (!(target instanceof Element)) return
+		const button = target.closest<HTMLButtonElement>(
+			"[data-booking-status-filter]",
+		)
+		if (!button || !controls?.contains(button)) return
+		const candidate = button.dataset.bookingStatusFilter?.toLowerCase() ?? "all"
+		activeFilter = allowedFilters.has(candidate) ? candidate : "all"
+		apply()
+	}
+	controls?.addEventListener("click", clickHandler)
+	apply()
+	return {
+		apply,
+		remove: () => controls?.removeEventListener("click", clickHandler),
+	}
 }
 
 function exportVisibleSecurityRows(format: "csv" | "excel"): void {
@@ -1663,6 +1794,8 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	if (authMessage) authMessage.textContent = ""
 
 	let removeSnapshotFilters: () => void = () => undefined
+	const bookingFilters = bindAdminBookingFilters()
+	removeTabHandlers.push(bookingFilters.remove)
 	const adminBackToTop = document.getElementById("backToTop")
 	if (adminBackToTop) {
 		const updateAdminBackToTopVisibility = (): void => {
@@ -2568,6 +2701,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				waitlist,
 				"No waitlist entries found.",
 			)
+			bookingFilters.apply()
 			renderAdminSnapshotList("adminReviewsList", reviews, "No reviews found.")
 			renderAdminSnapshotList(
 				"adminContactList",
@@ -2629,9 +2763,12 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				adminConfirmedCount: bookings.filter(
 					(item) => (item as AdminSnapshotRecord).status === "CONFIRMED",
 				).length,
-				adminWaitlistedBookingCount: bookings.filter(
-					(item) => (item as AdminSnapshotRecord).status === "WAITLISTED",
-				).length,
+				adminWaitlistedBookingCount: waitlist.length
+					? waitlist.length
+					: bookings.filter(
+							(item) =>
+								(item as AdminSnapshotRecord).status === "WAITLISTED",
+							).length,
 				adminCompletedCount: bookings.filter(
 					(item) => (item as AdminSnapshotRecord).status === "COMPLETED",
 				).length,
@@ -2670,6 +2807,11 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				),
 				adminSecuritySuccessCount: Number(securityStats.successfulLogins ?? 0),
 				adminSecurityFailedCount: Number(securityStats.failedLogins ?? 0),
+				adminSecuritySuspiciousCount: Number(securityStats.suspiciousLogins ?? 0),
+				adminSecurityLockedCount: Number(securityStats.lockedAccounts ?? 0),
+				adminSecurityRepeatedWrongCount: Number(
+					securityStats.repeatedWrongPasswords ?? 0,
+				),
 				adminSecurityHighRiskCount: Number(securityStats.highRiskLogins ?? 0),
 				adminSecurityAlertsTotalCount: Number(
 					securityStats.totalAlerts ?? securityAlerts.length,
@@ -2696,7 +2838,16 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 					securityStats.activeUsers ?? 0,
 				),
 				adminSecurityWidgetFailedLoginAttempts: Number(
-					securityStats.failedLogins ?? 0,
+					securityStats.failedLoginAttemptsToday ?? 0,
+				),
+				adminSecurityWidgetNewRegistrations: Number(
+					securityStats.newRegistrations ?? 0,
+				),
+				adminSecurityWidgetReturningCustomers: Number(
+					securityStats.returningCustomers ?? 0,
+				),
+				adminSecurityWidgetAnonymousUsers: Number(
+					securityStats.anonymousUsers ?? 0,
 				),
 				adminSecurityWidgetGoogleSignIns: Number(
 					securityStats.googleSignIns ?? 0,
@@ -2777,6 +2928,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						latestWaitlist,
 						"No waitlist entries found.",
 					)
+					bookingFilters.apply()
 					renderAdminSnapshotList(
 						"adminReviewsList",
 						latestReviews,
@@ -2879,9 +3031,11 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						adminConfirmedCount: latestBookings.filter(
 							(item) => recordValue(item).status === "CONFIRMED",
 						).length,
-						adminWaitlistedBookingCount: latestBookings.filter(
-							(item) => recordValue(item).status === "WAITLISTED",
-						).length,
+						adminWaitlistedBookingCount: latestWaitlist.length
+							? latestWaitlist.length
+							: latestBookings.filter(
+									(item) => recordValue(item).status === "WAITLISTED",
+								).length,
 						adminCompletedCount: latestBookings.filter(
 							(item) => recordValue(item).status === "COMPLETED",
 						).length,
@@ -2922,6 +3076,13 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 							latestStats.successfulLogins ?? 0,
 						),
 						adminSecurityFailedCount: Number(latestStats.failedLogins ?? 0),
+						adminSecuritySuspiciousCount: Number(
+							latestStats.suspiciousLogins ?? 0,
+						),
+						adminSecurityLockedCount: Number(latestStats.lockedAccounts ?? 0),
+						adminSecurityRepeatedWrongCount: Number(
+							latestStats.repeatedWrongPasswords ?? 0,
+						),
 						adminSecurityHighRiskCount: Number(latestStats.highRiskLogins ?? 0),
 						adminSecurityAlertsTotalCount: Number(
 							latestStats.totalAlerts ?? latestAlerts.length,
@@ -2948,7 +3109,16 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 							latestStats.activeUsers ?? 0,
 						),
 						adminSecurityWidgetFailedLoginAttempts: Number(
-							latestStats.failedLogins ?? 0,
+							latestStats.failedLoginAttemptsToday ?? 0,
+						),
+						adminSecurityWidgetNewRegistrations: Number(
+							latestStats.newRegistrations ?? 0,
+						),
+						adminSecurityWidgetReturningCustomers: Number(
+							latestStats.returningCustomers ?? 0,
+						),
+						adminSecurityWidgetAnonymousUsers: Number(
+							latestStats.anonymousUsers ?? 0,
 						),
 						adminSecurityWidgetGoogleSignIns: Number(
 							latestStats.googleSignIns ?? 0,
