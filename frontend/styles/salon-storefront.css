@@ -1828,6 +1828,7 @@ h6 {
     display: flex;
     align-items: center;
     position: relative;
+    isolation: isolate;
     overflow: hidden;
     padding-top: var(--nav-height);
 }
@@ -1838,7 +1839,8 @@ h6 {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .hero-bg::after {
@@ -1848,7 +1850,7 @@ h6 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(10, 10, 10, 0.7) 50%, rgba(10, 10, 10, 0.9) 100%);
+    background: linear-gradient(135deg, rgba(10, 10, 10, 0.86) 0%, rgba(10, 10, 10, 0.62) 50%, rgba(10, 10, 10, 0.84) 100%);
 }
 
 .hero-bg img {
@@ -1863,6 +1865,11 @@ h6 {
     gap: 60px;
     align-items: center;
     width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.hero > .container {
     position: relative;
     z-index: 1;
 }
