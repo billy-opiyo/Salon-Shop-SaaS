@@ -145,27 +145,48 @@ async function sendWhatsAppText(
 async function sendSmsText(to: string, text: string): Promise<DeliveryResult> {
 	const url = env("SMS_PROVIDER_URL")
 	const apiKey = env("SMS_PROVIDER_API_KEY")
-	if (!url || !apiKey || !to)
+	const username = env("SMS_PROVIDER_USERNAME")
+	if (!url || !apiKey || !username || !to)
 		return { ok: false, error: "SMS provider is not configured." }
 	try {
+		const body = new URLSearchParams({
+			username,
+			to,
+			message: text,
+		})
+		const senderId = env("SMS_SENDER_ID")
+		if (senderId) body.set("from", senderId)
+
 		const response = await fetch(url, {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${apiKey}`,
-				"content-type": "application/json",
+				apikey: apiKey,
+				Accept: "application/json",
+				"content-type": "application/x-www-form-urlencoded",
 			},
-			body: JSON.stringify({
-				to,
-				message: text,
-				sender: env("SMS_SENDER_ID") || "Beauty Sphia",
-			}),
+			body,
 		})
-		if (!response.ok)
+		if (response.status !== 201)
 			return {
 				ok: false,
 				error: `SMS provider rejected the message (${response.status}).`,
 			}
-		return { ok: true, providerMessageId: to }
+		const data = (await response.json().catch(() => null)) as {
+			SMSMessageData?: {
+				Recipients?: Array<{
+					status?: string
+					messageId?: string
+				}>
+			}
+		} | null
+		const recipient = data?.SMSMessageData?.Recipients?.[0]
+		if (recipient?.status && recipient.status.toLowerCase() !== "success") {
+			return {
+				ok: false,
+				error: "Africa's Talking did not accept the SMS for delivery.",
+			}
+		}
+		return { ok: true, providerMessageId: recipient?.messageId }
 	} catch (error) {
 		return {
 			ok: false,
@@ -514,7 +535,11 @@ export function isNotificationProviderConfigured(
 ): boolean {
 	if (channel === NotificationChannel.DASHBOARD) return true
 	if (channel === NotificationChannel.SMS)
-		return Boolean(env("SMS_PROVIDER_URL") && env("SMS_PROVIDER_API_KEY"))
+		return Boolean(
+			env("SMS_PROVIDER_URL") &&
+			env("SMS_PROVIDER_API_KEY") &&
+			env("SMS_PROVIDER_USERNAME"),
+		)
 	return channel === NotificationChannel.EMAIL
 		? Boolean(env("RESEND_API_KEY") && env("RESEND_FROM_EMAIL"))
 		: Boolean(
