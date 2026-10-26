@@ -99,9 +99,8 @@ export default async function PlatformHome() {
 	return (
 		<>
 			<ExperienceSplash
-				eyebrow="The salon operating platform"
 				brandName="Beauty Sphia"
-				description="Preparing your workspace experience"
+				logoUrl={design.logoUrl}
 			/>
 			<main id="home" className="platform-home-shell">
 				<PlatformHeader page="home" logoUrl={design.logoUrl} />

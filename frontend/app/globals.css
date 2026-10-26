@@ -222,8 +222,8 @@ main {
 .splash-content {
   position: relative;
   z-index: 1;
-  width: min(100%, 760px);
-  padding: clamp(30px, 5vw, 56px);
+  width: min(100%, 390px);
+  padding: clamp(30px, 5vw, 42px);
   text-align: center;
   border: 1px solid rgba(215, 168, 79, .42);
   border-radius: 30px;
@@ -288,59 +288,47 @@ main {
 
 .splash-progress {
   position: relative;
-  width: 100%;
-  max-width: 420px;
+  width: 116px;
+  height: 116px;
   margin: 0 auto;
-}
-
-.splash-progress-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  color: #b5aea3;
-  font-size: .8rem;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.splash-progress-percent {
-  color: #f1d59b;
-  font-variant-numeric: tabular-nums;
+  border-radius: 50%;
 }
 
 .splash-progress-track {
-  position: relative;
-  height: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(215, 168, 79, .42);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .12);
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  padding: 4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    #fff3cf 0%,
+    #d5a54e var(--splash-progress, 0%),
+    rgba(241, 213, 155, .2) var(--splash-progress, 0%),
+    rgba(241, 213, 155, .2) 100%
+  );
+  box-shadow: 0 0 24px rgba(215, 168, 79, .28);
 }
 
-.splash-progress-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  min-width: 8px;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #c8963e, #fff3cf);
-  transition: width .06s linear;
-}
-
-.splash-progress-fill::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .5), transparent);
-  animation: platform-splash-shimmer 1.45s linear infinite;
+.splash-progress-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(37, 28, 19, .9);
+  border-radius: 50%;
+  background: #211609;
+  object-fit: cover;
 }
 
 .splash-loading-text {
-  margin: 16px 0 0;
-  color: #b5aea3;
-  font-size: .85rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  margin: 20px 0 0;
+  color: #f1d59b;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .splash-loading-dots {
@@ -2897,8 +2885,10 @@ main {
 }
 
 .top-store__image {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
+  overflow: hidden;
   background: center/cover no-repeat rgba(12, 10, 7, .28);
 }
 
@@ -3857,7 +3847,7 @@ main {
 
 .platform-mobile-actions {
   border-top-color: var(--platform-line, rgba(213, 165, 78, .3));
-  background: linear-gradient(180deg, #4a3218, #24170b);
+  background: linear-gradient(180deg, #4a3218, #211609);
   box-shadow: 0 -.65rem 1.8rem rgba(0, 0, 0, .28);
 }
 
@@ -4231,6 +4221,26 @@ main {
 	gap: .18rem;
 	text-align: center;
 }
+
+/* Keep the sticky brand mark aligned with the 24px content gutter. */
+.platform-header {
+	padding-left: max(1.5rem, calc((100% - 1180px) / 2));
+}
+
+@media (max-width: 600px) {
+	.platform-header {
+		padding-left: 1.5rem;
+	}
+}
+
+.platform-mobile-actions {
+	background: linear-gradient(180deg, #4a3218 0%, #211609 100%);
+}
+
+.platform-about-page + .platform-mobile-actions,
+.platform-support-page + .platform-mobile-actions {
+	background: linear-gradient(180deg, #4a3218 0%, #211609 100%);
+}
 .platform-mobile-actions a > span:last-child {
 	display: block;
 	width: 100%;
@@ -4263,7 +4273,7 @@ main {
 		gap: .25rem;
 		padding: .5rem max(.5rem, env(safe-area-inset-left)) max(.5rem, env(safe-area-inset-bottom));
 		border-top: 1px solid var(--platform-line, rgba(213, 165, 78, .3));
-		background: linear-gradient(180deg, #4a3218, #24170b);
+		background: linear-gradient(180deg, #4a3218 0%, #211609 100%);
 		box-shadow: 0 -.65rem 1.8rem rgba(0, 0, 0, .28);
 	}
 	.platform-about-page + .platform-mobile-actions a,
@@ -4532,7 +4542,7 @@ main {
 	.tenant-site-search .site-search__panel { top: max(5.6rem, calc(env(safe-area-inset-top,0px) + 4.7rem)); }
 }
 @media (max-width: 360px) {
-	.platform-header { padding-inline: .65rem; }
+	.platform-header { padding-right: .65rem; padding-left: 1.5rem; }
 	.brand-mark__tagline { display: block; font-size: .43rem; letter-spacing: .08em; }
 	.platform-hero__benefits { grid-template-columns: minmax(0,1fr); }
 	.platform-mobile-actions a > span:last-child { font-size: .6rem; }
