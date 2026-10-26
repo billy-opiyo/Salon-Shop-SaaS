@@ -1,5 +1,6 @@
 import { getTopStores } from "@/lib/platformStores"
 import { StoreTransitionLink } from "@/components/shared/StoreTransitionLink"
+import Image from "next/image"
 
 function RatingStars({
 	rating,
@@ -53,12 +54,16 @@ export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
 					className={`top-store${store.available ? "" : " top-store--soon"}`}
 					key={store.slug}
 				>
-					<div
-						className="top-store__image"
-						style={{ backgroundImage: `url("${store.imageUrl}")` }}
-						role="img"
-						aria-label={`${store.name} storefront`}
-					/>
+					<div className="top-store__image">
+						<Image
+							className="top-store__image-content"
+							src={store.imageUrl}
+							alt={`${store.name} storefront`}
+							fill
+							sizes="(max-width: 700px) 100vw, (max-width: 1000px) 50vw, 33vw"
+							loading="lazy"
+						/>
+					</div>
 					<div className="top-store__content">
 						<span className="eyebrow">
 							{store.available
