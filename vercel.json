@@ -2,23 +2,23 @@
 	"crons": [
 		{
 			"path": "/api/cron/booking-slot-expiry",
-			"schedule": "*/15 * * * *"
+			"schedule": "15 3 * * *"
 		},
 		{
 			"path": "/api/cron/booking-payment-expiry",
-			"schedule": "*/5 * * * *"
+			"schedule": "30 3 * * *"
 		},
 		{
 			"path": "/api/cron/booking-reminders",
-			"schedule": "*/15 * * * *"
+			"schedule": "45 3 * * *"
 		},
 		{
 			"path": "/api/cron/billing-renewals",
-			"schedule": "0 * * * *"
+			"schedule": "0 4 * * *"
 		},
 		{
 			"path": "/api/cron/notification-retries",
-			"schedule": "*/5 * * * *"
+			"schedule": "15 4 * * *"
 		},
 		{
 			"path": "/api/cron/media-cleanup",
