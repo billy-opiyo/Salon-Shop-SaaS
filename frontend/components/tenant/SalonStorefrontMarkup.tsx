@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import type React from "react"
 import Image from "next/image"
-import { CalendarDays, Heart, Images, Menu, X, UserRound, House } from "lucide-react"
+import { CalendarDays, Heart, Images, Menu, X, House, Scissors } from "lucide-react"
 import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 export interface SalonStorefrontMarkupProps {
@@ -2276,9 +2276,9 @@ export function SalonStorefrontMarkup({
 		<nav className="saas-tenant-mobile-actions" aria-label="Salon mobile navigation">
 			<a href="#home" aria-label="Home"><House aria-hidden="true" /><small>Home</small></a>
 			<a href="#gallery" aria-label="Gallery"><Images aria-hidden="true" /><small>Gallery</small></a>
+			<a href="#services" aria-label="Services"><Scissors aria-hidden="true" /><small>Services</small></a>
 			<a href="#booking" aria-label="Book"><CalendarDays aria-hidden="true" /><small>Book</small></a>
 			<a href="#clientDashboard" aria-label="Favorites" data-dashboard-card="dashboardFavoritesCard"><Heart aria-hidden="true" /><small>Favorites</small></a>
-			<a href="#clientDashboard" aria-label="Account" data-dashboard-card="dashboardProfileCard"><UserRound aria-hidden="true" /><small>Account</small></a>
 		</nav>
 		<a href="#home" className="back-to-top" id="backToTop" aria-label="Back to top">
 			<svg
