@@ -209,6 +209,7 @@ main {
 .splash-handwriting-fill {
   opacity: .34;
   animation: platform-splash-handwriting-fill var(--splash-handwriting-fill-duration, 1.25s) ease var(--splash-handwriting-fill-delay, 3.65s) forwards;
+  animation-play-state: paused;
 }
 
 .splash-handwriting-letter {
@@ -217,6 +218,12 @@ main {
   stroke-dashoffset: 1600;
   animation: platform-splash-write-letter var(--splash-write-letter-duration, 1.08s) cubic-bezier(.45, 0, .22, 1) forwards;
   animation-delay: var(--splash-write-delay, .55s);
+  animation-play-state: paused;
+}
+
+html.splash-active .splash-handwriting-fill,
+html.splash-active .splash-handwriting-letter {
+  animation-play-state: running;
 }
 
 .splash-content {
@@ -242,7 +249,7 @@ main {
 }
 
 .splash-title {
-  margin: 0 auto clamp(24px, 3.8vw, 42px);
+  margin: 0 auto clamp(14px, 2vw, 20px);
   line-height: 1;
 }
 
@@ -868,18 +875,10 @@ main {
 @media (prefers-reduced-motion: reduce) {
 
   .splash-screen,
-  .splash-handwriting-fill,
-  .splash-handwriting-letter,
   .splash-progress-fill::after,
   .splash-loading-dots span {
     animation: none;
     transition: none;
-  }
-
-  .splash-handwriting-fill,
-  .splash-handwriting-letter {
-    opacity: 1;
-    stroke-dashoffset: 0;
   }
 
   .splash-progress-fill {
