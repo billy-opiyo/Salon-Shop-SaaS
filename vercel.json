@@ -1,4 +1,5 @@
 {
+	"outputDirectory": "frontend/.next",
 	"crons": [
 		{
 			"path": "/api/cron/booking-slot-expiry",
