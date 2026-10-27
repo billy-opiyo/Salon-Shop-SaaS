@@ -4971,10 +4971,10 @@ html.splash-active .splash-handwriting-letter {
 	display: flex;
 	min-width: 2.7rem;
 	min-height: 2.5rem;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
 	justify-content: center;
-	gap: .1rem;
+	gap: .45rem;
 	padding: .1rem .2rem;
 	border: 0;
 	border-radius: .45rem;
@@ -4987,6 +4987,250 @@ html.splash-active .splash-handwriting-letter {
 .platform-account__trigger span {
 	font-size: .7rem;
 	font-weight: 650;
+}
+
+.platform-account-password-reset {
+	display: inline-flex;
+	margin-top: 1rem;
+}
+
+.platform-account-delete-button {
+	border-color: rgba(224, 113, 105, .62);
+	background: rgba(150, 43, 43, .12);
+	color: #ffb6ad;
+}
+
+.platform-account-delete-button:hover,
+.platform-account-delete-button:focus-visible {
+	border-color: rgba(255, 145, 132, .88);
+	background: rgba(150, 43, 43, .24);
+	color: #ffe0da;
+}
+
+.platform-account-delete-button:disabled {
+	opacity: .55;
+}
+
+/* Refined Beauty Sphia platform administration spacing and controls. */
+.platform-admin-page {
+	width: min(1360px, calc(100% - clamp(1.5rem, 6vw, 6rem)));
+	padding-top: clamp(2rem, 4vw, 3.5rem);
+}
+
+.platform-admin-header {
+	align-items: center;
+	gap: 2rem;
+	padding: 1rem 0 clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.platform-admin-header__meta {
+	gap: .55rem;
+}
+
+.platform-admin-metrics {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 1rem;
+	padding: 1.5rem 0 2rem;
+}
+
+.platform-admin-metric {
+	min-height: 132px;
+	gap: .65rem;
+	padding: clamp(1rem, 2vw, 1.4rem);
+	border-radius: 1rem;
+}
+
+.platform-admin-grid {
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.platform-admin-panel {
+	padding: clamp(1.1rem, 2vw, 1.65rem);
+	border-radius: 1rem;
+}
+
+.platform-admin-page > .platform-admin-panel {
+	margin-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.platform-admin-panel > .section-heading {
+	margin-bottom: 1.35rem;
+}
+
+.platform-admin-panel .section-heading h2 {
+	margin-top: .35rem;
+}
+
+.platform-admin-list {
+	gap: .8rem;
+	margin-top: 1.1rem;
+}
+
+.platform-admin-row {
+	align-items: center;
+	gap: 1.25rem;
+	padding: 1rem 0;
+}
+
+.platform-admin-page .onboarding-form {
+	display: grid;
+	gap: 1.25rem;
+	margin-top: 1.5rem;
+}
+
+.platform-role-form {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: end;
+}
+
+.platform-role-form > button {
+	grid-column: 1 / -1;
+	justify-self: start;
+}
+
+.platform-admin-page .onboarding-form fieldset {
+	min-width: 0;
+	margin: 0;
+	padding: clamp(1rem, 2vw, 1.4rem);
+	border: 1px solid rgba(213, 165, 78, .3);
+	border-radius: .9rem;
+	background: rgba(10, 8, 5, .2);
+}
+
+.platform-admin-page .onboarding-form legend {
+	padding: 0 .45rem;
+	color: var(--platform-gold-light, #edcc83);
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.platform-admin-page .onboarding-form label,
+.platform-team-form label,
+.platform-role-form label {
+	gap: .55rem;
+	color: var(--platform-copy, #e2d2b5);
+	line-height: 1.45;
+}
+
+.platform-admin-page .onboarding-form input:not([type="checkbox"]):not([type="file"]),
+.platform-admin-page .onboarding-form select,
+.platform-team-form input:not([type="checkbox"]):not([type="file"]),
+.platform-team-form textarea,
+.platform-role-form input,
+.platform-role-form select {
+	min-height: 2.9rem;
+	padding: .75rem .9rem;
+	border: 1px solid rgba(213, 165, 78, .4);
+	border-radius: .65rem;
+	background-color: #21170d;
+	color: var(--platform-ivory, #fff6e6);
+	font: inherit;
+}
+
+.platform-admin-page .onboarding-form textarea,
+.platform-team-form textarea {
+	min-height: 7rem;
+	resize: vertical;
+}
+
+.platform-admin-page .onboarding-form :is(input, select, textarea):focus-visible,
+.platform-team-form :is(input, textarea):focus-visible,
+.platform-role-form :is(input, select):focus-visible {
+	outline: 2px solid var(--platform-gold-light, #edcc83);
+	outline-offset: 2px;
+}
+
+.platform-admin-page .button--outline,
+.platform-admin-page .button--ghost {
+	border-color: rgba(226, 188, 114, .55);
+	background: rgba(213, 165, 78, .1);
+	color: var(--platform-gold-light, #edcc83);
+}
+
+.platform-admin-page .button--outline:hover,
+.platform-admin-page .button--ghost:hover,
+.platform-admin-page .button--outline:focus-visible,
+.platform-admin-page .button--ghost:focus-visible {
+	border-color: var(--platform-gold-light, #edcc83);
+	background: rgba(213, 165, 78, .2);
+	color: var(--platform-ivory, #fff6e6);
+}
+
+/* Center the requested public page section headings and actions. */
+.platform-showcase > .eyebrow,
+.platform-showcase .showcase-copy,
+.platform-home-shell #top-stores .section-heading,
+.platform-home-shell #how-it-works .section-heading,
+.platform-home-shell #plans .section-heading,
+.platform-section--directory-hero .section-heading,
+.stores-directory #top-stores .section-heading,
+.directory-cta,
+.platform-about-hero,
+.platform-about-page > .platform-section[aria-labelledby="team-title"] > .section-heading,
+.platform-support-page .platform-about-hero,
+.platform-support-faq > .section-heading {
+	text-align: center;
+}
+
+.platform-showcase .showcase-copy {
+	margin-inline: auto;
+}
+
+.platform-showcase .platform-hero__actions,
+.platform-home-shell #top-stores .top-stores-actions,
+.directory-cta .platform-hero__actions,
+.platform-team-empty {
+	justify-content: center;
+}
+
+.platform-about-hero {
+	justify-items: center;
+}
+
+.platform-about-hero h1,
+.platform-about-hero > p:last-child,
+.platform-section--directory-hero .section-heading h1,
+.platform-section--directory-hero .section-heading > p:last-child,
+.stores-directory #top-stores .section-heading > p:last-child,
+.platform-support-faq > .section-heading > p:last-child {
+	margin-inline: auto;
+}
+
+.platform-about-page > .platform-section[aria-labelledby="team-title"] > .section-heading,
+.platform-support-faq > .section-heading {
+	margin-inline: auto;
+}
+
+.platform-team-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: .75rem;
+	text-align: center;
+}
+
+@media (max-width: 720px) {
+	.platform-admin-page {
+		width: min(100% - 1.5rem, 620px);
+	}
+
+	.platform-admin-metrics {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.platform-admin-row {
+		align-items: flex-start;
+	}
+
+	.platform-role-form {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 420px) {
+	.platform-admin-metrics {
+		grid-template-columns: 1fr;
+	}
 }
 .platform-account__trigger:hover,
 .platform-account__trigger:focus-visible,
