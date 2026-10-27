@@ -10,9 +10,10 @@ import {
 	sendPlatformEmail,
 } from "@backend/services/notificationService"
 import { signupSchema } from "@shared/validation/auth"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
 export type SignupResult =
-	| { readonly ok: true }
+	| { readonly ok: true; readonly verificationSent: boolean }
 	| { readonly ok: false; readonly message: string }
 
 export async function registerAccount(
@@ -46,6 +47,7 @@ export async function registerAccount(
 		typeof rawTenantSlug === "string" && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(rawTenantSlug.trim().toLowerCase())
 			? rawTenantSlug.trim().toLowerCase()
 			: ""
+	const callbackUrl = getSafeAuthCallbackUrl(String(formData.get("callbackUrl") ?? "/account"))
 	const existingUser = await prisma.user.findUnique({ where: { email } })
 	if (existingUser)
 		return { ok: false, message: "An account with that email already exists." }
@@ -57,21 +59,23 @@ export async function registerAccount(
 
 	// Legacy parity: every new account receives an email verification link.
 	// Provider outages must never block account creation itself.
+	let verificationSent = false
 	try {
 		const { token } = await createEmailVerificationToken(email)
-		await sendPlatformEmail({
+		const result = await sendPlatformEmail({
 			templateKey: "verify.address",
 			destination: email,
 			subject: {
 				businessName: "Beauty Sphia",
 				firstName: parsed.data.name,
 				email,
-				link: `${platformBaseUrl()}/verify-email?token=${encodeURIComponent(token)}${tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ""}`,
+				link: `${platformBaseUrl()}/verify-email?token=${encodeURIComponent(token)}${tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ""}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
 			},
 		})
+		verificationSent = result.ok
 	} catch {
 		// Account creation still succeeds even if verification delivery fails.
 	}
 
-	return { ok: true }
+	return { ok: true, verificationSent }
 }

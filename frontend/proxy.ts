@@ -3,5 +3,5 @@ import { auth } from "@/auth";
 export default auth;
 
 export const config = {
-  matcher: ["/manage/:path*", "/onboarding/:path*"],
+  matcher: ["/account/:path*", "/manage/:path*", "/onboarding/:path*"],
 };

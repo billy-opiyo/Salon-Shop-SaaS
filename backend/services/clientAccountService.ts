@@ -1,6 +1,9 @@
 import "server-only";
 
 import { prisma } from "@backend/db/prisma";
+import type { ClientAccountSnapshot } from "@shared/types/clientAccount";
+
+export type { ClientAccountSnapshot } from "@shared/types/clientAccount";
 
 export class ClientAccountError extends Error {
   readonly code = "CLIENT_ACCOUNT_FAILED" as const;
@@ -15,69 +18,17 @@ function normalizeTenantSlug(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export interface ClientAccountSnapshot {
-  readonly profile: {
-    readonly name: string | null;
-    readonly email: string;
-    readonly phone: string | null;
-    readonly image: string | null;
-  };
-  readonly preferences: {
-    readonly theme: "dark" | "light";
-    readonly fontSize: "small" | "medium" | "large";
-    readonly highContrast: boolean;
-    readonly reducedMotion: boolean;
-    readonly notifyEmail: boolean;
-    readonly notifySms: boolean;
-    readonly notifyPush: boolean;
-  } | null;
-  readonly bookings: readonly {
-    readonly id: string;
-    readonly serviceName: string;
-    readonly appointmentDate: string;
-    readonly timeLabel: string;
-    readonly status: string;
-    readonly stylistName: string | null;
-    readonly specialRequests: string | null;
-  }[];
-  readonly reviews: readonly {
-    readonly id: string;
-    readonly serviceName: string | null;
-    readonly rating: number;
-    readonly text: string;
-    readonly status: string;
-    readonly createdAt: string;
-  }[];
-  readonly favorites: readonly {
-    readonly id: string;
-    readonly galleryStyleId: string;
-    readonly styleName: string;
-    readonly imageUrl: string;
-    readonly category: string | null;
-  }[];
-  readonly loginHistory: readonly {
-    readonly id: string;
-    readonly provider: string;
-    readonly status: string;
-    readonly riskLevel: string | null;
-    readonly userAgent: string | null;
-    readonly country: string | null;
-    readonly createdAt: string;
-  }[];
-}
-
 export async function getClientAccountSnapshot(
   userId: string,
-  tenantSlug: string,
+  tenantSlug?: string,
 ): Promise<ClientAccountSnapshot> {
-  const normalizedSlug = normalizeTenantSlug(tenantSlug);
-  const tenant = await prisma.tenant.findUnique({
+  const normalizedSlug = tenantSlug ? normalizeTenantSlug(tenantSlug) : ""
+  const tenant = normalizedSlug ? await prisma.tenant.findUnique({
     where: { slug: normalizedSlug },
     select: { id: true, status: true },
-  });
-  if (!tenant || tenant.status !== "ACTIVE") {
-    throw new ClientAccountError("This salon is not currently available.");
-  }
+  }) : null
+  if (normalizedSlug && (!tenant || tenant.status !== "ACTIVE"))
+    throw new ClientAccountError("This salon is not currently available.")
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -100,8 +51,8 @@ export async function getClientAccountSnapshot(
     }),
     prisma.booking.findMany({
       where: {
-        tenantId: tenant.id,
-        OR: [{ userId }, { email: user.email.toLowerCase() }],
+        ...(tenant ? { tenantId: tenant.id } : {}),
+        OR: [{ userId }, { userId: null, email: user.email.toLowerCase() }],
       },
       orderBy: [{ appointmentDate: "asc" }, { timeLabel: "asc" }],
       take: 50,
@@ -112,11 +63,13 @@ export async function getClientAccountSnapshot(
         timeLabel: true,
         status: true,
         specialRequests: true,
+        stylistId: true,
         stylist: { select: { name: true } },
+        tenant: { select: { businessName: true, slug: true } },
       },
     }),
     prisma.review.findMany({
-      where: { tenantId: tenant.id, userId },
+      where: { ...(tenant ? { tenantId: tenant.id } : {}), userId },
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {
@@ -126,10 +79,11 @@ export async function getClientAccountSnapshot(
         text: true,
         status: true,
         createdAt: true,
+        tenant: { select: { businessName: true, slug: true } },
       },
     }),
     prisma.favorite.findMany({
-      where: { tenantId: tenant.id, userId },
+      where: { ...(tenant ? { tenantId: tenant.id } : {}), userId },
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {
@@ -142,6 +96,7 @@ export async function getClientAccountSnapshot(
             category: { select: { label: true } },
           },
         },
+        tenant: { select: { businessName: true, slug: true } },
       },
     }),
     prisma.loginActivity.findMany({
@@ -171,15 +126,20 @@ export async function getClientAccountSnapshot(
       : null,
     bookings: bookings.map((booking) => ({
       id: booking.id,
+      tenantName: booking.tenant.businessName,
+      tenantSlug: booking.tenant.slug,
       serviceName: booking.serviceName,
       appointmentDate: booking.appointmentDate.toISOString().slice(0, 10),
       timeLabel: booking.timeLabel,
       status: booking.status.toLowerCase(),
       stylistName: booking.stylist?.name ?? null,
+      stylistId: booking.stylistId,
       specialRequests: booking.specialRequests,
     })),
     reviews: reviews.map((review) => ({
       id: review.id,
+      tenantName: review.tenant.businessName,
+      tenantSlug: review.tenant.slug,
       serviceName: review.serviceName,
       rating: review.rating,
       text: review.text,
@@ -188,6 +148,8 @@ export async function getClientAccountSnapshot(
     })),
     favorites: favorites.map((favorite) => ({
       id: favorite.id,
+      tenantName: favorite.tenant.businessName,
+      tenantSlug: favorite.tenant.slug,
       galleryStyleId: favorite.galleryStyleId,
       styleName: favorite.galleryStyle.styleName,
       imageUrl: favorite.galleryStyle.imageUrl,

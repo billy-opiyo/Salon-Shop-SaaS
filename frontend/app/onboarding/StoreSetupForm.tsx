@@ -29,13 +29,18 @@ export function StoreSetupForm({
 		event.preventDefault()
 		setMessage("")
 		setIsSubmitting(true)
-		const result = await createStore(new FormData(event.currentTarget))
-		setIsSubmitting(false)
-		if (!result.ok) {
-			setMessage(result.message)
-			return
+		try {
+			const result = await createStore(new FormData(event.currentTarget))
+			if (!result.ok) {
+				setMessage(result.message)
+				return
+			}
+			router.push(`/manage/${encodeURIComponent(result.slug)}/billing?setup=required`)
+		} catch {
+			setMessage("We could not finish creating your salon. Please check your details and try again.")
+		} finally {
+			setIsSubmitting(false)
 		}
-		router.push(`/${result.slug}`)
 	}
 
 	return (
@@ -146,7 +151,7 @@ export function StoreSetupForm({
 				</p>
 			)}
 			<p className="auth-form__switch">
-				<Link href="/manage">Return to workspace</Link>
+				<Link href="/account">Return to your account</Link>
 			</p>
 		</form>
 	)

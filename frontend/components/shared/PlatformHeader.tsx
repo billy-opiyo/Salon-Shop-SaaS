@@ -3,7 +3,7 @@ import { PlatformHeaderClient } from "@/components/shared/PlatformHeaderClient"
 import { isPlatformAdmin } from "@backend/services/platformAuthorization"
 
 interface PlatformHeaderProps {
-	readonly page?: "home" | "stores" | "about" | "support"
+	readonly page?: "home" | "stores" | "about" | "support" | "account" | "onboarding"
 	readonly logoUrl?: string
 	readonly brandName?: string
 	readonly brandTagline?: string
@@ -17,8 +17,8 @@ export async function PlatformHeader({
 }: PlatformHeaderProps) {
 	const session = await auth()
 	const canAccessPlatformAdmin = session?.user?.id
-		? isPlatformAdmin(session.user.id, session.user.email)
+		? await isPlatformAdmin(session.user.id, session.user.email)
 		: false
 
-	return <PlatformHeaderClient page={page} logoUrl={logoUrl} brandName={brandName} brandTagline={brandTagline} isSignedIn={Boolean(session?.user)} canAccessPlatformAdmin={canAccessPlatformAdmin} />
+	return <PlatformHeaderClient key={session?.user?.image ?? "no-account-image"} page={page} logoUrl={logoUrl} brandName={brandName} brandTagline={brandTagline} isSignedIn={Boolean(session?.user)} userEmail={session?.user?.email} userImage={session?.user?.image} canAccessPlatformAdmin={canAccessPlatformAdmin} />
 }

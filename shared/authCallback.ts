@@ -1,6 +1,6 @@
 const APP_ORIGIN = "https://beauty-sphia.invalid"
-const FALLBACK_CALLBACK = "/manage"
-const ALLOWED_CALLBACK_ROOTS = ["/manage", "/onboarding", "/platform-admin"] as const
+const FALLBACK_CALLBACK = "/account"
+const ALLOWED_CALLBACK_ROOTS = ["/account", "/manage", "/onboarding", "/platform-admin"] as const
 
 export function getSafeAuthCallbackUrl(
 	value: string | string[] | undefined,

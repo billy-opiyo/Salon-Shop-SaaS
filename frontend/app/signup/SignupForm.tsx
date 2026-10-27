@@ -6,10 +6,11 @@ import { signIn } from "next-auth/react"
 
 import { GoogleIcon } from "@/components/shared/GoogleIcon"
 import { TurnstileWidget } from "@/components/shared/TurnstileWidget"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
 import { registerAccount } from "./actions"
 
-export function SignupForm() {
+export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?: string }) {
 	const [message, setMessage] = useState<string>("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [turnstileToken, setTurnstileToken] = useState("")
@@ -18,7 +19,7 @@ export function SignupForm() {
 		setMessage("")
 		setIsSubmitting(true)
 		try {
-			await signIn("google", { callbackUrl: "/manage" })
+			await signIn("google", { callbackUrl: getSafeAuthCallbackUrl(callbackUrl) })
 		} catch {
 			setIsSubmitting(false)
 			setMessage("Google sign-up is temporarily unavailable. Please try again.")
@@ -27,18 +28,24 @@ export function SignupForm() {
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
+		const form = event.currentTarget
 		setMessage("")
 		setIsSubmitting(true)
-		const result = await registerAccount(new FormData(event.currentTarget))
-		setIsSubmitting(false)
-		if (!result.ok) {
-			setMessage(result.message)
-			return
+		try {
+			const result = await registerAccount(new FormData(event.currentTarget))
+			if (!result.ok) {
+				setMessage(result.message)
+				return
+			}
+			setMessage(result.verificationSent
+				? "Account created. Check your inbox to verify your email, then sign in to your account."
+				: "Account created, but we could not send the verification email. Contact Beauty Sphia support to finish activating your sign-in.")
+			form.reset()
+		} catch {
+			setMessage("Account creation is temporarily unavailable. Please try again.")
+		} finally {
+			setIsSubmitting(false)
 		}
-		setMessage(
-			"Account created. Email verification will be enabled when Resend is configured.",
-		)
-		event.currentTarget.reset()
 	}
 
 	return (
@@ -92,6 +99,7 @@ export function SignupForm() {
 				value={turnstileToken}
 				readOnly
 			/>
+			<input name="callbackUrl" type="hidden" value={getSafeAuthCallbackUrl(callbackUrl)} readOnly />
 			<TurnstileWidget onToken={setTurnstileToken} />
 			<button
 				className="button button--primary auth-submit-btn"
@@ -108,7 +116,7 @@ export function SignupForm() {
 			<div className="auth-links">
 				<p className="auth-form__switch">
 					Already have a Beauty Sphia account?{" "}
-					<Link href="/login" replace>Sign in</Link>
+					<Link href={`/login?callbackUrl=${encodeURIComponent(getSafeAuthCallbackUrl(callbackUrl))}`} replace>Sign in</Link>
 				</p>
 			</div>
 		</form>

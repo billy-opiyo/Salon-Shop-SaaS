@@ -19,9 +19,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 				</Link>
 				<div className="auth-card-head">
 					<p className="section-subtitle">Welcome back</p>
-					<h1 id="login-title">Sign in to your salon workspace</h1>
+					<h1 id="login-title">Sign in to your Beauty Sphia account</h1>
 					<p className="auth-card__intro">
-						Manage your storefront, bookings, services, and team from one place.
+						Access your appointments, saved styles, profile, and salon workspace from one place.
 					</p>
 				</div>
 				<LoginForm callbackUrl={safeCallbackUrl} />

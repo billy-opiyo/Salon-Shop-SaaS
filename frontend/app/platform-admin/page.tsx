@@ -11,10 +11,12 @@ import {
 	getPlatformStorefrontDesign,
 } from "@backend/services/platformAdminService"
 import { listPlatformTeamForAdmin } from "@backend/services/platformTeamService"
+import { listPlatformRoleAssignments } from "@backend/services/platformRoleService"
 
 import { PlatformAdminAction } from "./PlatformAdminAction"
 import { PlatformTeamManager } from "./PlatformTeamManager"
 import { PlatformStorefrontManager } from "./PlatformStorefrontManager"
+import { PlatformRoleManager } from "./PlatformRoleManager"
 
 function formatDate(value: Date | null): string {
 	return value ? value.toLocaleDateString("en-KE") : "Not set"
@@ -37,20 +39,22 @@ export default async function PlatformAdminPage() {
 	const session = await auth()
 	if (!session?.user?.id)
 		redirect(getLoginUrlForPath("/platform-admin"))
+	let role: Awaited<ReturnType<typeof assertPlatformAdmin>>
 	try {
-		assertPlatformAdmin(session.user.id, session.user.email)
+		role = await assertPlatformAdmin(session.user.id, session.user.email)
 	} catch (error) {
 		if (error instanceof PlatformAuthorizationError) redirect("/")
 		throw error
 	}
 
-	const [snapshot, teamMembers, storefrontDesign] = await Promise.all([
-		getPlatformAdminSnapshot(),
-		listPlatformTeamForAdmin(session.user.id, session.user.email),
+	const [snapshot, teamMembers, storefrontDesign, roleAssignments] = await Promise.all([
+		role === "OWNER" ? getPlatformAdminSnapshot() : Promise.resolve(null),
+		role !== "STORE_SUPPORT" ? listPlatformTeamForAdmin(session.user.id, session.user.email) : Promise.resolve([]),
 		getPlatformStorefrontDesign(),
+		role === "OWNER" ? listPlatformRoleAssignments(session.user.id, session.user.email) : Promise.resolve([]),
 	])
-	const { counts } = snapshot
-	const metricCards = [
+	const counts = snapshot?.counts
+	const metricCards = counts ? [
 		["Total salons", counts.totalTenants, "Across the Beauty Sphia platform"],
 		[
 			"Active salons",
@@ -77,28 +81,25 @@ export default async function PlatformAdminPage() {
 			counts.unresolvedSecurityAlerts,
 			"Unresolved platform alerts",
 		],
-	] as const
+	] as const : []
 
 	return (
 		<main className="platform-home-shell platform-admin-page">
 			<header className="platform-header platform-admin-header">
 				<div>
 					<p className="eyebrow">Beauty Sphia operations</p>
-					<h1>Platform Admin</h1>
+					<h1>Platform Admin · {role === "OWNER" ? "Owner" : role === "STORE_EDITOR" ? "Store Editor" : "Store Support"}</h1>
 					<p className="auth-card__intro">
-						Watch every salon, subscription, notification, and security
-						signal from one place.
+						{role === "OWNER" ? "Watch platform operations and manage every platform feature." : role === "STORE_EDITOR" ? "Manage public site content and team profiles." : "Manage the public support page, FAQs, and support contact details."}
 					</p>
 				</div>
 				<div className="platform-admin-header__meta">
 					<span>Signed in as {session.user.email}</span>
-					<span>
-						Updated {snapshot.generatedAt.toLocaleTimeString("en-KE")}
-					</span>
+					{snapshot && <span>Updated {snapshot.generatedAt.toLocaleTimeString("en-KE")}</span>}
 				</div>
 			</header>
 
-			<section
+			{snapshot && <section
 				className="platform-section platform-admin-metrics"
 				aria-label="Platform overview"
 			>
@@ -109,9 +110,9 @@ export default async function PlatformAdminPage() {
 						<span>{detail}</span>
 					</article>
 				))}
-			</section>
+			</section>}
 
-			<section className="platform-admin-grid" aria-label="Platform monitoring">
+			{snapshot && <section className="platform-admin-grid" aria-label="Platform monitoring">
 				<section
 					className="platform-admin-panel"
 					aria-labelledby="stores-title"
@@ -292,9 +293,10 @@ export default async function PlatformAdminPage() {
 						)}
 					</div>
 				</section>
-		</section>
-		<PlatformStorefrontManager initialDesign={storefrontDesign} />
-		<PlatformTeamManager initialMembers={teamMembers} />
+			</section>}
+			<PlatformStorefrontManager initialDesign={storefrontDesign} role={role} />
+			{role !== "STORE_SUPPORT" && <PlatformTeamManager initialMembers={teamMembers} />}
+			{role === "OWNER" && <PlatformRoleManager initialAssignments={roleAssignments} />}
 		</main>
 	)
 }

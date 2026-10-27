@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 
 type VerificationState = "idle" | "verifying" | "success" | "error"
 
-export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
+export function VerifyEmailClient({ initialToken, callbackUrl = "/account" }: { initialToken: string; callbackUrl?: string }) {
 	const [state, setState] = useState<VerificationState>(
 		initialToken ? "verifying" : "idle",
 	)
@@ -62,7 +62,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 						: "Your email address is confirmed. You can now sign in and use every part of your account."}
 				</p>
 				<p className="auth-form__switch">
-					<Link href="/login">Continue to sign in</Link>
+					<Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Continue to sign in</Link>
 				</p>
 			</>
 		)
@@ -89,7 +89,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 					Try another link
 				</button>
 				<p className="auth-form__switch">
-					<Link href="/login">Back to sign in</Link>
+					<Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Back to sign in</Link>
 				</p>
 			</>
 		)
@@ -124,7 +124,7 @@ export function VerifyEmailClient({ initialToken }: { initialToken: string }) {
 				</button>
 			</form>
 			<p className="auth-form__switch">
-				<Link href="/login">Back to sign in</Link>
+				<Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Back to sign in</Link>
 			</p>
 		</>
 	)

@@ -23,6 +23,7 @@ export async function rescheduleClientBooking(
 		timeLabel: string
 		stylistId?: string
 	},
+	userEmail?: string | null,
 ): Promise<void> {
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: tenantSlug.trim().toLowerCase() },
@@ -43,8 +44,11 @@ export async function rescheduleClientBooking(
 		)
 	await prisma
 		.$transaction(async (transaction) => {
+			const accountBookingFilter = userEmail
+				? { OR: [{ userId }, { userId: null, email: userEmail.trim().toLowerCase() }] }
+				: { userId }
 			const booking = await transaction.booking.findFirst({
-				where: { id: input.bookingId, tenantId: tenant.id, userId },
+				where: { id: input.bookingId, tenantId: tenant.id, ...accountBookingFilter },
 				select: { status: true, bookingSlot: { select: { id: true } } },
 			})
 			const reschedulableStatuses: readonly BookingStatus[] = [

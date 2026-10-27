@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	provisionTenant,
 	TenantProvisioningError,
@@ -18,7 +19,7 @@ export async function createStore(
 ): Promise<CreateStoreResult> {
 	const session = await auth()
 	if (!session?.user?.id) {
-		redirect("/login")
+		redirect(getLoginUrlForPath("/onboarding"))
 	}
 
 	const parsed = createTenantSchema.safeParse({

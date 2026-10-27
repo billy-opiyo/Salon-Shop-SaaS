@@ -36,6 +36,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 			session.user.id,
 			parsed.data.tenantSlug,
 			parsed.data,
+			session.user.email,
 		)
 		return new NextResponse(null, { status: 204 })
 	} catch (error) {
