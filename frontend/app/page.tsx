@@ -9,6 +9,7 @@ import { ExperienceSplash } from "@/components/shared/ExperienceSplash"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
+import { PlatformFloatingActions } from "@/components/shared/PlatformFloatingActions"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 import { ContactForm } from "@/components/shared/ContactForm"
 import {
@@ -280,6 +281,7 @@ export default async function PlatformHome() {
 				</section>
 			</main>
 			<PlatformFooter description={content.footerDescription} />
+			<PlatformFloatingActions />
 			<nav
 				className="platform-mobile-actions"
 				aria-label="Mobile platform navigation"
