@@ -116,27 +116,34 @@ export function StoreSetupForm({
 			<fieldset className="legal-consent">
 				<legend>Platform agreement</legend>
 				<label>
-					<input name="termsAccepted" type="checkbox" required /> I agree to the{" "}
-					<Link href="/terms" target="_blank">
-						Terms of Service
-					</Link>
-					.
+					<input name="termsAccepted" type="checkbox" required />
+					<span>
+						I agree to the{" "}
+						<Link href="/terms" target="_blank">
+							Terms of Service
+						</Link>
+						.
+					</span>
 				</label>
 				<label>
-					<input name="privacyAccepted" type="checkbox" required /> I
-					acknowledge the{" "}
-					<Link href="/privacy" target="_blank">
-						Privacy Policy
-					</Link>
-					.
+					<input name="privacyAccepted" type="checkbox" required />
+					<span>
+						I acknowledge the{" "}
+						<Link href="/privacy" target="_blank">
+							Privacy Policy
+						</Link>
+						.
+					</span>
 				</label>
 				<label>
-					<input name="cookiesAccepted" type="checkbox" required /> I
-					acknowledge the{" "}
-					<Link href="/cookies" target="_blank">
-						Cookie Policy
-					</Link>
-					.
+					<input name="cookiesAccepted" type="checkbox" required />
+					<span>
+						I acknowledge the{" "}
+						<Link href="/cookies" target="_blank">
+							Cookie Policy
+						</Link>
+						.
+					</span>
 				</label>
 			</fieldset>
 			<button

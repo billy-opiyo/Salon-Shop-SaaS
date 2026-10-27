@@ -18,6 +18,17 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -522,29 +533,71 @@ html.splash-active .splash-handwriting-letter {
 
 .legal-consent {
   display: grid;
-  gap: .65rem;
-  margin: .5rem 0;
-  padding: 1rem;
+  gap: .75rem;
+  min-width: 0;
+  margin: .75rem 0 0;
+  padding: 1rem 1.1rem;
   border: 1px solid var(--line);
-  border-radius: .6rem;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(34, 27, 17, .88), rgba(18, 14, 9, .78));
+  box-shadow: inset 0 1px 0 rgba(255, 248, 232, .035);
 }
 
 .legal-consent legend {
-  padding: 0 .35rem;
+  padding: 0 .5rem;
   color: var(--gold-soft);
-  font-size: .78rem;
+  font-size: .95rem;
   font-weight: 700;
+  letter-spacing: .01em;
 }
 
 .legal-consent label {
-  display: block;
-  color: var(--muted);
-  font-size: .78rem;
-  line-height: 1.5;
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  align-items: start;
+  gap: .75rem;
+  min-width: 0;
+  padding: .8rem .85rem;
+  border: 1px solid rgba(241, 213, 155, .12);
+  border-radius: .75rem;
+  background: rgba(10, 8, 5, .38);
+  color: #eadfce;
+  font-size: .88rem;
+  line-height: 1.55;
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease;
+}
+
+.legal-consent label:hover,
+.legal-consent label:focus-within {
+  border-color: rgba(241, 213, 155, .5);
+  background: rgba(10, 8, 5, .62);
+}
+
+.legal-consent label > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.legal-consent input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: .15rem 0 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.legal-consent input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--gold-soft);
+  outline-offset: 3px;
 }
 
 .legal-consent a {
   color: var(--gold-soft);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: rgba(241, 213, 155, .55);
+  text-underline-offset: .16em;
 }
 
 .policy-page h1 {
@@ -565,6 +618,15 @@ html.splash-active .splash-handwriting-letter {
 }
 
 @media (max-width: 700px) {
+  body.splash-active .platform-mobile-actions,
+  body.splash-active .saas-tenant-mobile-actions {
+    display: none;
+  }
+
+  body:has(#authModal[aria-hidden="false"]) .saas-tenant-mobile-actions {
+    display: none;
+  }
+
   .platform-nav {
     display: none;
   }
@@ -585,6 +647,10 @@ html.splash-active .splash-handwriting-letter {
     box-shadow: 0 -.75rem 2rem rgba(0, 0, 0, .2);
     backdrop-filter: blur(18px) saturate(135%);
     -webkit-backdrop-filter: blur(18px) saturate(135%);
+  }
+
+  .platform-mobile-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .saas-tenant-mobile-actions {
@@ -729,6 +795,13 @@ html.splash-active .splash-handwriting-letter {
 .saas-tenant-mobile-actions a:hover,
 .saas-tenant-mobile-actions a:focus-visible {
   color: #ffe7ad;
+}
+
+.platform-mobile-actions a:focus-visible,
+.saas-tenant-mobile-actions a:focus-visible {
+  border-radius: .5rem;
+  outline: 2px solid #ffe7ad;
+  outline-offset: 2px;
 }
 
 /* The fixed salon floating buttons (WhatsApp chat + back-to-top) sit in the
@@ -2591,6 +2664,16 @@ html.splash-active .splash-handwriting-letter {
 .platform-mobile-actions a,
 .saas-tenant-mobile-actions a {
   min-height: 3.25rem;
+  background-color: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.platform-mobile-actions a[aria-current="page"],
+.platform-mobile-actions a:active,
+.saas-tenant-mobile-actions a[aria-current="page"],
+.saas-tenant-mobile-actions a:active {
+  background-color: transparent;
+  color: #ffe7ad;
 }
 
 .platform-mobile-actions a>span:last-child,
@@ -3694,7 +3777,7 @@ html.splash-active .splash-handwriting-letter {
 .platform-mobile-actions a:hover,
 .platform-mobile-actions a:focus-visible {
   color: #f0ca78;
-  background: rgba(213, 165, 78, .1);
+  background: transparent;
 }
 
 @media (max-width: 700px) {
@@ -5583,8 +5666,16 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .onboarding-card--platform .onboarding-form .legal-consent input {
-	width: auto;
-	min-height: auto;
+	box-sizing: border-box;
+	width: 1.1rem;
+	min-width: 1.1rem;
+	height: 1.1rem;
+	min-height: 1.1rem;
+	margin: .15rem 0 0;
+	padding: 0;
+	border-radius: .25rem;
+	background: transparent;
+	box-shadow: none;
 	accent-color: var(--gold);
 }
 
@@ -5708,9 +5799,10 @@ html.splash-active .splash-handwriting-letter {
 
 	.platform-site--with-mobile-actions .platform-mobile-actions a[aria-current="page"],
 	.platform-site--with-mobile-actions .platform-mobile-actions a:hover,
-	.platform-site--with-mobile-actions .platform-mobile-actions a:focus-visible {
+	.platform-site--with-mobile-actions .platform-mobile-actions a:focus-visible,
+	.platform-site--with-mobile-actions .platform-mobile-actions a:active {
 		color: var(--gold-soft);
-		background: color-mix(in srgb, var(--gold) 14%, transparent);
+		background: transparent;
 	}
 
 	.platform-site--with-mobile-actions .platform-floating-whatsapp,
@@ -6196,6 +6288,24 @@ html.splash-active .splash-handwriting-letter {
 	text-align: left;
 }
 
+.platform-home-shell #contact .contact-grid {
+	align-items: start;
+}
+
+.platform-home-shell #contact .section-heading {
+	width: 100%;
+	max-width: none;
+	margin-inline: 0;
+	text-align: left;
+}
+
+.platform-home-shell #contact .section-heading > p:last-child {
+	width: 100%;
+	max-width: 66ch;
+	margin-inline: 0;
+	text-align: left;
+}
+
 .platform-home-shell .plan-card__pricing {
 	min-width: 0;
 	justify-content: flex-start;
@@ -6330,5 +6440,23 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .platform-home-shell .plan-card {
+	text-align: left;
+}
+
+.platform-home-shell #contact .contact-grid {
+	align-items: start;
+}
+
+.platform-home-shell #contact .section-heading {
+	width: 100%;
+	max-width: none;
+	margin-inline: 0;
+	text-align: left;
+}
+
+.platform-home-shell #contact .section-heading > p:last-child {
+	width: 100%;
+	max-width: 66ch;
+	margin-inline: 0;
 	text-align: left;
 }

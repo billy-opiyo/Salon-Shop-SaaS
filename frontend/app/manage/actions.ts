@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
@@ -19,6 +19,7 @@ export async function publishStore(formData: FormData): Promise<
 
   try {
     await publishTenantForUser(session.user.id, tenantId);
+    revalidateTag("public-tenant-cards", { expire: 0 });
     revalidatePath("/manage");
     revalidatePath("/account");
 		return { ok: true, message: "Your salon is now live." };

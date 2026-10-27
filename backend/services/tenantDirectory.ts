@@ -1,5 +1,6 @@
 import "server-only"
 
+import { unstable_cache } from "next/cache"
 import { prisma } from "@backend/db/prisma"
 import { resolveTenantSlugByHost } from "@backend/services/tenantDomainService"
 import type { TenantStorefront } from "@shared/types/tenant"
@@ -110,7 +111,7 @@ export interface PublicTenantCard {
 	readonly createdAt: Date
 }
 
-export async function listPublicTenantCards(): Promise<PublicTenantCard[]> {
+const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[]> => {
 	if (!process.env.DATABASE_URL) {
 		return [{
 			slug: fixtureTenant.slug,
@@ -195,7 +196,12 @@ export async function listPublicTenantCards(): Promise<PublicTenantCard[]> {
 	} catch {
 		return []
 	}
-}
+}, ["public-tenant-cards"], {
+	revalidate: 30,
+	tags: ["public-tenant-cards"],
+})
+
+export const listPublicTenantCards = loadPublicTenantCards
 
 export async function getTenantStorefront(
 	slug: string,
@@ -297,8 +303,9 @@ export async function getTenantStorefront(
 			},
 		})
 
+		if (!tenant) return fixture ?? null
+
 		if (
-			!tenant ||
 			tenant.status === "ARCHIVED" ||
 			tenant.status === "SUSPENDED"
 		)
@@ -452,7 +459,7 @@ export async function getTenantStorefront(
 			})),
 		}
 	} catch {
-		return null
+		return fixture ?? null
 	}
 }
 

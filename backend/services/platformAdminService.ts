@@ -1,6 +1,8 @@
 import "server-only"
 
 import { randomUUID } from "node:crypto"
+import { cache } from "react"
+import { revalidateTag, unstable_cache } from "next/cache"
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@backend/db/prisma"
@@ -77,7 +79,7 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 	}
 }
 
-export async function getPlatformStorefrontDesign(): Promise<PlatformStorefrontDesign> {
+const loadPlatformStorefrontDesign = unstable_cache(async (): Promise<PlatformStorefrontDesign> => {
 	// The public platform must remain renderable while the database is being
 	// configured (and during a deployment where the new table is not available
 	// yet). The admin editor still requires the database for writes; public
@@ -90,7 +92,12 @@ export async function getPlatformStorefrontDesign(): Promise<PlatformStorefrontD
 	} catch {
 		return DEFAULT_PLATFORM_STOREFRONT
 	}
-}
+}, ["platform-storefront-design"], {
+	revalidate: 60,
+	tags: ["platform-storefront-design"],
+})
+
+export const getPlatformStorefrontDesign = cache(loadPlatformStorefrontDesign)
 
 export async function updatePlatformStorefrontDesign(
 	actorUserId: string,
@@ -196,6 +203,7 @@ export async function updatePlatformStorefrontDesign(
 			},
 		}),
 	])
+	revalidateTag("platform-storefront-design", { expire: 0 })
 	return design
 }
 
