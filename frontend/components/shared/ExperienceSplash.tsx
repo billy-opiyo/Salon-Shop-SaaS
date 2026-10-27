@@ -10,6 +10,7 @@ interface ExperienceSplashProps {
 }
 
 const SPLASH_DURATION_MS = 5000
+const SPLASH_HOLD_MS = 2000
 const SPLASH_EXIT_TRANSITION_MS = 850
 
 export function ExperienceSplash({
@@ -28,6 +29,7 @@ export function ExperienceSplash({
 		const progressStart = performance.now()
 		let animationFrameId = 0
 		let hideTimeoutId = 0
+		let completeTimeoutId = 0
 		const updateProgress = (now: number) => {
 			const elapsedMs = now - progressStart
 			const nextProgress = Math.min(100, (elapsedMs / SPLASH_DURATION_MS) * 100)
@@ -40,19 +42,22 @@ export function ExperienceSplash({
 				return
 			}
 
-			setIsExiting(true)
-			document.documentElement.classList.remove("splash-active")
-			document.body.classList.remove("splash-active")
 			hideTimeoutId = window.setTimeout(() => {
-				document.documentElement.classList.add("splash-complete")
-				document.body.classList.add("splash-complete")
-			}, prefersReducedMotion ? 0 : SPLASH_EXIT_TRANSITION_MS)
+				setIsExiting(true)
+				document.documentElement.classList.remove("splash-active")
+				document.body.classList.remove("splash-active")
+				completeTimeoutId = window.setTimeout(() => {
+					document.documentElement.classList.add("splash-complete")
+					document.body.classList.add("splash-complete")
+				}, prefersReducedMotion ? 0 : SPLASH_EXIT_TRANSITION_MS)
+			}, SPLASH_HOLD_MS)
 		}
 		animationFrameId = window.requestAnimationFrame(updateProgress)
 
 		return () => {
 			window.cancelAnimationFrame(animationFrameId)
 			window.clearTimeout(hideTimeoutId)
+			window.clearTimeout(completeTimeoutId)
 			document.documentElement.classList.remove(
 				"splash-active",
 				"splash-complete",
