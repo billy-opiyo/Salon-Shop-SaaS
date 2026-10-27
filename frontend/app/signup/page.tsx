@@ -1,14 +1,12 @@
 import Link from "next/link"
-
+import { AuthCloseButton } from "@/components/shared/AuthCloseButton"
 import { SignupForm } from "./SignupForm"
 
 export default function SignupPage() {
 	return (
 		<main className="auth-page">
 			<section className="auth-card" aria-labelledby="signup-title">
-				<Link className="auth-close-button" href="/" aria-label="Close account creation">
-					<span aria-hidden="true">×</span>
-				</Link>
+				<AuthCloseButton label="Close account creation" />
 				<Link className="brand-mark" href="/">
 					Beauty Sphia
 				</Link>

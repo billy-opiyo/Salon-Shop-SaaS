@@ -108,7 +108,7 @@ export function SignupForm() {
 			<div className="auth-links">
 				<p className="auth-form__switch">
 					Already have a Beauty Sphia account?{" "}
-					<Link href="/login">Sign in</Link>
+					<Link href="/login" replace>Sign in</Link>
 				</p>
 			</div>
 		</form>

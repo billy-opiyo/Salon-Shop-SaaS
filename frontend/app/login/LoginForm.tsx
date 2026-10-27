@@ -113,7 +113,7 @@ export function LoginForm({
 				</p>
 			)}
 			<div className="auth-links">
-				<Link href="/signup">Don&apos;t have an account? Register</Link>
+				<Link href="/signup" replace>Don&apos;t have an account? Register</Link>
 				<Link href="/reset-password">Forgot Password?</Link>
 				<Link href="/">Continue as Guest</Link>
 			</div>

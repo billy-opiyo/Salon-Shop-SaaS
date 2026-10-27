@@ -8682,7 +8682,7 @@ body.light-mode .salon-storefront-root .site-search__result strong {
 
     .salon-storefront-root .floating-whatsapp,
     .salon-storefront-root .back-to-top {
-        bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -8694,7 +8694,7 @@ body.light-mode .salon-storefront-root .site-search__result strong {
 
     .back-to-top,
     .floating-whatsapp {
-        bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
+        bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

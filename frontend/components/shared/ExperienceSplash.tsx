@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import type { CSSProperties } from "react"
 import Image from "next/image"
 
@@ -12,6 +12,7 @@ interface ExperienceSplashProps {
 const SPLASH_DURATION_MS = 5000
 const SPLASH_HOLD_MS = 2000
 const SPLASH_EXIT_TRANSITION_MS = 850
+const SPLASH_SESSION_KEY = "beauty-sphia-platform-splash-complete"
 
 export function ExperienceSplash({
 	brandName,
@@ -20,7 +21,25 @@ export function ExperienceSplash({
 	const [isExiting, setIsExiting] = useState(false)
 	const progressRef = useRef<HTMLDivElement>(null)
 
-	useEffect(() => {
+	useLayoutEffect(() => {
+		const root = document.documentElement
+		const body = document.body
+		let alreadyCompleted = false
+		try {
+			alreadyCompleted = window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "true"
+		} catch {
+			// Session storage can be unavailable in restricted browser contexts.
+		}
+		if (alreadyCompleted) {
+			root.classList.remove("splash-active")
+			body.classList.remove("splash-active")
+			root.classList.add("splash-complete")
+			body.classList.add("splash-complete")
+			return () => {
+				root.classList.remove("splash-active", "splash-complete")
+				body.classList.remove("splash-active", "splash-complete")
+			}
+		}
 		const prefersReducedMotion = window.matchMedia?.(
 			"(prefers-reduced-motion: reduce)",
 		).matches
@@ -47,8 +66,13 @@ export function ExperienceSplash({
 				document.documentElement.classList.remove("splash-active")
 				document.body.classList.remove("splash-active")
 				completeTimeoutId = window.setTimeout(() => {
-					document.documentElement.classList.add("splash-complete")
-					document.body.classList.add("splash-complete")
+					try {
+						window.sessionStorage.setItem(SPLASH_SESSION_KEY, "true")
+					} catch {
+						// The splash remains usable when session storage is unavailable.
+					}
+					root.classList.add("splash-complete")
+					body.classList.add("splash-complete")
 				}, prefersReducedMotion ? 0 : SPLASH_EXIT_TRANSITION_MS)
 			}, SPLASH_HOLD_MS)
 		}
@@ -58,11 +82,8 @@ export function ExperienceSplash({
 			window.cancelAnimationFrame(animationFrameId)
 			window.clearTimeout(hideTimeoutId)
 			window.clearTimeout(completeTimeoutId)
-			document.documentElement.classList.remove(
-				"splash-active",
-				"splash-complete",
-			)
-			document.body.classList.remove("splash-active", "splash-complete")
+			root.classList.remove("splash-active", "splash-complete")
+			body.classList.remove("splash-active", "splash-complete")
 		}
 	}, [])
 
