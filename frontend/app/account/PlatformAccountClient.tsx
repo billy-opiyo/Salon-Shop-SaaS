@@ -259,7 +259,7 @@ export function PlatformAccountClient({
 					</form>
 					<button className="button button--ghost" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
 					<h3 className="platform-account-subheading">Recent sign-ins</h3>
-					<ul className="platform-account-history">{snapshot.loginHistory.slice(0, 6).map((item) => <li key={item.id}><strong>{item.provider}</strong><span>{item.status} · {item.riskLevel ?? "standard"}</span><small>{item.country ?? "Unknown location"} · {new Date(item.createdAt).toLocaleDateString("en-KE")}</small></li>)}</ul>
+					{snapshot.loginHistory.length ? <ul className="platform-account-history">{snapshot.loginHistory.slice(0, 6).map((item) => <li key={item.id}><strong>{item.provider}</strong><span>{item.status} · {item.riskLevel ?? "standard"}</span><small>{item.country ?? "Unknown location"} · {new Date(item.createdAt).toLocaleDateString("en-KE")}</small></li>)}</ul> : <p className="platform-account-empty">Recent sign-ins will appear here.</p>}
 				</section>
 
 				<section className="platform-account-panel" aria-labelledby="platform-preferences-title">

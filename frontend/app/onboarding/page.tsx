@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
 import { getLoginUrlForPath } from "@shared/authCallback"
@@ -15,7 +16,7 @@ export default async function OnboardingPage() {
 	const design = await getPlatformStorefrontDesign()
 
 	return (
-		<div className="platform-site onboarding-platform" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions onboarding-platform" style={platformThemeStyle(design.theme)}>
 			<PlatformHeader page="onboarding" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 			<main className="onboarding-page onboarding-page--platform">
 				<section className="onboarding-card onboarding-card--platform" aria-labelledby="onboarding-title">
@@ -37,6 +38,7 @@ export default async function OnboardingPage() {
 					</div>
 				</section>
 			</main>
+			<PlatformMobileActions active="start" />
 		</div>
 	)
 }

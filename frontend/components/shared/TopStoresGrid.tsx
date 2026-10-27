@@ -1,14 +1,18 @@
-import { getTopStores } from "@/lib/platformStores"
+import { getAllPublicStores, getTopStores } from "@/lib/platformStores"
 import { StoreTransitionLink } from "@/components/shared/StoreTransitionLink"
 import Image from "next/image"
+import Link from "next/link"
 
 function RatingStars({
 	rating,
 	reviewCount,
 }: {
-	readonly rating: number
+	readonly rating: number | null
 	readonly reviewCount: number
 }) {
+	if (rating === null || reviewCount === 0) {
+		return <span className="top-store__rating">New on Beauty Sphia</span>
+	}
 	return (
 		<span
 			className="top-store__rating"
@@ -42,18 +46,25 @@ function RatingStars({
 
 interface TopStoresGridProps {
 	readonly limit?: number
+	readonly showAll?: boolean
 }
 
-export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
-	const stores = getTopStores(limit)
+export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGridProps) {
+	const stores = showAll ? await getAllPublicStores() : await getTopStores(limit)
+
+	if (stores.length === 0) {
+		return (
+			<div className="platform-stores-empty">
+				<p>Salon listings are unavailable right now. You can still start your salon or check back shortly.</p>
+				<Link className="button button--outline" href="/onboarding">Be the first to start your salon</Link>
+			</div>
+		)
+	}
 
 	return (
 		<div className="top-stores-list">
 			{stores.map((store) => (
-				<article
-					className={`top-store${store.available ? "" : " top-store--soon"}`}
-					key={store.slug}
-				>
+				<article className="top-store" key={store.slug}>
 					<div className="top-store__image">
 						<Image
 							className="top-store__image-content"
@@ -62,32 +73,20 @@ export function TopStoresGrid({ limit = 3 }: TopStoresGridProps) {
 							fill
 							sizes="(max-width: 700px) 100vw, (max-width: 1000px) 50vw, 33vw"
 							loading="lazy"
+							unoptimized
 						/>
 					</div>
 					<div className="top-store__content">
-						<span className="eyebrow">
-							{store.available
-								? `Available Salon · ${store.location}`
-								: `Opening soon · ${store.location}`}
-						</span>
+						<span className="eyebrow">Salon · {store.location}</span>
 						<h3>{store.name}</h3>
 						<p>{store.tagline}</p>
 						<RatingStars
 							rating={store.rating}
 							reviewCount={store.reviewCount}
 						/>
-						{store.available ? (
-							<StoreTransitionLink
-								className="top-store__link"
-								href={store.href}
-							>
-								Open {store.name} Salon →
-							</StoreTransitionLink>
-						) : (
-							<span className="top-store__soon-label">
-								Coming to Beauty Sphia
-							</span>
-						)}
+						<StoreTransitionLink className="top-store__link" href={store.href}>
+							Open {store.name} Salon →
+						</StoreTransitionLink>
 					</div>
 				</article>
 			))}

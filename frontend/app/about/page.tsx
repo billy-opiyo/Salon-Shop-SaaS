@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
-import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { PlatformTeamCards } from "@/components/shared/PlatformTeamCards"
 import { getPublishedPlatformTeam } from "@backend/services/platformTeamService"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
@@ -23,7 +23,7 @@ export default async function AboutPage() {
 	const design = await getPlatformStorefrontDesign()
 	const members = await getPublishedPlatformTeam().catch(() => [])
 	return (
-		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 			<main className="platform-home-shell platform-about-page">
 				<PlatformHeader page="about" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 				<section className="platform-section platform-about-hero" aria-labelledby="about-title">
@@ -37,18 +37,14 @@ export default async function AboutPage() {
 						<h2 id="team-title">{design.about.teamTitle}</h2>
 						<p>{design.about.teamDescription}</p>
 					</div>
-					{members.length ? <PlatformTeamCards members={members} /> : <p className="manage-empty">Our team profiles are being prepared. Please check back soon.</p>}
+					{members.length ? <PlatformTeamCards members={members} /> : <div className="platform-team-empty"><p>Team profiles are unavailable right now. You can still reach our team for help.</p><Link className="button button--outline" href="/support">Contact Beauty Sphia support</Link></div>}
 				</section>
 				<section className="platform-section platform-about-cta" aria-label="Get started">
 					<h2>{design.about.ctaTitle}</h2>
 					<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="/support">Salon Owner Support</Link></div>
 				</section>
 			</main>
-			<nav className="platform-mobile-actions" aria-label="Mobile platform navigation">
-				<Link href="/"><PlatformActionIcon name="home" /><span>Home</span></Link>
-				<Link href="/stores"><PlatformActionIcon name="salons" /><span>Salons</span></Link>
-				<Link href="/onboarding"><PlatformActionIcon name="start" /><span>Start Your Salon</span></Link>
-			</nav>
+			<PlatformMobileActions />
 		</div>
 	)
 }

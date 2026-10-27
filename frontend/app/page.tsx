@@ -7,7 +7,7 @@ import { renderTenantStorefront } from "@/app/[tenantSlug]/page"
 
 import { ExperienceSplash } from "@/components/shared/ExperienceSplash"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
-import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { PlatformFloatingActions } from "@/components/shared/PlatformFloatingActions"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
@@ -41,6 +41,13 @@ function replaceStoreWording(value: string): string {
 	})
 }
 
+function formatPlanAmount(amountMinor: number, currency: string): string {
+	return new Intl.NumberFormat("en-KE", {
+		style: "currency",
+		currency,
+	}).format(amountMinor / 100)
+}
+
 export default async function PlatformHome() {
 	const requestHost = getRequestHost(await headers())
 	if (requestHost) {
@@ -67,7 +74,7 @@ export default async function PlatformHome() {
 				brandName={design.branding.name}
 				logoUrl={design.logoUrl}
 			/>
-			<div className="platform-site" style={platformThemeStyle(design.theme)}>
+			<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 			<main id="home" className="platform-home-shell">
 				<PlatformHeader page="home" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 
@@ -171,18 +178,12 @@ export default async function PlatformHome() {
 								<h3>{plan.name}</h3>
 								<p className="plan-card__pricing">
 									<strong className="plan-card__price">
-										KES{" "}
-										{(
-											plan.monthlyAmountMinor / 100
-										).toLocaleString("en-KE")}
+						{formatPlanAmount(plan.monthlyAmountMinor, design.billing.currency)}
 									</strong>{" "}
 									<span className="plan-card__billing-period">/month</span>
 									<span className="plan-card__setup-fee">
 										<strong className="plan-card__setup-amount">
-											KES{" "}
-											{(
-											plan.setupFeeMinor / 100
-											).toLocaleString("en-KE")}
+							{formatPlanAmount(plan.setupFeeMinor, design.billing.currency)}
 										</strong>{" "}
 										One-Time Setup Fee
 									</span>
@@ -253,24 +254,7 @@ export default async function PlatformHome() {
 			</main>
 			<PlatformFooter brandName={design.branding.name} description={content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
 			<PlatformFloatingActions whatsappUrl={design.contact.whatsappUrl} />
-			<nav
-				className="platform-mobile-actions"
-				aria-label="Mobile platform navigation"
-			>
-				<Link href="#home">
-					<PlatformActionIcon name="home" />
-					<span>Home</span>
-				</Link>
-				<Link href="/stores">
-					<PlatformActionIcon name="salons" />
-					<span>Salons</span>
-				</Link>
-
-				<Link href="/onboarding">
-					<PlatformActionIcon name="start" />
-					<span>Start Your Salon</span>
-				</Link>
-			</nav>
+			<PlatformMobileActions active="home" />
 			</div>
 		</>
 	)

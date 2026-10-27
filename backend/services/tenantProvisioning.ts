@@ -182,7 +182,10 @@ export async function listTenantsForUser(userId: string) {
 			businessName: true,
 			status: true,
 			subscription: {
-				select: { plan: { select: { tier: true, displayName: true } } },
+				select: {
+					status: true,
+					plan: { select: { tier: true, displayName: true } },
+				},
 			},
 		},
 		orderBy: { createdAt: "asc" },

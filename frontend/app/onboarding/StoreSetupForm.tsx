@@ -111,7 +111,7 @@ export function StoreSetupForm({
 			</div>
 			<input name="timezone" type="hidden" value="Africa/Nairobi" readOnly />
 			<input name="locale" type="hidden" value="en-KE" readOnly />
-			<input name="currency" type="hidden" value="KES" readOnly />
+			<input name="currency" type="hidden" value={currency} readOnly />
 			<fieldset className="legal-consent">
 				<legend>Platform agreement</legend>
 				<label>

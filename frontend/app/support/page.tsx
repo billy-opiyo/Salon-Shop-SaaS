@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
-import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
@@ -18,7 +18,7 @@ export default async function SupportPage() {
 	const support = design.support
 	const contact = design.contact
 	return (
-		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 			<main className="platform-home-shell platform-support-page">
 				<PlatformHeader page="support" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 				<section className="platform-section platform-about-hero" aria-labelledby="support-title">
@@ -47,11 +47,7 @@ export default async function SupportPage() {
 					</div>
 				</section>
 			</main>
-			<nav className="platform-mobile-actions" aria-label="Mobile platform navigation">
-				<Link href="/"><PlatformActionIcon name="home" /><span>Home</span></Link>
-				<Link href="/stores"><PlatformActionIcon name="salons" /><span>Salons</span></Link>
-				<Link href="/onboarding"><PlatformActionIcon name="start" /><span>Start Your Salon</span></Link>
-			</nav>
+			<PlatformMobileActions />
 		</div>
 	)
 }
