@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	createStylistForUser,
 	MerchantStylistError,
@@ -13,7 +14,7 @@ import {
 
 export async function addStylist(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/staff`))
 	const tenantSlug = formData.get("tenantSlug")
 	const name = formData.get("name")
 	const title = formData.get("title")
@@ -41,7 +42,7 @@ export async function addStylist(formData: FormData): Promise<void> {
 
 export async function setStylistActive(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/staff`))
 	const tenantSlug = formData.get("tenantSlug")
 	const stylistId = formData.get("stylistId")
 	const active = formData.get("active")
@@ -67,7 +68,7 @@ export async function setStylistActive(formData: FormData): Promise<void> {
 
 export async function updateStylist(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/staff`))
 	const tenantSlug = formData.get("tenantSlug")
 	const stylistId = formData.get("stylistId")
 	const name = formData.get("name")

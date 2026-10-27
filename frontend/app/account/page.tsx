@@ -20,6 +20,13 @@ export const metadata = {
 	description: "Manage your Beauty Sphia profile, bookings, and salon accounts.",
 }
 
+function formatSalonStatus(status: string): string {
+	return status
+		.split("_")
+		.map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+		.join(" ")
+}
+
 export default async function AccountPage() {
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath("/account"))
@@ -50,9 +57,9 @@ export default async function AccountPage() {
 						return (
 							<article className="platform-account-salon" key={salon.id}>
 								<div>
-									<p className="eyebrow">{salon.subscription?.plan.displayName ?? "Salon"} · {salon.status}</p>
+								<p className="eyebrow">{salon.subscription?.plan.displayName ?? "Salon"} · {formatSalonStatus(salon.status)}</p>
 									<h3>{salon.businessName}</h3>
-									<span>beautysphia.com/{salon.slug}</span>
+									<span>Storefront path: /{salon.slug}</span>
 									{salon.status === "DRAFT" && <span className="platform-account-salon__next-step">{setupPaymentRequired ? "Next step: complete setup payment" : readyToPublish ? "Next step: publish your salon" : "Setup is being confirmed"}</span>}
 								</div>
 								<div className="platform-account-salon__actions">

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 export interface MerchantWorkspaceNavigationAccess {
-	readonly canAccessDashboard: boolean
 	readonly canManageBookings: boolean
 	readonly canManageContent: boolean
 	readonly canManageAdmins: boolean
@@ -25,11 +24,10 @@ export function MerchantWorkspaceNavigation({
 	if (!access || pathname.replace(/\/$/, "") === basePath) return null
 
 	const links = [
-		{ label: "Dashboard", href: basePath, visible: access.canAccessDashboard },
+		{ label: "Analytics", href: `${basePath}/analytics`, visible: access.canManageBookings },
 		{ label: "Bookings", href: `${basePath}/bookings`, visible: access.canManageBookings },
 		{ label: "Schedule", href: `${basePath}/schedule`, visible: access.canManageBookings },
 		{ label: "Waitlist", href: `${basePath}/waitlist`, visible: access.canManageBookings },
-		{ label: "Analytics", href: `${basePath}/analytics`, visible: access.canManageBookings },
 		{ label: "Services", href: `${basePath}/services`, visible: access.canManageContent },
 		{ label: "Gallery", href: `${basePath}/gallery`, visible: access.canManageContent },
 		{ label: "Reviews", href: `${basePath}/reviews`, visible: access.canManageContent },

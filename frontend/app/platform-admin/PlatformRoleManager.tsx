@@ -69,7 +69,7 @@ export function PlatformRoleManager({
 				<h2 id="platform-roles-title">Platform access roles</h2>
 				<p>The configured Owner account keeps full access. Assign other accounts only the platform sections they need.</p>
 			</div>
-			<form className="onboarding-form platform-role-form" onSubmit={save}>
+			<form className="onboarding-form platform-admin-form platform-role-form" onSubmit={save}>
 				<label>Email address<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
 				<label>Role<select value={role} onChange={(event) => setRole(event.target.value as RoleAssignment["role"])}><option value="STORE_EDITOR">Store Editor — platform site content</option><option value="STORE_SUPPORT">Store Support — support page and FAQs</option></select></label>
 				<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Assign role"}</button>

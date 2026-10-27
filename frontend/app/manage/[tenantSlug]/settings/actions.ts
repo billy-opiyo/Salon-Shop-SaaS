@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import { updateTenantSettingsForUser } from "@backend/services/tenantSettingsService"
 
 export async function saveTenantSettings(formData: FormData) {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/settings`))
 	const tenantSlug = String(formData.get("tenantSlug") ?? "")
 	const raw: Record<string, unknown> = Object.fromEntries(formData.entries())
 	raw.bookingPaymentsEnabled = formData.get("bookingPaymentsEnabled") === "on"

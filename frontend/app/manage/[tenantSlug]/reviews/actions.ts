@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { ReviewStatus } from "@prisma/client"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	deleteReviewForUser,
 	MerchantReviewError,
@@ -13,7 +14,7 @@ import {
 
 export async function updateReview(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/reviews`))
 	const tenantSlug = formData.get("tenantSlug")
 	const reviewId = formData.get("reviewId")
 	const status = formData.get("status")
@@ -41,7 +42,7 @@ export async function updateReview(formData: FormData): Promise<void> {
 
 export async function deleteReview(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/reviews`))
 	const tenantSlug = formData.get("tenantSlug")
 	const reviewId = formData.get("reviewId")
 	if (typeof tenantSlug !== "string" || typeof reviewId !== "string") return

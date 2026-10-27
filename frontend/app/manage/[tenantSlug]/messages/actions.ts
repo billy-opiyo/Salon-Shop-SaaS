@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	deleteMessage,
 	MerchantMessageError,
@@ -13,7 +14,7 @@ import {
 
 export async function setMessageStatus(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/messages`))
 	const tenantSlug = formData.get("tenantSlug")
 	const messageId = formData.get("messageId")
 	const status = formData.get("status")
@@ -39,7 +40,7 @@ export async function setMessageStatus(formData: FormData): Promise<void> {
 
 export async function removeMessage(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/messages`))
 	const tenantSlug = formData.get("tenantSlug")
 	const messageId = formData.get("messageId")
 	if (typeof tenantSlug !== "string" || typeof messageId !== "string") return

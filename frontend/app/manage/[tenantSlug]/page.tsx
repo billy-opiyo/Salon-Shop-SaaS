@@ -1,13 +1,8 @@
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
-import { SalonAdminRuntime } from "@/components/tenant/SalonAdminRuntime"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { prisma } from "@backend/db/prisma"
-import {
-	getMerchantAdminSnapshot,
-	MerchantAdminSnapshotError,
-} from "@backend/services/merchantAdminSnapshotService"
 
 interface AdminPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -21,16 +16,40 @@ export default async function TenantAdminPage({ params }: AdminPageProps) {
 	if (!userId) redirect(getLoginUrlForPath(`/manage/${normalizedSlug}`))
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: normalizedSlug },
-		select: { id: true, status: true },
+		select: {
+			id: true,
+			memberships: {
+				where: { userId, status: "ACTIVE" },
+				select: {
+					role: true,
+					canManageBookings: true,
+					canManageContent: true,
+					canManageAdmins: true,
+					canManageSecurity: true,
+					canManageBilling: true,
+				},
+			},
+		},
 	})
-	if (!tenant) redirect("/manage")
+	const membership = tenant?.memberships[0]
+	if (!tenant || !membership) redirect("/account")
 
-	try {
-		await getMerchantAdminSnapshot(userId, normalizedSlug)
-	} catch (error) {
-		if (error instanceof MerchantAdminSnapshotError) redirect("/manage")
-		throw error
-	}
+	const canManageBookings = membership.role === "OWNER" || membership.canManageBookings
+	const canManageContent = membership.role === "OWNER" || membership.canManageContent
+	const canManageAdmins = membership.role === "OWNER" || membership.canManageAdmins
+	const canManageSecurity = membership.role === "OWNER" || membership.canManageSecurity
+	const destination = canManageBookings
+		? "analytics"
+		: canManageContent
+			? "services"
+			: canManageAdmins
+				? "team"
+				: canManageSecurity
+					? "security"
+					: (membership.role === "ADMIN" && membership.canManageBilling)
+						? "billing"
+						: null
 
-	return <SalonAdminRuntime tenantSlug={normalizedSlug} />
+	if (!destination) redirect("/account")
+	redirect(`/manage/${encodeURIComponent(normalizedSlug)}/${destination}`)
 }

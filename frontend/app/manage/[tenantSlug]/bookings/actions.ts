@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { getLoginUrlForPath } from "@shared/authCallback";
 import { MerchantBookingError, updateBookingStatusForUser } from "@backend/services/merchantBookingService";
 import { bookingStatusUpdateSchema } from "@shared/validation/merchant";
 
 export async function updateBookingStatus(formData: FormData): Promise<void> {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/bookings`));
   const parsed = bookingStatusUpdateSchema.safeParse({ tenantSlug: formData.get("tenantSlug"), bookingId: formData.get("bookingId"), status: formData.get("status") });
   if (!parsed.success) return;
   try {

@@ -17,6 +17,7 @@ import { PlatformAdminAction } from "./PlatformAdminAction"
 import { PlatformTeamManager } from "./PlatformTeamManager"
 import { PlatformStorefrontManager } from "./PlatformStorefrontManager"
 import { PlatformRoleManager } from "./PlatformRoleManager"
+import "./platform-admin.css"
 
 function formatDate(value: Date | null): string {
 	return value ? value.toLocaleDateString("en-KE") : "Not set"
@@ -85,7 +86,7 @@ export default async function PlatformAdminPage() {
 
 	return (
 		<main className="platform-home-shell platform-admin-page">
-			<header className="platform-header platform-admin-header">
+			<header className="platform-admin-header">
 				<div>
 					<p className="eyebrow">Beauty Sphia operations</p>
 					<h1>Platform Admin · {role === "OWNER" ? "Owner" : role === "STORE_EDITOR" ? "Store Editor" : "Store Support"}</h1>
@@ -100,7 +101,7 @@ export default async function PlatformAdminPage() {
 			</header>
 
 			{snapshot && <section
-				className="platform-section platform-admin-metrics"
+				className="platform-admin-metrics"
 				aria-label="Platform overview"
 			>
 				{metricCards.map(([label, value, detail]) => (

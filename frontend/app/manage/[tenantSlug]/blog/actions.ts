@@ -11,11 +11,12 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import { blogMutationSchema } from "@shared/validation/merchant"
 
 export async function updateBlogStatus(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/blog`))
 	const tenantSlug = formData.get("tenantSlug")
 	const blogId = formData.get("blogId")
 	const published = formData.get("published")
@@ -41,7 +42,7 @@ export async function updateBlogStatus(formData: FormData): Promise<void> {
 
 export async function removeBlog(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/blog`))
 	const tenantSlug = formData.get("tenantSlug")
 	const blogId = formData.get("blogId")
 	if (typeof tenantSlug !== "string" || typeof blogId !== "string") return
@@ -56,7 +57,7 @@ export async function removeBlog(formData: FormData): Promise<void> {
 
 export async function addBlog(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/blog`))
 	const parsed = blogMutationSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),
 		title: formData.get("title"),
@@ -80,7 +81,7 @@ export async function addBlog(formData: FormData): Promise<void> {
 
 export async function editBlog(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/blog`))
 	const id = formData.get("blogId")
 	const parsed = blogMutationSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),

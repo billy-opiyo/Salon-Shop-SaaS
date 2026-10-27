@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	MerchantWaitlistError,
 	updateWaitlistStatusForUser,
@@ -18,7 +19,7 @@ const waitlistStatuses = new Set([
 
 export async function updateWaitlistStatus(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/waitlist`))
 	const tenantSlug = formData.get("tenantSlug")
 	const entryId = formData.get("entryId")
 	const status = formData.get("status")
