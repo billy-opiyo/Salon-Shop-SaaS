@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
@@ -65,9 +66,10 @@ export default async function MerchantSchedulePage({
 
 			<section className="merchant-schedule-days" aria-label="Upcoming schedule">
 				{sortedDates.length === 0 ? (
-					<p className="manage-empty merchant-schedule-empty">
-						No upcoming appointments are scheduled.
-					</p>
+					<div className="manage-empty-state merchant-schedule-empty">
+						<p className="manage-empty">No upcoming appointments are scheduled. New and confirmed appointments will be grouped here by day.</p>
+						<Link className="button button--outline button--small" href={`/manage/${encodeURIComponent(tenantSlug)}/bookings`}>Review bookings</Link>
+					</div>
 				) : sortedDates.map((date) => {
 					const dayBookings = groupedByDay.get(date) ?? []
 					const dateObj = new Date(`${date}T00:00:00.000Z`)

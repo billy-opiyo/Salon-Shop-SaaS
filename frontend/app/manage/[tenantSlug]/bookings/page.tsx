@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
@@ -83,9 +84,10 @@ export default async function MerchantBookingsPage({
 
 			<section className="admin-bookings-list" aria-label="Bookings">
 				{bookings.length === 0 ? (
-					<p className="manage-empty">
-						No bookings have been received for this salon.
-					</p>
+					<div className="manage-empty-state">
+						<p className="manage-empty">No bookings have been received for this salon yet. New customer appointments will appear here.</p>
+						<Link className="button button--outline button--small" href={`/${tenantSlug}#booking`} target="_blank" rel="noreferrer">Open booking page</Link>
+					</div>
 				) : (
 					bookings.map((booking) => {
 						const bookingStatus = booking.status as (typeof statuses)[number]

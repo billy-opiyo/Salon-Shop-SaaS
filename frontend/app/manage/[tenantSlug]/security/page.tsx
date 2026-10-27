@@ -10,6 +10,14 @@ interface SecurityPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
 }
 
+function formatTimestamp(value: Date): string {
+	return value.toLocaleString("en-KE", {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone: "Africa/Nairobi",
+	})
+}
+
 export default async function MerchantSecurityPage({
 	params,
 }: SecurityPageProps) {
@@ -71,7 +79,7 @@ export default async function MerchantSecurityPage({
 							<h2>{login.email ?? "Unknown account"}</h2>
 							<p>
 								{login.provider} · {login.country ?? "Unknown location"} ·{" "}
-								{login.createdAt.toISOString()}
+								{formatTimestamp(login.createdAt)}
 							</p>
 						</div>
 					</article>
@@ -89,7 +97,7 @@ export default async function MerchantSecurityPage({
 						<div>
 							<p className="eyebrow">Authenticated session</p>
 							<h2>{session.user.name ?? session.user.email ?? session.userId}</h2>
-							<p>Expires {session.expires.toISOString()}</p>
+							<p>Expires {formatTimestamp(session.expires)}</p>
 						</div>
 					</article>
 				))}
@@ -104,7 +112,7 @@ export default async function MerchantSecurityPage({
 						<div>
 							<p className="eyebrow">{event.eventType}</p>
 							<h2>{event.summary}</h2>
-							<p>{event.createdAt.toISOString()}</p>
+							<p>{formatTimestamp(event.createdAt)}</p>
 						</div>
 					</article>
 				))}

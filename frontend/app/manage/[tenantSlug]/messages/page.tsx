@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import {
@@ -57,9 +58,10 @@ export default async function MerchantMessagesPage({
 			</section>
 			<section className="manage-store-list" aria-label="Contact messages">
 				{messages.length === 0 ? (
-					<p className="manage-empty">
-						No contact messages have been received.
-					</p>
+					<div className="manage-empty-state">
+						<p className="manage-empty">No contact messages yet. Messages submitted through your storefront contact form will appear here.</p>
+						<Link className="button button--outline button--small" href={`/${tenantSlug}#contact`} target="_blank" rel="noreferrer">View storefront contact page</Link>
+					</div>
 				) : (
 					messages.map((message) => (
 						<article className="manage-store" key={message.id}>
