@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { headers } from "next/headers"
 
 import { getRequestHost } from "@backend/services/tenantDomainService"
@@ -73,10 +72,6 @@ export default async function PlatformHome() {
 				<PlatformHeader page="home" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 
 				<section className="platform-hero platform-hero--editorial" aria-labelledby="platform-title">
-					<picture className="platform-hero__art">
-						<source media="(max-width: 1024px)" srcSet={design.heroMobileUrl} />
-						<Image src={design.heroDesktopUrl} alt={design.heroAlt} fill sizes="100vw" unoptimized priority />
-					</picture>
 <div className="platform-hero__copy">
 <p className="platform-hero__eyebrow">{design.homeHero.eyebrow}</p><p className="platform-hero__audience">{design.homeHero.audience}</p>
 <h1 id="platform-title">{design.homeHero.title} <span>{design.homeHero.highlight}</span></h1>
