@@ -1,6 +1,7 @@
 import "server-only"
 
 import { unstable_cache } from "next/cache"
+import { cache } from "react"
 import { prisma } from "@backend/db/prisma"
 import { resolveTenantSlugByHost } from "@backend/services/tenantDomainService"
 import type { TenantStorefront } from "@shared/types/tenant"
@@ -203,9 +204,9 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 
 export const listPublicTenantCards = loadPublicTenantCards
 
-export async function getTenantStorefront(
+export const getTenantStorefront = cache(async (
 	slug: string,
-): Promise<TenantStorefront | null> {
+): Promise<TenantStorefront | null> => {
 	const normalizedSlug = slug.trim().toLowerCase()
 	const fixture = tenantFixtures[normalizedSlug]
 
@@ -461,7 +462,7 @@ export async function getTenantStorefront(
 	} catch {
 		return fixture ?? null
 	}
-}
+})
 
 export async function getTenantStorefrontByHost(
 	host: string | null | undefined,

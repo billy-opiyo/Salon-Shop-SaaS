@@ -5584,6 +5584,7 @@ html.splash-active .splash-handwriting-letter {
 
 .onboarding-card__copy h1 {
 	margin: .7rem 0 1rem;
+	scroll-margin-top: 6.5rem;
 	color: var(--foreground);
 	font: 500 clamp(2.6rem, 5vw, 4.7rem)/.98 var(--serif);
 	letter-spacing: -.055em;
@@ -5977,6 +5978,10 @@ html.splash-active .splash-handwriting-letter {
 .merchant-workspace-navigation a:focus-visible {
 	outline: 2px solid var(--gold-soft);
 	outline-offset: 2px;
+}
+
+.merchant-workspace-shell #add-stylist {
+	scroll-margin-top: 5.5rem;
 }
 
 .merchant-analytics-page .manage-header,

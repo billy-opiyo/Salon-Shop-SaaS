@@ -13,6 +13,7 @@ import {
 	consumeRateLimit,
 	hashRateLimitSubject,
 } from "@backend/services/rateLimit"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
 const GENERIC_REQUEST_MESSAGE =
 	"If an account exists for that email, a password reset link has been sent."
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
 			email?: unknown
 			token?: unknown
 			newPassword?: unknown
+			callbackUrl?: unknown
 		}
 		if (body.action === "request") {
 			if (typeof body.email !== "string" || !body.email.trim()) {
@@ -33,6 +35,9 @@ export async function POST(request: NextRequest) {
 				)
 			}
 			const normalizedEmail = body.email.trim().toLowerCase()
+			const callbackUrl = getSafeAuthCallbackUrl(
+				typeof body.callbackUrl === "string" ? body.callbackUrl : undefined,
+			)
 			let emailed = false
 			try {
 				await consumeRateLimit({
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
 					subject: {
 						businessName: "Beauty Sphia",
 						email: normalizedEmail,
-						link: `${platformBaseUrl()}/reset-password?token=${token}`,
+						link: `${platformBaseUrl()}/reset-password?token=${encodeURIComponent(token)}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
 					},
 				})
 				emailed = sent.ok

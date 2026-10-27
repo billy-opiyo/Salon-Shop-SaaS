@@ -296,6 +296,10 @@ export function SalonTestimonials({
 export function SalonBlogs({
 	items,
 	}: Readonly<{ items: readonly SalonBlogItem[] }>): ReactNode {
+	if (items.length === 0) {
+		return <p className="blog-empty-state" role="status">No blogs published yet.</p>
+	}
+
 	return items.map((blog, index) => {
 		const imageUrl = safeImageUrl(blog.imageUrl)
 		return (

@@ -1,4 +1,5 @@
 import { ResetPasswordForm } from "./ResetPasswordForm"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
 interface ResetPasswordPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
@@ -9,12 +10,20 @@ export default async function ResetPasswordPage({
 }: ResetPasswordPageProps) {
   const params = searchParams ? await searchParams : {}
   const rawToken = params.token
+  const rawCallbackUrl = params.callbackUrl
   const initialToken =
     typeof rawToken === "string"
       ? rawToken
       : Array.isArray(rawToken)
         ? (rawToken[0] ?? "")
         : ""
+  const callbackUrl = getSafeAuthCallbackUrl(
+    typeof rawCallbackUrl === "string"
+      ? rawCallbackUrl
+      : Array.isArray(rawCallbackUrl)
+        ? rawCallbackUrl[0]
+        : undefined,
+  )
 
   return (
     <main className="auth-page">
@@ -22,7 +31,7 @@ export default async function ResetPasswordPage({
         <span className="brand-mark">Beauty Sphia</span>
         <p className="eyebrow">Account recovery</p>
         <h1>Reset your password.</h1>
-        <ResetPasswordForm initialToken={initialToken} />
+        <ResetPasswordForm initialToken={initialToken} callbackUrl={callbackUrl} />
       </section>
     </main>
   )

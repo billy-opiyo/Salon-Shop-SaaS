@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { getSafeAuthCallbackUrl } from "@shared/authCallback";
 
 type ResetMode = "request" | "requested" | "reset" | "done";
 
-export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
+export function ResetPasswordForm({
+  initialToken,
+  callbackUrl = "/account",
+}: {
+  initialToken: string;
+  callbackUrl?: string;
+}) {
   const [mode, setMode] = useState<ResetMode>(initialToken ? "reset" : "request");
   const [message, setMessage] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const safeCallbackUrl = getSafeAuthCallbackUrl(callbackUrl);
+  const loginHref = `/login?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`;
+  const resetRequestHref = `/reset-password?callbackUrl=${encodeURIComponent(safeCallbackUrl)}`;
 
   async function post(payload: Record<string, unknown>) {
     const response = await fetch("/api/auth/password-reset", {
@@ -31,6 +41,7 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
         const data = await post({
           action: "request",
           email: formData.get("email"),
+          callbackUrl: safeCallbackUrl,
         });
         setIsSubmitting(false);
         if (!data || data.error) {
@@ -69,7 +80,7 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
           Your password has been updated. All previous sessions were signed out.
         </p>
         <p className="auth-form__switch">
-          <Link href="/login">Continue to sign in</Link>
+          <Link href={loginHref}>Continue to sign in</Link>
         </p>
       </>
     );
@@ -83,8 +94,8 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
           Tip: the link expires in 30 minutes and can be used once.
         </p>
         <p className="auth-form__switch">
-          <a href="/reset-password">Send another link</a> ·{" "}
-          <Link href="/login">Back to sign in</Link>
+          <Link href={resetRequestHref}>Send another link</Link> ·{" "}
+          <Link href={loginHref}>Back to sign in</Link>
         </p>
       </>
     );
@@ -120,13 +131,13 @@ export function ResetPasswordForm({ initialToken }: { initialToken: string }) {
           </button>
         </>
       )}
-      {message && mode === "request" && (
+      {message && (mode === "request" || mode === "reset") && (
         <p className="form-message" role="alert">
           {message}
         </p>
       )}
       <p className="auth-form__switch">
-        <Link href="/login">Back to sign in</Link>
+        <Link href={loginHref}>Back to sign in</Link>
       </p>
     </form>
   );
