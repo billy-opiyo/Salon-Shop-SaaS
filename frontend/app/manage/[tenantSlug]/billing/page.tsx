@@ -27,6 +27,23 @@ function formatAmount(amountMinor: number, currency: string): string {
 	)
 }
 
+function formatSubscriptionStatus(status: string | null | undefined): string {
+	if (!status) return "Not configured"
+	const labels: Record<string, string> = {
+		setup_payment_required: "Setup payment required",
+		setup_paid_pending_activation: "Ready to publish",
+		trialing: "Free usage period",
+		active: "Active",
+		payment_due: "Payment due",
+		suspended: "Suspended",
+		cancelled: "Cancelled",
+	}
+	return (
+		labels[status] ??
+		status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+	)
+}
+
 export default async function MerchantBillingPage({
 	params,
 }: BillingPageProps) {
@@ -48,6 +65,27 @@ export default async function MerchantBillingPage({
 	const design = await getPlatformStorefrontDesign()
 	const pricing = planTier ? design.plans[planTier] : null
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
+	const subscriptionStatus = billing.subscription?.status
+	const trialEndsAt = subscriptionStatus === "cancelled"
+		? null
+		: billing.subscription?.trialEndsAt ?? null
+	const activationPending = subscriptionStatus === "setup_payment_required" || subscriptionStatus === "setup_paid_pending_activation"
+	const freeUsageValue = trialEndsAt
+		? formatDate(trialEndsAt)
+		: activationPending
+			? "Starts after publication"
+			: subscriptionStatus === "cancelled"
+				? "Period ended"
+				: "Not scheduled"
+	const freeUsageDescription = trialEndsAt
+		? `${freeUsageLabel} of free usage ends on this date; monthly billing begins afterward.`
+		: subscriptionStatus === "setup_payment_required"
+			? `Your ${freeUsageLabel} free usage begins after the setup payment is confirmed and your salon is published.`
+			: subscriptionStatus === "setup_paid_pending_activation"
+				? `Your ${freeUsageLabel} free usage begins when you publish your salon.`
+				: subscriptionStatus === "cancelled"
+					? "This subscription has been cancelled."
+					: "No free usage period is currently scheduled."
 
 	return (
 		<div className="platform-site merchant-billing-page" style={platformThemeStyle(design.theme)}>
@@ -74,12 +112,12 @@ export default async function MerchantBillingPage({
 							? `${formatAmount(pricing.monthlyAmountMinor, billing.currency)} / month`
 							: "Plan pricing unavailable"}
 					</p>
-					<p>Status: {billing.subscription?.status ?? "Not configured"}</p>
+					<p>Status: <strong className="merchant-billing-status">{formatSubscriptionStatus(subscriptionStatus)}</strong></p>
 				</article>
 				<article className="manage-card">
 					<p className="eyebrow">Free usage and renewal</p>
-					<h2>{formatDate(billing.subscription?.trialEndsAt ?? null)}</h2>
-					<p>{freeUsageLabel} of free usage ends, then monthly billing begins</p>
+					<h2>{freeUsageValue}</h2>
+					<p>{freeUsageDescription}</p>
 					{billing.subscription?.cancelAtPeriodEnd && (
 						<p>Cancellation is scheduled for the end of the paid period.</p>
 					)}
@@ -108,6 +146,17 @@ export default async function MerchantBillingPage({
 						<h3>Next: publish your salon</h3>
 						<p>After the setup payment is confirmed, return to your account and choose “Publish salon” to make your storefront live.</p>
 						<Link className="button button--outline button--small" href="/account">Go to my account</Link>
+					</div>
+				</section>
+			)}
+			{billing.subscription?.status === "setup_payment_required" && !pricing && (
+				<section className="manage-card merchant-billing-setup-unavailable" aria-labelledby="setup-unavailable-title">
+					<p className="eyebrow">Salon setup</p>
+					<h2 id="setup-unavailable-title">Setup payment is temporarily unavailable</h2>
+					<p>Your salon details are saved, but the selected plan’s current pricing is unavailable. Contact Beauty Sphia support for help continuing setup.</p>
+					<div className="manage-header__actions">
+						<Link className="button button--outline" href="/account">Return to my account</Link>
+						<a className="button button--ghost" href={`mailto:${design.contact.supportEmail}?subject=${encodeURIComponent(`Help with ${billing.businessName} setup`)}`}>Contact support</a>
 					</div>
 				</section>
 			)}

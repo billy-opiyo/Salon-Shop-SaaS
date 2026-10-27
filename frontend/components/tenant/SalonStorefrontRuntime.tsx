@@ -1430,6 +1430,21 @@ function setDesignControl(id: string, value: unknown): void {
 	) {
 		element.value = typeof value === "string" ? value : String(value ?? "")
 	}
+	const previewId =
+		id === "adminDesignLogoUrl"
+			? "adminDesignLogoPreview"
+			: id === "adminDesignHeroUrl"
+				? "adminDesignHeroPreview"
+				: null
+	if (previewId) {
+		const preview = document.getElementById(previewId)
+		if (preview instanceof HTMLImageElement) {
+			const imageUrl = typeof value === "string" ? value.trim() : ""
+			preview.hidden = !imageUrl
+			if (imageUrl) preview.src = imageUrl
+			else preview.removeAttribute("src")
+		}
+	}
 }
 
 function getDesignControl(id: string): string {

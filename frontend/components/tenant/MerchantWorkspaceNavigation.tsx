@@ -44,10 +44,14 @@ export function MerchantWorkspaceNavigation({
 	]
 
 	return (
-		<nav className="merchant-workspace-navigation" aria-label="Salon workspace pages">
+		<nav
+			className="merchant-workspace-navigation admin-section-tabs"
+			aria-label="Salon workspace pages"
+		>
 			{links.filter((link) => link.visible).map((link) => (
 				<Link
 					key={link.href}
+					className={`admin-section-tab${pathname === link.href ? " active" : ""}`}
 					href={link.href}
 					aria-current={pathname === link.href ? "page" : undefined}
 				>

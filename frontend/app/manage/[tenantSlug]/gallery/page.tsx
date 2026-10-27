@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
+import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
 import {
 	listGalleryForUser,
 	MerchantGalleryError,
@@ -86,23 +87,8 @@ export default async function MerchantGalleryPage({
 												required
 											/>
 										</label>
-										<label>
-											Image URL
-											<input
-												name="imageUrl"
-												type="url"
-												defaultValue={style.imageUrl}
-												required
-											/>
-										</label>
-										<label>
-											Before image URL
-											<input
-												name="beforeImageUrl"
-												type="url"
-												defaultValue={style.beforeImageUrl ?? ""}
-											/>
-										</label>
+						<TenantImageUploadField tenantSlug={tenantSlug} name="imageUrl" label="Style image" kind="GALLERY" defaultValue={style.imageUrl} required />
+						<TenantImageUploadField tenantSlug={tenantSlug} name="beforeImageUrl" label="Before image" kind="GALLERY" defaultValue={style.beforeImageUrl} />
 										<label>
 											Style type
 											<input
@@ -170,14 +156,8 @@ export default async function MerchantGalleryPage({
 					Style name
 					<input name="styleName" required minLength={2} maxLength={160} />
 				</label>
-				<label>
-					Image URL
-					<input name="imageUrl" type="url" required />
-				</label>
-				<label>
-					Before image URL
-					<input name="beforeImageUrl" type="url" />
-				</label>
+				<TenantImageUploadField tenantSlug={tenantSlug} name="imageUrl" label="Style image" kind="GALLERY" required />
+				<TenantImageUploadField tenantSlug={tenantSlug} name="beforeImageUrl" label="Before image" kind="GALLERY" />
 				<label>
 					Style type
 					<input name="styleType" maxLength={120} />
