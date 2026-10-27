@@ -257,7 +257,7 @@ export function PlatformAccountClient({
 						<label>New password<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><small>Use at least 12 characters.</small></label>
 						<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Updating…" : "Change password"}</button>
 					</form>
-					<button className="button button--ghost" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
+					<button className="button button--ghost platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
 					<h3 className="platform-account-subheading">Recent sign-ins</h3>
 					{snapshot.loginHistory.length ? <ul className="platform-account-history">{snapshot.loginHistory.slice(0, 6).map((item) => <li key={item.id}><strong>{item.provider}</strong><span>{item.status} · {item.riskLevel ?? "standard"}</span><small>{item.country ?? "Unknown location"} · {new Date(item.createdAt).toLocaleDateString("en-KE")}</small></li>)}</ul> : <p className="platform-account-empty">Recent sign-ins will appear here.</p>}
 				</section>
@@ -305,7 +305,7 @@ export function PlatformAccountClient({
 
 				<section className="platform-account-panel platform-account-panel--wide platform-account-danger" aria-labelledby="platform-delete-title">
 					<p className="eyebrow">Privacy controls</p><h2 id="platform-delete-title">Delete your account</h2>
-					{canDeleteAccount ? <><p>Deleting your account permanently removes your Beauty Sphia sign-in and personal profile.</p><button className="button button--outline" type="button" onClick={() => void deleteAccount()} disabled={busy}>Delete account permanently</button></> : <p>Transfer or remove your salon ownership before deleting this account. Your salon workspaces are connected to this sign-in.</p>}
+					{canDeleteAccount ? <><p>Deleting your account permanently removes your Beauty Sphia sign-in and personal profile.</p><button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy}>Delete account permanently</button></> : <p>Transfer or remove your salon ownership before deleting this account. Your salon workspaces are connected to this sign-in.</p>}
 				</section>
 			</div>
 		</div>

@@ -113,7 +113,7 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 					onClick={() => setAccountMenuOpen((open) => !open)}
 				>
 					{isSignedIn ? accountImage ? <Image className="platform-account__avatar" src={accountImage} alt="" width={30} height={30} unoptimized onError={() => setAccountImage("")} /> : <span className="platform-account__initial" aria-hidden="true">{userEmail?.trim().charAt(0).toUpperCase() || <UserRound size={18} aria-hidden="true" />}</span> : <UserRound size={21} strokeWidth={1.8} aria-hidden="true" />}
-					<span>{isSignedIn ? "Account" : "Log in"}</span>
+					{!isSignedIn && <span>Log in</span>}
 				</button>
 				{accountMenuOpen && <div className="platform-account__menu" id="platform-account-menu" role="menu" aria-label="Account options">
 					{isSignedIn ? <>
