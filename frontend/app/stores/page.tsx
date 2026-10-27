@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
-import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
@@ -18,7 +18,7 @@ export default async function StoresDirectoryPage() {
 	const design = await getPlatformStorefrontDesign()
 	const directory = design.directory
 	return (
-		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 		<main id="home" className="platform-home-shell stores-directory">
 			<PlatformHeader page="stores" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 
@@ -43,7 +43,7 @@ export default async function StoresDirectoryPage() {
 					<h2 id="top-stores-title">{directory.listTitle}</h2>
 					<p>{directory.listDescription}</p>
 				</div>
-				<TopStoresGrid />
+				<TopStoresGrid showAll />
 			</section>
 
 			<section className="platform-section platform-section--directory-cta">
@@ -62,25 +62,8 @@ export default async function StoresDirectoryPage() {
 
 
 
-			<nav
-				className="platform-mobile-actions"
-				aria-label="Mobile platform navigation"
-			>
-				<Link href="/">
-					<PlatformActionIcon name="home" />
-					<span>Home</span>
-				</Link>
-				<Link href="/stores">
-					<PlatformActionIcon name="salons" />
-					<span>Salons</span>
-				</Link>
-
-				<Link href="/onboarding">
-					<PlatformActionIcon name="start" />
-					<span>Start Your Salon</span>
-				</Link>
-			</nav>
 		</main>
+		<PlatformMobileActions active="salons" />
 		</div>
 	)
 }

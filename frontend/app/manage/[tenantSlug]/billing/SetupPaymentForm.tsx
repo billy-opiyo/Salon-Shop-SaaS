@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 export function SetupPaymentForm({
 	tenantSlug,
@@ -10,13 +11,16 @@ export function SetupPaymentForm({
 	readonly tenantSlug: string
 	readonly mode?: "setup" | "renewal"
 }) {
+	const router = useRouter()
 	const [phoneNumber, setPhoneNumber] = useState("")
 	const [message, setMessage] = useState("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [requestAccepted, setRequestAccepted] = useState(false)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		setMessage("")
+		setRequestAccepted(false)
 		setIsSubmitting(true)
 		try {
 			const response = await fetch(`/api/billing/${tenantSlug}/${mode}`, {
@@ -30,9 +34,10 @@ export function SetupPaymentForm({
 			}
 			setMessage(
 				response.ok
-					? "STK Push sent. Check the M-Pesa phone for approval."
+					? "Payment request sent. Approve it on your M-Pesa phone, then refresh the status here."
 					: (data.error ?? "Payment could not be started."),
 			)
+			setRequestAccepted(response.ok)
 		} catch {
 			setMessage("Payment could not be started. Please try again.")
 		} finally {
@@ -73,6 +78,11 @@ export function SetupPaymentForm({
 				<p className="form-message" role="status">
 					{message}
 				</p>
+			)}
+			{requestAccepted && (
+				<button className="button button--outline button--small" type="button" onClick={() => router.refresh()}>
+					I approved the request — refresh payment status
+				</button>
 			)}
 		</form>
 	)

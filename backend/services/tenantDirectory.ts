@@ -98,6 +98,105 @@ const tenantFixtures: Readonly<Record<string, TenantStorefront>> = {
 	[fixtureTenant.slug]: fixtureTenant,
 }
 
+export interface PublicTenantCard {
+	readonly slug: string
+	readonly name: string
+	readonly location: string
+	readonly tagline: string
+	readonly rating: number | null
+	readonly reviewCount: number
+	readonly imageUrl: string
+	readonly href: string
+	readonly createdAt: Date
+}
+
+export async function listPublicTenantCards(): Promise<PublicTenantCard[]> {
+	if (!process.env.DATABASE_URL) {
+		return [{
+			slug: fixtureTenant.slug,
+			name: fixtureTenant.businessName,
+			location: fixtureTenant.locationLabel,
+			tagline: fixtureTenant.shortDescription,
+			rating: null,
+			reviewCount: 0,
+			imageUrl: "/platform/Royal Braids logo.webp",
+			href: `/${fixtureTenant.slug}`,
+			createdAt: new Date(0),
+		}]
+	}
+
+	try {
+		const tenants = await prisma.tenant.findMany({
+			where: { status: "ACTIVE" },
+			orderBy: { createdAt: "desc" },
+			select: {
+				id: true,
+				slug: true,
+				businessName: true,
+				city: true,
+				country: true,
+				createdAt: true,
+				settings: {
+					select: {
+						logoUrl: true,
+						heroImageUrl: true,
+						heroSubtitle: true,
+						storefrontConfig: true,
+					},
+				},
+			},
+		})
+		if (!tenants.length) return []
+
+		const reviews = await prisma.review.groupBy({
+			by: ["tenantId"],
+			where: {
+				tenantId: { in: tenants.map((tenant) => tenant.id) },
+				status: "APPROVED",
+			},
+			_avg: { rating: true },
+			_count: { _all: true },
+		})
+		const reviewStats = new Map(
+			reviews.map((review) => [review.tenantId, review]),
+		)
+
+		return tenants
+			.map((tenant) => {
+				const stats = reviewStats.get(tenant.id)
+				const storefrontConfig = tenant.settings?.storefrontConfig as
+					| Partial<StorefrontDesignConfig>
+					| null
+					| undefined
+				const description =
+					tenant.settings?.heroSubtitle ??
+					storefrontConfig?.heroDescription ??
+					`Explore the services and signature styles at ${tenant.businessName}.`
+				return {
+					slug: tenant.slug,
+					name: tenant.businessName,
+					location: [tenant.city, tenant.country].filter(Boolean).join(", "),
+					tagline: description,
+					rating: stats?._avg.rating ?? null,
+					reviewCount: stats?._count._all ?? 0,
+					imageUrl:
+						tenant.settings?.heroImageUrl ??
+						tenant.settings?.logoUrl ??
+						"/platform/Beauty Sphia logo.webp",
+					href: `/${tenant.slug}`,
+					createdAt: tenant.createdAt,
+				}
+			})
+			.sort((a, b) =>
+				(b.rating ?? 0) - (a.rating ?? 0) ||
+				b.reviewCount - a.reviewCount ||
+				b.createdAt.getTime() - a.createdAt.getTime(),
+			)
+	} catch {
+		return []
+	}
+}
+
 export async function getTenantStorefront(
 	slug: string,
 ): Promise<TenantStorefront | null> {
@@ -203,7 +302,7 @@ export async function getTenantStorefront(
 			tenant.status === "ARCHIVED" ||
 			tenant.status === "SUSPENDED"
 		)
-			return fixture ?? null
+			return null
 
 		const planTier = tenant.subscription?.plan.tier.toLowerCase()
 		const resolvedPlan =
@@ -353,7 +452,7 @@ export async function getTenantStorefront(
 			})),
 		}
 	} catch {
-		return fixture ?? null
+		return null
 	}
 }
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { getClientAccountSnapshot } from "@backend/services/clientAccountService"
 import { prisma } from "@backend/db/prisma"
@@ -11,8 +12,8 @@ import { getPlatformStorefrontDesign } from "@backend/services/platformAdminServ
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
-import { publishStore } from "@/app/manage/actions"
 import { PlatformAccountClient } from "./PlatformAccountClient"
+import { PublishSalonForm } from "./PublishSalonForm"
 
 export const metadata = {
 	title: "My account | Beauty Sphia",
@@ -29,7 +30,7 @@ export default async function AccountPage() {
 		prisma.tenant.count({ where: { ownerUserId: session.user.id } }),
 	])
 	return (
-		<div className="platform-site platform-account-page" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions platform-account-page" style={platformThemeStyle(design.theme)}>
 			<PlatformHeader page="account" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 			<main className="platform-account-shell">
 				<header className="platform-account-hero">
@@ -43,22 +44,33 @@ export default async function AccountPage() {
 						<div><p className="eyebrow">For salon owners</p><h2 id="account-salons-title">Your salons</h2></div>
 						<Link className="button button--primary" href="/onboarding">Start Your Salon</Link>
 					</div>
-					{salons.length ? <div className="platform-account-salons__grid">{salons.map((salon) => (
-						<article className="platform-account-salon" key={salon.id}>
-							<div><p className="eyebrow">{salon.subscription?.plan.displayName ?? "Salon"} · {salon.status}</p><h3>{salon.businessName}</h3><span>beautysphia.com/{salon.slug}</span></div>
-							<div className="platform-account-salon__actions">
-								<Link className="button button--outline button--small" href={`/manage/${salon.slug}`}>Manage salon</Link>
-								{salon.status === "ACTIVE" && <Link className="button button--ghost button--small" href={`/${salon.slug}`}>View storefront</Link>}
-								{salon.status === "DRAFT" && <form action={publishStore}><input type="hidden" name="tenantId" value={salon.id} /><button className="button button--primary button--small" type="submit">Publish salon</button></form>}
-								{salon.status === "DRAFT" && <Link className="platform-account-salon__setup-link" href={`/manage/${salon.slug}/billing`}>Review setup payment</Link>}
-							</div>
-						</article>
-					))}</div> : <p className="platform-account-empty">No salon workspaces are connected to this account yet. You can still explore salons and manage your bookings here.</p>}
+					{salons.length ? <div className="platform-account-salons__grid">{salons.map((salon) => {
+						const setupPaymentRequired = salon.subscription?.status === "setup_payment_required"
+						const readyToPublish = salon.subscription?.status === "setup_paid_pending_activation"
+						return (
+							<article className="platform-account-salon" key={salon.id}>
+								<div>
+									<p className="eyebrow">{salon.subscription?.plan.displayName ?? "Salon"} · {salon.status}</p>
+									<h3>{salon.businessName}</h3>
+									<span>beautysphia.com/{salon.slug}</span>
+									{salon.status === "DRAFT" && <span className="platform-account-salon__next-step">{setupPaymentRequired ? "Next step: complete setup payment" : readyToPublish ? "Next step: publish your salon" : "Setup is being confirmed"}</span>}
+								</div>
+								<div className="platform-account-salon__actions">
+									{salon.status === "DRAFT" && setupPaymentRequired && <Link className="button button--primary button--small" href={`/manage/${salon.slug}/billing?setup=required`}>Continue setup payment</Link>}
+									{salon.status === "DRAFT" && readyToPublish && <PublishSalonForm tenantId={salon.id} />}
+									{salon.status === "DRAFT" && !setupPaymentRequired && !readyToPublish && <Link className="button button--outline button--small" href={`/manage/${salon.slug}/billing`}>Check payment status</Link>}
+									{salon.status !== "DRAFT" && <Link className="button button--outline button--small" href={`/manage/${salon.slug}`}>Manage salon</Link>}
+									{salon.status === "ACTIVE" && <Link className="button button--ghost button--small" href={`/${salon.slug}`}>View storefront</Link>}
+								</div>
+							</article>
+						)
+					})}</div> : <p className="platform-account-empty">No salon workspaces are connected to this account yet. You can still explore salons and manage your bookings here.</p>}
 				</section>
 
 				<PlatformAccountClient initialSnapshot={account} canDeleteAccount={ownedSalonCount === 0} />
 			</main>
 			<PlatformFooter brandName={design.branding.name} description={design.content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
+			<PlatformMobileActions />
 		</div>
 	)
 }

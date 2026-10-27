@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
 import {
 	getBillingSnapshotForUser,
 	MerchantBillingError,
@@ -48,6 +50,7 @@ export default async function MerchantBillingPage({
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 
 	return (
+		<div className="platform-site merchant-billing-page" style={platformThemeStyle(design.theme)}>
 		<main className="manage-page">
 			<header className="manage-header">
 				<div>
@@ -57,6 +60,10 @@ export default async function MerchantBillingPage({
 						Manage your subscription, setup payment, and billing records.
 					</p>
 				</div>
+				<nav className="manage-header__actions" aria-label="Billing page navigation">
+					<Link className="button button--outline" href={`/manage/${tenantSlug}`}>Salon workspace</Link>
+					<Link className="button button--ghost" href="/account">My account</Link>
+				</nav>
 			</header>
 
 			<section className="manage-grid" aria-label="Billing summary">
@@ -98,6 +105,19 @@ export default async function MerchantBillingPage({
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
 					<SetupPaymentForm tenantSlug={tenantSlug} />
+					<div className="merchant-billing-next-step">
+						<h3>Next: publish your salon</h3>
+						<p>After the setup payment is confirmed, return to your account and choose “Publish salon” to make your storefront live.</p>
+						<Link className="button button--outline button--small" href="/account">Go to my account</Link>
+					</div>
+				</section>
+			)}
+			{billing.subscription?.status === "setup_paid_pending_activation" && (
+				<section className="manage-card merchant-billing-activation" aria-labelledby="setup-complete-title">
+					<p className="eyebrow">Setup payment confirmed</p>
+					<h2 id="setup-complete-title">Your salon is ready to publish</h2>
+					<p>The setup fee has been received. Publish your storefront from your account to make it visible to customers.</p>
+					<Link className="button button--primary" href="/account">Continue to publish</Link>
 				</section>
 			)}
 			{(billing.subscription?.status === "payment_due" ||
@@ -214,5 +234,6 @@ export default async function MerchantBillingPage({
 				</form>
 			</section>
 		</main>
+		</div>
 	)
 }

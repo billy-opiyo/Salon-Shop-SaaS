@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation"
+
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	assertAnalyticsAccess,
-	getTenantAnalytics,
 	getBookingAnalytics,
 	getReviewAnalytics,
+	getTenantAnalytics,
 } from "@backend/services/analyticsService"
 
 interface AnalyticsPageProps {
@@ -26,7 +27,7 @@ export default async function MerchantAnalyticsPage({
 		where: { slug: tenantSlug.trim().toLowerCase() },
 		select: { id: true },
 	})
-	if (!tenant) redirect(`/manage`)
+	if (!tenant) redirect("/manage")
 	try {
 		await assertAnalyticsAccess(session.user.id, tenant.id)
 	} catch {
@@ -39,338 +40,122 @@ export default async function MerchantAnalyticsPage({
 		getReviewAnalytics(tenant.id),
 	])
 
-	const confirmationPercentage =
-		analytics.totalBookings > 0
-			? Math.round(
-					(analytics.confirmedBookings / analytics.totalBookings) * 100,
-				)
-			: 0
+	const confirmationPercentage = analytics.totalBookings > 0
+		? Math.round((analytics.confirmedBookings / analytics.totalBookings) * 100)
+		: 0
+	const cancellationPercentage = analytics.totalBookings > 0
+		? Math.round((analytics.cancelledBookings / analytics.totalBookings) * 100)
+		: 0
+	const metrics = [
+		{
+			label: "Total bookings",
+			value: analytics.totalBookings,
+			detail: `Confirmed: ${analytics.confirmedBookings} (${confirmationPercentage}%)`,
+		},
+		{
+			label: "Average rating",
+			value: `${analytics.averageRating.toFixed(1)} / 5`,
+			detail: `From ${analytics.totalReviews} reviews`,
+		},
+		{
+			label: "Unique clients",
+			value: analytics.uniqueClients,
+			detail: "With booked appointments",
+		},
+		{
+			label: "New messages",
+			value: analytics.newMessages,
+			detail: `From ${analytics.totalMessages} total`,
+		},
+	]
+	const bookingStatuses = [
+		{ label: "Pending", value: bookingAnalytics.bookingsByStatus.PENDING ?? 0, tone: "pending" },
+		{ label: "Confirmed", value: bookingAnalytics.bookingsByStatus.CONFIRMED ?? 0, tone: "confirmed" },
+		{ label: "Cancelled", value: bookingAnalytics.bookingsByStatus.CANCELLED ?? 0, tone: "cancelled" },
+	]
+	const reviewMetrics = [
+		{ label: "Total reviews", value: reviewAnalytics.totalReviews },
+		{ label: "Approved", value: reviewAnalytics.approvedReviews },
+		{ label: "Pending", value: reviewAnalytics.pendingReviews },
+		{ label: "Flagged", value: reviewAnalytics.flaggedReviews },
+	]
 
 	return (
-		<main className="manage-page">
+		<main className="manage-page merchant-analytics-page">
 			<header className="manage-header">
 				<div>
-					<p className="eyebrow">Business Intelligence</p>
-					<h1>Analytics & Insights</h1>
+					<p className="eyebrow">Business intelligence</p>
+					<h1>Analytics &amp; insights</h1>
 					<p className="auth-card__intro">
 						Key metrics and trends for your salon business.
 					</p>
 				</div>
 			</header>
 
-			<section
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-					gap: "1.5em",
-					marginBottom: "2em",
-				}}
-			>
-				<div
-					style={{
-						padding: "1.5em",
-						border: "1px solid #ddd",
-						borderRadius: "0.5em",
-						background: "#f8f9fa",
-					}}
-				>
-					<p
-						style={{ color: "#666", fontSize: "0.9em", marginBottom: "0.5em" }}
-					>
-						Total Bookings
-					</p>
-					<h2 style={{ fontSize: "2em", margin: "0" }}>
-						{analytics.totalBookings}
-					</h2>
-					<p
-						style={{ fontSize: "0.85em", color: "#999", margin: "0.5em 0 0 0" }}
-					>
-						Confirmed: {analytics.confirmedBookings} ({confirmationPercentage}%)
-					</p>
-				</div>
-
-				<div
-					style={{
-						padding: "1.5em",
-						border: "1px solid #ddd",
-						borderRadius: "0.5em",
-						background: "#f8f9fa",
-					}}
-				>
-					<p
-						style={{ color: "#666", fontSize: "0.9em", marginBottom: "0.5em" }}
-					>
-						Average Rating
-					</p>
-					<h2 style={{ fontSize: "2em", margin: "0" }}>
-						{analytics.averageRating.toFixed(1)} ⭐
-					</h2>
-					<p
-						style={{ fontSize: "0.85em", color: "#999", margin: "0.5em 0 0 0" }}
-					>
-						from {analytics.totalReviews} reviews
-					</p>
-				</div>
-
-				<div
-					style={{
-						padding: "1.5em",
-						border: "1px solid #ddd",
-						borderRadius: "0.5em",
-						background: "#f8f9fa",
-					}}
-				>
-					<p
-						style={{ color: "#666", fontSize: "0.9em", marginBottom: "0.5em" }}
-					>
-						Unique Clients
-					</p>
-					<h2 style={{ fontSize: "2em", margin: "0" }}>
-						{analytics.uniqueClients}
-					</h2>
-					<p
-						style={{ fontSize: "0.85em", color: "#999", margin: "0.5em 0 0 0" }}
-					>
-						Booked appointments
-					</p>
-				</div>
-
-				<div
-					style={{
-						padding: "1.5em",
-						border: "1px solid #ddd",
-						borderRadius: "0.5em",
-						background: "#f8f9fa",
-					}}
-				>
-					<p
-						style={{ color: "#666", fontSize: "0.9em", marginBottom: "0.5em" }}
-					>
-						Messages
-					</p>
-					<h2 style={{ fontSize: "2em", margin: "0" }}>
-						{analytics.newMessages}
-					</h2>
-					<p
-						style={{ fontSize: "0.85em", color: "#999", margin: "0.5em 0 0 0" }}
-					>
-						New from {analytics.totalMessages} total
-					</p>
-				</div>
+			<section className="merchant-analytics-metrics" aria-label="Salon overview">
+				{metrics.map((metric) => (
+					<article className="merchant-analytics-metric" key={metric.label}>
+						<p>{metric.label}</p>
+					<strong>{metric.value}</strong>
+						<span>{metric.detail}</span>
+					</article>
+				))}
 			</section>
 
-			<section style={{ marginBottom: "2em" }}>
-				<h2 style={{ marginBottom: "1em" }}>Booking Status Breakdown</h2>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-						gap: "1em",
-					}}
-				>
-					{[
-						[
-							"PENDING",
-							bookingAnalytics.bookingsByStatus.PENDING ?? 0,
-							"#ffc107",
-						],
-						[
-							"CONFIRMED",
-							bookingAnalytics.bookingsByStatus.CONFIRMED ?? 0,
-							"#28a745",
-						],
-						[
-							"CANCELLED",
-							bookingAnalytics.bookingsByStatus.CANCELLED ?? 0,
-							"#dc3545",
-						],
-					].map(([status, count, color]) => (
-						<div
-							key={status}
-							style={{
-								padding: "1em",
-								background: color,
-								color: "white",
-								borderRadius: "0.5em",
-								textAlign: "center",
-							}}
-						>
-							<p style={{ margin: "0", fontSize: "0.9em", opacity: 0.9 }}>
-								{status}
-							</p>
-							<h3 style={{ fontSize: "1.5em", margin: "0.25em 0" }}>{count}</h3>
-						</div>
+			<section className="merchant-analytics-section" aria-labelledby="booking-status-title">
+				<header className="merchant-analytics-section__heading">
+					<p className="eyebrow">Bookings</p>
+					<h2 id="booking-status-title">Booking status</h2>
+				</header>
+				<div className="merchant-analytics-status-grid">
+					{bookingStatuses.map((status) => (
+						<article className={`merchant-analytics-status merchant-analytics-status--${status.tone}`} key={status.label}>
+							<span>{status.label}</span>
+							<strong>{status.value}</strong>
+						</article>
 					))}
 				</div>
 			</section>
 
 			{bookingAnalytics.bookingsByService.length > 0 && (
-				<section style={{ marginBottom: "2em" }}>
-					<h2 style={{ marginBottom: "1em" }}>Top Services</h2>
-					<div style={{ border: "1px solid #ddd", borderRadius: "0.5em" }}>
-						{bookingAnalytics.bookingsByService
-							.slice(0, 5)
-							.map((service, i) => (
-								<div
-									key={i}
-									style={{
-										padding: "1em",
-										borderBottom:
-											i <
-											Math.min(5, bookingAnalytics.bookingsByService.length - 1)
-												? "1px solid #eee"
-												: "none",
-										display: "flex",
-										justifyContent: "space-between",
-										alignItems: "center",
-									}}
-								>
-									<div>
-										<p style={{ margin: "0", fontWeight: "500" }}>
-											{service.serviceName}
-										</p>
-									</div>
-									<div
-										style={{
-											fontSize: "0.9em",
-											color: "#666",
-										}}
-									>
-										{service.count} bookings
-									</div>
-								</div>
-							))}
-					</div>
+				<section className="merchant-analytics-section" aria-labelledby="top-services-title">
+					<header className="merchant-analytics-section__heading">
+						<p className="eyebrow">What clients book</p>
+						<h2 id="top-services-title">Top services</h2>
+					</header>
+					<ol className="merchant-analytics-service-list">
+						{bookingAnalytics.bookingsByService.slice(0, 5).map((service, index) => (
+							<li key={`${service.serviceName}-${index}`}>
+								<span>{service.serviceName}</span>
+								<strong>{service.count} bookings</strong>
+							</li>
+						))}
+					</ol>
 				</section>
 			)}
 
-			<section style={{ marginBottom: "2em" }}>
-				<h2 style={{ marginBottom: "1em" }}>Review Insights</h2>
-				<div
-					style={{
-						display: "grid",
-						gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-						gap: "1em",
-					}}
-				>
-					<div
-						style={{
-							padding: "1em",
-							background: "#f8f9fa",
-							borderRadius: "0.5em",
-						}}
-					>
-						<p
-							style={{
-								color: "#666",
-								fontSize: "0.9em",
-								marginBottom: "0.5em",
-							}}
-						>
-							Total Reviews
-						</p>
-						<h3 style={{ fontSize: "1.5em", margin: "0" }}>
-							{reviewAnalytics.totalReviews}
-						</h3>
-					</div>
-					<div
-						style={{
-							padding: "1em",
-							background: "#f8f9fa",
-							borderRadius: "0.5em",
-						}}
-					>
-						<p
-							style={{
-								color: "#666",
-								fontSize: "0.9em",
-								marginBottom: "0.5em",
-							}}
-						>
-							Approved
-						</p>
-						<h3 style={{ fontSize: "1.5em", margin: "0" }}>
-							{reviewAnalytics.approvedReviews}
-						</h3>
-					</div>
-					<div
-						style={{
-							padding: "1em",
-							background: "#f8f9fa",
-							borderRadius: "0.5em",
-						}}
-					>
-						<p
-							style={{
-								color: "#666",
-								fontSize: "0.9em",
-								marginBottom: "0.5em",
-							}}
-						>
-							Pending
-						</p>
-						<h3 style={{ fontSize: "1.5em", margin: "0" }}>
-							{reviewAnalytics.pendingReviews}
-						</h3>
-					</div>
-					<div
-						style={{
-							padding: "1em",
-							background: "#f8f9fa",
-							borderRadius: "0.5em",
-						}}
-					>
-						<p
-							style={{
-								color: "#666",
-								fontSize: "0.9em",
-								marginBottom: "0.5em",
-							}}
-						>
-							Flagged
-						</p>
-						<h3 style={{ fontSize: "1.5em", margin: "0" }}>
-							{reviewAnalytics.flaggedReviews}
-						</h3>
-					</div>
+			<section className="merchant-analytics-section" aria-labelledby="review-insights-title">
+				<header className="merchant-analytics-section__heading">
+					<p className="eyebrow">Client feedback</p>
+					<h2 id="review-insights-title">Review insights</h2>
+				</header>
+				<div className="merchant-analytics-review-grid">
+					{reviewMetrics.map((metric) => (
+						<article className="merchant-analytics-review" key={metric.label}>
+							<span>{metric.label}</span>
+							<strong>{metric.value}</strong>
+						</article>
+					))}
 				</div>
 			</section>
 
-			<section
-				style={{
-					padding: "1.5em",
-					background: "#e7f3ff",
-					borderLeft: "4px solid #2196F3",
-					borderRadius: "0.25em",
-				}}
-			>
-				<h3 style={{ margin: "0 0 0.5em 0", color: "#1565c0" }}>
-					💡 Business Insights
-				</h3>
-				<ul style={{ margin: "0", paddingLeft: "1.5em", color: "#0d47a1" }}>
-					<li>
-						Avg. confirmation time:{" "}
-						<strong>
-							{bookingAnalytics.averageTimeToConfirmation.toFixed(1)}
-						</strong>{" "}
-						minutes
-					</li>
-					<li>
-						Cancellation rate:{" "}
-						<strong>
-							{analytics.totalBookings > 0
-								? Math.round(
-										(analytics.cancelledBookings / analytics.totalBookings) *
-											100,
-									)
-								: 0}
-						</strong>
-						%
-					</li>
-					<li>
-						Waitlist entries: <strong>{analytics.activeWaitlistEntries}</strong>{" "}
-						active
-					</li>
+			<section className="merchant-analytics-insights" aria-labelledby="business-insights-title">
+				<p className="eyebrow">At a glance</p>
+				<h2 id="business-insights-title">Business insights</h2>
+				<ul>
+					<li>Average confirmation time: <strong>{bookingAnalytics.averageTimeToConfirmation.toFixed(1)} minutes</strong></li>
+					<li>Cancellation rate: <strong>{cancellationPercentage}%</strong></li>
+					<li>Waitlist entries: <strong>{analytics.activeWaitlistEntries} active</strong></li>
 				</ul>
 			</section>
 		</main>
