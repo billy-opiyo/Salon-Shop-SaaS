@@ -1,4 +1,5 @@
 import "../../../styles/salon-storefront.css"
+import Link from "next/link"
 import { auth } from "@/auth"
 import { prisma } from "@backend/db/prisma"
 import { MerchantWorkspaceNavigation } from "@/components/tenant/MerchantWorkspaceNavigation"
@@ -60,8 +61,24 @@ async function TenantAdminLayoutContent({
 			className="platform-site platform-site--with-mobile-actions merchant-workspace-shell"
 			style={platformThemeStyle(design.theme)}
 		>
-			<MerchantWorkspaceNavigation tenantSlug={tenantSlug.trim().toLowerCase()} access={access} />
-			{children}
+			<header className="merchant-admin-console-banner">
+				<p className="merchant-admin-console-banner__eyebrow">Admin Console</p>
+				<h1>Content, Bookings &amp; Security Management</h1>
+				<p>
+					Manage your salon storefront, bookings, content, and team from one
+					categorized control panel.
+				</p>
+				<Link href={`/${tenantSlug.trim().toLowerCase()}#home`}>
+					← Back to Homepage
+				</Link>
+			</header>
+			<div className="merchant-workspace-panel">
+				<MerchantWorkspaceNavigation
+					tenantSlug={tenantSlug.trim().toLowerCase()}
+					access={access}
+				/>
+				{children}
+			</div>
 			<PlatformMobileActions />
 		</div>
 	)

@@ -24,16 +24,16 @@ export function MerchantWorkspaceNavigation({
 	if (!access || pathname.replace(/\/$/, "") === basePath) return null
 
 	const links = [
-		{ label: "Analytics", href: `${basePath}/analytics`, visible: access.canManageBookings },
 		{ label: "Bookings", href: `${basePath}/bookings`, visible: access.canManageBookings },
-		{ label: "Schedule", href: `${basePath}/schedule`, visible: access.canManageBookings },
 		{ label: "Waitlist", href: `${basePath}/waitlist`, visible: access.canManageBookings },
-		{ label: "Services", href: `${basePath}/services`, visible: access.canManageContent },
+		{ label: "Schedule", href: `${basePath}/schedule`, visible: access.canManageBookings },
 		{ label: "Gallery", href: `${basePath}/gallery`, visible: access.canManageContent },
+		{ label: "Blog", href: `${basePath}/blog`, visible: access.canManageContent },
 		{ label: "Reviews", href: `${basePath}/reviews`, visible: access.canManageContent },
 		{ label: "Messages", href: `${basePath}/messages`, visible: access.canManageContent },
-		{ label: "Blog", href: `${basePath}/blog`, visible: access.canManageContent },
+		{ label: "Services", href: `${basePath}/services`, visible: access.canManageContent },
 		{ label: "Staff", href: `${basePath}/staff`, visible: access.canManageContent },
+		{ label: "Analytics", href: `${basePath}/analytics`, visible: access.canManageBookings },
 		{ label: "Settings", href: `${basePath}/settings`, visible: access.canManageContent },
 		{ label: "Preview", href: `${basePath}/preview`, visible: access.canManageContent },
 		{ label: "Team", href: `${basePath}/team`, visible: access.canManageAdmins },
