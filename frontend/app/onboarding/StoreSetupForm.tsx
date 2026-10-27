@@ -68,7 +68,7 @@ export function StoreSetupForm({
 				/>
 			</label>
 			<label>
-				Salon address
+				Salon web address
 				<input
 					name="slug"
 					type="text"
@@ -78,6 +78,7 @@ export function StoreSetupForm({
 					pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
 					placeholder="your-salon"
 				/>
+				<span className="form-help">Choose the short name for your public salon link. You can add the full physical address in the salon settings.</span>
 			</label>
 			<label>
 				Starting plan

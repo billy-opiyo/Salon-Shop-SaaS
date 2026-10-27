@@ -46,9 +46,6 @@ async function TenantAdminLayoutContent({
 	const access = membership
 		? {
 				isOwner,
-				canAccessDashboard:
-					isOwner || membership.canManageBookings || membership.canManageContent ||
-					membership.canManageAdmins || membership.canManageSecurity,
 				canManageBookings: isOwner || membership.canManageBookings,
 				canManageContent: isOwner || membership.canManageContent,
 				canManageAdmins: isOwner || membership.canManageAdmins,

@@ -257,7 +257,7 @@ export function PlatformAccountClient({
 						<label>New password<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><small>Use at least 12 characters.</small></label>
 						<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Updating…" : "Change password"}</button>
 					</form>
-					<button className="button button--ghost platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
+					<button className="button button--primary platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
 					<h3 className="platform-account-subheading">Recent sign-ins</h3>
 					{snapshot.loginHistory.length ? <ul className="platform-account-history">{snapshot.loginHistory.slice(0, 6).map((item) => <li key={item.id}><strong>{item.provider}</strong><span>{item.status} · {item.riskLevel ?? "standard"}</span><small>{item.country ?? "Unknown location"} · {new Date(item.createdAt).toLocaleDateString("en-KE")}</small></li>)}</ul> : <p className="platform-account-empty">Recent sign-ins will appear here.</p>}
 				</section>

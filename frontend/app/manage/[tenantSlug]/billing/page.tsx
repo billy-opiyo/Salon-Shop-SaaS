@@ -61,7 +61,6 @@ export default async function MerchantBillingPage({
 					</p>
 				</div>
 				<nav className="manage-header__actions" aria-label="Billing page navigation">
-					<Link className="button button--outline" href={`/manage/${tenantSlug}`}>Salon workspace</Link>
 					<Link className="button button--ghost" href="/account">My account</Link>
 				</nav>
 			</header>

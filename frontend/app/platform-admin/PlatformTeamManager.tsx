@@ -188,7 +188,7 @@ export function PlatformTeamManager({
 					Add team member
 				</button>
 			</div>
-			<form className="platform-team-form" onSubmit={submit}>
+			<form className="platform-team-form platform-admin-form" onSubmit={submit}>
 				<div className="platform-team-form__grid">
 					<label>Name<input name="name" value={form.name} onChange={(event) => updateField("name", event.target.value)} required maxLength={120} /></label>
 					<label>Role<input name="role" value={form.role} onChange={(event) => updateField("role", event.target.value)} required maxLength={120} /></label>

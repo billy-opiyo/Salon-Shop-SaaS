@@ -64,7 +64,7 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 	return (
 		<div className="top-stores-list">
 			{stores.map((store) => (
-				<article className="top-store" key={store.slug}>
+				<article className={`top-store${store.isDemo ? " top-store--soon" : ""}`} key={store.slug}>
 					<div className="top-store__image">
 						<Image
 							className="top-store__image-content"
@@ -77,16 +77,22 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 						/>
 					</div>
 					<div className="top-store__content">
-						<span className="eyebrow">Salon · {store.location}</span>
+						<span className="eyebrow">{store.isDemo ? "Demo salon" : "Salon"} · {store.location}</span>
 						<h3>{store.name}</h3>
 						<p>{store.tagline}</p>
-						<RatingStars
-							rating={store.rating}
-							reviewCount={store.reviewCount}
-						/>
-						<StoreTransitionLink className="top-store__link" href={store.href}>
-							Open {store.name} Salon →
-						</StoreTransitionLink>
+						{store.isDemo ? (
+							<span className="top-store__soon-label">Coming soon</span>
+						) : (
+							<>
+								<RatingStars
+									rating={store.rating}
+									reviewCount={store.reviewCount}
+								/>
+								<StoreTransitionLink className="top-store__link" href={store.href}>
+									Open {store.name} Salon →
+								</StoreTransitionLink>
+							</>
+						)}
 					</div>
 				</article>
 			))}

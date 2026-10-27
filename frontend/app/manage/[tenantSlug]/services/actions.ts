@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	MerchantServiceCatalogError,
 	createServiceForUser,
@@ -21,7 +22,7 @@ export async function updateCategoryVisibility(
 	formData: FormData,
 ): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services`))
 	const tenantSlug = formData.get("tenantSlug")
 	const categoryId = formData.get("categoryId")
 	const enabled = formData.get("enabled")
@@ -62,7 +63,7 @@ function readServiceInput(formData: FormData) {
 
 export async function createService(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services`))
 	const parsed = readServiceInput(formData)
 	if (!parsed.success) return
 	try {
@@ -76,7 +77,7 @@ export async function createService(formData: FormData): Promise<void> {
 
 export async function updateService(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services`))
 	const parsed = readServiceInput(formData)
 	if (!parsed.success || !parsed.data.serviceId) return
 	try {
@@ -93,7 +94,7 @@ export async function updateService(formData: FormData): Promise<void> {
 
 export async function deleteService(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services`))
 	const tenantSlug = formData.get("tenantSlug")
 	const serviceId = formData.get("serviceId")
 	if (typeof tenantSlug !== "string" || typeof serviceId !== "string") return
@@ -108,7 +109,7 @@ export async function deleteService(formData: FormData): Promise<void> {
 
 export async function updateServicePaymentPrice(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services`))
 	const parsed = servicePriceUpdateSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),
 		serviceId: formData.get("serviceId"),

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
+import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	createGalleryStyle,
 	deleteGalleryStyle,
@@ -15,7 +16,7 @@ import { galleryMutationSchema } from "@shared/validation/merchant"
 
 export async function updateGalleryStatus(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/gallery`))
 	const tenantSlug = formData.get("tenantSlug")
 	const galleryStyleId = formData.get("galleryStyleId")
 	const published = formData.get("published")
@@ -41,7 +42,7 @@ export async function updateGalleryStatus(formData: FormData): Promise<void> {
 
 export async function removeGalleryStyle(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/gallery`))
 	const tenantSlug = formData.get("tenantSlug")
 	const galleryStyleId = formData.get("galleryStyleId")
 	if (typeof tenantSlug !== "string" || typeof galleryStyleId !== "string")
@@ -57,7 +58,7 @@ export async function removeGalleryStyle(formData: FormData): Promise<void> {
 
 export async function addGalleryStyle(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/gallery`))
 	const parsed = galleryMutationSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),
 		styleName: formData.get("styleName"),
@@ -78,7 +79,7 @@ export async function addGalleryStyle(formData: FormData): Promise<void> {
 
 export async function editGalleryStyle(formData: FormData): Promise<void> {
 	const session = await auth()
-	if (!session?.user?.id) redirect("/login")
+	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/gallery`))
 	const id = formData.get("galleryStyleId")
 	const parsed = galleryMutationSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),

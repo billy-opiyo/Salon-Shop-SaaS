@@ -176,7 +176,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 	}
 
 	const textField = (label: string, value: string, onChange: (value: string) => void, multiline = false) => (
-		<label key={label}>
+		<label className={`platform-admin-field${multiline ? " platform-admin-field--wide" : ""}`} key={label}>
 			{label}
 			{multiline
 				? <textarea value={value} onChange={(event) => onChange(event.target.value)} />
@@ -206,7 +206,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				<h2 id="platform-storefront-title">Beauty Sphia platform pages</h2>
 				<p>{isOwner ? "Manage platform pages, pricing, billing instructions, and delegated access." : role === "STORE_EDITOR" ? "Edit public platform site content and team profiles. Pricing, billing, and support settings are restricted." : "Manage the support page, FAQs, and support contact details."}</p>
 			</div>
-			<form className="onboarding-form platform-storefront-form" onSubmit={save}>
+			<form className="onboarding-form platform-admin-form platform-storefront-form" onSubmit={save}>
 				{canEditSite && <>
 				<fieldset>
 					<legend>Branding and theme</legend>
