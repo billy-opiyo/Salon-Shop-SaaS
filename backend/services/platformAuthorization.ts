@@ -22,12 +22,12 @@ export function assertPlatformAdmin(
 	userId: string,
 	email?: string | null,
 ): void {
+	if (!isPlatformAdmin(userId, email)) throw new PlatformAuthorizationError()
+}
+
+export function isPlatformAdmin(userId: string, email?: string | null): boolean {
 	const allowedIds = configuredValues("PLATFORM_ADMIN_USER_IDS")
 	const allowedEmails = configuredValues("PLATFORM_ADMIN_EMAILS")
-	if (
-		!allowedIds.has(userId.trim().toLowerCase()) &&
-		!allowedEmails.has((email ?? "").trim().toLowerCase())
-	) {
-		throw new PlatformAuthorizationError()
-	}
+	return allowedIds.has(userId.trim().toLowerCase()) ||
+		allowedEmails.has((email ?? "").trim().toLowerCase())
 }

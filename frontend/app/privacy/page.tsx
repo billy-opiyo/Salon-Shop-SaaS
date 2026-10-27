@@ -1,31 +1,32 @@
 import Link from "next/link"
 
-export default function PrivacyPage() {
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
+
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return { title: `${design.privacyPolicy.title} | ${design.branding.name}` }
+}
+
+export default async function PrivacyPage() {
+	const design = await getPlatformStorefrontDesign()
+	const policy = design.privacyPolicy
 	return (
-		<main className="policy-page">
-			<Link className="brand-mark" href="/">
-				Beauty Sphia
-			</Link>
-			<p className="eyebrow">Platform policy</p>
-			<h1>Privacy Policy</h1>
-			<p>
-				We use account, salon, booking, and operational data to provide the
-				platform, protect accounts, and support customer workflows.
-			</p>
-			<h2>Data stewardship</h2>
-			<p>
-				Salon owners must collect and use customer information lawfully, explain
-				their own salon practices, and keep access limited to authorized team
-				members.
-			</p>
-			<h2>Security</h2>
-			<p>
-				We use authentication, authorization, rate limits, audit records, and
-				provider safeguards appropriate to the platform services enabled for a
-				workspace.
-			</p>
-			<h2>Agreement</h2>
-			<p>By creating a salon workspace, you acknowledge this privacy policy.</p>
-		</main>
+		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+			<main className="policy-page">
+				<Link className="brand-mark" href="/" aria-label={`${design.branding.name} homepage`}>
+					{design.branding.name}
+				</Link>
+				<p className="eyebrow">{policy.eyebrow}</p>
+				<h1>{policy.title}</h1>
+				<p>{policy.introduction}</p>
+				{policy.sections.map((section) => (
+					<section key={section.heading}>
+						<h2>{section.heading}</h2>
+						<p>{section.body}</p>
+					</section>
+				))}
+			</main>
+		</div>
 	)
 }

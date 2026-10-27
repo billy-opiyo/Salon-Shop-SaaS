@@ -16,15 +16,60 @@ export class PlatformAdminActionError extends Error {
 }
 
 function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign {
-	const current = value && typeof value === "object"
-		? (value as Partial<PlatformStorefrontDesign>)
-		: {}
-	const currentContent = current.content && typeof current.content === "object"
-		? current.content
-		: {}
+	const asRecord = (item: unknown): Record<string, unknown> =>
+		item && typeof item === "object" && !Array.isArray(item)
+			? (item as Record<string, unknown>)
+			: {}
+	const record = asRecord(value)
+	const storedContent = asRecord(record.content)
+	const current = asRecord("branding" in storedContent ? storedContent : record)
+	const currentContent = asRecord(current.content)
+	const currentHero = asRecord(current.homeHero)
+	const currentAbout = asRecord(current.about)
+	const currentSupport = asRecord(current.support)
+	const currentDirectory = asRecord(current.directory)
+	const currentBranding = asRecord(current.branding)
+	const currentTheme = asRecord(current.theme)
+	const currentContact = asRecord(current.contact)
+	const currentBilling = asRecord(current.billing)
+	const currentPlans = asRecord(current.plans)
+	const currentPrivacy = asRecord(current.privacyPolicy)
+	const currentTerms = asRecord(current.termsPolicy)
+	const currentCookies = asRecord(current.cookiePolicy)
+	const supportEmail = process.env.PLATFORM_SUPPORT_EMAIL?.trim() || DEFAULT_PLATFORM_STOREFRONT.contact.supportEmail
 	return {
 		...DEFAULT_PLATFORM_STOREFRONT,
 		...current,
+		logoUrl: (typeof record.logoUrl === "string" ? record.logoUrl : current.logoUrl as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.logoUrl,
+		heroDesktopUrl: (typeof record.heroDesktopUrl === "string" ? record.heroDesktopUrl : current.heroDesktopUrl as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.heroDesktopUrl,
+		heroMobileUrl: (typeof record.heroMobileUrl === "string" ? record.heroMobileUrl : current.heroMobileUrl as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.heroMobileUrl,
+		heroAlt: (typeof record.heroAlt === "string" ? record.heroAlt : current.heroAlt as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.heroAlt,
+		branding: { ...DEFAULT_PLATFORM_STOREFRONT.branding, ...currentBranding },
+		theme: { ...DEFAULT_PLATFORM_STOREFRONT.theme, ...currentTheme },
+		homeHero: {
+			...DEFAULT_PLATFORM_STOREFRONT.homeHero,
+			...currentHero,
+			benefits: Array.isArray(currentHero.benefits) && currentHero.benefits.length === 4
+				? currentHero.benefits
+				: DEFAULT_PLATFORM_STOREFRONT.homeHero.benefits,
+		},
+		about: { ...DEFAULT_PLATFORM_STOREFRONT.about, ...currentAbout },
+		support: { ...DEFAULT_PLATFORM_STOREFRONT.support, ...currentSupport },
+		directory: { ...DEFAULT_PLATFORM_STOREFRONT.directory, ...currentDirectory },
+		contact: { ...DEFAULT_PLATFORM_STOREFRONT.contact, supportEmail, ...currentContact },
+		billing: {
+			...DEFAULT_PLATFORM_STOREFRONT.billing,
+			businessShortCode: process.env.DARAJA_SHORTCODE?.trim() ?? "",
+			...currentBilling,
+		},
+		plans: {
+				starter: { ...DEFAULT_PLATFORM_STOREFRONT.plans.starter, ...asRecord(currentPlans.starter) },
+				business: { ...DEFAULT_PLATFORM_STOREFRONT.plans.business, ...asRecord(currentPlans.business) },
+				enterprise: { ...DEFAULT_PLATFORM_STOREFRONT.plans.enterprise, ...asRecord(currentPlans.enterprise) },
+		},
+		privacyPolicy: { ...DEFAULT_PLATFORM_STOREFRONT.privacyPolicy, ...currentPrivacy },
+		termsPolicy: { ...DEFAULT_PLATFORM_STOREFRONT.termsPolicy, ...currentTerms },
+		cookiePolicy: { ...DEFAULT_PLATFORM_STOREFRONT.cookiePolicy, ...currentCookies },
 		content: { ...DEFAULT_PLATFORM_STOREFRONT.content, ...currentContent },
 	}
 }
@@ -50,11 +95,37 @@ export async function updatePlatformStorefrontDesign(
 ): Promise<PlatformStorefrontDesign> {
 	const input = platformStorefrontDesignSchema.parse(rawInput)
 	const current = await getPlatformStorefrontDesign()
+	const pricingChanged = (Object.keys(input.plans) as Array<keyof typeof input.plans>).some((tier) =>
+		input.plans[tier].monthlyAmountMinor !== current.plans[tier].monthlyAmountMinor ||
+		input.plans[tier].setupFeeMinor !== current.plans[tier].setupFeeMinor,
+	)
+	const nextBilling = {
+		...input.billing,
+		priceVersion: pricingChanged
+			? `platform-${Date.now()}`
+			: current.billing.priceVersion,
+	}
 	const design = platformStorefrontDesignSchema.parse({
 		...current,
 		...input,
+		billing: nextBilling,
 		content: { ...current.content, ...input.content },
 	})
+	const storedDesign = {
+		branding: design.branding,
+		theme: design.theme,
+		homeHero: design.homeHero,
+		about: design.about,
+		support: design.support,
+		directory: design.directory,
+		contact: design.contact,
+		plans: design.plans,
+		billing: design.billing,
+		privacyPolicy: design.privacyPolicy,
+		termsPolicy: design.termsPolicy,
+		cookiePolicy: design.cookiePolicy,
+		content: design.content,
+	}
 	await prisma.$transaction([
 		prisma.platformStorefrontConfig.upsert({
 			where: { id: "default" },
@@ -64,14 +135,14 @@ export async function updatePlatformStorefrontDesign(
 				heroDesktopUrl: design.heroDesktopUrl,
 				heroMobileUrl: design.heroMobileUrl,
 				heroAlt: design.heroAlt,
-				content: design.content as unknown as Prisma.InputJsonValue,
+				content: storedDesign as unknown as Prisma.InputJsonValue,
 			},
 			update: {
 				logoUrl: design.logoUrl,
 				heroDesktopUrl: design.heroDesktopUrl,
 				heroMobileUrl: design.heroMobileUrl,
 				heroAlt: design.heroAlt,
-				content: design.content as unknown as Prisma.InputJsonValue,
+				content: storedDesign as unknown as Prisma.InputJsonValue,
 			},
 		}),
 		prisma.platformAuditLog.create({

@@ -3,30 +3,33 @@ import Link from "next/link"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
 
-export const metadata = {
-	title: "Salons | Beauty Sphia",
-		description:
-		"Explore top salons on Beauty Sphia — discover newly added, high-rated salons and step inside a live salon experience.",
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return {
+		title: `Salons | ${design.branding.name}`,
+		description: design.directory.description,
+	}
 }
 
-export default function StoresDirectoryPage() {
+export default async function StoresDirectoryPage() {
+	const design = await getPlatformStorefrontDesign()
+	const directory = design.directory
 	return (
+		<div className="platform-site" style={platformThemeStyle(design.theme)}>
 		<main id="home" className="platform-home-shell stores-directory">
-			<PlatformHeader page="stores" />
+			<PlatformHeader page="stores" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 
 			<section
 				className="platform-section platform-section--directory-hero"
 				aria-labelledby="directory-title"
 			>
 				<div className="section-heading">
-					<p className="eyebrow">The Beauty Sphia Directory</p>
-					<h1 id="directory-title">Find your next favourite salon.</h1>
-					<p>
-						Browse independent salons already running on Beauty Sphia.
-						Discover freshly launched salons and community favourites,
-						then step inside a live salon experience.
-					</p>
+					<p className="eyebrow">{directory.eyebrow}</p>
+					<h1 id="directory-title">{directory.title}</h1>
+					<p>{directory.description}</p>
 				</div>
 			</section>
 
@@ -36,24 +39,18 @@ export default function StoresDirectoryPage() {
 				aria-labelledby="top-stores-title"
 			>
 				<div className="section-heading">
-					<p className="eyebrow">Curated picks</p>
-						<h2 id="top-stores-title">Top Salons Available</h2>
-					<p>
-						Our most-loved and most recently added salons, ranked for
-						you. New salons are featured as they open their doors.
-					</p>
+					<p className="eyebrow">{directory.listEyebrow}</p>
+					<h2 id="top-stores-title">{directory.listTitle}</h2>
+					<p>{directory.listDescription}</p>
 				</div>
 				<TopStoresGrid />
 			</section>
 
 			<section className="platform-section platform-section--directory-cta">
 				<div className="directory-cta">
-					<p className="eyebrow">Own your corner of the platform</p>
-					<h2>Ready to open your own salon?</h2>
-					<p>
-						Join Royal Braids and the growing family of independent
-						salons bringing their brand online with Beauty Sphia.
-					</p>
+					<p className="eyebrow">{directory.ctaEyebrow}</p>
+					<h2>{directory.ctaTitle}</h2>
+					<p>{directory.ctaDescription}</p>
 					<div className="platform-hero__actions">
 						<Link className="button button--primary" href="/onboarding">
 							Start Your Salon
@@ -84,5 +81,6 @@ export default function StoresDirectoryPage() {
 				</Link>
 			</nav>
 		</main>
+		</div>
 	)
 }

@@ -5,11 +5,25 @@ import { useRouter } from "next/navigation"
 import { FormEvent, useState } from "react"
 
 import { createStore } from "./actions"
+import type { PlatformPlanDisplay } from "@shared/constants/platformStorefront"
+import type { PlanTier } from "@shared/types/tenant"
 
-export function StoreSetupForm() {
+export function StoreSetupForm({
+	freeUsageMonths,
+	currency,
+	plans,
+}: {
+	readonly freeUsageMonths: number
+	readonly currency: string
+	readonly plans: Readonly<Record<PlanTier, PlatformPlanDisplay>>
+}) {
 	const router = useRouter()
 	const [message, setMessage] = useState("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const formatAmount = (amountMinor: number) => new Intl.NumberFormat("en-KE", {
+		style: "currency",
+		currency,
+	}).format(amountMinor / 100)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
@@ -63,14 +77,16 @@ export function StoreSetupForm() {
 			<label>
 				Starting plan
 				<select name="planTier" defaultValue="starter">
-					<option value="starter">Starter</option>
-					<option value="business">Business</option>
-					<option value="enterprise">Enterprise</option>
+					{(["starter", "business", "enterprise"] as const).map((tier) => (
+						<option value={tier} key={tier}>
+							{plans[tier].name} · {formatAmount(plans[tier].monthlyAmountMinor)}/month · {formatAmount(plans[tier].setupFeeMinor)} setup
+						</option>
+					))}
 				</select>
 			</label>
 			<p className="form-help">
 				A one-time setup fee activates your salon. The selected plan then
-				includes six months of free usage before monthly billing begins.
+				includes {freeUsageMonths} {freeUsageMonths === 1 ? "month" : "months"} of free usage before monthly billing begins.
 			</p>
 			<div className="onboarding-form__row">
 				<label>

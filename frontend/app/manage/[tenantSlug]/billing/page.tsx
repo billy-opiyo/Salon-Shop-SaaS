@@ -2,11 +2,11 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import {
 	getBillingSnapshotForUser,
 	MerchantBillingError,
 } from "@backend/services/merchantBillingService"
-import { PLAN_PRICING } from "@shared/constants/plans"
 
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
@@ -43,7 +43,9 @@ export default async function MerchantBillingPage({
 		| "business"
 		| "enterprise"
 		| undefined
-	const pricing = planTier ? PLAN_PRICING[planTier] : null
+	const design = await getPlatformStorefrontDesign()
+	const pricing = planTier ? design.plans[planTier] : null
+	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 
 	return (
 		<main className="manage-page">
@@ -60,7 +62,7 @@ export default async function MerchantBillingPage({
 			<section className="manage-grid" aria-label="Billing summary">
 				<article className="manage-card">
 					<p className="eyebrow">Current plan</p>
-					<h2>{billing.subscription?.plan.displayName ?? "Starter"}</h2>
+					<h2>{pricing?.name ?? billing.subscription?.plan.displayName ?? "Starter"}</h2>
 					<p>
 						{pricing
 							? `${formatAmount(pricing.monthlyAmountMinor, billing.currency)} / month`
@@ -71,7 +73,7 @@ export default async function MerchantBillingPage({
 				<article className="manage-card">
 					<p className="eyebrow">Free usage and renewal</p>
 					<h2>{formatDate(billing.subscription?.trialEndsAt ?? null)}</h2>
-					<p>Six-month free usage ends, then monthly billing begins</p>
+					<p>{freeUsageLabel} of free usage ends, then monthly billing begins</p>
 					{billing.subscription?.cancelAtPeriodEnd && (
 						<p>Cancellation is scheduled for the end of the paid period.</p>
 					)}
@@ -87,10 +89,14 @@ export default async function MerchantBillingPage({
 					</h2>
 					<p>
 						Setup begins after payment. Your M-Pesa provider may charge the
-						sender a separate transaction fee. Your first six months of salon
+						sender a separate transaction fee. Your first {freeUsageLabel} of salon
 						usage are free after the one-time setup fee; recurring billing starts
 						after that period.
 					</p>
+					<p>{design.billing.paymentInstructions}</p>
+					{design.billing.businessShortCode && (
+						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
+					)}
 					<SetupPaymentForm tenantSlug={tenantSlug} />
 				</section>
 			)}
@@ -106,6 +112,10 @@ export default async function MerchantBillingPage({
 						Approve the M-Pesa STK Push to keep or restore your Beauty Sphia
 						salon.
 					</p>
+					<p>{design.billing.paymentInstructions}</p>
+					{design.billing.businessShortCode && (
+						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
+					)}
 					<SetupPaymentForm tenantSlug={tenantSlug} mode="renewal" />
 				</section>
 			)}
@@ -113,6 +123,7 @@ export default async function MerchantBillingPage({
 			<section className="manage-card" aria-labelledby="invoices-title">
 				<p className="eyebrow">Billing records</p>
 				<h2 id="invoices-title">Invoices and payment attempts</h2>
+				<p>{design.billing.receiptInstructions}</p>
 				{billing.invoices.length === 0 ? (
 					<p>No invoices yet.</p>
 				) : (

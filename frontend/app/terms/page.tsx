@@ -1,34 +1,32 @@
 import Link from "next/link"
 
-export default function TermsPage() {
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
+
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return { title: `${design.termsPolicy.title} | ${design.branding.name}` }
+}
+
+export default async function TermsPage() {
+	const design = await getPlatformStorefrontDesign()
+	const policy = design.termsPolicy
 	return (
-		<main className="policy-page">
-			<Link className="brand-mark" href="/">
-				Beauty Sphia
-			</Link>
-			<p className="eyebrow">Platform policy</p>
-			<h1>Terms of Service</h1>
-			<p>
-				These terms govern salon workspace creation, storefront publishing,
-				bookings, customer communication, and responsible use of the Beauty Sphia salon platform
-				Beauty Sphia.
-			</p>
-			<h2>Workspace responsibility</h2>
-			<p>
-				Owners are responsible for accurate salon information, lawful content,
-				customer consent, and the services offered through their storefront.
-			</p>
-			<h2>Platform use</h2>
-			<p>
-				Do not misuse the platform, attempt unauthorized access, upload harmful
-				content, or use customer information outside the purposes disclosed to
-				customers.
-			</p>
-			<h2>Agreement</h2>
-			<p>
-				By creating a salon workspace, you confirm that you have read and agree
-				to these terms.
-			</p>
-		</main>
+		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+			<main className="policy-page">
+				<Link className="brand-mark" href="/" aria-label={`${design.branding.name} homepage`}>
+					{design.branding.name}
+				</Link>
+				<p className="eyebrow">{policy.eyebrow}</p>
+				<h1>{policy.title}</h1>
+				<p>{policy.introduction}</p>
+				{policy.sections.map((section) => (
+					<section key={section.heading}>
+						<h2>{section.heading}</h2>
+						<p>{section.body}</p>
+					</section>
+				))}
+			</main>
+		</div>
 	)
 }

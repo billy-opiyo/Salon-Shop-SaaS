@@ -89,6 +89,7 @@ export interface SalonClientConfig {
 
 export interface SalonStorefrontRuntimeProps {
 	readonly tenantSlug?: string
+	readonly showAdminSearch?: boolean
 	readonly turnstileSiteKey?: string
 	readonly clientConfig: SalonClientConfig
 }
@@ -6447,6 +6448,7 @@ function bindNativeSalonInteractions(
 
 export function SalonStorefrontRuntime({
 	tenantSlug,
+	showAdminSearch = false,
 	turnstileSiteKey,
 	clientConfig,
 }: SalonStorefrontRuntimeProps) {
@@ -6576,6 +6578,9 @@ export function SalonStorefrontRuntime({
 		...gallery.map((item) => ({ label: item.styleName, description: item.serviceName ?? item.styleType, href: "#gallery", keywords: item.hairType })),
 		...testimonials.map((item) => ({ label: item.name, description: item.text, href: "#testimonials", keywords: item.role })),
 		...blogs.map((item) => ({ label: item.title, description: item.excerpt, href: item.readMoreUrl ?? "#blog", keywords: item.category })),
+		...(showAdminSearch && tenantSlug
+			? [{ label: "Salon Admin", description: "Manage this salon's bookings, team, storefront, and settings", href: `/manage/${encodeURIComponent(tenantSlug)}`, keywords: "admin dashboard management" }]
+			: []),
 	]
 	return (
 		<div className="salon-storefront-root">

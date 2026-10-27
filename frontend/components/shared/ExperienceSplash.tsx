@@ -40,6 +40,14 @@ export function ExperienceSplash({
 				body.classList.remove("splash-active", "splash-complete")
 			}
 		}
+		// Treat the splash as a one-time session entrance as soon as it starts.
+		// If the user opens login/signup mid-animation, returning to the homepage
+		// should resume the page instead of restarting the splash from zero.
+		try {
+			window.sessionStorage.setItem(SPLASH_SESSION_KEY, "true")
+		} catch {
+			// Session storage can be unavailable in restricted browser contexts.
+		}
 		const prefersReducedMotion = window.matchMedia?.(
 			"(prefers-reduced-motion: reduce)",
 		).matches

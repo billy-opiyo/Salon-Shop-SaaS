@@ -4,6 +4,7 @@ import { prisma } from "@backend/db/prisma"
 import {
 	assertTenantMembership,
 	assertTenantPermission,
+	type TenantMembershipContext,
 } from "@backend/services/authorization"
 import { listBookingsForUser } from "@backend/services/merchantBookingService"
 import { listWaitlistForUser } from "@backend/services/merchantWaitlistService"
@@ -15,6 +16,46 @@ import { listServiceCatalogForUser } from "@backend/services/merchantServiceCata
 import { getSecuritySnapshot } from "@backend/services/merchantSecurityService"
 import { listStylistsForUser } from "@backend/services/merchantStylistService"
 import { listTeamForUser } from "@backend/services/merchantTeamService"
+
+type TenantAdminMembership = Pick<
+	TenantMembershipContext,
+	| "role"
+	| "canManageAdmins"
+	| "canManageBookings"
+	| "canManageContent"
+	| "canManageSecurity"
+>
+
+function hasTenantAdminPermission(membership: TenantAdminMembership): boolean {
+	return membership.role === "OWNER" || membership.canManageAdmins ||
+		membership.canManageBookings || membership.canManageContent ||
+		membership.canManageSecurity
+}
+
+export async function hasMerchantAdminPanelAccess(
+	userId: string,
+	tenantId: string,
+): Promise<boolean> {
+	if (!process.env.DATABASE_URL?.trim()) return false
+	try {
+		const membership = await prisma.membership.findUnique({
+			where: { tenantId_userId: { tenantId, userId } },
+			select: {
+				role: true,
+				status: true,
+				canManageAdmins: true,
+				canManageBookings: true,
+				canManageContent: true,
+				canManageSecurity: true,
+			},
+		})
+		return Boolean(
+			membership?.status === "ACTIVE" && hasTenantAdminPermission(membership),
+		)
+	} catch {
+		return false
+	}
+}
 
 export class MerchantAdminSnapshotError extends Error {
 	readonly code = "MERCHANT_ADMIN_SNAPSHOT_FAILED" as const
@@ -45,13 +86,7 @@ async function getTenantIdForAdmin(userId: string, tenantSlug: string) {
 		},
 	})
 	const activeMembership = assertTenantMembership(membership, tenant.id)
-	if (
-		!activeMembership.canManageAdmins &&
-		!activeMembership.canManageBookings &&
-		!activeMembership.canManageContent &&
-		!activeMembership.canManageSecurity &&
-		activeMembership.role !== "OWNER"
-	) {
+	if (!hasTenantAdminPermission(activeMembership)) {
 		throw new MerchantAdminSnapshotError("Missing admin permissions.")
 	}
 	return tenant.id

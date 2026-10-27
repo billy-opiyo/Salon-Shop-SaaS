@@ -2,7 +2,7 @@ import "server-only"
 
 import { prisma } from "@backend/db/prisma"
 import { requestInvoicePayment } from "@backend/services/darajaPaymentService"
-import { PLAN_PRICING } from "@shared/constants/plans"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import type { PlanTier } from "@shared/types/tenant"
 
 export class MerchantBillingError extends Error {
@@ -108,7 +108,12 @@ async function ownerBillingContext(userId: string, tenantSlug: string) {
 		select: {
 			id: true,
 			subscription: {
-				select: { id: true, status: true, plan: { select: { tier: true } } },
+				select: {
+					id: true,
+					status: true,
+					agreedMonthlyAmountMinor: true,
+					plan: { select: { tier: true } },
+				},
 			},
 			memberships: {
 				where: { userId, status: "ACTIVE" },
@@ -167,6 +172,7 @@ export async function changePlanForUser(
 	const subscription = tenant.subscription
 	if (!subscription)
 		throw new MerchantBillingError("Subscription is not configured.")
+	const platformDesign = await getPlatformStorefrontDesign()
 	const nextPlan = await prisma.plan.findUnique({
 		where: {
 			tier: tier.toUpperCase() as "STARTER" | "BUSINESS" | "ENTERPRISE",
@@ -175,8 +181,9 @@ export async function changePlanForUser(
 	if (!nextPlan)
 		throw new MerchantBillingError("The selected plan is unavailable.")
 	const currentTier = subscription.plan.tier.toLowerCase() as PlanTier
-	const currentAmount = PLAN_PRICING[currentTier].monthlyAmountMinor
-	const nextAmount = PLAN_PRICING[tier].monthlyAmountMinor
+	const currentAmount = subscription.agreedMonthlyAmountMinor ??
+		platformDesign.plans[currentTier].monthlyAmountMinor
+	const nextAmount = platformDesign.plans[tier].monthlyAmountMinor
 	if (nextAmount <= currentAmount) {
 		return prisma.subscription.update({
 			where: { id: subscription.id },
@@ -207,7 +214,7 @@ export async function changePlanForUser(
 				kind: "plan_upgrade",
 				status: "pending",
 				amountMinor: nextAmount - currentAmount,
-				currency: "KES",
+				currency: platformDesign.billing.currency,
 				description: "Beauty Sphia plan upgrade adjustment",
 				dueAt: now,
 			},
