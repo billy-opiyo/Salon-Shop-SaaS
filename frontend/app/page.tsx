@@ -50,7 +50,14 @@ function formatPlanAmount(amountMinor: number, currency: string): string {
 
 export default async function PlatformHome() {
 	const requestHost = getRequestHost(await headers())
-	if (requestHost) {
+	const platformHosts = new Set([
+		"localhost",
+		"127.0.0.1",
+		"beauty-sphia-staging.vercel.app",
+		process.env.VERCEL_URL?.toLowerCase(),
+		process.env.VERCEL_PROJECT_PRODUCTION_URL?.toLowerCase(),
+	].filter((host): host is string => Boolean(host)))
+	if (requestHost && !platformHosts.has(requestHost)) {
 		const customTenant = await getTenantStorefrontByHost(requestHost)
 		if (customTenant) return renderTenantStorefront(customTenant.slug)
 	}

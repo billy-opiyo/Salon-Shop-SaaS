@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
@@ -17,6 +18,7 @@ import { PlatformAdminAction } from "./PlatformAdminAction"
 import { PlatformTeamManager } from "./PlatformTeamManager"
 import { PlatformStorefrontManager } from "./PlatformStorefrontManager"
 import { PlatformRoleManager } from "./PlatformRoleManager"
+import { PlatformBackToTop } from "@/components/shared/PlatformBackToTop"
 import "./platform-admin.css"
 
 function formatDate(value: Date | null): string {
@@ -85,6 +87,7 @@ export default async function PlatformAdminPage() {
 	] as const : []
 
 	return (
+		<>
 		<main className="platform-home-shell platform-admin-page">
 			<header className="platform-admin-header">
 				<div>
@@ -95,6 +98,9 @@ export default async function PlatformAdminPage() {
 					</p>
 				</div>
 				<div className="platform-admin-header__meta">
+					<Link className="button button--outline platform-admin-home-link" href="/" prefetch>
+						Platform Home
+					</Link>
 					<span>Signed in as {session.user.email}</span>
 					{snapshot && <span>Updated {snapshot.generatedAt.toLocaleTimeString("en-KE")}</span>}
 				</div>
@@ -299,5 +305,7 @@ export default async function PlatformAdminPage() {
 			{role !== "STORE_SUPPORT" && <PlatformTeamManager initialMembers={teamMembers} />}
 			{role === "OWNER" && <PlatformRoleManager initialAssignments={roleAssignments} />}
 		</main>
+		<PlatformBackToTop />
+		</>
 	)
 }

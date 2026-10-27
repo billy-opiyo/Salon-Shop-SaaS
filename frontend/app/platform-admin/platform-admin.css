@@ -59,6 +59,19 @@
 	overflow-wrap: anywhere;
 }
 
+.platform-admin-home-link {
+	justify-self: end;
+	width: fit-content;
+	max-width: 100%;
+	white-space: nowrap;
+}
+
+.platform-admin-page :is(a.button, button.button) {
+	width: fit-content;
+	max-width: 100%;
+	justify-self: start;
+}
+
 .platform-admin-metrics {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -121,6 +134,17 @@
 .platform-admin-panel > .section-heading {
 	max-width: none;
 	margin: 0 0 1.1rem;
+}
+
+.platform-admin-panel[aria-labelledby="stores-title"] > .section-heading {
+	align-items: flex-start;
+	justify-content: flex-start;
+	text-align: left;
+}
+
+.platform-admin-panel[aria-labelledby="stores-title"] > .section-heading > div {
+	width: 100%;
+	text-align: left;
 }
 
 .platform-admin-panel .section-heading .eyebrow,

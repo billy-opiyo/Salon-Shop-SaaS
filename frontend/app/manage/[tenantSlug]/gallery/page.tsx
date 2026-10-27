@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
@@ -45,10 +46,14 @@ export default async function MerchantGalleryPage({
 			</header>
 			<section className="manage-store-list" aria-label="Gallery styles">
 				{styles.length === 0 ? (
-					<p className="manage-empty">
-						No gallery styles have been added yet. Media upload configuration is
-						still pending.
-					</p>
+					<>
+						<p className="manage-empty">
+							No gallery styles yet. Add your first salon look using the form below.
+						</p>
+						<Link className="button button--outline button--small" href="#add-gallery-style">
+							Add your first style
+						</Link>
+					</>
 				) : (
 					styles.map((style) => (
 						<article className="manage-store" key={style.id}>
@@ -154,6 +159,7 @@ export default async function MerchantGalleryPage({
 				)}
 			</section>
 			<form
+				id="add-gallery-style"
 				className="onboarding-form"
 				action={addGalleryStyle}
 				aria-label="Add gallery style"

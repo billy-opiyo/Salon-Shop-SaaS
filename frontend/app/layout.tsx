@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import "../styles/not-found.css"
 import { OfflineNotice } from "@/components/shared/OfflineNotice"
@@ -14,6 +14,14 @@ export async function generateMetadata(): Promise<Metadata> {
 			shortcut: design.logoUrl,
 			apple: design.logoUrl,
 		},
+	}
+}
+
+export async function generateViewport(): Promise<Viewport> {
+	const design = await getPlatformStorefrontDesign()
+	return {
+		colorScheme: "dark",
+		themeColor: design.theme.background,
 	}
 }
 

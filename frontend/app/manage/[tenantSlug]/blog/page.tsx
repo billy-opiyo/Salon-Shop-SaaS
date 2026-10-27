@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
@@ -36,10 +37,14 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 			</header>
 			<section className="manage-store-list" aria-label="Blog posts">
 				{posts.length === 0 ? (
-					<p className="manage-empty">
-						No blog posts have been added. Media upload configuration is still
-						pending.
-					</p>
+					<>
+						<p className="manage-empty">
+							No blog posts yet. Add your first salon story using the form below.
+						</p>
+						<Link className="button button--outline button--small" href="#add-blog-post">
+							Write your first post
+						</Link>
+					</>
 				) : (
 					posts.map((post) => (
 						<article className="manage-store" key={post.id}>
@@ -159,6 +164,7 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 				)}
 			</section>
 			<form
+				id="add-blog-post"
 				className="onboarding-form"
 				action={addBlog}
 				aria-label="Add blog post"
