@@ -114,7 +114,7 @@ export function LoginForm({
 			)}
 			<div className="auth-links">
 				<Link href={`/signup?callbackUrl=${encodeURIComponent(getSafeAuthCallbackUrl(callbackUrl))}`} replace>Don&apos;t have an account? Register</Link>
-				<Link href="/reset-password">Forgot Password?</Link>
+				<Link href={`/reset-password?callbackUrl=${encodeURIComponent(getSafeAuthCallbackUrl(callbackUrl))}`}>Forgot Password?</Link>
 				<Link href="/">Continue as Guest</Link>
 			</div>
 		</form>

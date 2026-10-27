@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { signIn, signOut } from "next-auth/react"
 
 import { registerAccount } from "@/app/signup/actions"
@@ -5962,8 +5961,11 @@ function bindNativeContentControls(): () => void {
 			const viewAll = document.getElementById("viewAllBlogsBtn")
 			const viewLess = document.getElementById("viewLessBlogsBtn")
 			const controls = document.getElementById("blogToggleControls")
+			const scrollControls = document.getElementById("blogScrollControls")
 			if (controls)
 				controls.style.display = blogCards.length > 3 ? "flex" : "none"
+			if (scrollControls)
+				scrollControls.style.display = blogCards.length > 0 ? "flex" : "none"
 			viewAll?.classList.toggle("hidden", showAllBlogs || blogCards.length <= 3)
 			viewLess?.classList.toggle(
 				"hidden",
@@ -6458,7 +6460,6 @@ export function SalonStorefrontRuntime({
 	turnstileSiteKey,
 	clientConfig,
 }: SalonStorefrontRuntimeProps) {
-	const router = useRouter()
 	useEffect(() => {
 		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
 		applyNativeClientConfig(clientConfig)
@@ -6482,39 +6483,7 @@ export function SalonStorefrontRuntime({
 		)
 		const removeAccount = bindAccountMutationAdapter(tenantSlug ?? "")
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
-		const markFormDirty = (event: Event): void => {
-			const target = event.target
-			if (target instanceof Element)
-				target.closest("form")?.setAttribute("data-saas-refresh-dirty", "true")
-		}
-		const clearFormDirty = (event: Event): void => {
-			const form = event.target
-			if (form instanceof HTMLFormElement)
-				window.setTimeout(
-					() => form.removeAttribute("data-saas-refresh-dirty"),
-					0,
-				)
-		}
-		const refreshPublicData = (): void => {
-			if (
-				document.visibilityState !== "visible" ||
-				document.querySelector('[data-saas-refresh-dirty="true"]') ||
-				document.querySelector('[aria-modal="true"][aria-hidden="false"]')
-			)
-				return
-			router.refresh()
-		}
-		document.addEventListener("input", markFormDirty, true)
-		document.addEventListener("change", markFormDirty, true)
-		document.addEventListener("reset", clearFormDirty, true)
-		const publicRefreshTimer = window.setInterval(refreshPublicData, 60_000)
-		document.addEventListener("visibilitychange", refreshPublicData)
 		return () => {
-			window.clearInterval(publicRefreshTimer)
-			document.removeEventListener("input", markFormDirty, true)
-			document.removeEventListener("change", markFormDirty, true)
-			document.removeEventListener("reset", clearFormDirty, true)
-			document.removeEventListener("visibilitychange", refreshPublicData)
 			removeSplash()
 			removeImageSizeGuard()
 			removeInteractions()
@@ -6526,7 +6495,7 @@ export function SalonStorefrontRuntime({
 			removeAccount()
 			removeNavigation()
 		}
-	}, [clientConfig, router, tenantSlug, turnstileSiteKey])
+	}, [clientConfig, tenantSlug, turnstileSiteKey])
 
 	const services = clientConfig.catalog?.services ?? []
 	const stylists = clientConfig.catalog?.stylists ?? []
