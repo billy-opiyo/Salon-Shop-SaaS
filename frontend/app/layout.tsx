@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import "../styles/not-found.css"
+import { OfflineNotice } from "@/components/shared/OfflineNotice"
 
 export const metadata: Metadata = {
 	title: "Beauty Sphia",
@@ -35,7 +36,10 @@ export default function RootLayout({
 					href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 				/>
 			</head>
-			<body>{children}</body>
+			<body>
+				{children}
+				<OfflineNotice />
+			</body>
 		</html>
 	)
 }
