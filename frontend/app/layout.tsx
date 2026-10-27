@@ -2,21 +2,19 @@ import type { Metadata } from "next"
 import "./globals.css"
 import "../styles/not-found.css"
 import { OfflineNotice } from "@/components/shared/OfflineNotice"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 
-export const metadata: Metadata = {
-	title: "Beauty Sphia",
-	description: "Create and run a beautiful salon storefront from one platform.",
-	icons: {
-		icon: {
-			url: "/platform/Beauty Sphia logo.png",
-			type: "image/png",
+export async function generateMetadata(): Promise<Metadata> {
+	const design = await getPlatformStorefrontDesign()
+	return {
+		title: design.branding.name,
+		description: design.homeHero.description,
+		icons: {
+			icon: design.logoUrl,
+			shortcut: design.logoUrl,
+			apple: design.logoUrl,
 		},
-		shortcut: {
-			url: "/platform/Beauty Sphia logo.png",
-			type: "image/png",
-		},
-		apple: "/platform/Beauty Sphia logo.png",
-	},
+	}
 }
 
 export default function RootLayout({

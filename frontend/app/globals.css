@@ -4569,7 +4569,7 @@ html.splash-active .splash-handwriting-letter {
 	box-shadow: 0 8px 25px rgba(31, 157, 79, .28);
 }
 
-.platform-floating-whatsapp i { font-size: 23px; line-height: 1; }
+.platform-floating-whatsapp i { color: #fff; font-size: 23px; line-height: 1; }
 
 .platform-floating-whatsapp:hover,
 .platform-floating-whatsapp:focus-visible {
@@ -4705,6 +4705,163 @@ html.splash-active .splash-handwriting-letter {
 	opacity: .75;
 }
 
+.platform-site {
+	--gold-glow: color-mix(in srgb, var(--gold) 20%, transparent);
+	--primary-soft: color-mix(in srgb, var(--gold) 14%, transparent);
+	--primary-border: color-mix(in srgb, var(--gold-soft) 38%, transparent);
+	--text-primary: var(--foreground);
+	--text-secondary: var(--muted);
+	--platform-ivory: var(--foreground);
+	min-height: 100vh;
+	background: linear-gradient(135deg, var(--background), color-mix(in srgb, var(--surface) 36%, var(--background)) 52%, var(--background));
+	color: var(--foreground);
+}
+
+.platform-site .platform-hero--editorial {
+	border-color: var(--glass-border, var(--line));
+	background:
+		radial-gradient(ellipse at 78% 18%, color-mix(in srgb, var(--gold) 20%, transparent), transparent 36%),
+		linear-gradient(125deg, color-mix(in srgb, var(--surface) 88%, var(--background)), color-mix(in srgb, var(--background) 94%, transparent) 53%, color-mix(in srgb, var(--gold-dark) 28%, var(--background)));
+}
+
+.platform-site .platform-hero__eyebrow,
+.platform-site .platform-hero__benefits article > span,
+.platform-site .platform-section .eyebrow,
+.platform-site .platform-home-shell .eyebrow,
+.platform-site .brand-mark__tagline,
+.platform-site .brand-mark__s svg {
+	color: var(--gold-soft);
+	stroke: var(--gold-soft);
+}
+
+.platform-site .platform-hero__eyebrow,
+.platform-site .platform-hero__benefits article,
+.platform-site .platform-section {
+	border-color: color-mix(in srgb, var(--gold-soft) 22%, transparent);
+}
+
+.platform-site .platform-hero--editorial h1,
+.platform-site .platform-hero__benefits h2,
+.platform-site .platform-showcase .showcase-copy h2,
+.platform-site .platform-section .section-heading h2,
+.platform-site .platform-about-page h1,
+.platform-site .platform-about-page h2,
+.platform-site .platform-support-page h1,
+.platform-site .platform-support-page h2,
+.platform-site .directory-cta h2,
+.platform-site .platform-footer__title {
+	color: var(--foreground);
+}
+
+.platform-site .platform-hero--editorial h1 span,
+.platform-site .plan-card__price,
+.platform-site .plan-card__setup-amount,
+.platform-site .plan-card__capabilities li span {
+	color: var(--gold-soft);
+}
+
+.platform-site .platform-hero__description,
+.platform-site .platform-hero__benefits p,
+.platform-site .platform-showcase .showcase-copy > p,
+.platform-site .platform-section .section-heading > p:last-child {
+	color: var(--muted);
+}
+
+.platform-site .platform-hero__benefits article,
+.platform-site .platform-home-shell .plan-card,
+.platform-site .platform-support-grid article,
+.platform-site .platform-home-shell .contact-grid > :last-child {
+	border-color: color-mix(in srgb, var(--gold-soft) 24%, transparent);
+	background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.platform-site .platform-home-shell .button--primary,
+.platform-site .platform-home-shell .button--primary:link,
+.platform-site .platform-home-shell .button--primary:visited {
+	border-color: var(--gold);
+	background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+	color: var(--background);
+}
+
+.platform-site .platform-home-shell .button--outline,
+.platform-site .platform-home-shell .button--ghost {
+	border-color: color-mix(in srgb, var(--gold-soft) 46%, transparent);
+	color: var(--gold-soft);
+}
+
+.platform-site .platform-footer {
+	border-top-color: color-mix(in srgb, var(--gold-soft) 22%, transparent);
+	background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, transparent), var(--background));
+}
+
+.platform-site .policy-page {
+	border-color: color-mix(in srgb, var(--gold) 34%, transparent);
+	background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--background) 90%, transparent));
+	color: var(--foreground);
+}
+
+.platform-hero__art {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	display: block;
+	overflow: hidden;
+	opacity: .24;
+	pointer-events: none;
+}
+
+.platform-hero__art::after {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, var(--background) 0%, color-mix(in srgb, var(--background) 75%, transparent) 42%, color-mix(in srgb, var(--background) 24%, transparent));
+	content: "";
+}
+
+.platform-hero__art img {
+	object-fit: cover;
+	object-position: center 42%;
+}
+
+.platform-storefront-theme-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	gap: .85rem;
+}
+
+.platform-storefront-theme-grid label {
+	display: grid;
+	gap: .4rem;
+	text-transform: capitalize;
+}
+
+.platform-storefront-theme-grid input[type="color"] {
+	width: 100%;
+	min-height: 2.8rem;
+	padding: .25rem;
+	border: 1px solid var(--line);
+	border-radius: .55rem;
+	background: var(--surface);
+}
+
+.platform-contact-details {
+	display: grid;
+	justify-items: start;
+	gap: .55rem;
+	margin-top: 1.25rem;
+}
+
+.platform-contact-details a {
+	color: var(--gold-soft);
+	font-weight: 600;
+}
+
+.platform-contact-details p { margin: 0; color: var(--muted); }
+
+@media (max-width: 700px) {
+	.platform-hero__art { opacity: .16; }
+	.platform-hero__art::after { background: linear-gradient(180deg, color-mix(in srgb, var(--background) 74%, transparent), var(--background)); }
+}
+
 
 .platform-hero__audience {
 	margin: -.65rem 0 1.35rem;
@@ -4797,4 +4954,69 @@ html.splash-active .splash-handwriting-letter {
 .platform-account__menu button:hover {
 	background: rgba(215,168,79,.14);
 	color: #fff1cc;
+}
+
+.platform-support-faq {
+	max-width: 1120px;
+}
+
+.platform-support-faq__list {
+	display: grid;
+	gap: .75rem;
+	max-width: 920px;
+	margin: 1.5rem auto 0;
+}
+
+.platform-support-faq__item {
+	border: 1px solid var(--line);
+	border-radius: 1rem;
+	background: color-mix(in srgb, var(--surface) 88%, transparent);
+	box-shadow: 0 .65rem 1.8rem rgba(0, 0, 0, .16);
+}
+
+.platform-support-faq__item summary {
+	display: flex;
+	min-height: 3.8rem;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1rem 1.2rem;
+	color: var(--foreground);
+	font-weight: 700;
+	line-height: 1.5;
+	list-style: none;
+	cursor: pointer;
+}
+
+.platform-support-faq__item summary::-webkit-details-marker {
+	display: none;
+}
+
+.platform-support-faq__item summary span::before {
+	content: "+";
+	display: grid;
+	width: 1.8rem;
+	height: 1.8rem;
+	place-items: center;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	color: var(--gold-soft);
+	font-size: 1.2rem;
+}
+
+.platform-support-faq__item[open] summary span::before {
+	content: "−";
+}
+
+.platform-support-faq__item summary:focus-visible {
+	border-radius: 1rem;
+	outline: 2px solid var(--gold);
+	outline-offset: 3px;
+}
+
+.platform-support-faq__item > p {
+	margin: 0;
+	padding: 0 1.2rem 1.2rem;
+	color: var(--muted);
+	line-height: 1.7;
 }

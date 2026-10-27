@@ -6,6 +6,7 @@ import {
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { normalizeKenyanMpesaPhone } from "@shared/validation/mpesa"
 
 type DarajaTokenResponse = { access_token?: string }
@@ -56,15 +57,44 @@ async function getAccessToken(): Promise<string> {
 	return data.access_token
 }
 
-function stkPassword(timestamp: string): string {
-	const shortCode = env("DARAJA_SHORTCODE")
+function stkPassword(timestamp: string, shortCode = env("DARAJA_SHORTCODE")): string {
 	const passkey = env("DARAJA_PASSKEY")
 	if (!shortCode || !passkey || !env("DARAJA_CALLBACK_URL"))
 		throw new Error("Daraja shortcode, passkey, and callback URL are required.")
 	return Buffer.from(`${shortCode}${passkey}${timestamp}`).toString("base64")
 }
 
-export async function verifyDarajaPayment(checkoutRequestId: string): Promise<void> {
+function stkAccountReference(prefix: string, invoiceNumber: string): string {
+	const safePrefix = prefix.replace(/[^a-z0-9]/gi, "").slice(0, 5) || "BS"
+	const suffixLength = Math.max(1, 12 - safePrefix.length)
+	const suffix = invoiceNumber.replace(/[^a-z0-9]/gi, "").slice(-suffixLength)
+	return `${safePrefix}${suffix}`.slice(0, 12)
+}
+
+async function platformPaymentSettings() {
+	const billing = (await getPlatformStorefrontDesign()).billing
+	const receivingNumber = billing.businessShortCode.trim() ||
+		(billing.paymentMode === "paybill-stk" ? env("DARAJA_SHORTCODE") : "")
+	const shortCode = billing.paymentMode === "till-stk"
+		? env("DARAJA_SHORTCODE")
+		: receivingNumber
+	if (!shortCode || !receivingNumber)
+		throw new Error("The platform M-Pesa Paybill or Till number is not configured.")
+	return {
+		shortCode,
+		partyB: receivingNumber,
+		accountReferencePrefix: billing.accountReferencePrefix,
+		transactionType:
+			billing.paymentMode === "till-stk"
+				? "CustomerBuyGoodsOnline"
+				: "CustomerPayBillOnline",
+	}
+}
+
+export async function verifyDarajaPayment(
+	checkoutRequestId: string,
+	shortCode = env("DARAJA_SHORTCODE"),
+): Promise<void> {
 	const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14)
 	const response = await fetch(
 		`${darajaBaseUrl()}/mpesa/stkpushquery/v1/query`,
@@ -75,8 +105,8 @@ export async function verifyDarajaPayment(checkoutRequestId: string): Promise<vo
 				"content-type": "application/json",
 			},
 			body: JSON.stringify({
-				BusinessShortCode: env("DARAJA_SHORTCODE"),
-				Password: stkPassword(timestamp),
+				BusinessShortCode: shortCode,
+				Password: stkPassword(timestamp, shortCode),
 				Timestamp: timestamp,
 				CheckoutRequestID: checkoutRequestId,
 			}),
@@ -155,6 +185,7 @@ export async function requestInvoicePayment(
 	})
 	if (existingAttempt)
 		return { status: "pending" as const, attemptId: existingAttempt.id }
+	const paymentSettings = await platformPaymentSettings()
 	const attempt = await prisma.paymentAttempt.create({
 		data: { invoiceId, phoneNumber },
 	})
@@ -169,17 +200,20 @@ export async function requestInvoicePayment(
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					BusinessShortCode: env("DARAJA_SHORTCODE"),
-					Password: stkPassword(timestamp),
+					BusinessShortCode: paymentSettings.shortCode,
+					Password: stkPassword(timestamp, paymentSettings.shortCode),
 					Timestamp: timestamp,
-					TransactionType: "CustomerPayBillOnline",
+					TransactionType: paymentSettings.transactionType,
 					Amount: Math.ceil(invoice.amountMinor / 100),
 					PartyA: phoneNumber,
-					PartyB: env("DARAJA_SHORTCODE"),
+					PartyB: paymentSettings.partyB,
 					PhoneNumber: phoneNumber,
 					CallBackURL: env("DARAJA_CALLBACK_URL"),
-					AccountReference: invoice.invoiceNumber,
-					TransactionDesc: transactionDescription,
+					AccountReference: stkAccountReference(
+						paymentSettings.accountReferencePrefix,
+						invoice.invoiceNumber,
+					),
+					TransactionDesc: transactionDescription.slice(0, 13),
 				}),
 			},
 		)
@@ -269,6 +303,7 @@ export async function requestSetupPayment(
 	})
 	if (existingAttempt)
 		return { status: "pending", attemptId: existingAttempt.id }
+	const paymentSettings = await platformPaymentSettings()
 
 	const attempt = await prisma.paymentAttempt.create({
 		data: { invoiceId: invoice.id, phoneNumber },
@@ -284,17 +319,20 @@ export async function requestSetupPayment(
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					BusinessShortCode: env("DARAJA_SHORTCODE"),
-					Password: stkPassword(timestamp),
+					BusinessShortCode: paymentSettings.shortCode,
+					Password: stkPassword(timestamp, paymentSettings.shortCode),
 					Timestamp: timestamp,
-					TransactionType: "CustomerPayBillOnline",
+					TransactionType: paymentSettings.transactionType,
 					Amount: Math.ceil(invoice.amountMinor / 100),
 					PartyA: phoneNumber,
-					PartyB: env("DARAJA_SHORTCODE"),
+					PartyB: paymentSettings.partyB,
 					PhoneNumber: phoneNumber,
 					CallBackURL: env("DARAJA_CALLBACK_URL"),
-					AccountReference: invoice.invoiceNumber,
-					TransactionDesc: "Beauty Sphia salon store setup fee",
+					AccountReference: stkAccountReference(
+						paymentSettings.accountReferencePrefix,
+						invoice.invoiceNumber,
+					),
+					TransactionDesc: "Salon setup",
 				}),
 			},
 		)
@@ -383,8 +421,10 @@ export async function handleDarajaCallback(payload: unknown) {
 				"Daraja callback phone number does not match the payment.",
 			)
 		}
-		await verifyDarajaPayment(result.CheckoutRequestID)
+		const paymentSettings = await platformPaymentSettings()
+		await verifyDarajaPayment(result.CheckoutRequestID, paymentSettings.shortCode)
 	}
+	const platformDesign = paid ? await getPlatformStorefrontDesign() : null
 	const processed = await prisma.$transaction(async (transaction) => {
 		const claimed = await transaction.paymentAttempt.updateMany({
 			where: { id: attempt.id, status: "pending" },
@@ -421,7 +461,7 @@ export async function handleDarajaCallback(payload: unknown) {
 				const pendingPlan = subscription?.pendingPlanTier
 					? await transaction.plan.findUnique({
 							where: { tier: subscription.pendingPlanTier },
-							select: { id: true },
+							select: { id: true, tier: true },
 						})
 					: null
 				await transaction.subscription.update({
@@ -436,6 +476,10 @@ export async function handleDarajaCallback(payload: unknown) {
 							? {
 									planId: pendingPlan.id,
 									pendingPlanTier: null,
+									agreedMonthlyAmountMinor:
+										platformDesign?.plans[pendingPlan.tier.toLowerCase() as "starter" | "business" | "enterprise"].monthlyAmountMinor,
+									priceVersion: platformDesign?.billing.priceVersion,
+									priceChangeEffectiveAt: null,
 								}
 							: {}),
 					},

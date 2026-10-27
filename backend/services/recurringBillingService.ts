@@ -2,11 +2,8 @@ import "server-only"
 
 import { prisma } from "@backend/db/prisma"
 import { requestInvoicePayment } from "@backend/services/darajaPaymentService"
-import {
-	BILLING_POLICY,
-	CURRENT_PRICE_VERSION,
-	PLAN_PRICING,
-} from "@shared/constants/plans"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { BILLING_POLICY } from "@shared/constants/plans"
 import type { PlanTier } from "@shared/types/tenant"
 
 function invoiceNumber(subscriptionId: string, periodEnd: Date): string {
@@ -14,6 +11,7 @@ function invoiceNumber(subscriptionId: string, periodEnd: Date): string {
 }
 
 export async function createDueRenewalInvoices(now = new Date()) {
+	const platformDesign = await getPlatformStorefrontDesign()
 	const cancellations = await prisma.subscription.findMany({
 		where: {
 			cancelAtPeriodEnd: true,
@@ -65,11 +63,11 @@ export async function createDueRenewalInvoices(now = new Date()) {
 		const tier = (
 			subscription.pendingPlanTier ?? subscription.plan.tier
 		).toLowerCase() as PlanTier
-		const pricing = PLAN_PRICING[tier]
+		const pricing = platformDesign.plans[tier]
 		if (
 			subscription.agreedMonthlyAmountMinor !== null &&
 			subscription.agreedMonthlyAmountMinor !== pricing.monthlyAmountMinor &&
-			subscription.priceVersion !== CURRENT_PRICE_VERSION
+			subscription.priceVersion !== platformDesign.billing.priceVersion
 		) {
 			if (!subscription.priceChangeEffectiveAt) {
 				await prisma.subscription.update({
@@ -102,7 +100,7 @@ export async function createDueRenewalInvoices(now = new Date()) {
 					invoiceNumber: number,
 					kind: "monthly",
 					amountMinor: pricing.monthlyAmountMinor,
-					currency: "KES",
+					currency: platformDesign.billing.currency,
 					description: "Beauty Sphia monthly subscription",
 					dueAt: now,
 				},
@@ -112,7 +110,7 @@ export async function createDueRenewalInvoices(now = new Date()) {
 				data: {
 					status: "payment_due",
 					agreedMonthlyAmountMinor: pricing.monthlyAmountMinor,
-					priceVersion: CURRENT_PRICE_VERSION,
+					priceVersion: platformDesign.billing.priceVersion,
 					priceChangeEffectiveAt: null,
 				},
 			})

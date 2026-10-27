@@ -3,16 +3,14 @@ import "server-only"
 import { Prisma, TenantStatus } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
 import {
-	CURRENT_PRICE_VERSION,
-	BILLING_POLICY,
 	addCalendarMonths,
 	PLAN_ENTITLEMENTS,
-	PLAN_PRICING,
 } from "@shared/constants/plans"
 import {
 	DEFAULT_SALON_CATEGORIES,
@@ -39,6 +37,8 @@ export async function provisionTenant(
 ) {
 	const input = createTenantSchema.parse(rawInput)
 	const entitlement = PLAN_ENTITLEMENTS[input.planTier]
+	const platformDesign = await getPlatformStorefrontDesign()
+	const pricing = platformDesign.plans[input.planTier]
 
 	try {
 		return await prisma.$transaction(async (transaction) => {
@@ -51,8 +51,7 @@ export async function provisionTenant(
 						| "ENTERPRISE",
 				},
 				update: {
-					displayName:
-						input.planTier[0].toUpperCase() + input.planTier.slice(1),
+					displayName: platformDesign.plans[input.planTier].name,
 					entitlements: entitlement as unknown as Prisma.InputJsonValue,
 				},
 				create: {
@@ -60,8 +59,7 @@ export async function provisionTenant(
 						| "STARTER"
 						| "BUSINESS"
 						| "ENTERPRISE",
-					displayName:
-						input.planTier[0].toUpperCase() + input.planTier.slice(1),
+					displayName: platformDesign.plans[input.planTier].name,
 					entitlements: entitlement as unknown as Prisma.InputJsonValue,
 				},
 			})
@@ -103,9 +101,8 @@ export async function provisionTenant(
 						create: {
 							planId: plan.id,
 							status: "setup_payment_required",
-							agreedMonthlyAmountMinor:
-								PLAN_PRICING[input.planTier].monthlyAmountMinor,
-							priceVersion: CURRENT_PRICE_VERSION,
+							agreedMonthlyAmountMinor: pricing.monthlyAmountMinor,
+							priceVersion: platformDesign.billing.priceVersion,
 						},
 					},
 					categories: {
@@ -128,8 +125,8 @@ export async function provisionTenant(
 						create: {
 							invoiceNumber: `BS-${now.getTime()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
 							kind: "setup",
-							amountMinor: PLAN_PRICING[input.planTier].setupFeeMinor,
-							currency: input.currency,
+							amountMinor: pricing.setupFeeMinor,
+							currency: platformDesign.billing.currency,
 							description: "Beauty Sphia salon store setup fee",
 						},
 					},
@@ -219,6 +216,7 @@ export async function publishTenantForUser(userId: string, tenantId: string) {
 			"The setup fee must be paid before this store can be activated.",
 		)
 	const now = new Date()
+	const freeUsageMonths = (await getPlatformStorefrontDesign()).billing.freeUsageMonths
 	const result = await prisma.$transaction(async (transaction) => {
 		const tenantUpdate = await transaction.tenant.updateMany({
 			where: { id: tenantId, status: "DRAFT" },
@@ -231,9 +229,9 @@ export async function publishTenantForUser(userId: string, tenantId: string) {
 				status: "trialing",
 				trialConsumedAt: now,
 				trialStartsAt: now,
-				trialEndsAt: addCalendarMonths(now, BILLING_POLICY.freeUsageMonths),
+				trialEndsAt: addCalendarMonths(now, freeUsageMonths),
 				activatedAt: now,
-				currentPeriodEnd: addCalendarMonths(now, BILLING_POLICY.freeUsageMonths),
+				currentPeriodEnd: addCalendarMonths(now, freeUsageMonths),
 			},
 		})
 		return true

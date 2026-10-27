@@ -2,27 +2,49 @@ import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
 
-export const metadata = {
-	title: "Salon Owner Support | Beauty Sphia",
-	description: "Help for salon owners creating and operating Beauty Sphia salons.",
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return {
+		title: `Salon Owner Support | ${design.branding.name}`,
+		description: design.support.description,
+	}
 }
 
-export default function SupportPage() {
-	const supportEmail = process.env.PLATFORM_SUPPORT_EMAIL?.trim() || "support@beautysphia.com"
+export default async function SupportPage() {
+	const design = await getPlatformStorefrontDesign()
+	const support = design.support
+	const contact = design.contact
 	return (
-		<>
+		<div className="platform-site" style={platformThemeStyle(design.theme)}>
 			<main className="platform-home-shell platform-support-page">
-				<PlatformHeader page="support" />
+				<PlatformHeader page="support" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 				<section className="platform-section platform-about-hero" aria-labelledby="support-title">
-					<p className="eyebrow">Salon Owner Support</p>
-					<h1 id="support-title">A helpful partner for every salon you build.</h1>
-					<p>Need help with setup, storefront content, bookings, billing, or your team workspace? We are here to help you keep your salon moving.</p>
+					<p className="eyebrow">{support.eyebrow}</p>
+					<h1 id="support-title">{support.title}</h1>
+					<p>{support.description}</p>
 				</section>
 				<section className="platform-section platform-support-grid" aria-label="Support options">
-					<article><span className="eyebrow">Getting started</span><h2>Launch with confidence.</h2><p>Use the onboarding workspace to set your identity, services, schedule, staff, and storefront content.</p><Link href="/onboarding">Start onboarding</Link></article>
-					<article><span className="eyebrow">Direct help</span><h2>Talk to our team.</h2><p>For account, billing, or technical questions, email the Beauty Sphia support team.</p><a href={`mailto:${supportEmail}`}>{supportEmail}</a></article>
-					<article><span className="eyebrow">Platform contact</span><h2>Tell us what you need.</h2><p>Share a question or product suggestion directly with the Beauty Sphia team.</p><a href={`mailto:${supportEmail}?subject=Beauty%20Sphia%20platform%20question`}>Email platform support</a></article>
+					<article><span className="eyebrow">{support.gettingStartedEyebrow}</span><h2>{support.gettingStartedTitle}</h2><p>{support.gettingStartedDescription}</p><Link href="/onboarding">Start onboarding</Link></article>
+					<article><span className="eyebrow">{support.directHelpEyebrow}</span><h2>{support.directHelpTitle}</h2><p>{support.directHelpDescription}</p><a href={`mailto:${contact.supportEmail}`}>{contact.supportEmail}</a>{contact.phone && <a href={`tel:${contact.phone}`}>{contact.phone}</a>}</article>
+					<article><span className="eyebrow">{support.contactEyebrow}</span><h2>{support.contactTitle}</h2><p>{support.contactDescription}</p><a href={contact.whatsappUrl || `mailto:${contact.supportEmail}?subject=${encodeURIComponent(`${design.branding.name} platform question`)}`}>{contact.whatsappUrl ? "Chat with platform support" : "Email platform support"}</a></article>
+				</section>
+				<section className="platform-section platform-support-faq" aria-labelledby="support-faq-title">
+					<div className="section-heading">
+						<p className="eyebrow">{support.faqEyebrow}</p>
+						<h2 id="support-faq-title">{support.faqTitle}</h2>
+						<p>{support.faqDescription}</p>
+					</div>
+					<div className="platform-support-faq__list">
+						{support.faqs.map((faq, index) => (
+							<details className="platform-support-faq__item" key={`${index}-${faq.question}`}>
+								<summary>{faq.question}<span aria-hidden="true" /></summary>
+								<p>{faq.answer}</p>
+							</details>
+						))}
+					</div>
 				</section>
 			</main>
 			<nav className="platform-mobile-actions" aria-label="Mobile platform navigation">
@@ -30,6 +52,6 @@ export default function SupportPage() {
 				<Link href="/stores"><PlatformActionIcon name="salons" /><span>Salons</span></Link>
 				<Link href="/onboarding"><PlatformActionIcon name="start" /><span>Start Your Salon</span></Link>
 			</nav>
-		</>
+		</div>
 	)
 }

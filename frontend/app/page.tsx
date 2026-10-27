@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { headers } from "next/headers"
 
 import { getRequestHost } from "@backend/services/tenantDomainService"
@@ -11,50 +12,14 @@ import { PlatformActionIcon } from "@/components/shared/PlatformActionIcon"
 import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { PlatformFloatingActions } from "@/components/shared/PlatformFloatingActions"
 import { TopStoresGrid } from "@/components/shared/TopStoresGrid"
-import { ContactForm } from "@/components/shared/ContactForm"
+import { PlatformContactForm } from "@/components/shared/PlatformContactForm"
+import { platformThemeStyle } from "@/lib/platformTheme"
 import {
 	PLAN_ENTITLEMENTS,
-	PLAN_POSITIONING,
-	PLAN_PRICING,
 } from "@shared/constants/plans"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 
-const plans = [
-	{
-		name: "Starter",
-		tier: "starter",
-		description: "Launch a polished salon storefront with the essentials.",
-		features: [
-			"Launch one polished salon storefront",
-			"Manage services, gallery, blog, and reviews",
-			"Handle up to 100 bookings each month",
-			"Owner-led workspace with standard support",
-		],
-	},
-	{
-		name: "Business",
-		tier: "business",
-		description: "Run daily salon operations with deeper customer workflows.",
-		features: [
-			"Run up to 1,000 bookings each month",
-			"Manage up to 10 staff members with permissions",
-			"Use waitlists and advanced scheduling",
-			"Automate email and WhatsApp follow-up",
-		],
-	},
-	{
-		name: "Enterprise",
-		tier: "enterprise",
-		description:
-			"Scale multiple teams, locations, and operational requirements.",
-		features: [
-			"Operate multiple salon locations",
-			"Use expanded or negotiated usage limits",
-			"Apply advanced security and audit controls",
-			"Receive custom-domain and priority onboarding support",
-		],
-	},
-] as const
+const planTiers = ["starter", "business", "enterprise"] as const
 
 const planCapabilities = [
 	["Monthly bookings", "limit", "monthlyBookings"],
@@ -100,26 +65,28 @@ export default async function PlatformHome() {
 	return (
 		<>
 			<ExperienceSplash
-				brandName="Beauty Sphia"
+				brandName={design.branding.name}
 				logoUrl={design.logoUrl}
 			/>
+			<div className="platform-site" style={platformThemeStyle(design.theme)}>
 			<main id="home" className="platform-home-shell">
-				<PlatformHeader page="home" logoUrl={design.logoUrl} />
+				<PlatformHeader page="home" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 
 				<section className="platform-hero platform-hero--editorial" aria-labelledby="platform-title">
+					<picture className="platform-hero__art">
+						<source media="(max-width: 1024px)" srcSet={design.heroMobileUrl} />
+						<Image src={design.heroDesktopUrl} alt={design.heroAlt} fill sizes="100vw" unoptimized priority />
+					</picture>
 <div className="platform-hero__copy">
-<p className="platform-hero__eyebrow">The salon platform for owners and customers</p><p className="platform-hero__audience">Salon Owners · Stylists · Customers</p>
-<h1 id="platform-title">A better salon experience for <span>everyone</span></h1>
-<p className="platform-hero__description">Beauty Sphia helps salon owners manage bookings, clients, and daily operations. Customers can discover salons, explore services, and book appointments with ease.</p>
-<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link></div>
+<p className="platform-hero__eyebrow">{design.homeHero.eyebrow}</p><p className="platform-hero__audience">{design.homeHero.audience}</p>
+<h1 id="platform-title">{design.homeHero.title} <span>{design.homeHero.highlight}</span></h1>
+<p className="platform-hero__description">{design.homeHero.description}</p>
+<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">{design.homeHero.actionLabel}</Link></div>
 </div>
 <div className="platform-hero__benefits" aria-label="Platform benefits">
-<article><span aria-hidden="true">01</span><h2>Online Bookings</h2><p>Help customers book anytime and keep your salon schedule organized.</p></article>
-<article><span aria-hidden="true">02</span><h2>Client Management</h2><p>Build lasting relationships. Keep your clients organized and loyal.</p></article>
-<article><span aria-hidden="true">03</span><h2>Salon Discovery</h2><p>Help customers find your salon, explore services, and book a visit.</p></article>
-<article><span aria-hidden="true">04</span><h2>Business Growth</h2><p>Make data-driven decisions. Track growth and make smarter decisions.</p></article>
+{design.homeHero.benefits.map((benefit, index) => <article key={benefit.title}><span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><h2>{benefit.title}</h2><p>{benefit.description}</p></article>)}
 </div>
-<p className="platform-hero__signature">More Clients <span>·</span> Less Admin <span>·</span> Bigger Dreams</p>
+<p className="platform-hero__signature">{design.homeHero.signature}</p>
 </section>
 
 				<section
@@ -196,12 +163,14 @@ export default async function PlatformHome() {
 						<p>{content.plansDescription}</p>
 					</div>
 					<div className="plans-grid">
-						{plans.map((plan) => (
+						{planTiers.map((tier) => {
+							const plan = design.plans[tier]
+							return (
 							<article
-								className={`plan-card${plan.name === "Business" ? " plan-card--featured" : ""}`}
-								key={plan.name}
+								className={`plan-card${tier === "business" ? " plan-card--featured" : ""}`}
+								key={tier}
 							>
-								{plan.name === "Business" && (
+								{tier === "business" && (
 									<span className="plan-card__badge">Recommended</span>
 								)}
 								<h3>{plan.name}</h3>
@@ -209,7 +178,7 @@ export default async function PlatformHome() {
 									<strong className="plan-card__price">
 										KES{" "}
 										{(
-											PLAN_PRICING[plan.tier].monthlyAmountMinor / 100
+											plan.monthlyAmountMinor / 100
 										).toLocaleString("en-KE")}
 									</strong>{" "}
 									<span className="plan-card__billing-period">/month</span>
@@ -217,7 +186,7 @@ export default async function PlatformHome() {
 										<strong className="plan-card__setup-amount">
 											KES{" "}
 											{(
-												PLAN_PRICING[plan.tier].setupFeeMinor / 100
+											plan.setupFeeMinor / 100
 											).toLocaleString("en-KE")}
 										</strong>{" "}
 										One-Time Setup Fee
@@ -225,7 +194,7 @@ export default async function PlatformHome() {
 								</p>
 								<p className="plan-card__best-for">
 									<strong>Best for:</strong>{" "}
-									{PLAN_POSITIONING[plan.tier].bestFor}
+									{plan.bestFor}
 								</p>
 								<p>{plan.description}</p>
 								<ul>
@@ -238,7 +207,7 @@ export default async function PlatformHome() {
 								</ul>
 								<ul className="plan-card__capabilities" aria-label={`${plan.name} plan capabilities`}>
 									{planCapabilities.map(([label, kind, key]) => {
-										const entitlement = PLAN_ENTITLEMENTS[plan.tier]
+										const entitlement = PLAN_ENTITLEMENTS[tier]
 										const included = kind === "feature"
 											? entitlement.features[key as keyof typeof entitlement.features]
 											: true
@@ -261,7 +230,8 @@ export default async function PlatformHome() {
 									Start with {plan.name}
 								</Link>
 							</article>
-						))}
+							)
+						})}
 					</div>
 				</section>
 
@@ -275,13 +245,19 @@ export default async function PlatformHome() {
 							<p className="eyebrow">{content.contactEyebrow}</p>
 							<h2 id="contact-title">{content.contactTitle}</h2>
 							<p>{content.contactDescription}</p>
+							<div className="platform-contact-details" aria-label="Beauty Sphia contact details">
+								<a href={`mailto:${design.contact.supportEmail}`}>{design.contact.supportEmail}</a>
+								{design.contact.phone && <a href={`tel:${design.contact.phone}`}>{design.contact.phone}</a>}
+								{design.contact.whatsappUrl && <a href={design.contact.whatsappUrl} target="_blank" rel="noopener noreferrer">WhatsApp support</a>}
+								{design.contact.address && <p>{design.contact.address}</p>}
+							</div>
 						</div>
-						<ContactForm />
+						<PlatformContactForm />
 					</div>
 				</section>
 			</main>
-			<PlatformFooter description={content.footerDescription} />
-			<PlatformFloatingActions />
+			<PlatformFooter brandName={design.branding.name} description={content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
+			<PlatformFloatingActions whatsappUrl={design.contact.whatsappUrl} />
 			<nav
 				className="platform-mobile-actions"
 				aria-label="Mobile platform navigation"
@@ -300,6 +276,7 @@ export default async function PlatformHome() {
 					<span>Start Your Salon</span>
 				</Link>
 			</nav>
+			</div>
 		</>
 	)
 }

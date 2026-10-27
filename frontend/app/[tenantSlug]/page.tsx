@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { auth } from "@/auth"
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
+import { hasMerchantAdminPanelAccess } from "@backend/services/merchantAdminSnapshotService"
 import {
 	SalonStorefrontRuntime,
 	type SalonClientConfig,
@@ -202,10 +204,15 @@ export async function generateMetadata({
 export async function renderTenantStorefront(tenantSlug: string) {
 	const tenant = await getTenantStorefront(tenantSlug)
 	if (!tenant) notFound()
+	const session = await auth()
+	const showAdminSearch = session?.user?.id
+		? await hasMerchantAdminPanelAccess(session.user.id, tenant.id)
+		: false
 
 	return (
 		<SalonStorefrontRuntime
 			tenantSlug={tenant.slug}
+			showAdminSearch={showAdminSearch}
 			turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
 			clientConfig={buildReferenceClientConfig(tenant) as SalonClientConfig}
 		/>

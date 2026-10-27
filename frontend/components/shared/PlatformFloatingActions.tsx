@@ -4,9 +4,7 @@ import { useEffect, useState } from "react"
 import type { MouseEvent } from "react"
 
 // Platform contact stays independent from the tenant-specific storefront settings.
-const PLATFORM_WHATSAPP_URL = "https://wa.me/254740470381"
-
-export function PlatformFloatingActions() {
+export function PlatformFloatingActions({ whatsappUrl = "https://wa.me/254740470381" }: { readonly whatsappUrl?: string }) {
 	const [showBackToTop, setShowBackToTop] = useState(false)
 
 	useEffect(() => {
@@ -29,7 +27,7 @@ export function PlatformFloatingActions() {
 	return (
 		<>
 			<a
-				href={`${PLATFORM_WHATSAPP_URL}?text=${encodeURIComponent("Hello Beauty Sphia, I would like to know more about the platform.")}`}
+				href={`${whatsappUrl}${whatsappUrl.includes("?") ? "&" : "?"}text=${encodeURIComponent("Hello Beauty Sphia, I would like to know more about the platform.")}`}
 				className="platform-floating-whatsapp"
 				aria-label="Contact Beauty Sphia on WhatsApp"
 				target="_blank"

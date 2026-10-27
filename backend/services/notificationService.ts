@@ -499,6 +499,33 @@ export async function dispatchNotification(
 	}
 }
 
+export async function dispatchPlatformContactEmail({
+	to,
+	name,
+	fromEmail,
+	subject,
+	message,
+}: {
+	readonly to: string
+	readonly name: string
+	readonly fromEmail: string
+	readonly subject: string
+	readonly message: string
+}): Promise<{ readonly ok: boolean }> {
+	const safeName = escapeHtml(name)
+	const safeEmail = escapeHtml(fromEmail)
+	const safeMessage = escapeHtml(message).replaceAll("\n", "<br>")
+	return sendResendEmail(
+		to,
+		`Beauty Sphia platform inquiry: ${subject}`,
+		emailShell(
+			`Platform inquiry: ${subject}`,
+			`Message from ${safeName}`,
+			`<p>Reply to: <a href="mailto:${safeEmail}">${safeEmail}</a></p><p>${safeMessage}</p>`,
+		),
+	)
+}
+
 export async function retryDueNotifications(limit = 50): Promise<number> {
 	const due = await prisma.notificationDelivery.findMany({
 		where: {

@@ -12,7 +12,10 @@ import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch
 interface PlatformHeaderClientProps {
 	readonly page: "home" | "stores" | "about" | "support"
 	readonly logoUrl: string
+	readonly brandName: string
+	readonly brandTagline: string
 	readonly isSignedIn: boolean
+	readonly canAccessPlatformAdmin: boolean
 }
 
 const platformSearchEntries: readonly SiteSearchEntry[] = [
@@ -26,7 +29,7 @@ const platformSearchEntries: readonly SiteSearchEntry[] = [
 	{ label: "Contact", description: "Send a message to the Beauty Sphia team", href: "/#contact", keywords: "email message" },
 ]
 
-export function PlatformHeaderClient({ page, logoUrl, isSignedIn }: PlatformHeaderClientProps) {
+export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, isSignedIn, canAccessPlatformAdmin }: PlatformHeaderClientProps) {
 	const [menuOpen, setMenuOpen] = useState(false)
 	const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 	const router = useRouter()
@@ -36,10 +39,10 @@ export function PlatformHeaderClient({ page, logoUrl, isSignedIn }: PlatformHead
 	const homeHref = isHome ? "#home" : "/"
 	const plansHref = isHome ? "#plans" : "/#plans"
 	const brand = <>
-		<Image className="brand-mark__image" src={logoUrl} alt="Beauty Sphia logo" unoptimized width={48} height={48} />
+		<Image className="brand-mark__image" src={logoUrl} alt={`${brandName} logo`} unoptimized width={48} height={48} />
 		<span className="brand-mark__copy">
-			<strong className="brand-mark__title">Beauty <span className="brand-mark__s">S<svg viewBox="0 0 24 16" aria-hidden="true" focusable="false"><path d="m3 5 4 4 5-6 5 6 4-4-2 10H5L3 5Z" /><path d="M5 18h14" /></svg></span>phia</strong>
-			<span className="brand-mark__tagline">Manage | Book | Grow</span>
+			<strong className="brand-mark__title">{brandName}</strong>
+			<span className="brand-mark__tagline">{brandTagline}</span>
 		</span>
 	</>
 
@@ -71,7 +74,7 @@ export function PlatformHeaderClient({ page, logoUrl, isSignedIn }: PlatformHead
 	}
 
 	return <header className="platform-header">
-		{isHome ? <PlatformBrandMark>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label="Beauty Sphia homepage">{brand}</Link>}
+		{isHome ? <PlatformBrandMark>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label={`${brandName} homepage`}>{brand}</Link>}
 		<nav id="platform-navigation" className={"platform-nav" + (menuOpen ? " is-open" : "")} aria-label="Platform navigation">
 			<Link href={homeHref} onClick={() => setMenuOpen(false)}>Home</Link>
 			<Link href="/stores" onClick={() => setMenuOpen(false)}>Salons</Link>
@@ -80,7 +83,12 @@ export function PlatformHeaderClient({ page, logoUrl, isSignedIn }: PlatformHead
 			<Link href="/support" onClick={() => setMenuOpen(false)}>Support</Link>
 		</nav>
 		<div className="platform-header__actions">
-			<SiteSearch entries={platformSearchEntries} label="Beauty Sphia" />
+			<SiteSearch
+				entries={canAccessPlatformAdmin
+					? [...platformSearchEntries, { label: "Platform Admin", description: "Manage Beauty Sphia platform operations and CMS", href: "/platform-admin", keywords: "admin dashboard cms operations" }]
+					: platformSearchEntries}
+				label={brandName}
+			/>
 			<div className="platform-account" ref={accountMenuRef}>
 				<button
 					ref={accountTriggerRef}

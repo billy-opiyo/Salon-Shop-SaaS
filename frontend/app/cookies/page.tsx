@@ -1,29 +1,32 @@
 import Link from "next/link"
 
-export default function CookiesPage() {
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
+import { platformThemeStyle } from "@/lib/platformTheme"
+
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return { title: `${design.cookiePolicy.title} | ${design.branding.name}` }
+}
+
+export default async function CookiesPage() {
+	const design = await getPlatformStorefrontDesign()
+	const policy = design.cookiePolicy
 	return (
-		<main className="policy-page">
-			<Link className="brand-mark" href="/">
-				Beauty Sphia
-			</Link>
-			<p className="eyebrow">Platform policy</p>
-			<h1>Cookie Policy</h1>
-			<p>
-				The platform may use essential cookies for authentication, security,
-				preferences, and reliable navigation.
-			</p>
-			<h2>Essential cookies</h2>
-			<p>
-				These support secure sessions and platform operation. They cannot be
-				disabled while using protected workspace features.
-			</p>
-			<h2>Preferences</h2>
-			<p>
-				Theme and accessibility preferences may be stored locally or in your
-				account when the relevant feature is enabled.
-			</p>
-			<h2>Agreement</h2>
-			<p>By using the platform, you acknowledge this cookie policy.</p>
-		</main>
+		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+			<main className="policy-page">
+				<Link className="brand-mark" href="/" aria-label={`${design.branding.name} homepage`}>
+					{design.branding.name}
+				</Link>
+				<p className="eyebrow">{policy.eyebrow}</p>
+				<h1>{policy.title}</h1>
+				<p>{policy.introduction}</p>
+				{policy.sections.map((section) => (
+					<section key={section.heading}>
+						<h2>{section.heading}</h2>
+						<p>{section.body}</p>
+					</section>
+				))}
+			</main>
+		</div>
 	)
 }
