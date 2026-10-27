@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
+import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
 import {
 	listBlogsForUser,
 	MerchantBlogError,
@@ -81,14 +82,7 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 												required
 											/>
 										</label>
-										<label>
-											Image URL
-											<input
-												name="imageUrl"
-												type="url"
-												defaultValue={post.imageUrl ?? ""}
-											/>
-										</label>
+						<TenantImageUploadField tenantSlug={tenantSlug} name="imageUrl" label="Post image" kind="BLOG" defaultValue={post.imageUrl} />
 										<label>
 											Read time
 											<input
@@ -183,10 +177,7 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 					Excerpt
 					<textarea name="excerpt" required maxLength={5000} />
 				</label>
-				<label>
-					Image URL
-					<input name="imageUrl" type="url" />
-				</label>
+				<TenantImageUploadField tenantSlug={tenantSlug} name="imageUrl" label="Post image" kind="BLOG" />
 				<label>
 					Read time
 					<input name="readTime" maxLength={80} />

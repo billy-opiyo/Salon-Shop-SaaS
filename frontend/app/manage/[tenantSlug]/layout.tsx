@@ -61,18 +61,42 @@ async function TenantAdminLayoutContent({
 			className="platform-site platform-site--with-mobile-actions merchant-workspace-shell"
 			style={platformThemeStyle(design.theme)}
 		>
-			<header className="merchant-admin-console-banner">
-				<p className="merchant-admin-console-banner__eyebrow">Admin Console</p>
-				<h1>Content, Bookings &amp; Security Management</h1>
-				<p>
-					Manage your salon storefront, bookings, content, and team from one
-					categorized control panel.
+			<header className="admin-bookings-header merchant-admin-console-banner">
+				<div className="admin-console-heading">
+					<div className="section-subtitle">Admin Console</div>
+					<h1 className="section-title">
+						Content, Bookings &amp; Security Management
+					</h1>
+				</div>
+				<p className="section-desc">
+					Manage Bookings, Schedules, Gallery, Blogs, Reviews, Messages, Waitlist,
+					Services, and Security from one categorized control panel.
 				</p>
-				<Link href={`/${tenantSlug.trim().toLowerCase()}#home`}>
-					← Back to Homepage
-				</Link>
+				<p className="merchant-admin-console-home">
+					<Link
+						className="btn btn-outline"
+						href={`/${tenantSlug.trim().toLowerCase()}#home`}
+					>
+						← Back to Homepage
+					</Link>
+				</p>
 			</header>
-			<div className="merchant-workspace-panel">
+			{session?.user && (
+				<div className="admin-auth-card merchant-admin-session">
+					<div className="admin-auth-actions">
+						<div className="admin-user-state">
+							Logged in as {session.user.email ?? "your account"}
+							{membership?.role
+								? ` (${membership.role.replace(/_/g, " ")})`
+								: ""}
+						</div>
+					</div>
+					<p className="admin-auth-tip">
+						Only authorized salon accounts can access this panel.
+					</p>
+				</div>
+			)}
+			<div className="admin-panel merchant-workspace-panel">
 				<MerchantWorkspaceNavigation
 					tenantSlug={tenantSlug.trim().toLowerCase()}
 					access={access}

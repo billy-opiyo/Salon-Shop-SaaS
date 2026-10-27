@@ -1,11 +1,16 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
+import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	getTenantSettingsForUser,
 	TenantSettingsError,
 } from "@backend/services/tenantSettingsService"
 import { saveTenantSettings } from "./actions"
+import {
+	THEME_PRESET_OPTIONS,
+	isThemePreset,
+} from "@shared/constants/themePresets"
 
 export default async function MerchantSettingsPage({
 	params,
@@ -28,6 +33,10 @@ export default async function MerchantSettingsPage({
 		throw error
 	}
 	const settings = data.settings
+	const savedThemePreset = settings?.themePreset ?? ""
+	const selectedThemePreset = isThemePreset(savedThemePreset)
+		? savedThemePreset
+		: "gold"
 	return (
 		<main className="manage-page">
 			<header className="manage-header">
@@ -39,15 +48,20 @@ export default async function MerchantSettingsPage({
 					</p>
 				</div>
 			</header>
-			<form className="onboarding-form" action={saveTenantSettings}>
+			<section className="manage-card merchant-settings-card" aria-labelledby="merchant-settings-title">
+				<h2 id="merchant-settings-title">Storefront and booking settings</h2>
+				<p>Shape the salon’s public identity, contact details, and optional online payment settings.</p>
+			<form className="onboarding-form merchant-settings-form" action={saveTenantSettings}>
 				<input type="hidden" name="tenantSlug" value={tenantSlug} />
 				<label>
-					Theme preset
-					<input
-						name="themePreset"
-						defaultValue={settings?.themePreset ?? "gold"}
-						required
-					/>
+					Color theme
+					<select name="themePreset" defaultValue={selectedThemePreset} required>
+						{THEME_PRESET_OPTIONS.map((preset) => (
+							<option key={preset.key} value={preset.key}>
+								{preset.label}
+							</option>
+						))}
+					</select>
 				</label>
 				<label>
 					Theme mode
@@ -72,22 +86,8 @@ export default async function MerchantSettingsPage({
 						maxLength={160}
 					/>
 				</label>
-				<label>
-					Logo URL
-					<input
-						name="logoUrl"
-						type="url"
-						defaultValue={settings?.logoUrl ?? ""}
-					/>
-				</label>
-				<label>
-					Hero image URL
-					<input
-						name="heroImageUrl"
-						type="url"
-						defaultValue={settings?.heroImageUrl ?? ""}
-					/>
-				</label>
+				<TenantImageUploadField tenantSlug={tenantSlug} name="logoUrl" label="Salon logo" kind="LOGO" defaultValue={settings?.logoUrl} />
+				<TenantImageUploadField tenantSlug={tenantSlug} name="heroImageUrl" label="Hero image" kind="HERO" defaultValue={settings?.heroImageUrl} />
 				<label>
 					Primary phone
 					<input
@@ -126,7 +126,7 @@ export default async function MerchantSettingsPage({
 						defaultValue={settings?.emailBookings ?? ""}
 					/>
 				</label>
-			<label>
+			<label className="merchant-settings-form__wide">
 				Address
 					<textarea
 						name="address"
@@ -189,6 +189,7 @@ export default async function MerchantSettingsPage({
 					Save settings
 				</button>
 			</form>
+			</section>
 		</main>
 	)
 }

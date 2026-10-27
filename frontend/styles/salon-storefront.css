@@ -11842,6 +11842,47 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     box-shadow: 0 18px 45px rgba(0, 0, 0, .24);
 }
 
+.merchant-workspace-shell .merchant-admin-console-banner {
+    width: min(1080px, calc(100% - 2rem));
+    margin-bottom: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.merchant-workspace-shell .merchant-admin-console-banner .admin-console-heading {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto clamp(14px, 2vw, 18px);
+    padding: clamp(16px, 2.2vw, 24px) clamp(18px, 3vw, 30px);
+    text-align: center;
+}
+
+.merchant-workspace-shell .merchant-admin-console-banner .section-title {
+    margin: 0;
+    color: var(--text-primary);
+    font: 600 clamp(2rem, 4vw, 3.2rem)/1.1 var(--font-heading, Georgia, serif);
+    letter-spacing: -.035em;
+}
+
+.merchant-workspace-shell .merchant-admin-console-banner > .section-desc {
+    width: min(100%, 680px);
+    margin: 0 auto;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.65;
+    text-align: center;
+}
+
+.merchant-workspace-shell .merchant-admin-console-home {
+    margin: 12px 0 0;
+    text-align: center;
+}
+
 .merchant-admin-console-banner__eyebrow {
     display: flex;
     align-items: center;
@@ -11898,6 +11939,7 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 }
 
 .merchant-workspace-panel {
+    display: block;
     width: min(1200px, calc(100% - 2rem));
     margin: 0 auto;
     padding: 1.25rem;
@@ -11905,6 +11947,23 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     border-radius: 1.1rem;
     background: var(--bg-card);
     box-shadow: 0 18px 48px rgba(0, 0, 0, .28);
+}
+
+.merchant-workspace-shell .merchant-admin-session {
+    width: min(100% - 2rem, 560px);
+    margin: 0 auto 18px;
+    padding: 24px;
+    text-align: left;
+}
+
+.merchant-workspace-shell .merchant-admin-session .admin-auth-actions {
+    width: 100%;
+    min-width: 0;
+    align-items: flex-start;
+}
+
+.merchant-workspace-shell .merchant-admin-session .admin-auth-tip {
+    margin: 0;
 }
 
 .merchant-workspace-panel .merchant-workspace-navigation {
@@ -11948,14 +12007,14 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 
 .merchant-workspace-panel .manage-header {
     align-items: flex-start;
-    padding: .15rem 0 1.25rem;
-    border-bottom: 1px solid var(--border);
+    padding: .15rem 0 .5rem;
+    border-bottom: 0;
 }
 
 .merchant-workspace-panel .manage-header h1 {
-    margin: .35rem 0 .55rem;
+    margin: .25rem 0 .4rem;
     color: var(--text-primary);
-    font-size: clamp(2.15rem, 5vw, 3.35rem);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
 }
 
 .merchant-workspace-panel .manage-header .eyebrow,
@@ -11970,6 +12029,46 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
     border-radius: .8rem;
     background: linear-gradient(110deg, rgba(200, 150, 62, .08), rgba(17, 17, 17, .38));
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"],
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Security totals"] {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"] .admin-booking-filter-btn,
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Security totals"] .admin-booking-filter-btn {
+    display: grid;
+    min-height: 5.5rem;
+    align-content: space-between;
+    justify-items: start;
+    gap: .5rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .75rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"] .admin-booking-filter-btn strong,
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Security totals"] .admin-booking-filter-btn strong {
+    color: var(--text-primary);
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"] .admin-booking-filter-btn span,
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label="Security totals"] .admin-booking-filter-btn span {
+    color: var(--text-muted);
+    font-size: .75rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
 }
 
 .merchant-workspace-panel .manage-store,
@@ -12000,6 +12099,11 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
         padding: 1.25rem 1rem;
     }
 
+    .merchant-workspace-shell .merchant-admin-console-banner {
+        margin-bottom: .85rem;
+        padding: 0;
+    }
+
     .merchant-admin-console-banner h1 {
         font-size: clamp(1.65rem, 8vw, 2.35rem);
     }
@@ -12016,6 +12120,11 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
         margin-right: -.75rem;
         padding: 0 .75rem .8rem 0;
         scrollbar-width: thin;
+    }
+
+    .merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"],
+    .merchant-workspace-panel .admin-booking-filter-controls[aria-label="Security totals"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .merchant-workspace-panel .manage-header {
@@ -12084,6 +12193,31 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     transform: none;
     transition: none;
 }
+.tenant-image-upload-field {
+    display: grid;
+    gap: .45rem;
+    min-width: 0;
+}
+.tenant-image-upload-field > label {
+    display: grid;
+    gap: .45rem;
+}
+.tenant-image-upload-field > small {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.tenant-image-upload-field__preview,
+.admin-design-image-preview {
+    display: block;
+    width: min(100%, 28rem);
+    max-height: 13rem;
+    border: 1px solid var(--border);
+    border-radius: .65rem;
+    background: var(--bg-secondary);
+    object-fit: contain;
+    object-position: left center;
+}
+.admin-design-image-preview[hidden] { display: none; }
 .salon-storefront-root .nav-toggle .nav-toggle__icon--close { display: none; }
 .salon-storefront-root .nav-toggle.active .nav-toggle__icon--menu { display: none; }
 .salon-storefront-root .nav-toggle.active .nav-toggle__icon--close { display: inline-flex; }

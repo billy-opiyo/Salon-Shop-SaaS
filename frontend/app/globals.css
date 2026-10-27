@@ -1761,7 +1761,7 @@ html.splash-active .splash-handwriting-letter {
   font-size: .8rem;
 }
 
-.auth-form input {
+.auth-form input:not([type="checkbox"]):not([type="radio"]) {
   width: 100%;
   padding: .85rem 1rem;
   border: 1px solid var(--line);
@@ -1772,9 +1772,48 @@ html.splash-active .splash-handwriting-letter {
   font: inherit;
 }
 
+.auth-form select,
+.auth-form textarea {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 2.9rem;
+	padding: .8rem 1rem;
+	border: 1px solid var(--line);
+	border-radius: .6rem;
+	background: rgba(10, 8, 5, .62);
+	box-shadow: 0 1px 0 rgba(255, 248, 232, .05) inset;
+	color: var(--foreground);
+	font: inherit;
+}
+
+.auth-form > label:has(> input[type="checkbox"]) {
+	display: flex;
+	align-items: center;
+	gap: .75rem;
+}
+
+.auth-form > label > input[type="checkbox"] {
+	width: 1.1rem;
+	min-width: 1.1rem;
+	height: 1.1rem;
+	margin: 0;
+	padding: 0;
+	accent-color: var(--gold);
+}
+
+.auth-form select {
+	color-scheme: dark;
+}
+
 .auth-form input:focus {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+.auth-form :is(select, textarea):focus-visible {
+	border-color: var(--gold);
+	outline: 2px solid var(--gold);
+	outline-offset: 2px;
 }
 
 .auth-form .button {
@@ -1900,7 +1939,18 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .onboarding-form {
+	display: grid;
+	gap: 1rem;
+	align-items: start;
   margin-top: 2rem;
+}
+
+.onboarding-form:not(.auth-form):not(.platform-admin-form) > label {
+	display: grid;
+	gap: .45rem;
+	min-width: 0;
+	color: var(--muted);
+	font-size: .82rem;
 }
 
 .platform-about-page,
@@ -2188,6 +2238,7 @@ html.splash-active .splash-handwriting-letter {
   border-radius: .6rem;
   background: rgba(10, 8, 5, .62);
   color: var(--foreground);
+  color-scheme: dark;
   font: inherit;
 }
 
@@ -3725,6 +3776,27 @@ html.splash-active .splash-handwriting-letter {
   box-shadow: 0 1px 2px rgba(0, 0, 0, .3) inset;
 }
 
+.onboarding-form textarea {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 8rem;
+	padding: .85rem 1rem;
+	border: 1px solid rgba(213, 165, 78, .38);
+	border-radius: .6rem;
+	background: rgba(17, 12, 6, .78);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .3) inset;
+	color: #fff6e6;
+	font: inherit;
+	line-height: 1.55;
+	resize: vertical;
+}
+
+.onboarding-form :is(input:not([type="checkbox"]), select, textarea):focus-visible {
+	border-color: var(--gold);
+	outline: 2px solid var(--gold);
+	outline-offset: 2px;
+}
+
 .auth-form--salon-parity .form-group input::placeholder,
 .onboarding-form input::placeholder {
   color: #c9b68f;
@@ -4608,6 +4680,10 @@ html.splash-active .splash-handwriting-letter {
 	color: var(--foreground);
 }
 
+.merchant-billing-status {
+	color: var(--gold-soft);
+}
+
 .merchant-billing-page .manage-grid {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -4615,6 +4691,46 @@ html.splash-active .splash-handwriting-letter {
 .merchant-billing-page .manage-card {
 	border-color: var(--line);
 	background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.merchant-settings-card {
+	min-height: 0;
+	border-color: var(--line);
+	background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.merchant-settings-card > h2 {
+	margin-top: 0;
+	color: var(--foreground);
+}
+
+.merchant-settings-card > p {
+	max-width: 68ch;
+	margin-bottom: 0;
+	color: var(--muted);
+}
+
+.merchant-settings-form {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem 1.25rem;
+	margin-top: 1.5rem;
+}
+
+.merchant-settings-form__wide,
+.merchant-settings-form > fieldset {
+	grid-column: 1 / -1;
+}
+
+.merchant-settings-form > button.button--primary {
+	width: fit-content;
+	min-width: min(100%, 12rem);
+	justify-self: start;
+}
+
+.merchant-billing-page .auth-form > button {
+	width: fit-content;
+	min-width: min(100%, 12rem);
+	justify-self: start;
 }
 
 .merchant-billing-page .manage-header__actions .button--outline,
@@ -4639,6 +4755,13 @@ html.splash-active .splash-handwriting-letter {
 	}
 	.merchant-billing-page .manage-grid {
 		grid-template-columns: minmax(0, 1fr);
+	}
+	.merchant-settings-form {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.merchant-settings-form__wide,
+	.merchant-settings-form > fieldset {
+		grid-column: auto;
 	}
 }
 

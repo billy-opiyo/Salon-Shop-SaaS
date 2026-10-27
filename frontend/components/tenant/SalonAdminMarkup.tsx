@@ -253,12 +253,12 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 										<input id="adminDesignHeroFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
 									</div>
 									<div className="form-group full">
-										<label htmlFor="adminDesignLogoUrl">Current logo URL</label>
-										<input id="adminDesignLogoUrl" type="text" placeholder="Uploaded URL or /assets/..." />
+										<input id="adminDesignLogoUrl" type="hidden" />
+										<img id="adminDesignLogoPreview" className="admin-design-image-preview" alt="Current salon logo" hidden />
 									</div>
 									<div className="form-group full">
-										<label htmlFor="adminDesignHeroUrl">Current hero image URL</label>
-										<input id="adminDesignHeroUrl" type="text" placeholder="Uploaded URL or /assets/..." />
+										<input id="adminDesignHeroUrl" type="hidden" />
+										<img id="adminDesignHeroPreview" className="admin-design-image-preview" alt="Current salon hero image" hidden />
 									</div>
 									<div className="form-group full">
 										<label htmlFor="adminDesignHeroTitle">Hero title</label>

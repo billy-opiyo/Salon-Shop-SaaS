@@ -306,11 +306,9 @@ export const getTenantStorefront = cache(async (
 
 		if (!tenant) return fixture ?? null
 
-		if (
-			tenant.status === "ARCHIVED" ||
-			tenant.status === "SUSPENDED"
-		)
-			return null
+		// Public storefront routes must never expose a draft salon. New salons
+		// become discoverable only after the owner publishes them from /account.
+		if (tenant.status !== "ACTIVE") return null
 
 		const planTier = tenant.subscription?.plan.tier.toLowerCase()
 		const resolvedPlan =
