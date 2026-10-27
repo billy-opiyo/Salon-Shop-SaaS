@@ -6435,9 +6435,15 @@ function bindNativeSalonInteractions(
 					{ threshold: 0.1, rootMargin: "0px 0px -50px 0px" },
 				)
 			: null
-	root
-		?.querySelectorAll(".animate-on-scroll")
-		.forEach((element) => observer?.observe(element))
+	root?.querySelectorAll<HTMLElement>(".animate-on-scroll").forEach((element) => {
+		if (observer) {
+			observer.observe(element)
+		} else {
+			// Keep content visible in browsers without IntersectionObserver rather
+			// than leaving the scroll-reveal elements at opacity: 0.
+			element.classList.add("visible")
+		}
+	})
 	if (observer) cleanup.push(() => observer.disconnect())
 
 	return () => {

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { listStylistsForUser, MerchantStylistError } from "@backend/services/merchantStylistService"
@@ -23,7 +24,10 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 			</header>
 			<section className="manage-store-list" aria-label="Stylists">
 				{stylists.length === 0 ? (
-					<p className="manage-empty">No stylists have been added.</p>
+					<div className="manage-empty-state">
+						<p className="manage-empty">No stylists have been added. Add your team so customers can choose who they would like to book with.</p>
+						<Link className="button button--outline button--small" href="#add-stylist">Add your first stylist</Link>
+					</div>
 				) : stylists.map((stylist) => (
 					<article className="manage-store" key={stylist.id}>
 						<div>
@@ -47,7 +51,7 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 					</article>
 				))}
 			</section>
-			<form className="onboarding-form" action={addStylist} aria-label="Add stylist">
+			<form id="add-stylist" className="onboarding-form" action={addStylist} aria-label="Add stylist">
 				<h2>Add stylist</h2>
 				<input type="hidden" name="tenantSlug" value={tenantSlug} />
 				<label>Name<input name="name" required minLength={2} maxLength={160} /></label>

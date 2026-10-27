@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
@@ -60,9 +61,10 @@ export default async function MerchantWaitlistPage({
 			</section>
 			<section className="admin-bookings-list" aria-label="Waitlist entries">
 				{entries.length === 0 ? (
-					<p className="manage-empty">
-						No clients are waiting for an appointment.
-					</p>
+					<div className="manage-empty-state">
+						<p className="manage-empty">No clients are waiting right now. When a booking time is full, customers who join your waitlist will appear here.</p>
+						<Link className="button button--outline button--small" href={`/manage/${encodeURIComponent(tenantSlug)}/bookings`}>Review bookings</Link>
+					</div>
 				) : (
 					entries.map((entry) => (
 						<article className="admin-booking-item" key={entry.id}>

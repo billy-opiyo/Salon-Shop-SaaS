@@ -1850,6 +1850,26 @@ html.splash-active .splash-handwriting-letter {
   line-height: 1.7;
 }
 
+.manage-empty-state {
+  display: grid;
+  justify-items: start;
+  gap: .85rem;
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.4rem);
+  border: 1px solid var(--glass-border);
+  border-radius: .9rem;
+  background: linear-gradient(145deg, rgba(58, 43, 20, .48), rgba(19, 15, 9, .45));
+}
+
+.manage-empty-state > .manage-empty {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.manage-empty-state > .button {
+  justify-self: start;
+}
+
 .manage-store-list {
   display: grid;
   gap: .75rem;
