@@ -34,6 +34,11 @@ enum MembershipRole {
   STAFF
 }
 
+enum PlatformAdminRole {
+  STORE_EDITOR
+  STORE_SUPPORT
+}
+
 enum MembershipStatus {
   INVITED
   ACTIVE
@@ -276,6 +281,17 @@ model PlatformAuditLog {
 
   @@index([actorUserId, createdAt])
   @@index([resourceType, resourceId, createdAt])
+}
+
+model PlatformAdminRoleAssignment {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  role             PlatformAdminRole
+  assignedByUserId String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([role, createdAt])
 }
 
 model PlatformStorefrontConfig {

@@ -10,6 +10,9 @@ import {
 	type PlatformStorefrontDesign,
 } from "@shared/constants/platformStorefront"
 import { getImageUploadError } from "@shared/validation/media"
+import {
+	assertPlatformAdminPermission,
+} from "@backend/services/platformAuthorization"
 
 export class PlatformAdminActionError extends Error {
 	readonly code = "PLATFORM_ADMIN_ACTION_FAILED" as const
@@ -91,10 +94,49 @@ export async function getPlatformStorefrontDesign(): Promise<PlatformStorefrontD
 
 export async function updatePlatformStorefrontDesign(
 	actorUserId: string,
+	actorEmail: string | null | undefined,
 	rawInput: unknown,
 ): Promise<PlatformStorefrontDesign> {
-	const input = platformStorefrontDesignSchema.parse(rawInput)
 	const current = await getPlatformStorefrontDesign()
+	const role = await assertPlatformAdminPermission(
+		actorUserId,
+		actorEmail,
+		"site-content:read",
+	)
+	if (role === "OWNER")
+		await assertPlatformAdminPermission(actorUserId, actorEmail, "site-content:write")
+	else if (role === "STORE_EDITOR")
+		await assertPlatformAdminPermission(actorUserId, actorEmail, "site-content:write")
+	else
+		await assertPlatformAdminPermission(actorUserId, actorEmail, "support-content:write")
+	const submitted = rawInput && typeof rawInput === "object" && !Array.isArray(rawInput)
+		? rawInput as Record<string, unknown>
+		: {}
+	const submittedContact = submitted.contact && typeof submitted.contact === "object" && !Array.isArray(submitted.contact)
+		? submitted.contact as Record<string, unknown>
+		: {}
+	const scopedInput = role === "OWNER"
+		? submitted
+		: role === "STORE_SUPPORT"
+			? {
+				...current,
+				support: submitted.support ?? current.support,
+				contact: {
+					...current.contact,
+					supportEmail: submittedContact.supportEmail ?? current.contact.supportEmail,
+					phone: submittedContact.phone ?? current.contact.phone,
+					whatsappUrl: submittedContact.whatsappUrl ?? current.contact.whatsappUrl,
+				},
+			}
+			: {
+				...current,
+				...Object.fromEntries(
+					["branding", "theme", "homeHero", "about", "directory", "content", "privacyPolicy", "termsPolicy", "cookiePolicy", "logoUrl", "heroDesktopUrl", "heroMobileUrl", "heroAlt"]
+						.filter((key) => key in submitted)
+						.map((key) => [key, submitted[key]]),
+				),
+			}
+	const input = platformStorefrontDesignSchema.parse(scopedInput)
 	const pricingChanged = (Object.keys(input.plans) as Array<keyof typeof input.plans>).some((tier) =>
 		input.plans[tier].monthlyAmountMinor !== current.plans[tier].monthlyAmountMinor ||
 		input.plans[tier].setupFeeMinor !== current.plans[tier].setupFeeMinor,
@@ -172,11 +214,13 @@ function platformR2Client(): S3Client {
 
 export async function uploadPlatformStorefrontImage(
 	actorUserId: string,
+	actorEmail: string | null | undefined,
 	file: Buffer,
 	mimeType: string,
 	fileName: string,
 	kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE",
 ): Promise<string> {
+	await assertPlatformAdminPermission(actorUserId, actorEmail, "site-content:write")
 	const validationError = getImageUploadError(file.length, mimeType)
 	if (validationError) throw new PlatformAdminActionError(validationError)
 	const bucket = process.env.R2_BUCKET_NAME?.trim()

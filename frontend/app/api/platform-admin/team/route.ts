@@ -2,7 +2,7 @@ import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
-	assertPlatformAdmin,
+	assertPlatformAdminPermission,
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
 import {
@@ -73,7 +73,7 @@ async function authorize(request: NextRequest): Promise<AuthorizedPlatformReques
 			),
 		}
 	try {
-		assertPlatformAdmin(session.user.id, session.user.email)
+		await assertPlatformAdminPermission(session.user.id, session.user.email, "team-content:write")
 	} catch (error) {
 		if (error instanceof PlatformAuthorizationError)
 			return {

@@ -36,11 +36,15 @@ export async function cancelClientBooking(
 	userId: string,
 	tenantSlug: string,
 	bookingId: string,
+	userEmail?: string | null,
 ): Promise<void> {
 	const tenant = await resolveTenant(userId, tenantSlug)
+	const accountBookingFilter = userEmail
+		? { OR: [{ userId }, { userId: null, email: userEmail.trim().toLowerCase() }] }
+		: { userId }
 	const releasedSlot = await prisma.$transaction(async (transaction) => {
 		const booking = await transaction.booking.findFirst({
-			where: { id: bookingId, tenantId: tenant.id, userId },
+			where: { id: bookingId, tenantId: tenant.id, ...accountBookingFilter },
 			select: {
 				status: true,
 				appointmentDate: true,
@@ -61,7 +65,7 @@ export async function cancelClientBooking(
 			where: {
 				id: bookingId,
 				tenantId: tenant.id,
-				userId,
+				...accountBookingFilter,
 				status: booking.status,
 			},
 			data: {

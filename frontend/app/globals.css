@@ -4992,3 +4992,652 @@ html.splash-active .splash-handwriting-letter {
 	color: var(--muted);
 	line-height: 1.7;
 }
+
+.platform-account__avatar,
+.platform-account__initial {
+	display: grid;
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 2rem;
+	place-items: center;
+	border: 1px solid rgba(237,204,131,.48);
+	border-radius: 50%;
+	background: linear-gradient(145deg, #d9ac58, #b77d2d);
+	color: #211507;
+	font-size: .95rem;
+	font-weight: 800;
+	object-fit: cover;
+}
+
+.platform-account-page {
+	min-height: 100vh;
+}
+
+.platform-account-shell {
+	width: min(1200px, calc(100% - 2rem));
+	margin: 0 auto;
+	padding: clamp(2rem, 5vw, 4.5rem) 0 5rem;
+}
+
+.platform-account-hero {
+	max-width: 760px;
+	margin: 0 auto clamp(2rem, 5vw, 4rem);
+	text-align: center;
+}
+
+.platform-account-hero h1 {
+	margin: .8rem 0 1rem;
+	color: var(--foreground);
+	font: 500 clamp(2.6rem, 7vw, 5rem)/.98 var(--serif);
+	letter-spacing: -.05em;
+}
+
+.platform-account-hero > p:last-child,
+.platform-account-empty,
+.platform-account-panel > p:not(.eyebrow),
+.platform-account-salon span {
+	color: var(--muted);
+	line-height: 1.7;
+}
+
+.platform-account-salons,
+.platform-account-panel {
+	border: 1px solid var(--line);
+	border-radius: 1.1rem;
+	background: color-mix(in srgb, var(--surface) 86%, transparent);
+	box-shadow: var(--glass-shadow);
+}
+
+.platform-account-salons {
+	margin-bottom: 1.25rem;
+	padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+.platform-account-salons .section-heading--row {
+	align-items: center;
+	margin-bottom: 1.2rem;
+}
+
+.platform-account-salons .section-heading h2,
+.platform-account-panel h2 {
+	margin: .35rem 0 1rem;
+	color: var(--foreground);
+	font: 500 clamp(1.5rem, 3vw, 2rem)/1.15 var(--serif);
+}
+
+.platform-account-salons__grid,
+.platform-account-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1.1rem;
+}
+
+.platform-account-salon,
+.platform-account-panel {
+	min-width: 0;
+	padding: clamp(1rem, 2.5vw, 1.6rem);
+}
+
+.platform-account-salon {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.25rem;
+	border: 1px solid var(--line);
+	border-radius: .85rem;
+	background: color-mix(in srgb, var(--background) 78%, transparent);
+}
+
+.platform-account-salon h3,
+.platform-account-booking h3 {
+	margin: .2rem 0 .4rem;
+	color: var(--foreground);
+	font-size: 1.1rem;
+}
+
+.platform-account-salon__actions,
+.platform-account-booking__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .45rem;
+}
+
+.platform-account-salon__setup-link {
+	color: var(--gold-soft);
+	font-size: .8rem;
+}
+
+.platform-account-grid {
+	align-items: start;
+}
+
+.platform-account-panel {
+	border: 1px solid var(--line);
+	border-radius: 1rem;
+	background: color-mix(in srgb, var(--surface) 88%, transparent);
+	box-shadow: var(--glass-shadow);
+}
+
+.platform-account-panel--wide {
+	grid-column: 1 / -1;
+}
+
+.platform-account-avatar-row {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1.2rem;
+}
+
+.platform-account-profile-image,
+.platform-account-profile-initial {
+	width: 5.5rem;
+	height: 5.5rem;
+	flex: 0 0 5.5rem;
+	border: 1px solid var(--line);
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--gold) 35%, var(--surface));
+	color: var(--foreground);
+	font-size: 2.2rem;
+	font-weight: 800;
+	object-fit: cover;
+}
+
+.platform-account-profile-initial {
+	display: grid;
+	place-items: center;
+}
+
+.platform-account-avatar-row > label {
+	position: relative;
+	display: grid;
+	gap: .3rem;
+}
+
+.platform-account-avatar-row input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0,0,0,0);
+}
+
+.platform-account-avatar-row small,
+.platform-account-form small {
+	color: var(--muted);
+	font-size: .75rem;
+	line-height: 1.5;
+}
+
+.platform-account-form {
+	display: grid;
+	gap: .9rem;
+	margin-top: 1rem;
+}
+
+.platform-account-form label,
+.platform-account-reschedule label {
+	display: grid;
+	gap: .4rem;
+	color: var(--foreground);
+	font-size: .84rem;
+	font-weight: 650;
+}
+
+.platform-account-form input:not([type="checkbox"]),
+.platform-account-form select,
+.platform-account-reschedule input {
+	width: 100%;
+	min-height: 2.85rem;
+	padding: .7rem .8rem;
+	border: 1px solid var(--line);
+	border-radius: .55rem;
+	background: color-mix(in srgb, var(--background) 88%, transparent);
+	color: var(--foreground);
+	font: inherit;
+}
+
+.platform-account-form input:focus-visible,
+.platform-account-form select:focus-visible,
+.platform-account-reschedule input:focus-visible {
+	outline: 2px solid var(--gold);
+	outline-offset: 2px;
+}
+
+.platform-account-form__row {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: .8rem;
+}
+
+.platform-account-checks {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: .7rem;
+	margin: .35rem 0;
+}
+
+.platform-account-checks label {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	color: var(--muted);
+	font-size: .82rem;
+}
+
+.platform-account-checks input {
+	accent-color: var(--gold);
+}
+
+.platform-account-subheading {
+	margin: 1.5rem 0 .6rem;
+	color: var(--foreground);
+	font-size: 1rem;
+}
+
+.platform-account-history,
+.platform-account-review-list {
+	display: grid;
+	gap: .6rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.platform-account-history li,
+.platform-account-review-list li {
+	display: grid;
+	gap: .25rem;
+	padding: .8rem;
+	border: 1px solid var(--line);
+	border-radius: .65rem;
+	background: color-mix(in srgb, var(--background) 75%, transparent);
+}
+
+.platform-account-history span,
+.platform-account-history small,
+.platform-account-review-list span,
+.platform-account-review-list a {
+	color: var(--muted);
+	font-size: .8rem;
+}
+
+.platform-account-bookings {
+	display: grid;
+	gap: .8rem;
+}
+
+.platform-account-booking {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: start;
+	gap: 1rem;
+	padding: 1rem;
+	border: 1px solid var(--line);
+	border-radius: .8rem;
+	background: color-mix(in srgb, var(--background) 75%, transparent);
+}
+
+.platform-account-booking__details > span,
+.platform-account-booking__details > small {
+	display: block;
+	margin-top: .3rem;
+	color: var(--muted);
+	font-size: .84rem;
+}
+
+.platform-account-booking__actions {
+	justify-content: flex-end;
+}
+
+.platform-account-status {
+	padding: .3rem .55rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--gold) 20%, transparent);
+	color: var(--foreground);
+	font-size: .72rem;
+	font-weight: 700;
+	text-transform: capitalize;
+}
+
+.platform-account-reschedule {
+	display: flex;
+	grid-column: 1 / -1;
+	align-items: end;
+	flex-wrap: wrap;
+	gap: .7rem;
+	padding-top: .8rem;
+	border-top: 1px solid var(--line);
+}
+
+.platform-account-reschedule label {
+	min-width: min(100%, 12rem);
+}
+
+.platform-account-reschedule > small {
+	flex-basis: 100%;
+	color: var(--muted);
+}
+
+.platform-account-review-list li > div {
+	display: flex;
+	justify-content: space-between;
+	gap: .7rem;
+}
+
+.platform-account-review-list p {
+	margin: .4rem 0;
+	color: var(--foreground);
+	line-height: 1.6;
+}
+
+.platform-account-favorites {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: .7rem;
+}
+
+.platform-account-favorite {
+	min-width: 0;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: .7rem;
+	background: color-mix(in srgb, var(--background) 75%, transparent);
+	color: var(--foreground);
+	text-decoration: none;
+}
+
+.platform-account-favorite img {
+	display: block;
+	width: 100%;
+	height: 9rem;
+	object-fit: cover;
+}
+
+.platform-account-favorite span {
+	display: grid;
+	gap: .25rem;
+	padding: .65rem;
+}
+
+.platform-account-favorite small {
+	color: var(--muted);
+}
+
+.platform-account-message {
+	margin: 0 0 1rem;
+	padding: .85rem 1rem;
+	border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+	border-radius: .65rem;
+	background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+	color: var(--foreground);
+}
+
+.platform-account-message.is-error {
+	border-color: rgba(230,95,95,.55);
+	background: rgba(120,32,32,.18);
+}
+
+.platform-account-danger {
+	border-color: rgba(197,91,91,.38);
+}
+
+.platform-account-content[data-account-theme="light"] {
+	--background: #fbf8f2;
+	--surface: #fffdf9;
+	--foreground: #2b2117;
+	--muted: #655849;
+	--line: rgba(89,68,43,.2);
+	--gold: #b78336;
+	--gold-soft: #805919;
+	color: var(--foreground);
+}
+
+.platform-account-content[data-account-contrast="high"] {
+	--muted: var(--foreground);
+}
+
+.platform-account-content[data-account-size="small"] {
+	font-size: .9rem;
+}
+
+.platform-account-content[data-account-size="large"] {
+	font-size: 1.08rem;
+}
+
+.platform-account-content[data-account-size="large"] :is(.platform-account-form label, .platform-account-history, .platform-account-review-list, .platform-account-booking__details > span) {
+	font-size: 1rem;
+}
+
+.platform-account-content[data-account-motion="reduced"] *,
+.platform-account-content[data-account-motion="reduced"] *::before,
+.platform-account-content[data-account-motion="reduced"] *::after {
+	animation-duration: .01ms !important;
+	animation-iteration-count: 1 !important;
+	scroll-behavior: auto !important;
+	transition-duration: .01ms !important;
+}
+
+.onboarding-page--platform {
+	width: min(1280px, calc(100% - 2rem));
+	min-height: 0;
+	margin: 0 auto;
+	padding: clamp(1.4rem, 4vw, 3rem) 0 clamp(3rem, 6vw, 5rem);
+	background: transparent;
+}
+
+.onboarding-card--platform {
+	display: grid;
+	width: 100%;
+	max-width: none;
+	grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+	align-items: stretch;
+	gap: 0;
+	padding: 0;
+	border-color: var(--line);
+	border-radius: 1.2rem;
+	background: color-mix(in srgb, var(--surface) 92%, transparent);
+	color: var(--foreground);
+}
+
+.onboarding-card__copy {
+	padding: clamp(1.5rem, 5vw, 4rem);
+	border-right: 1px solid var(--line);
+	background: radial-gradient(ellipse at 12% 5%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 48%);
+}
+
+.onboarding-card__copy h1 {
+	margin: .7rem 0 1rem;
+	color: var(--foreground);
+	font: 500 clamp(2.6rem, 5vw, 4.7rem)/.98 var(--serif);
+	letter-spacing: -.055em;
+}
+
+.onboarding-card__lead,
+.onboarding-card__form-heading > p:last-child {
+	color: var(--muted);
+	line-height: 1.7;
+}
+
+.onboarding-steps {
+	display: grid;
+	gap: 1.2rem;
+	margin: 2rem 0;
+	padding: 0;
+	list-style: none;
+}
+
+.onboarding-steps li {
+	display: grid;
+	grid-template-columns: 2rem minmax(0, 1fr);
+	gap: .8rem;
+}
+
+.onboarding-steps li > span {
+	color: var(--gold-soft);
+	font-size: .76rem;
+	font-weight: 800;
+	letter-spacing: .1em;
+}
+
+.onboarding-steps strong {
+	color: var(--foreground);
+}
+
+.onboarding-steps p,
+.onboarding-card__account {
+	margin: .3rem 0 0;
+	color: var(--muted);
+	font-size: .88rem;
+	line-height: 1.6;
+}
+
+.onboarding-card__account strong {
+	color: var(--foreground);
+	word-break: break-word;
+}
+
+.onboarding-card__form {
+	min-width: 0;
+	padding: clamp(1.5rem, 4vw, 3.2rem);
+}
+
+.onboarding-card__form-heading h2 {
+	margin: .35rem 0;
+	color: var(--foreground);
+	font: 500 1.8rem/1.15 var(--serif);
+}
+
+.onboarding-card__form-heading p:last-child {
+	margin: .25rem 0;
+	font-size: .86rem;
+}
+
+.onboarding-card__form .onboarding-form {
+	margin-top: 1.3rem;
+}
+
+.onboarding-card--platform .onboarding-form label {
+	color: var(--foreground);
+	font-size: .82rem;
+	font-weight: 650;
+}
+
+.onboarding-card--platform .onboarding-form input,
+.onboarding-card--platform .onboarding-form select {
+	min-height: 2.8rem;
+	border-color: var(--line);
+	background: color-mix(in srgb, var(--background) 82%, transparent);
+	color: var(--foreground);
+}
+
+.onboarding-card--platform .onboarding-form input::placeholder {
+	color: var(--muted);
+}
+
+.onboarding-card--platform .onboarding-form .form-help,
+.onboarding-card--platform .onboarding-form .legal-consent,
+.onboarding-card--platform .onboarding-form .legal-consent label {
+	color: var(--muted);
+	line-height: 1.6;
+}
+
+.onboarding-card--platform .onboarding-form .legal-consent {
+	margin: .25rem 0;
+	padding: .9rem;
+	border: 1px solid var(--line);
+	border-radius: .7rem;
+}
+
+.onboarding-card--platform .onboarding-form .legal-consent input {
+	width: auto;
+	min-height: auto;
+	accent-color: var(--gold);
+}
+
+.onboarding-card--platform .onboarding-form .legal-consent a,
+.onboarding-card__footer a {
+	color: var(--gold-soft);
+}
+
+.onboarding-card--platform .onboarding-form .button--primary {
+	width: 100%;
+	min-height: 3.1rem;
+}
+
+.onboarding-card__footer {
+	display: flex;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: .75rem;
+	margin-top: 1.2rem;
+	font-size: .84rem;
+}
+
+@media (max-width: 900px) {
+	.onboarding-card--platform {
+		grid-template-columns: 1fr;
+	}
+	.onboarding-card__copy {
+		border-right: 0;
+		border-bottom: 1px solid var(--line);
+	}
+	.onboarding-steps {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: .8rem;
+	}
+	.onboarding-steps li {
+		grid-template-columns: 1fr;
+		gap: .35rem;
+	}
+}
+
+@media (max-width: 680px) {
+	.platform-account-shell {
+		width: min(100% - 1rem, 34rem);
+	}
+	.platform-account-salons__grid,
+	.platform-account-grid,
+	.platform-account-favorites {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.platform-account-panel--wide {
+		grid-column: auto;
+	}
+	.platform-account-salon,
+	.platform-account-booking {
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+	}
+	.platform-account-salon {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.platform-account-booking__actions {
+		justify-content: flex-start;
+	}
+	.platform-account-reschedule {
+		grid-column: auto;
+	}
+	.platform-account-form__row,
+	.platform-account-checks {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.onboarding-page--platform {
+		width: calc(100% - 1rem);
+	}
+	.onboarding-card__copy,
+	.onboarding-card__form {
+		padding: 1.25rem;
+	}
+	.onboarding-steps {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.onboarding-steps li {
+		grid-template-columns: 2rem minmax(0, 1fr);
+	}
+	.onboarding-card__footer {
+		flex-direction: column;
+	}
+}

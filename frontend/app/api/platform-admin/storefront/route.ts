@@ -8,15 +8,15 @@ import {
 	updatePlatformStorefrontDesign,
 } from "@backend/services/platformAdminService"
 import {
-	assertPlatformAdmin,
+	assertPlatformAdminPermission,
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
 
-async function requirePlatformAdmin() {
+async function requirePlatformAdmin(permission: "site-content:read" | "site-content:write") {
 	const session = await auth()
 	if (!session?.user?.id) throw new PlatformAdminActionError("Authentication required.")
 	try {
-		assertPlatformAdmin(session.user.id, session.user.email)
+		await assertPlatformAdminPermission(session.user.id, session.user.email, permission)
 	} catch (error) {
 		if (error instanceof PlatformAuthorizationError)
 			throw new PlatformAdminActionError(error.message)
@@ -27,7 +27,7 @@ async function requirePlatformAdmin() {
 
 export async function GET() {
 	try {
-		await requirePlatformAdmin()
+		await requirePlatformAdmin("site-content:read")
 		return NextResponse.json(await getPlatformStorefrontDesign())
 	} catch (error) {
 		if (error instanceof PlatformAdminActionError)
@@ -39,7 +39,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
 	try {
-		const session = await requirePlatformAdmin()
+		const session = await requirePlatformAdmin("site-content:write")
 		const formData = await request.formData()
 		const file = formData.get("file")
 		const kind = formData.get("kind")
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "A valid platform image kind is required." }, { status: 400 })
 		const url = await uploadPlatformStorefrontImage(
 			session.user.id,
+			session.user.email,
 			Buffer.from(await file.arrayBuffer()),
 			file.type,
 			file.name,
@@ -65,9 +66,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
 	try {
-		const session = await requirePlatformAdmin()
+		const session = await requirePlatformAdmin("site-content:read")
 		const body = await request.json()
-		const design = await updatePlatformStorefrontDesign(session.user.id, body)
+		const design = await updatePlatformStorefrontDesign(session.user.id, session.user.email, body)
 		return NextResponse.json(design)
 	} catch (error) {
 		if (error instanceof PlatformAdminActionError)

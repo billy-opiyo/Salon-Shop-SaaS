@@ -10,11 +10,13 @@ import { PlatformBrandMark } from "@/components/shared/PlatformBrandMark"
 import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 interface PlatformHeaderClientProps {
-	readonly page: "home" | "stores" | "about" | "support"
+	readonly page: "home" | "stores" | "about" | "support" | "account" | "onboarding"
 	readonly logoUrl: string
 	readonly brandName: string
 	readonly brandTagline: string
 	readonly isSignedIn: boolean
+	readonly userEmail?: string | null
+	readonly userImage?: string | null
 	readonly canAccessPlatformAdmin: boolean
 }
 
@@ -29,9 +31,10 @@ const platformSearchEntries: readonly SiteSearchEntry[] = [
 	{ label: "Contact", description: "Send a message to the Beauty Sphia team", href: "/#contact", keywords: "email message" },
 ]
 
-export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, isSignedIn, canAccessPlatformAdmin }: PlatformHeaderClientProps) {
+export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, isSignedIn, userEmail, userImage, canAccessPlatformAdmin }: PlatformHeaderClientProps) {
 	const [menuOpen, setMenuOpen] = useState(false)
 	const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+	const [accountImage, setAccountImage] = useState(userImage ?? "")
 	const router = useRouter()
 	const accountMenuRef = useRef<HTMLDivElement>(null)
 	const accountTriggerRef = useRef<HTMLButtonElement>(null)
@@ -45,6 +48,15 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 			<span className="brand-mark__tagline">{brandTagline}</span>
 		</span>
 	</>
+
+	useEffect(() => {
+		const updateAccountImage = (event: Event) => {
+			if (event instanceof CustomEvent && typeof event.detail?.image === "string")
+				setAccountImage(event.detail.image)
+		}
+		window.addEventListener("beauty-sphia:profile-image-updated", updateAccountImage)
+		return () => window.removeEventListener("beauty-sphia:profile-image-updated", updateAccountImage)
+	}, [])
 
 	useEffect(() => {
 		if (!accountMenuOpen) return
@@ -100,12 +112,12 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 					aria-controls="platform-account-menu"
 					onClick={() => setAccountMenuOpen((open) => !open)}
 				>
-					<UserRound size={21} strokeWidth={1.8} aria-hidden="true" />
+					{isSignedIn ? accountImage ? <Image className="platform-account__avatar" src={accountImage} alt="" width={30} height={30} unoptimized onError={() => setAccountImage("")} /> : <span className="platform-account__initial" aria-hidden="true">{userEmail?.trim().charAt(0).toUpperCase() || <UserRound size={18} aria-hidden="true" />}</span> : <UserRound size={21} strokeWidth={1.8} aria-hidden="true" />}
 					<span>{isSignedIn ? "Account" : "Log in"}</span>
 				</button>
 				{accountMenuOpen && <div className="platform-account__menu" id="platform-account-menu" role="menu" aria-label="Account options">
 					{isSignedIn ? <>
-						<Link href="/manage" role="menuitem" onClick={() => setAccountMenuOpen(false)}>Accounts</Link>
+						<Link href="/account" role="menuitem" onClick={() => setAccountMenuOpen(false)}>My account</Link>
 						<button type="button" role="menuitem" onClick={handleSignOut}>Log out</button>
 					</> : <>
 						<Link href="/login" role="menuitem" onClick={() => setAccountMenuOpen(false)}>Log in</Link>

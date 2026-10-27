@@ -1,6 +1,7 @@
 import { VerifyEmailClient } from "./VerifyEmailClient"
 import { SalonVerifyEmailClient } from "@/components/tenant/SalonVerifyEmailClient"
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
+import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 
 interface VerifyEmailPageProps {
 	searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
@@ -18,6 +19,10 @@ export default async function VerifyEmailPage({
 				? (tenantValue[0] ?? "")
 				: ""
   const rawToken = params.token
+	const rawCallbackUrl = params.callbackUrl
+	const callbackUrl = getSafeAuthCallbackUrl(
+		typeof rawCallbackUrl === "string" ? rawCallbackUrl : Array.isArray(rawCallbackUrl) ? rawCallbackUrl[0] : undefined,
+	)
 	const initialToken =
     typeof rawToken === "string"
       ? rawToken
@@ -47,7 +52,7 @@ export default async function VerifyEmailPage({
     <main className="auth-page">
       <section className="auth-card" aria-label="Email verification">
         <span className="brand-mark">Beauty Sphia</span>
-        <VerifyEmailClient initialToken={initialToken} />
+				<VerifyEmailClient initialToken={initialToken} callbackUrl={callbackUrl} />
       </section>
     </main>
   )

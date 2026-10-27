@@ -48,7 +48,7 @@ const googleProvider =
 			})
 		: null
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 	adapter: PrismaAdapter(prisma),
 	secret: process.env.AUTH_SECRET,
 	trustHost: true,
@@ -119,8 +119,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 		...(googleProvider ? [googleProvider] : []),
 	],
 	callbacks: {
-		async jwt({ token, user }) {
+		async jwt({ token, user, trigger }) {
 			if (user?.id) token.id = user.id
+			if (trigger === "update" && typeof token.id === "string") {
+				const currentUser = await prisma.user.findUnique({
+					where: { id: token.id },
+					select: { name: true, email: true, image: true },
+				})
+				if (currentUser) {
+					token.name = currentUser.name
+					token.email = currentUser.email
+					token.picture = currentUser.image
+				}
+			}
 			return token
 		},
 		async session({ session, token }) {

@@ -46,7 +46,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 	const tenantSlug =
 		new URL(request.url).searchParams.get("tenantSlug")?.trim() ?? ""
-	if (tenantSlug.length < 3 || tenantSlug.length > 48) {
+	if (tenantSlug && (tenantSlug.length < 3 || tenantSlug.length > 48)) {
 		return NextResponse.json(
 			{ error: "A valid salon is required." },
 			{ status: 400 },
@@ -76,7 +76,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 			})
 			return NextResponse.json(queueInfo, { status: 200 })
 		}
-		const snapshot = await getClientAccountSnapshot(userId, tenantSlug)
+		if ((query.has("bookingId") || query.has("waitlistId")) && !tenantSlug)
+			return NextResponse.json({ error: "A salon is required for waitlist details." }, { status: 400 })
+		const snapshot = await getClientAccountSnapshot(userId, tenantSlug || undefined)
 		return NextResponse.json(snapshot, { status: 200 })
 	} catch (error) {
 		if (error instanceof ClientAccountError || error instanceof ClientWaitlistError) {

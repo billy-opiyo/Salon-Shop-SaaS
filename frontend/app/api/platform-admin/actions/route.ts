@@ -8,7 +8,7 @@ import {
 	setTenantSuspension,
 } from "@backend/services/platformAdminService"
 import {
-	assertPlatformAdmin,
+	assertPlatformAdminPermission,
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 			{ status: 403 },
 		)
 	try {
-		assertPlatformAdmin(session.user.id, session.user.email)
+		await assertPlatformAdminPermission(session.user.id, session.user.email, "operations:write")
 	} catch (error) {
 		if (error instanceof PlatformAuthorizationError)
 			return NextResponse.json({ error: error.message }, { status: 403 })

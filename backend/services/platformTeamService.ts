@@ -3,14 +3,13 @@ import "server-only"
 import { randomUUID } from "node:crypto"
 import {
 	DeleteObjectCommand,
-	HeadObjectCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3"
 
 import { prisma } from "@backend/db/prisma"
 import {
-	assertPlatformAdmin,
+	assertPlatformAdminPermission,
 	PlatformAuthorizationError,
 } from "@backend/services/platformAuthorization"
 import {
@@ -69,7 +68,7 @@ export async function listPlatformTeamForAdmin(
 	userId: string,
 	email?: string | null,
 ): Promise<readonly PlatformTeamMemberView[]> {
-	assertPlatformAdmin(userId, email)
+	await assertPlatformAdminPermission(userId, email, "team-content:write")
 	const members = await prisma.platformTeamMember.findMany({
 		orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
 		select: memberSelect,
@@ -144,7 +143,7 @@ export async function createPlatformTeamMember(
 	actorEmail: string | null | undefined,
 	input: PlatformTeamMemberInput,
 ): Promise<PlatformTeamMemberView> {
-	assertPlatformAdmin(actorUserId, actorEmail)
+	await assertPlatformAdminPermission(actorUserId, actorEmail, "team-content:write")
 	const data = validateInput(input)
 	const created = await prisma.$transaction(async (transaction) => {
 		const member = await transaction.platformTeamMember.create({
@@ -179,7 +178,7 @@ export async function updatePlatformTeamMember(
 	id: string,
 	input: PlatformTeamMemberInput,
 ): Promise<PlatformTeamMemberView> {
-	assertPlatformAdmin(actorUserId, actorEmail)
+	await assertPlatformAdminPermission(actorUserId, actorEmail, "team-content:write")
 	const data = validateInput(input)
 	try {
 		const updated = await prisma.$transaction(async (transaction) => {
@@ -241,7 +240,7 @@ export async function deletePlatformTeamMember(
 	actorEmail: string | null | undefined,
 	id: string,
 ): Promise<void> {
-	assertPlatformAdmin(actorUserId, actorEmail)
+	await assertPlatformAdminPermission(actorUserId, actorEmail, "team-content:write")
 	const deleted = await prisma.$transaction(async (transaction) => {
 		const member = await transaction.platformTeamMember.findUnique({
 			where: { id },
