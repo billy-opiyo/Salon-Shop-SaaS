@@ -105,6 +105,7 @@ async function TenantAdminLayoutContent({
 				<MerchantWorkspaceNavigation
 					tenantSlug={tenantSlug.trim().toLowerCase()}
 					access={access}
+					placement="layout"
 				/>
 				{children}
 			</div>

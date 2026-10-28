@@ -3127,7 +3127,7 @@ export function bindAdminSnapshotAdapter(
 					.forEach((item) => {
 						const active = item === tab
 						item.classList.toggle("active", active)
-						item.setAttribute("aria-selected", String(active))
+						item.setAttribute("aria-pressed", String(active))
 					})
 				document
 					.querySelectorAll<HTMLElement>("[data-admin-section]")

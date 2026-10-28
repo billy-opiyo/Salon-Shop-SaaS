@@ -6,6 +6,10 @@ import {
 	SalonAdminMarkup,
 	type SalonAdminSection,
 } from "@/components/tenant/SalonAdminMarkup"
+import {
+	MerchantWorkspaceNavigation,
+	type MerchantWorkspaceNavigationAccess,
+} from "@/components/tenant/MerchantWorkspaceNavigation"
 import { bindAdminSnapshotAdapter } from "@/components/tenant/SalonStorefrontRuntime"
 
 interface SalonAdminRuntimeProps {
@@ -13,6 +17,7 @@ interface SalonAdminRuntimeProps {
 	readonly userEmail: string
 	readonly initialSection: SalonAdminSection
 	readonly allowedSections: readonly SalonAdminSection[]
+	readonly navigationAccess: MerchantWorkspaceNavigationAccess
 }
 
 export function SalonAdminRuntime({
@@ -20,6 +25,7 @@ export function SalonAdminRuntime({
 	userEmail,
 	initialSection,
 	allowedSections,
+	navigationAccess,
 }: SalonAdminRuntimeProps) {
 	useEffect(() => bindAdminSnapshotAdapter(tenantSlug, userEmail), [tenantSlug, userEmail])
 
@@ -32,6 +38,13 @@ export function SalonAdminRuntime({
 				userEmail={userEmail}
 				initialSection={initialSection}
 				allowedSections={allowedSections}
+				workspaceNavigation={
+					<MerchantWorkspaceNavigation
+						tenantSlug={tenantSlug}
+						access={navigationAccess}
+						placement="console"
+					/>
+				}
 			/>
 		</div>
 	)

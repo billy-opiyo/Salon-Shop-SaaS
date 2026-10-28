@@ -12016,7 +12016,8 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     -webkit-backdrop-filter: none;
 }
 
-.merchant-workspace-panel .merchant-workspace-navigation a {
+.merchant-workspace-panel .merchant-workspace-navigation a,
+.merchant-workspace-panel .merchant-workspace-navigation button {
     display: flex;
     width: 100%;
     min-width: 0;
@@ -12034,8 +12035,11 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 }
 
 .merchant-workspace-panel .merchant-workspace-navigation a[aria-current="page"],
+.merchant-workspace-panel .merchant-workspace-navigation button[aria-pressed="true"],
 .merchant-workspace-panel .merchant-workspace-navigation a:hover,
-.merchant-workspace-panel .merchant-workspace-navigation a:focus-visible {
+.merchant-workspace-panel .merchant-workspace-navigation button:hover,
+.merchant-workspace-panel .merchant-workspace-navigation a:focus-visible,
+.merchant-workspace-panel .merchant-workspace-navigation button:focus-visible {
     border-color: var(--primary);
     background: var(--primary);
     color: #0a0a0a;
