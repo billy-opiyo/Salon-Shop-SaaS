@@ -30,6 +30,7 @@ export function SalonAdminRuntime({
 				staffHref={`/manage/${tenantSlug}/staff`}
 				settingsHref={`/manage/${tenantSlug}/settings`}
 				servicesHref={`/manage/${tenantSlug}/services?view=catalog`}
+				userEmail={userEmail}
 				initialSection={initialSection}
 				allowedSections={allowedSections}
 			/>

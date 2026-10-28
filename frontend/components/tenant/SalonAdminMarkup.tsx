@@ -10,6 +10,7 @@ export interface SalonAdminMarkupProps {
 	readonly staffHref: string
 	readonly settingsHref: string
 	readonly servicesHref: string
+	readonly userEmail: string
 	readonly initialSection: SalonAdminSection
 	readonly allowedSections: readonly SalonAdminSection[]
 }
@@ -32,6 +33,7 @@ export function SalonAdminMarkup({
 	staffHref,
 	settingsHref,
 	servicesHref,
+	userEmail,
 	initialSection,
 	allowedSections,
 }: SalonAdminMarkupProps): ReactNode {
@@ -66,18 +68,18 @@ export function SalonAdminMarkup({
 				<div className="admin-auth-card">
 					<div className="admin-auth-actions">
 						<div className="admin-user-state" id="adminUserState">
-							Not logged in
+							Signed in as {userEmail}
 						</div>
 						<button
 							className="btn btn-outline"
 							id="adminLogoutBtn"
-						 style={{display: "none"}}
+							type="button"
 						>
 							Log Out
 						</button>
 					</div>
 
-					<form className="admin-auth-form" id="adminLoginForm">
+					<form className="admin-auth-form" id="adminLoginForm" style={{display: "none"}}>
 						<div className="form-group">
 							<label htmlFor="adminEmail">Admin Email</label>
 							<input
@@ -130,7 +132,7 @@ export function SalonAdminMarkup({
 					</p>
 				</div>
 
-				<div className="admin-panel" id="adminPanel">
+				<div className="admin-panel" id="adminPanel" style={{display: "block"}}>
 					<div
 						className="admin-section-tabs"
 						role="tablist"

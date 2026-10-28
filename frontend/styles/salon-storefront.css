@@ -5265,6 +5265,12 @@ h6 {
     font-size: 0.76rem;
 }
 
+.admin-schedule-day-header .admin-schedule-day-count {
+    margin-top: 6px;
+    font-size: 0.7rem;
+    opacity: 0.78;
+}
+
 .admin-schedule-day-events {
     padding: 10px;
     display: grid;
