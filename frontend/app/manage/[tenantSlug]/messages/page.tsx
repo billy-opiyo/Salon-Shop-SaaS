@@ -19,7 +19,7 @@ export default async function MerchantMessagesPage({
 	const { tenantSlug } = await params
 	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=messages`)
 	const session = await auth()
-	const userId = session?.user?.id
+	const userId = session?.user?.id ?? ""
 	if (!userId)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/messages`))
 	let messages: Awaited<ReturnType<typeof listMessagesForUser>>
