@@ -49,6 +49,13 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 				) : (
 					posts.map((post) => (
 						<article className="manage-store" key={post.id}>
+							<div className="manage-store__media">
+								{post.imageUrl ? (
+									<img src={post.imageUrl} alt={post.title} loading="lazy" />
+								) : (
+									<span>Blog story</span>
+								)}
+							</div>
 							<div>
 								<p className="eyebrow">
 									{post.published ? "Published" : "Draft"} ·{" "}

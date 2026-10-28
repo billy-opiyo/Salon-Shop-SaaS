@@ -175,8 +175,8 @@ export default async function MerchantSettingsPage({
 					/>
 					Pay after service
 				</label>
-				<label>
-					Partial deposit percentage
+				<label className="merchant-settings-deposit-field">
+					<span>Partial deposit percentage</span>
 					<input
 						name="bookingDepositPercent"
 						type="number"

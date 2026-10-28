@@ -32,7 +32,10 @@ export function DomainManager({
 	const [record, setRecord] = useState<Registration["verification"] | null>(
 		null,
 	)
-	const [message, setMessage] = useState("")
+	const [feedback, setFeedback] = useState<{
+		readonly message: string
+		readonly isError: boolean
+	} | null>(null)
 	const [busy, setBusy] = useState(false)
 
 	async function request(
@@ -41,7 +44,7 @@ export function DomainManager({
 		domainId?: string,
 	) {
 		setBusy(true)
-		setMessage("")
+		setFeedback(null)
 		try {
 			const response = await fetch(
 				`/api/manage/${encodeURIComponent(tenantSlug)}/domains${domainId ? `?domainId=${encodeURIComponent(domainId)}` : ""}`,
@@ -82,17 +85,19 @@ export function DomainManager({
 					),
 				)
 			}
-			setMessage(
-				method === "DELETE"
+			setFeedback({
+				message: method === "DELETE"
 					? "Domain removed."
 					: body?.action === "register"
 						? "Add the DNS record, then verify the domain."
 						: "Domain updated.",
-			)
+				isError: false,
+			})
 		} catch (error) {
-			setMessage(
-				error instanceof Error ? error.message : "Domain operation failed.",
-			)
+			setFeedback({
+				message: error instanceof Error ? error.message : "Domain operation failed.",
+				isError: true,
+			})
 		} finally {
 			setBusy(false)
 		}
@@ -100,9 +105,13 @@ export function DomainManager({
 
 	return (
 		<>
-			{message && (
-				<p className="form-message" role="status">
-					{message}
+			{feedback && (
+				<p
+					className={`form-message form-message--${feedback.isError ? "error" : "success"}`}
+					role={feedback.isError ? "alert" : "status"}
+					aria-live={feedback.isError ? "assertive" : "polite"}
+				>
+					{feedback.message}
 				</p>
 			)}
 			<section className="manage-store-list" aria-label="Custom domains">

@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import Link from "next/link"
 
 type Invitation = {
 	readonly id: string
@@ -20,15 +21,30 @@ export function TeamInvitationPanel({
 	initialInvitations,
 }: TeamInvitationPanelProps) {
 	const [invitations, setInvitations] = useState([...initialInvitations])
-	const [message, setMessage] = useState("")
-	const [submitting, setSubmitting] = useState(false)
+	const [feedback, setFeedback] = useState<{
+		readonly message: string
+		readonly isError: boolean
+	} | null>(null)
+	const [busyAction, setBusyAction] = useState<
+		| { readonly type: "invite" }
+		| { readonly type: "accept" }
+		| {
+				readonly type: "update"
+				readonly action: "cancel" | "resend"
+				readonly invitationId: string
+		  }
+		| null
+	>(null)
 	const [acceptCode, setAcceptCode] = useState("")
+	const [acceptedSlug, setAcceptedSlug] = useState<string | null>(null)
 
 	async function invite(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
-		setSubmitting(true)
-		setMessage("")
-		const form = new FormData(event.currentTarget)
+		const formElement = event.currentTarget
+		setBusyAction({ type: "invite" })
+		setFeedback(null)
+		setAcceptedSlug(null)
+		const form = new FormData(formElement)
 		try {
 			const response = await fetch(
 				`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
@@ -43,9 +59,10 @@ export function TeamInvitationPanel({
 			)
 			const result = await response.json()
 			if (!response.ok) throw new Error(result.error ?? "Invitation failed.")
-			setMessage(
-				`Invitation created for ${String(form.get("email"))}. Code: ${result.invitationCode}`,
-			)
+			setFeedback({
+				message: `Invitation created for ${String(form.get("email"))}. Code: ${result.invitationCode}`,
+				isError: false,
+			})
 			setInvitations((current) => [
 				{
 					id: result.invitationId,
@@ -56,11 +73,14 @@ export function TeamInvitationPanel({
 				},
 				...current,
 			])
-			event.currentTarget.reset()
+			formElement.reset()
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Invitation failed.")
+			setFeedback({
+				message: error instanceof Error ? error.message : "Invitation failed.",
+				isError: true,
+			})
 		} finally {
-			setSubmitting(false)
+			setBusyAction(null)
 		}
 	}
 
@@ -68,48 +88,69 @@ export function TeamInvitationPanel({
 		action: "cancel" | "resend",
 		invitationId: string,
 	) {
-		setMessage("")
-		const response = await fetch(
-			`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
-			{
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ action, invitationId }),
-			},
-		)
-		const result = await response.json()
-		if (!response.ok) {
-			setMessage(result.error ?? "Invitation update failed.")
-			return
+		setBusyAction({ type: "update", action, invitationId })
+		setFeedback(null)
+		setAcceptedSlug(null)
+		try {
+			const response = await fetch(
+				`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
+				{
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ action, invitationId }),
+				},
+			)
+			const result = await response.json().catch(() => ({}))
+			if (!response.ok) throw new Error(result.error ?? "Invitation update failed.")
+			setFeedback({
+				message: action === "resend"
+					? `Invitation resent. New code: ${result.invitationCode}`
+					: "Invitation cancelled.",
+				isError: false,
+			})
+			setInvitations((current) =>
+				current.map((item) =>
+					item.id === invitationId
+						? { ...item, status: action === "cancel" ? "CANCELLED" : "PENDING" }
+						: item,
+				),
+			)
+		} catch (error) {
+			setFeedback({
+				message: error instanceof Error ? error.message : "Invitation update failed.",
+				isError: true,
+			})
+		} finally {
+			setBusyAction(null)
 		}
-		setMessage(
-			action === "resend"
-				? `Invitation resent. New code: ${result.invitationCode}`
-				: "Invitation cancelled.",
-		)
-		setInvitations((current) =>
-			current.map((item) =>
-				item.id === invitationId
-					? { ...item, status: action === "cancel" ? "CANCELLED" : "PENDING" }
-					: item,
-			),
-		)
 	}
 
 	async function acceptInvitation(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
-		setMessage("")
-		const response = await fetch("/api/team/invitations/accept", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ code: acceptCode.trim() }),
-		})
-		const result = await response.json()
-		setMessage(
-			response.ok
-				? `Invitation accepted. Open /manage/${result.slug}.`
-				: (result.error ?? "Invitation could not be accepted."),
-		)
+		setBusyAction({ type: "accept" })
+		setFeedback(null)
+		setAcceptedSlug(null)
+		try {
+			const response = await fetch("/api/team/invitations/accept", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ code: acceptCode.trim() }),
+			})
+			const result = await response.json().catch(() => ({}))
+			if (!response.ok) throw new Error(result.error ?? "Invitation could not be accepted.")
+			setAcceptedSlug(result.slug)
+			setFeedback({
+				message: `Invitation accepted. Open /manage/${result.slug}.`,
+				isError: false,
+			})
+		} catch (error) {
+			setFeedback({
+				message: error instanceof Error ? error.message : "Invitation could not be accepted.",
+				isError: true,
+			})
+		} finally {
+			setBusyAction(null)
+		}
 	}
 
 	return (
@@ -119,19 +160,20 @@ export function TeamInvitationPanel({
 				<input
 					name="email"
 					type="email"
+					aria-label="Team member email address"
 					placeholder="team@example.com"
 					required
 				/>
-				<select name="role" defaultValue="STAFF">
+				<select name="role" defaultValue="STAFF" aria-label="Team member role">
 					<option value="STAFF">Staff</option>
 					<option value="ADMIN">Admin</option>
 				</select>
 				<button
 					className="button button--primary"
 					type="submit"
-					disabled={submitting}
+					disabled={busyAction !== null}
 				>
-					{submitting ? "Sending..." : "Invite member"}
+					{busyAction?.type === "invite" ? "Sending..." : "Invite member"}
 				</button>
 			</form>
 			{invitations.map((invitation) => (
@@ -149,16 +191,18 @@ export function TeamInvitationPanel({
 							<button
 								className="button button--outline button--small"
 								type="button"
+								disabled={busyAction !== null}
 								onClick={() => void updateInvitation("resend", invitation.id)}
 							>
-								Resend
+								{busyAction?.type === "update" && busyAction.invitationId === invitation.id && busyAction.action === "resend" ? "Resending…" : "Resend"}
 							</button>
 							<button
 								className="button button--outline button--small"
 								type="button"
+								disabled={busyAction !== null}
 								onClick={() => void updateInvitation("cancel", invitation.id)}
 							>
-								Cancel
+								{busyAction?.type === "update" && busyAction.invitationId === invitation.id && busyAction.action === "cancel" ? "Cancelling…" : "Cancel"}
 							</button>
 						</div>
 					)}
@@ -169,18 +213,33 @@ export function TeamInvitationPanel({
 					value={acceptCode}
 					onChange={(event) => setAcceptCode(event.target.value)}
 					placeholder="Invitation code"
+					aria-label="Invitation code"
 					minLength={64}
 					maxLength={64}
+					disabled={busyAction !== null}
 					required
 				/>
-				<button className="button button--outline" type="submit">
-					Accept invitation
+				<button
+					className="button button--outline"
+					type="submit"
+					disabled={busyAction !== null}
+				>
+					{busyAction?.type === "accept" ? "Accepting…" : "Accept invitation"}
 				</button>
 			</form>
-			{message && (
-				<p className="form-message" role="status">
-					{message}
+			{feedback && (
+				<p
+					className={`form-message form-message--${feedback.isError ? "error" : "success"}`}
+					role={feedback.isError ? "alert" : "status"}
+					aria-live={feedback.isError ? "assertive" : "polite"}
+				>
+					{feedback.message}
 				</p>
+			)}
+			{acceptedSlug && !feedback?.isError && (
+				<Link className="button button--primary button--small" href={`/manage/${encodeURIComponent(acceptedSlug)}`}>
+					Open salon workspace
+				</Link>
 			)}
 		</section>
 	)

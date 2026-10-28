@@ -20,6 +20,13 @@ const defaultPreferences: Preferences = {
 	notifyPush: false,
 }
 
+function toLocalDateInputValue(date: Date): string {
+	const year = date.getFullYear()
+	const month = String(date.getMonth() + 1).padStart(2, "0")
+	const day = String(date.getDate()).padStart(2, "0")
+	return `${year}-${month}-${day}`
+}
+
 export function PlatformAccountClient({
 	initialSnapshot,
 	canDeleteAccount,
@@ -230,7 +237,7 @@ export function PlatformAccountClient({
 		}
 	}
 
-	const today = new Date().toISOString().slice(0, 10)
+	const today = toLocalDateInputValue(new Date())
 
 	return (
 		<div className="platform-account-content" data-account-theme={preferences.theme} data-account-size={preferences.fontSize} data-account-contrast={preferences.highContrast ? "high" : "normal"} data-account-motion={preferences.reducedMotion ? "reduced" : "normal"}>
@@ -287,7 +294,7 @@ export function PlatformAccountClient({
 						const canReschedule = ["pending", "confirmed"].includes(booking.status)
 						return <article className="platform-account-booking" key={booking.id}>
 							<div className="platform-account-booking__details"><p className="eyebrow">{booking.tenantName}</p><h3>{booking.serviceName}</h3><span>{booking.appointmentDate} at {booking.timeLabel} · {booking.stylistName ?? "Any available stylist"}</span>{booking.specialRequests && <small>Note: {booking.specialRequests}</small>}</div>
-							<div className="platform-account-booking__actions"><span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span><Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>{canManage && <button className="button button--outline button--small" type="button" disabled={busy} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>Cancel</button>}{canReschedule && <button className="button button--outline button--small" type="button" onClick={() => { setEditingBooking((current) => current === booking.id ? null : booking.id); setNewDate(booking.appointmentDate); setNewTime(booking.timeLabel) }}>Reschedule</button>}</div>
+							<div className="platform-account-booking__actions"><span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span><Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>{canManage && <button className="button button--outline button--small" type="button" disabled={busy} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>Cancel</button>}{canReschedule && <button className="button button--outline button--small" type="button" disabled={busy} aria-expanded={editingBooking === booking.id} onClick={() => { setEditingBooking((current) => current === booking.id ? null : booking.id); setNewDate(booking.appointmentDate); setNewTime(booking.timeLabel) }}>{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}</button>}</div>
 							{editingBooking === booking.id && <form className="platform-account-reschedule" onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}><label>New date<input type="date" min={today} value={newDate} onChange={(event) => setNewDate(event.target.value)} required /></label><label>New time<input type="text" value={newTime} onChange={(event) => setNewTime(event.target.value)} placeholder="e.g. 10:30 AM" maxLength={40} required /></label><button className="button button--primary button--small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save new time"}</button><small>The salon will confirm availability for your requested time.</small></form>}
 						</article>
 					})}</div> : <p className="platform-account-empty">No appointments are linked to your Beauty Sphia account yet. Browse salons to book your next visit.</p>}
