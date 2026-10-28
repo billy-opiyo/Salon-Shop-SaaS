@@ -17,7 +17,7 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 	const { tenantSlug } = await params
 	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=blogs`)
 	const session = await auth()
-	const userId = session?.user?.id
+	const userId = session?.user?.id ?? ""
 	if (!userId) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/blog`))
 	let posts: Awaited<ReturnType<typeof listBlogsForUser>>
 	try {

@@ -12031,7 +12031,7 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     color: var(--text-secondary);
 }
 
-.merchant-workspace-panel .admin-booking-filter-controls {
+.merchant-workspace-panel > .manage-page .admin-booking-filter-controls {
     margin: 1.25rem 0;
     padding: .65rem;
     border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
@@ -12080,7 +12080,7 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 }
 
 .merchant-workspace-panel .manage-store,
-.merchant-workspace-panel .admin-booking-item,
+.merchant-workspace-panel > .manage-page .admin-booking-item,
 .merchant-workspace-panel .merchant-analytics-metric,
 .merchant-workspace-panel .merchant-analytics-review,
 .merchant-workspace-panel .merchant-analytics-status,
@@ -12485,7 +12485,7 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     color: var(--text-muted);
 }
 
-.merchant-workspace-panel .admin-booking-item {
+.merchant-workspace-panel > .manage-page .admin-booking-item {
     border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
     background: linear-gradient(145deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--primary)), var(--bg-primary));
     box-shadow: 0 8px 24px rgba(0, 0, 0, .16);

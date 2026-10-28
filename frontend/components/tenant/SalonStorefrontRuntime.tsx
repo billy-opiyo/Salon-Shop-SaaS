@@ -305,6 +305,8 @@ function renderAdminSnapshotList(
 			const statusClass = String(record.status ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "-")
 			statusBadge.className = `admin-status-badge admin-status-${statusClass}`
 			statusBadge.textContent = String(record.status ?? "Unknown")
+				.replace(/[_-]+/g, " ")
+				.replace(/\b\w/g, (letter) => letter.toUpperCase())
 			header.append(identity, statusBadge)
 			row.append(header)
 
@@ -312,7 +314,7 @@ function renderAdminSnapshotList(
 			meta.className = isWaitlist ? "admin-review-meta" : "admin-booking-meta"
 			const fields: Array<[string, unknown]> = isWaitlist
 				? [["Waitlist Place", record.queuePositionLabel ? `${String(record.queuePositionLabel)}${record.queueSize ? ` of ${String(record.queueSize)}` : ""}` : "N/A"], ["Waitlist Status", record.status], ["Service", record.serviceName ?? record.service], ["Stylist", record.preferredStylist ?? "Any Available"], ["Preferred date", record.preferredDate], ["Preferred time", record.preferredTime], ["Slot ID", record.preferredSlotId ?? "N/A"], ["Email", record.email], ["Phone", record.phone], ["Joined", record.createdAt], ["Updated", record.updatedAt], ["Notified", record.notifiedAt], ["Notification channel", record.notificationChannel]]
-				: [["Service", record.serviceName ?? record.service], ["Stylist", typeof record.stylist === "object" && record.stylist !== null ? (record.stylist as AdminSnapshotRecord).name : record.stylistName ?? record.stylist ?? "Any Available"], ["Date", record.appointmentDate ?? record.date], ["Time", record.timeLabel ?? record.time], ["Email", record.email], ["Phone", record.phone], ["WhatsApp", record.whatsappStatus], ["Reminder sent", record.reminderSentAt ?? "Not sent"]]
+				: [["Service", record.serviceName || record.service || "N/A"], ["Stylist", typeof record.stylist === "object" && record.stylist !== null ? (record.stylist as AdminSnapshotRecord).name : record.stylistName ?? record.stylist ?? "Any Available"], ["Date", record.appointmentDate || record.date || "N/A"], ["Time", record.timeLabel || record.time || "N/A"], ["Email", record.email || "N/A"], ["Phone", record.phone || "N/A"], ["WhatsApp", record.whatsappStatus || "pending"], ["Reminder sent", record.reminderSentAt || "Not sent"]]
 			for (const [label, value] of fields) {
 				if (value === null || value === undefined || value === "") continue
 				const field = document.createElement("div")
@@ -605,6 +607,14 @@ function renderAdminSnapshotList(
 				// Ignore malformed legacy image URLs.
 			}
 		}
+		if ((isBooking || isWaitlist) && !inspirationImageUrl) {
+			const inspiration = document.createElement("div")
+			inspiration.className = "admin-booking-inspiration"
+			const inspirationLabel = document.createElement("span")
+			inspirationLabel.textContent = "Inspiration Image: "
+			inspiration.append(inspirationLabel, document.createTextNode("Not provided"))
+			row.append(inspiration)
+		}
 		const recordId =
 			elementId === "adminAdminsList" && typeof record.userId === "string"
 				? record.userId
@@ -646,6 +656,23 @@ function renderAdminSnapshotList(
 			actionGroup.append(button)
 		}
 		if (elementId === "adminBookingsList") {
+			if (status !== "WAITLISTED") {
+				const reminder = document.createElement("button")
+				reminder.type = "button"
+				reminder.className = "admin-action-btn admin-platform-action"
+				reminder.dataset.adminAction = "manual-whatsapp-reminder"
+				reminder.dataset.adminId = recordId
+				reminder.dataset.name = titleText
+				reminder.dataset.service = String(record.serviceName ?? record.service ?? "[Service name]")
+				reminder.dataset.price = String(record.price ?? record.priceRange ?? "[Price]")
+				reminder.dataset.date = String(record.appointmentDate ?? record.date ?? "[Appointment date]")
+				reminder.dataset.time = String(record.timeLabel ?? record.time ?? "[Appointment time]")
+				const reminderIcon = document.createElement("i")
+				reminderIcon.className = "fab fa-whatsapp"
+				reminderIcon.setAttribute("aria-hidden", "true")
+				reminder.append(reminderIcon, document.createTextNode(" Send WhatsApp Reminder"))
+				actionGroup.append(reminder)
+			}
 			if (status === "PENDING") {
 				addAction("booking-status", "Confirm", { status: "CONFIRMED" })
 				addAction("booking-status", "Cancel + Release Slot", { status: "CANCELLED" })
@@ -2836,6 +2863,27 @@ export function bindAdminSnapshotAdapter(
 				form.scrollIntoView({ behavior: "smooth", block: "center" })
 			} catch {
 				// The detail payload is generated locally from the server snapshot.
+			}
+			return
+		}
+		if (action === "manual-whatsapp-reminder") {
+			const config = (window.CLIENT_CONFIG ?? {}) as SalonClientConfig
+			const businessName = config.client?.name ?? config.brand?.businessName ?? "the salon"
+			const customerLine = button.dataset.name ? ` for ${button.dataset.name}` : ""
+			const reminderText = `Hello ${businessName}, this is a manual appointment reminder${customerLine}. Service: ${button.dataset.service || "[Service name]"}. Price: ${button.dataset.price || "[Price]"}. Date: ${button.dataset.date || "[Appointment date]"}. Time: ${button.dataset.time || "[Appointment time]"}. Please confirm you received this reminder.`
+			const baseUrl = getConfiguredWhatsAppUrl()
+			const separator = baseUrl.includes("?") ? "&" : "?"
+			window.open(
+				`${baseUrl}${separator}text=${encodeURIComponent(reminderText)}`,
+				"_blank",
+				"noopener,noreferrer",
+			)
+			const message = document.getElementById("adminActionMessage")
+			if (message) {
+				message.textContent = "WhatsApp opened with a ready-to-send manual reminder."
+				message.classList.remove("error")
+				message.classList.add("success")
+				message.style.display = "block"
 			}
 			return
 		}

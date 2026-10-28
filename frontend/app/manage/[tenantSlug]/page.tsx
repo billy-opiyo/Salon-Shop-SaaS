@@ -32,7 +32,7 @@ export default async function TenantAdminPage({
 	const { tenantSlug } = await params
 	const normalizedSlug = tenantSlug.trim().toLowerCase()
 	const session = await auth()
-	const userId = session?.user?.id
+	const userId = session?.user?.id ?? ""
 	if (!userId) redirect(getLoginUrlForPath(`/manage/${normalizedSlug}`))
 
 	const tenant = await prisma.tenant.findUnique({

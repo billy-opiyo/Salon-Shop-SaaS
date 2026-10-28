@@ -39,7 +39,7 @@ export default async function MerchantSchedulePage({
 	const { tenantSlug } = await params
 	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=schedule`)
 	const session = await auth()
-	const userId = session?.user?.id
+	const userId = session?.user?.id ?? ""
 	if (!userId)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/schedule`))
 	let bookings: Awaited<ReturnType<typeof listScheduleForUser>>

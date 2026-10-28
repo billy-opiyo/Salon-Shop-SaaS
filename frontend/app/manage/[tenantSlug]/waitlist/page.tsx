@@ -21,7 +21,7 @@ export default async function MerchantWaitlistPage({
 	const { tenantSlug } = await params
 	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=waitlist`)
 	const session = await auth()
-	const userId = session?.user?.id
+	const userId = session?.user?.id ?? ""
 	if (!userId)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/waitlist`))
 	let entries: Awaited<ReturnType<typeof listWaitlistForUser>>
