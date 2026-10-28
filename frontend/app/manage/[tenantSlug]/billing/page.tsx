@@ -11,6 +11,7 @@ import {
 
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
+import { PublishSalonForm } from "@/app/account/PublishSalonForm"
 
 interface BillingPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -98,7 +99,7 @@ export default async function MerchantBillingPage({
 					</p>
 				</div>
 				<nav className="manage-header__actions" aria-label="Billing page navigation">
-					<Link className="button button--ghost" href="/account">My account</Link>
+					<Link className="button button--ghost" href={`/manage/${encodeURIComponent(tenantSlug)}`}>Salon admin</Link>
 				</nav>
 			</header>
 
@@ -143,8 +144,7 @@ export default async function MerchantBillingPage({
 					<SetupPaymentForm tenantSlug={tenantSlug} />
 					<div className="merchant-billing-next-step">
 						<h3>Next: publish your salon</h3>
-						<p>After the setup payment is confirmed, return to your account and choose “Publish salon” to make your storefront live.</p>
-						<Link className="button button--outline button--small" href="/account">Go to my account</Link>
+						<p>Once the setup payment is confirmed, this page will show the action to publish your storefront.</p>
 					</div>
 				</section>
 			)}
@@ -154,7 +154,7 @@ export default async function MerchantBillingPage({
 					<h2 id="setup-unavailable-title">Setup payment is temporarily unavailable</h2>
 					<p>Your salon details are saved, but the selected plan’s current pricing is unavailable. Contact Beauty Sphia support for help continuing setup.</p>
 					<div className="manage-header__actions">
-						<Link className="button button--outline" href="/account">Return to my account</Link>
+						<Link className="button button--outline" href={`/manage/${encodeURIComponent(tenantSlug)}`}>Salon admin</Link>
 						<a className="button button--ghost" href={`mailto:${design.contact.supportEmail}?subject=${encodeURIComponent(`Help with ${billing.businessName} setup`)}`}>Contact support</a>
 					</div>
 				</section>
@@ -163,8 +163,23 @@ export default async function MerchantBillingPage({
 				<section className="manage-card merchant-billing-activation" aria-labelledby="setup-complete-title">
 					<p className="eyebrow">Setup payment confirmed</p>
 					<h2 id="setup-complete-title">Your salon is ready to publish</h2>
-					<p>The setup fee has been received. Publish your storefront from your account to make it visible to customers.</p>
-					<Link className="button button--primary" href="/account">Continue to publish</Link>
+					<p>The setup fee has been received. Publish your storefront to make it visible to customers.</p>
+					{billing.memberships[0]?.role === "OWNER" || billing.memberships[0]?.canManageContent ? (
+						<PublishSalonForm tenantId={billing.id} />
+					) : (
+						<p>Ask the salon owner or an authorized content manager to publish this storefront.</p>
+					)}
+				</section>
+			)}
+			{billing.status === "ACTIVE" && (
+				<section className="manage-card merchant-billing-activation" aria-labelledby="salon-live-title">
+					<p className="eyebrow">Salon published</p>
+					<h2 id="salon-live-title">Your storefront is live</h2>
+					<p>Customers can now discover and visit your salon online.</p>
+					<div className="manage-header__actions">
+						<Link className="button button--primary" href={`/${encodeURIComponent(tenantSlug)}`}>View storefront</Link>
+						<Link className="button button--outline" href={`/manage/${encodeURIComponent(tenantSlug)}`}>Manage salon</Link>
+					</div>
 				</section>
 			)}
 			{(billing.subscription?.status === "payment_due" ||

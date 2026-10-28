@@ -24,9 +24,10 @@ export default async function MerchantGalleryPage({
 	params,
 }: GalleryPageProps) {
 	const { tenantSlug } = await params
+	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=gallery`)
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/gallery`))
-	let styles
+	let styles: Awaited<ReturnType<typeof listGalleryForUser>>
 	try {
 		styles = await listGalleryForUser(session.user.id, tenantSlug)
 	} catch (error) {

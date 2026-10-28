@@ -22,10 +22,11 @@ export default async function MerchantSecurityPage({
 	params,
 }: SecurityPageProps) {
 	const { tenantSlug } = await params
+	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=security`)
 	const session = await auth()
 	if (!session?.user?.id)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/security`))
-	let snapshot
+	let snapshot: Awaited<ReturnType<typeof getSecuritySnapshot>>
 	try {
 		snapshot = await getSecuritySnapshot(session.user.id, tenantSlug)
 	} catch (error) {

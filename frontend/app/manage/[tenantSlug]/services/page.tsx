@@ -16,12 +16,17 @@ import {
 
 interface ServicesPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
+	readonly searchParams: Promise<{ view?: string | string[] }>
 }
 
 export default async function MerchantServicesPage({
 	params,
+	searchParams,
 }: ServicesPageProps) {
 	const { tenantSlug } = await params
+	const query = await searchParams
+	if (query.view !== "catalog")
+		redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=services`)
 	const session = await auth()
 	if (!session?.user?.id)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/services`))

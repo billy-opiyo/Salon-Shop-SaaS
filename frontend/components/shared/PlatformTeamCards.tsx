@@ -33,6 +33,8 @@ export function PlatformTeamCards({
 								className="platform-team-public-card__avatar"
 								src={avatarUrl}
 								alt={`${member.name} profile`}
+								loading="lazy"
+								decoding="async"
 							/>
 						) : (
 							<div className="platform-team-public-card__avatar platform-team-public-card__avatar--empty" aria-hidden="true">

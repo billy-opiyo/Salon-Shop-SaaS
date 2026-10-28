@@ -67,6 +67,7 @@ export function PlatformTeamManager({
 	const [form, setForm] = useState<TeamFormState>(emptyForm)
 	const [avatar, setAvatar] = useState<File | null>(null)
 	const [busy, setBusy] = useState(false)
+	const [removingId, setRemovingId] = useState<string | null>(null)
 	const [message, setMessage] = useState("")
 	const [error, setError] = useState("")
 
@@ -133,8 +134,9 @@ export function PlatformTeamManager({
 					(a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name),
 				)
 			})
-			setMessage(editingId ? "Team member updated." : "Team member added.")
+			const successMessage = editingId ? "Team member updated." : "Team member added."
 			startCreate()
+			setMessage(successMessage)
 		} catch (submitError) {
 			setError(
 				submitError instanceof Error
@@ -149,7 +151,9 @@ export function PlatformTeamManager({
 	async function remove(member: PlatformTeamMemberView) {
 		if (!window.confirm(`Remove ${member.name} from the platform team?`)) return
 		setBusy(true)
+		setRemovingId(member.id)
 		setError("")
+		setMessage("")
 		try {
 			const body = new FormData()
 			body.set("action", "delete")
@@ -165,6 +169,7 @@ export function PlatformTeamManager({
 			if (!response.ok) throw new Error(result.error ?? "Team member could not be removed.")
 			setMembers((current) => current.filter((item) => item.id !== member.id))
 			if (editingId === member.id) startCreate()
+			setMessage(`${member.name} was removed from the platform team.`)
 		} catch (removeError) {
 			setError(
 				removeError instanceof Error
@@ -172,6 +177,7 @@ export function PlatformTeamManager({
 					: "Team member could not be removed.",
 			)
 		} finally {
+			setRemovingId(null)
 			setBusy(false)
 		}
 	}
@@ -184,7 +190,7 @@ export function PlatformTeamManager({
 					<h2 id="team-title">Meet Our Team</h2>
 					<p>Add the people behind Beauty Sphia and keep their public profiles current.</p>
 				</div>
-				<button className="button button--outline button--small" type="button" onClick={startCreate}>
+				<button className="button button--outline button--small" type="button" onClick={startCreate} disabled={busy}>
 					Add team member
 				</button>
 			</div>
@@ -212,9 +218,9 @@ export function PlatformTeamManager({
 			<div className="platform-team-admin__cards">
 				{members.map((member) => (
 					<article className="platform-team-card" key={member.id}>
-						{safeAvatarUrl(member.avatarUrl) ? <img className="platform-team-card__avatar" src={safeAvatarUrl(member.avatarUrl) ?? undefined} alt={`${member.name} profile`} /> : <div className="platform-team-card__avatar platform-team-card__avatar--empty" aria-hidden="true">{member.name.slice(0, 1).toUpperCase()}</div>}
+						{safeAvatarUrl(member.avatarUrl) ? <img className="platform-team-card__avatar" src={safeAvatarUrl(member.avatarUrl) ?? undefined} alt={`${member.name} profile`} loading="lazy" decoding="async" /> : <div className="platform-team-card__avatar platform-team-card__avatar--empty" aria-hidden="true">{member.name.slice(0, 1).toUpperCase()}</div>}
 						<div className="platform-team-card__body"><p className="eyebrow">{member.published ? "Published" : "Hidden"}</p><h3>{member.name}</h3><strong>{member.role}</strong><p>{member.bio}</p></div>
-						<div className="platform-team-card__actions"><button className="button button--outline button--small" type="button" onClick={() => startEdit(member)} disabled={busy}>Edit</button><button className="button button--ghost button--small" type="button" onClick={() => remove(member)} disabled={busy}>Remove</button></div>
+						<div className="platform-team-card__actions"><button className="button button--outline button--small" type="button" onClick={() => startEdit(member)} disabled={busy}>Edit</button><button className="button button--ghost button--small" type="button" onClick={() => remove(member)} disabled={busy}>{removingId === member.id ? "Removing…" : "Remove"}</button></div>
 					</article>
 				))}
 				{members.length === 0 && <p className="manage-empty">No platform team profiles have been added.</p>}

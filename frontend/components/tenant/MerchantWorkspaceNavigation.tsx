@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 export interface MerchantWorkspaceNavigationAccess {
 	readonly canManageBookings: boolean
@@ -20,44 +20,60 @@ export function MerchantWorkspaceNavigation({
 	readonly access: MerchantWorkspaceNavigationAccess | null
 }) {
 	const pathname = usePathname()
+	const searchParams = useSearchParams()
 	const basePath = `/manage/${tenantSlug}`
-	if (!access || pathname.replace(/\/$/, "") === basePath) return null
+	if (!access) return null
 
 	const links = [
-		{ label: "Bookings", href: `${basePath}/bookings`, visible: access.canManageBookings },
-		{ label: "Waitlist", href: `${basePath}/waitlist`, visible: access.canManageBookings },
-		{ label: "Schedule", href: `${basePath}/schedule`, visible: access.canManageBookings },
-		{ label: "Gallery", href: `${basePath}/gallery`, visible: access.canManageContent },
-		{ label: "Blog", href: `${basePath}/blog`, visible: access.canManageContent },
-		{ label: "Reviews", href: `${basePath}/reviews`, visible: access.canManageContent },
-		{ label: "Messages", href: `${basePath}/messages`, visible: access.canManageContent },
-		{ label: "Services", href: `${basePath}/services`, visible: access.canManageContent },
+		{ label: "Bookings", href: `${basePath}?section=bookings`, section: "bookings", visible: access.canManageBookings },
+		{ label: "Waitlist", href: `${basePath}?section=waitlist`, section: "waitlist", visible: access.canManageBookings },
+		{ label: "Schedule", href: `${basePath}?section=schedule`, section: "schedule", visible: access.canManageBookings },
+		{ label: "Gallery", href: `${basePath}?section=gallery`, section: "gallery", visible: access.canManageContent },
+		{ label: "Blog", href: `${basePath}?section=blogs`, section: "blogs", visible: access.canManageContent },
+		{ label: "Reviews", href: `${basePath}?section=reviews`, section: "reviews", visible: access.canManageContent },
+		{ label: "Messages", href: `${basePath}?section=messages`, section: "messages", visible: access.canManageContent },
+		{ label: "Services", href: `${basePath}?section=services`, section: "services", visible: access.canManageContent },
 		{ label: "Staff", href: `${basePath}/staff`, visible: access.canManageContent },
 		{ label: "Analytics", href: `${basePath}/analytics`, visible: access.canManageBookings },
-		{ label: "Settings", href: `${basePath}/settings`, visible: access.canManageContent },
+		{ label: "Settings", href: `${basePath}?section=design`, section: "design", visible: access.canManageContent },
 		{ label: "Preview", href: `${basePath}/preview`, visible: access.canManageContent },
 		{ label: "Team", href: `${basePath}/team`, visible: access.canManageAdmins },
 		{ label: "Domains", href: `${basePath}/domains`, visible: access.canManageSecurity },
-		{ label: "Security", href: `${basePath}/security`, visible: access.canManageSecurity },
+		{ label: "Security", href: `${basePath}?section=security`, section: "security", visible: access.canManageSecurity },
 		{ label: "Billing", href: `${basePath}/billing`, visible: access.canManageBilling || access.isOwner },
-		{ label: "My account", href: "/account", visible: true },
 	]
+	const defaultSection = access.canManageBookings
+		? "bookings"
+		: access.canManageContent
+			? "gallery"
+			: access.canManageAdmins
+				? "admins"
+				: "security"
+	const activeSection =
+		links.find((link) => link.visible && link.section === searchParams.get("section"))?.section ??
+		defaultSection
 
 	return (
 		<nav
 			className="merchant-workspace-navigation admin-section-tabs"
 			aria-label="Salon workspace pages"
 		>
-			{links.filter((link) => link.visible).map((link) => (
+			{links.filter((link) => link.visible).map((link) => {
+				const normalizedPath = pathname.replace(/\/$/, "")
+				const isActive = link.section
+					? normalizedPath === basePath && activeSection === link.section
+					: normalizedPath === link.href.replace(/\/$/, "")
+				return (
 				<Link
 					key={link.href}
-					className={`admin-section-tab${pathname === link.href ? " active" : ""}`}
+					className={`admin-section-tab${isActive ? " active" : ""}`}
 					href={link.href}
-					aria-current={pathname === link.href ? "page" : undefined}
+					aria-current={isActive ? "page" : undefined}
 				>
 					{link.label}
 				</Link>
-			))}
+				)
+			})}
 		</nav>
 	)
 }

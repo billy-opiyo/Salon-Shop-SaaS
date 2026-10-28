@@ -22,7 +22,7 @@ export async function getBillingSnapshotForUser(
 			currency: true,
 			memberships: {
 				where: { userId, status: "ACTIVE" },
-				select: { role: true, canManageBilling: true },
+				select: { role: true, canManageBilling: true, canManageContent: true },
 			},
 			subscription: {
 				select: {

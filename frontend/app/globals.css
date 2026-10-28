@@ -649,6 +649,15 @@ html.splash-active .splash-handwriting-letter {
     -webkit-backdrop-filter: blur(18px) saturate(135%);
   }
 
+  .saas-tenant-mobile-actions {
+    border-top-color: var(--border);
+    background: var(--bg-secondary);
+  }
+
+  body.light-mode .saas-tenant-mobile-actions {
+    background: rgba(247, 242, 234, 0.96);
+  }
+
   .platform-mobile-actions {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4729,20 +4738,29 @@ html.splash-active .splash-handwriting-letter {
 
 .merchant-settings-form .merchant-settings-deposit-field {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(10rem, .8fr);
+	grid-template-columns: minmax(12rem, 1fr) minmax(0, 2fr);
 	align-items: center;
 	gap: .75rem 1rem;
 	min-width: 0;
 }
 
 .merchant-settings-form .merchant-settings-deposit-field > span {
+	display: block;
 	min-width: 0;
-	overflow-wrap: normal;
+	white-space: normal;
+	overflow-wrap: break-word;
 }
 
 .merchant-settings-form .merchant-settings-deposit-field > input[type="number"] {
 	width: 100%;
 	min-width: 0;
+}
+
+/* Override the generic checkbox-row grid for this text-and-number field. */
+.merchant-settings-form fieldset.legal-consent > label.merchant-settings-deposit-field {
+	grid-template-columns: minmax(12rem, .7fr) minmax(0, 1.3fr);
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .merchant-billing-page .auth-form > button {
@@ -4778,6 +4796,9 @@ html.splash-active .splash-handwriting-letter {
 		grid-template-columns: minmax(0, 1fr);
 	}
 	.merchant-settings-form .merchant-settings-deposit-field {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.merchant-settings-form fieldset.legal-consent > label.merchant-settings-deposit-field {
 		grid-template-columns: minmax(0, 1fr);
 	}
 	.merchant-settings-form__wide,

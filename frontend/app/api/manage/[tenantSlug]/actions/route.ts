@@ -29,7 +29,10 @@ import {
 	createBlogForUser,
 	updateBlogForUser,
 } from "@backend/services/merchantBlogService"
-import { updateServiceCategoryVisibility } from "@backend/services/merchantServiceCatalog"
+import {
+	updateServiceCategoryVisibility,
+	updateServiceCategoryVisibilityBatch,
+} from "@backend/services/merchantServiceCatalog"
 import {
 	removeTeamMemberForUser,
 	updateTeamMemberPermissionsForUser,
@@ -256,6 +259,31 @@ export async function POST(
 					input.enabled,
 				)
 				break
+			case "category-visibility-bulk": {
+				if (!Array.isArray(input.updates) || input.updates.length === 0 || input.updates.length > 100)
+					return NextResponse.json(
+						{ error: "Choose valid service categories to save." },
+						{ status: 400 },
+					)
+				const updates: Array<{ categoryId: string; enabled: boolean }> = []
+				const seenIds = new Set<string>()
+				for (const value of input.updates) {
+					if (
+						typeof value !== "object" || value === null ||
+						!("categoryId" in value) || typeof value.categoryId !== "string" ||
+						!("enabled" in value) || typeof value.enabled !== "boolean" ||
+						!value.categoryId.trim() || seenIds.has(value.categoryId)
+					)
+						return NextResponse.json(
+							{ error: "Choose valid service categories to save." },
+							{ status: 400 },
+						)
+					seenIds.add(value.categoryId)
+					updates.push({ categoryId: value.categoryId, enabled: value.enabled })
+				}
+				await updateServiceCategoryVisibilityBatch(session.user.id, tenantSlug, updates)
+				break
+			}
 			case "security-resolve-alert":
 				if (!id)
 					return NextResponse.json(

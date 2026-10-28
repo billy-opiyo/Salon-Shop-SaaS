@@ -13,7 +13,9 @@ import type { BookingStatusUpdateInput } from "@shared/validation/merchant";
 const ALLOWED_TRANSITIONS: Readonly<Record<BookingStatus, readonly BookingStatus[]>> = {
   PENDING: [BookingStatus.CONFIRMED, BookingStatus.WAITLISTED, BookingStatus.CANCELLED],
   CONFIRMED: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
-  WAITLISTED: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
+  // Waitlisted bookings must be converted through the slot-locking waitlist
+  // workflow, or cancelled from the linked waitlist request.
+  WAITLISTED: [],
   COMPLETED: [],
   CANCELLED: [],
   EXPIRED: [],
