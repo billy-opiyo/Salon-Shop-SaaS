@@ -17,10 +17,11 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 	const { tenantSlug } = await params
 	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=blogs`)
 	const session = await auth()
-	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/blog`))
+	const userId = session?.user?.id
+	if (!userId) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/blog`))
 	let posts: Awaited<ReturnType<typeof listBlogsForUser>>
 	try {
-		posts = await listBlogsForUser(session.user.id, tenantSlug)
+		posts = await listBlogsForUser(userId, tenantSlug)
 	} catch (error) {
 		if (error instanceof MerchantBlogError) redirect(`/manage/${tenantSlug}`)
 		throw error

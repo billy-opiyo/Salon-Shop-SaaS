@@ -132,19 +132,23 @@ function renderAdminSnapshotList(
 		elementId === "adminAccountHistoryList" ||
 		elementId === "adminSessionsList" ||
 		elementId === "adminTimelineList"
+	if (isSecurityCollection) {
+		element.classList.toggle("is-vertical-scroll-active", items.length > 4)
+		element.setAttribute("data-scroll-active", items.length > 4 ? "true" : "false")
+	}
 	let securityRows: HTMLTableSectionElement | null = null
 	if (isSecurityCollection) {
 		const table = document.createElement("table")
 		table.className = "admin-security-table"
 		const headings = elementId === "adminSecurityActivityList"
-			? ["User", "Sign-in details", "Status / risk", "Time", "Actions"]
+			? ["User", "Method", "Device/Browser", "Location", "IP (Masked)", "Status", "Failed Attempts", "Lock Status", "Risk", "Suspicious", "Actions", "Time"]
 			: elementId === "adminSecurityAlertsList"
-				? ["Alert", "Severity", "Status", "Time", "Actions"]
+				? ["Alert", "User", "Severity", "Status", "Time"]
 				: elementId === "adminSessionsList"
-					? ["User", "Session", "Expires", "Status", "Actions"]
+					? ["User", "Device/Browser", "Status", "Last Active", "Duration", "Devices"]
 					: elementId === "adminAccountHistoryList"
-						? ["Change", "Account", "Details", "Time", "Actions"]
-						: ["Event", "Summary", "Type", "Time", "Actions"]
+						? ["Change", "User", "Details", "Time"]
+						: ["Time", "Event", "User", "Summary"]
 		const head = document.createElement("thead")
 		const headingRow = document.createElement("tr")
 		for (const value of headings) {
@@ -215,8 +219,10 @@ function renderAdminSnapshotList(
 			: record.resolvedAt === null
 				? "open"
 				: String(record.status ?? "").toLowerCase()
+		if (elementId === "adminSessionsList") row.dataset.status = "active"
 		row.dataset.severity = String(record.severity ?? "").toLowerCase()
 		row.dataset.eventType = String(record.eventType ?? "").toLowerCase()
+		row.dataset.changeType = String(record.changeType ?? "").toLowerCase()
 		row.dataset.createdAt = String(record.createdAt ?? "")
 		row.dataset.updatedAt = String(record.updatedAt ?? "")
 		if (isReview) {
@@ -440,27 +446,115 @@ function renderAdminSnapshotList(
 		} else if (isSecurity) {
 			const identityCell = document.createElement("td")
 			const title = document.createElement("strong")
-			title.textContent = titleText
+			const securityUser = record.user && typeof record.user === "object"
+				? (record.user as AdminSnapshotRecord)
+				: {}
+			const identityLabel = String(
+				securityUser.name ?? record.displayName ?? record.email ??
+				record.userId ?? record.uid ?? "Unknown user",
+			)
+			title.textContent = elementId === "adminSecurityAlertsList"
+				? String(record.message ?? "Security alert")
+				: elementId === "adminAccountHistoryList"
+					? String(record.changeLabel ?? (typeof record.changeType === "string"
+						? record.changeType.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+						: "Account updated"))
+					: elementId === "adminTimelineList"
+						? formatAdminSnapshotValue(record.createdAt ?? record.updatedAt ?? "")
+						: identityLabel
 			identityCell.append(title)
-			const email = String(record.email ?? record.attemptedEmail ?? "").trim()
-			if (email && email !== titleText) {
+			const email = String(securityUser.email ?? record.email ?? record.attemptedEmail ?? "").trim()
+			if (email && email !== identityLabel && elementId !== "adminSecurityAlertsList") {
 				const emailLine = document.createElement("div")
 				emailLine.className = "admin-booking-id"
 				emailLine.textContent = email
 				identityCell.append(emailLine)
 			}
-			const detailsCell = document.createElement("td")
-			const summary = record.summary ?? record.eventType ?? record.method ?? record.provider ?? record.changeType
-			detailsCell.textContent = [summary, details.textContent].filter(Boolean).map(formatAdminSnapshotValue).join(" · ")
-			const stateCell = document.createElement("td")
-			const state = String(record.severity ?? record.riskLevel ?? record.status ?? "Recorded")
-			const stateBadge = document.createElement("span")
-			stateBadge.className = `admin-status admin-status-${state.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`
-			stateBadge.textContent = state
-			stateCell.append(stateBadge)
-			const timeCell = document.createElement("td")
-			timeCell.textContent = formatAdminSnapshotValue(record.createdAt ?? record.updatedAt ?? record.expires ?? "")
-			row.append(identityCell, detailsCell, stateCell, timeCell)
+			const textCell = (value: unknown): HTMLTableCellElement => {
+				const cell = document.createElement("td")
+				cell.textContent = formatAdminSnapshotValue(value) || "—"
+				return cell
+			}
+			const statusCell = (value: unknown, className?: string): HTMLTableCellElement => {
+				const cell = document.createElement("td")
+				const state = String(value ?? "Recorded")
+				const badge = document.createElement("span")
+				badge.className = `admin-status ${className ?? `admin-status-${state.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`}`
+				badge.textContent = state
+				cell.append(badge)
+				return cell
+			}
+			if (elementId === "adminSecurityActivityList") {
+				const userAgent = String(record.userAgent ?? "")
+				const device = row.dataset.device === "mobile" ? "Mobile" : row.dataset.device === "tablet" ? "Tablet" : row.dataset.device === "desktop" ? "Desktop" : "Unknown"
+				const browser = /edg\//i.test(userAgent) ? "Edge" : /firefox\//i.test(userAgent) ? "Firefox" : /chrome\//i.test(userAgent) ? "Chrome" : /safari\//i.test(userAgent) ? "Safari" : "Unknown"
+				const identityKey = String(record.userId ?? record.email ?? "").toLowerCase()
+				const createdAt = Date.parse(String(record.createdAt ?? "")) || 0
+				const failedIn = (minutes: number) => items.filter((candidate) => {
+					if (typeof candidate !== "object" || candidate === null) return false
+					const item = candidate as AdminSnapshotRecord
+					return String(item.status ?? "").toLowerCase() === "failure" &&
+						String(item.userId ?? item.email ?? "").toLowerCase() === identityKey &&
+						(Date.parse(String(item.createdAt ?? "")) || 0) >= createdAt - minutes * 60_000 &&
+						(Date.parse(String(item.createdAt ?? "")) || 0) <= createdAt
+				}).length
+				const user = record.user && typeof record.user === "object" ? (record.user as AdminSnapshotRecord) : {}
+				const blockedUntil = user.blockedUntil ? Date.parse(String(user.blockedUntil)) : 0
+				const state = String(record.status ?? "unknown").toLowerCase()
+				const risk = String(record.riskLevel ?? "unknown").toUpperCase()
+				const suspicious = ["medium", "high"].includes(String(record.riskLevel ?? "").toLowerCase())
+				row.append(
+					identityCell,
+					textCell(record.provider),
+					textCell(`${device} ${browser}`),
+					textCell(record.country),
+					textCell("Private"),
+					statusCell(state, state === "success" ? "admin-status-completed" : "admin-status-cancelled"),
+					textCell(`${failedIn(5)}/5m • ${failedIn(15)}/15m`),
+					textCell(blockedUntil > Date.now() ? `Active until ${formatAdminSnapshotDate(user.blockedUntil, true)}` : "No"),
+					textCell(`${risk} (${String(record.riskScore ?? "—")})`),
+					textCell(suspicious ? "Flagged" : "No"),
+					textCell(record.userId ? "See below" : "No linked account"),
+					textCell(formatAdminSnapshotDate(record.createdAt, true)),
+				)
+			} else if (elementId === "adminSecurityAlertsList") {
+				const userCell = textCell(identityLabel)
+				const severity = String(record.severity ?? "unknown")
+				const severityCell = statusCell(severity, severity.toLowerCase() === "high" ? "admin-status-cancelled" : "admin-status-pending")
+				const state = record.resolvedAt ? "resolved" : "open"
+				const stateCell = statusCell(state, state === "resolved" ? "admin-status-completed" : "admin-status-pending")
+				if (state === "open" && typeof record.id === "string") {
+					const resolve = document.createElement("button")
+					resolve.type = "button"
+					resolve.className = "admin-action-btn admin-platform-action"
+					resolve.dataset.adminAction = "security-resolve-alert"
+					resolve.dataset.adminId = record.id
+					resolve.textContent = "Resolve"
+					stateCell.append(resolve)
+				}
+				row.append(identityCell, userCell, severityCell, stateCell, textCell(formatAdminSnapshotDate(record.createdAt, true)))
+			} else if (elementId === "adminSessionsList") {
+				const userCount = items.filter((candidate) => typeof candidate === "object" && candidate !== null && String((candidate as AdminSnapshotRecord).userId ?? "") === String(record.userId ?? "")).length
+				row.append(
+					textCell(identityLabel),
+					textCell("Not tracked"),
+					statusCell("online", "admin-status-confirmed"),
+					textCell("Not tracked"),
+					textCell("Not tracked"),
+					textCell(`${userCount} active ${userCount === 1 ? "device" : "devices"}`),
+				)
+			} else if (elementId === "adminAccountHistoryList") {
+				row.append(identityCell, textCell(identityLabel), textCell(record.summary ?? record.details), textCell(formatAdminSnapshotDate(record.createdAt, true)))
+			} else {
+				const type = String(record.eventType ?? "activity").toLowerCase()
+				const typeLabel = type.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+				row.append(
+					textCell(formatAdminSnapshotDate(record.createdAt, true)),
+					statusCell(typeLabel, type.startsWith("booking") ? "admin-status-completed" : type.startsWith("review") ? "admin-status-pending" : "admin-status-confirmed"),
+					textCell(identityLabel),
+					textCell(record.summary),
+				)
+			}
 		} else {
 			const title = document.createElement("strong")
 			title.textContent = titleText
@@ -522,9 +616,9 @@ function renderAdminSnapshotList(
 		actionGroup.className = isGallery || isBlog
 			? "admin-gallery-actions admin-platform-actions"
 			: isSecurity
-				? "admin-security-inline-actions admin-platform-actions"
+				? "admin-booking-actions admin-security-inline-actions admin-platform-actions"
 				: "admin-booking-actions admin-platform-actions"
-		if (recordId) {
+		if (recordId && !isSecurity) {
 			const detailButton = document.createElement("button")
 			detailButton.type = "button"
 			detailButton.className = "admin-action-btn admin-platform-detail"
@@ -659,13 +753,28 @@ function renderAdminSnapshotList(
 		}
 		if (elementId === "adminAdminsList")
 			addAction("team-member-remove", "Remove")
-		if (elementId === "adminSecurityAlertsList" && !record.resolvedAt)
-			addAction("security-resolve-alert", "Resolve")
 		if (isSecurityCollection) {
-			const actionCell = document.createElement("td")
-			actionCell.append(actionGroup)
-			row.append(actionCell)
-			securityRows?.append(row)
+			if (elementId === "adminSecurityActivityList") {
+				if (typeof record.userId === "string" && record.userId) {
+					addAction("security-restrict-user", "Temp Block")
+					addAction("security-force-logout", "Force Logout", {}, record.userId)
+					addAction("security-force-password-reset", "Force Password Reset", {}, record.userId)
+					addAction("security-clear-restriction", "Clear Restrictions", {}, record.userId)
+				} else {
+					const unavailable = document.createElement("span")
+					unavailable.textContent = "No linked account for security actions"
+					actionGroup.append(unavailable)
+				}
+				const actionRow = document.createElement("tr")
+				actionRow.className = "admin-security-row-actions"
+				const actionCell = document.createElement("td")
+				actionCell.colSpan = 12
+				actionCell.append(actionGroup)
+				actionRow.append(actionCell)
+				securityRows?.append(row, actionRow)
+			} else {
+				securityRows?.append(row)
+			}
 		} else {
 			row.append(actionGroup)
 			element.append(row)
@@ -1507,7 +1616,7 @@ function bindAdminSnapshotFilters(): () => void {
 				rows.forEach((row) => container.append(row))
 				return
 			}
-			if (selector === "#adminSessionsList" && mode === "multi-device-first") {
+			if (selector === "#adminSessionsList") {
 				const sessionCountByUser = new Map<string, number>()
 				for (const row of rows) {
 					const userId = row.dataset.sessionUserId
@@ -1518,32 +1627,83 @@ function bindAdminSnapshotFilters(): () => void {
 						)
 				}
 			rows.sort((left, right) => {
-				const leftCount = sessionCountByUser.get(left.dataset.sessionUserId ?? "") ?? 0
-				const rightCount = sessionCountByUser.get(right.dataset.sessionUserId ?? "") ?? 0
-				if (leftCount !== rightCount) return rightCount - leftCount
-				return (right.dataset.createdAt ?? "").localeCompare(
-					left.dataset.createdAt ?? "",
-				)
+				if (mode === "multi-device-first") {
+					const leftCount = sessionCountByUser.get(left.dataset.sessionUserId ?? "") ?? 0
+					const rightCount = sessionCountByUser.get(right.dataset.sessionUserId ?? "") ?? 0
+					if (leftCount !== rightCount) return rightCount - leftCount
+				}
+				if (mode === "online-first")
+					return Number(right.dataset.status === "active") - Number(left.dataset.status === "active")
+				// Auth.js JWT sessions do not expose last-active or duration telemetry.
+				// Use a timestamp only when the backing snapshot provides one.
+				if (mode === "last-active-newest")
+					return (right.dataset.lastActiveAt ?? "").localeCompare(left.dataset.lastActiveAt ?? "")
+				if (mode === "longest-session")
+					return Number(right.dataset.durationSeconds ?? 0) - Number(left.dataset.durationSeconds ?? 0)
+				return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
 			})
 				const destination = container.querySelector<HTMLElement>("tbody") ?? container
 				rows.forEach((row) => destination.append(row))
 			return
 		}
+			if (selector === "#adminAccountHistoryList") {
+				rows.sort((left, right) => {
+					if (mode === "oldest")
+						return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
+					if (mode === "critical-first") {
+					const critical = new Set(["password_changed", "email_changed", "account_deleted", "account_deactivated"])
+					const criticalDiff = Number(critical.has(right.dataset.changeType ?? "")) - Number(critical.has(left.dataset.changeType ?? ""))
+					if (criticalDiff) return criticalDiff
+					}
+					if (mode === "type") {
+						const typeDiff = (left.dataset.changeType ?? "").localeCompare(right.dataset.changeType ?? "")
+						if (typeDiff) return typeDiff
+					}
+					return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
+				})
+				const destination = container.querySelector<HTMLElement>("tbody") ?? container
+				rows.forEach((row) => destination.append(row))
+				return
+			}
+			if (selector === "#adminTimelineList") {
+				rows.sort((left, right) => {
+					if (mode === "oldest")
+						return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
+					const category = (eventType: string | undefined) => {
+						const normalized = eventType ?? ""
+						if (mode === "bookings-first") return ["booking_created", "booking_canceled"].includes(normalized) ? 0 : 1
+						if (mode === "reviews-first") return ["review_posted", "review_edited"].includes(normalized) ? 0 : 1
+						if (mode === "contact-first") return normalized === "contact_submitted" ? 0 : 1
+						return 0
+					}
+					const categoryDiff = category(left.dataset.eventType) - category(right.dataset.eventType)
+					if (categoryDiff) return categoryDiff
+					return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
+				})
+				const destination = container.querySelector<HTMLElement>("tbody") ?? container
+				rows.forEach((row) => destination.append(row))
+				return
+			}
 			rows.sort((left, right) => {
 				if (mode.includes("oldest"))
 					return (left.dataset.createdAt ?? "").localeCompare(
 						right.dataset.createdAt ?? "",
 					)
-				if (mode.includes("failed"))
-					return (
+				if (mode.includes("failed")) {
+					const failedDiff = (
 						Number(right.dataset.status === "failure") -
 						Number(left.dataset.status === "failure")
 					)
+					if (failedDiff) return failedDiff
+				}
 				if (mode.includes("suspicious"))
-					return (
+					{
+					const suspiciousDiff = (
 						Number(right.dataset.risk === "high") -
 						Number(left.dataset.risk === "high")
 					)
+					if (suspiciousDiff) return suspiciousDiff
+				}
 				if (mode.includes("high"))
 					return (
 						Number(right.dataset.severity === "high") -
@@ -2224,6 +2384,28 @@ export function bindAdminSnapshotAdapter(
 	let pendingConfirmationButton: HTMLButtonElement | null = null
 	let confirmedActionButton: HTMLButtonElement | null = null
 	const removeTabHandlers: Array<() => void> = []
+	const logoutButton = document.getElementById("adminLogoutBtn")
+	if (logoutButton instanceof HTMLButtonElement) {
+		const logoutHandler = async () => {
+			logoutButton.disabled = true
+			try {
+				await signOut({ redirect: false })
+				window.location.reload()
+			} catch {
+				logoutButton.disabled = false
+				const message = document.getElementById("adminAuthMessage")
+				if (message) {
+					message.textContent = "You could not be signed out. Please try again."
+					message.classList.add("error")
+					message.style.display = "block"
+				}
+			}
+		}
+		logoutButton.addEventListener("click", logoutHandler)
+		removeTabHandlers.push(() =>
+			logoutButton.removeEventListener("click", logoutHandler),
+		)
+	}
 	const pendingServiceCategoryChanges = new Map<string, boolean>()
 	const serviceCategorySaveButton = document.getElementById(
 		"adminSaveServiceCategoriesBtn",
@@ -2502,6 +2684,24 @@ export function bindAdminSnapshotAdapter(
 		const action = button.dataset.adminAction
 		const id = button.dataset.adminId
 		if (!action || !id) return
+		if (action === "security-restrict-user" && !button.dataset.durationMinutes) {
+			const value = window.prompt(
+				"Enter temporary block duration in minutes (5 - 10080):",
+				"30",
+			)
+			if (value === null) return
+			const durationMinutes = Number(value)
+			if (!Number.isFinite(durationMinutes) || durationMinutes < 5 || durationMinutes > 10080) {
+				const message = document.getElementById("adminSecurityEventsMessage")
+				if (message) {
+					message.textContent = "Enter a valid block duration between 5 and 10080 minutes."
+					message.classList.add("error")
+					message.style.display = "block"
+				}
+				return
+			}
+			button.dataset.durationMinutes = String(Math.round(durationMinutes))
+		}
 		if (action === "review-update" && button.dataset.status === "APPROVED") {
 			try {
 				const record = JSON.parse(
@@ -2521,18 +2721,27 @@ export function bindAdminSnapshotAdapter(
 				return
 			}
 		}
+		const securityConfirmText: Record<string, string> = {
+			"security-restrict-user": `Temporarily block this account for ${button.dataset.durationMinutes} minutes?`,
+			"security-force-logout": "Force logout this account from all active sessions immediately?",
+			"security-force-password-reset": "Force this user to reset their password and end current sessions?",
+			"security-clear-restriction": "Clear all restrictions for this user?",
+		}
 		const requiresConfirmation =
-			action.endsWith("-delete") || action === "team-member-remove"
+			action.endsWith("-delete") ||
+			action === "team-member-remove" ||
+			action in securityConfirmText
 		if (requiresConfirmation && confirmedActionButton !== button) {
 			pendingConfirmationButton = button
 			const title = document.getElementById("adminConfirmTitle")
 			const message = document.getElementById("adminConfirmMessage")
-			if (title) title.textContent = "Confirm removal"
+			if (title) title.textContent = securityConfirmText[action] ? "Confirm security action" : "Confirm removal"
 			if (message)
-				message.textContent =
+				message.textContent = securityConfirmText[action] ?? (
 					action === "team-member-remove"
 						? "Remove this team member’s access to the salon?"
 						: "Delete this item? This action cannot be undone."
+				)
 			confirmationModal?.classList.add("active")
 			confirmationModal?.setAttribute("aria-hidden", "false")
 			return
@@ -2637,6 +2846,8 @@ export function bindAdminSnapshotAdapter(
 			payload.featured = button.dataset.featured === "true"
 		if (button.dataset.published)
 			payload.published = button.dataset.published === "true"
+		if (button.dataset.durationMinutes)
+			payload.durationMinutes = Number(button.dataset.durationMinutes)
 		void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
 			method: "POST",
 			credentials: "same-origin",
@@ -3127,8 +3338,6 @@ export function bindAdminSnapshotAdapter(
 			const heading = document.createElement("h4")
 			heading.textContent = date.toLocaleDateString(undefined, {
 				weekday: "short",
-				month: "short",
-				day: "numeric",
 			})
 			const dayItems = scheduleBookings
 				.filter((record) => bookingDateKey(record.appointmentDate) === key)
@@ -3137,8 +3346,15 @@ export function bindAdminSnapshotAdapter(
 						bookingTimeMinutes(a.timeLabel) - bookingTimeMinutes(b.timeLabel),
 				)
 			const dayCount = document.createElement("p")
+			dayCount.className = "admin-schedule-day-count"
 			dayCount.textContent = `${dayItems.length} appointment${dayItems.length === 1 ? "" : "s"}`
-			header.append(heading, dayCount)
+			const dateLabel = document.createElement("p")
+			dateLabel.className = "admin-schedule-day-date"
+			dateLabel.textContent = date.toLocaleDateString(undefined, {
+				month: "short",
+				day: "numeric",
+			})
+			header.append(heading, dateLabel, dayCount)
 			column.append(header)
 			const eventList = document.createElement("div")
 			eventList.className = "admin-schedule-day-events"
