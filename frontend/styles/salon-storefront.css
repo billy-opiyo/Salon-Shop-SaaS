@@ -12260,8 +12260,8 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
 
 .merchant-workspace-shell:has(.salon-admin-root) .admin-stat-card {
     min-width: 0;
-    min-height: 5.4rem;
-    gap: .75rem;
+    min-height: 5.6rem;
+    gap: 1rem;
     padding: 1rem;
 }
 
@@ -12273,29 +12273,6 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
 .merchant-workspace-shell:has(.salon-admin-root) .admin-stat-card strong {
     margin-top: .05rem;
     line-height: 1.1;
-}
-
-@media (max-width: 600px) {
-    .merchant-workspace-shell:has(.salon-admin-root) .admin-section-tabs {
-        display: flex;
-        width: 100%;
-        flex-wrap: nowrap;
-        gap: .5rem;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0 0 .65rem;
-        scrollbar-width: thin;
-        scrollbar-color: var(--primary) var(--bg-secondary);
-    }
-
-    .merchant-workspace-shell:has(.salon-admin-root) .admin-section-tab {
-        flex: 0 0 auto;
-        width: auto;
-        min-width: 0;
-        min-height: 2.4rem;
-        padding: .55rem .85rem;
-        white-space: nowrap;
-    }
 }
 
 /* Merchant routes reuse the legacy salon admin's warm, card-based controls. */
