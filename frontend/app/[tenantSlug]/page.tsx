@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
-import { hasMerchantAdminPanelAccess } from "@backend/services/merchantAdminSnapshotService"
+import { hasMerchantAdminPanelAccessForSlug } from "@backend/services/merchantAdminSnapshotService"
 import {
 	SalonStorefrontRuntime,
 	type SalonClientConfig,
@@ -202,12 +202,17 @@ export async function generateMetadata({
 }
 
 export async function renderTenantStorefront(tenantSlug: string) {
-	const tenant = await getTenantStorefront(tenantSlug)
+	const sessionPromise = auth()
+	const showAdminSearchPromise = sessionPromise.then((session) =>
+		session?.user?.id
+			? hasMerchantAdminPanelAccessForSlug(session.user.id, tenantSlug)
+			: false,
+	)
+	const [tenant, showAdminSearch] = await Promise.all([
+		getTenantStorefront(tenantSlug),
+		showAdminSearchPromise,
+	])
 	if (!tenant) notFound()
-	const session = await auth()
-	const showAdminSearch = session?.user?.id
-		? await hasMerchantAdminPanelAccess(session.user.id, tenant.id)
-		: false
 
 	return (
 		<SalonStorefrontRuntime

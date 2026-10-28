@@ -25,6 +25,13 @@ const ROYAL_BRAIDS_HERO_TITLE =
 const ROYAL_BRAIDS_HERO_DESCRIPTION =
 	"From signature braids, hair services and flawless twists to glowing beauty spa rituals, precision nails, radiant makeup, barber grooming, eyebrows & lash enhancements, and bridal-ready glam—step into a full beauty experience crafted to make you shine."
 
+export interface TenantStorefrontBrand {
+	readonly slug: string
+	readonly businessName: string
+	readonly logoUrl?: string
+	readonly theme: { readonly preset: string; readonly mode: "light" | "dark" }
+}
+
 const fixtureTenant: TenantStorefront = {
 	id: "tenant_fixture_royal_braids",
 	slug: "royal-braids",
@@ -216,6 +223,55 @@ async function canPreviewDraftRoyalBraids(): Promise<boolean> {
 	const host = (await headers()).get("host")?.split(":", 1)[0].toLowerCase()
 	return host === "beauty-sphia-staging.vercel.app"
 }
+
+export const getTenantStorefrontBrand = cache(async (
+	slug: string,
+): Promise<TenantStorefrontBrand | null> => {
+	const normalizedSlug = slug.trim().toLowerCase()
+	const fixture = tenantFixtures[normalizedSlug]
+	if (!process.env.DATABASE_URL) {
+		return fixture
+			? {
+				slug: fixture.slug,
+				businessName: fixture.businessName,
+				logoUrl: fixture.logoUrl,
+				theme: fixture.theme,
+			}
+			: null
+	}
+	try {
+		const tenant = await prisma.tenant.findUnique({
+			where: { slug: normalizedSlug },
+			select: {
+				slug: true,
+				businessName: true,
+				status: true,
+				settings: { select: { themePreset: true, themeMode: true, logoUrl: true } },
+			},
+		})
+		if (!tenant) return null
+		if (
+			tenant.status !== "ACTIVE" &&
+			!(
+				tenant.status === "DRAFT" &&
+				normalizedSlug === "royal-braids" &&
+				(await canPreviewDraftRoyalBraids())
+			)
+		)
+			return null
+		return {
+			slug: tenant.slug,
+			businessName: tenant.businessName,
+			logoUrl: tenant.settings?.logoUrl ?? undefined,
+			theme: {
+				preset: tenant.settings?.themePreset ?? DEFAULT_THEME_PRESET,
+				mode: tenant.settings?.themeMode === "light" ? "light" : "dark",
+			},
+		}
+	} catch {
+		return null
+	}
+})
 
 export const getTenantStorefront = cache(async (
 	slug: string,
