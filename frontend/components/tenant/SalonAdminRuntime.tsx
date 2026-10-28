@@ -27,7 +27,6 @@ export function SalonAdminRuntime({
 		<div className="salon-admin-root">
 			<SalonAdminMarkup
 				homeHref={`/${tenantSlug}`}
-				staffHref={`/manage/${tenantSlug}/staff`}
 				settingsHref={`/manage/${tenantSlug}/settings`}
 				servicesHref={`/manage/${tenantSlug}/services?view=catalog`}
 				userEmail={userEmail}
