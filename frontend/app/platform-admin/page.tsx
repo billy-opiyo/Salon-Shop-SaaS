@@ -19,6 +19,7 @@ import { PlatformTeamManager } from "./PlatformTeamManager"
 import { PlatformStorefrontManager } from "./PlatformStorefrontManager"
 import { PlatformRoleManager } from "./PlatformRoleManager"
 import { PlatformBackToTop } from "@/components/shared/PlatformBackToTop"
+import { platformThemeStyle } from "@/lib/platformTheme"
 import "./platform-admin.css"
 
 function formatDate(value: Date | null): string {
@@ -88,7 +89,7 @@ export default async function PlatformAdminPage() {
 
 	return (
 		<>
-		<main className="platform-home-shell platform-admin-page">
+		<main className="platform-home-shell platform-admin-page" style={platformThemeStyle(storefrontDesign.theme)}>
 			<header className="platform-admin-header">
 				<div>
 					<p className="eyebrow">Beauty Sphia operations</p>

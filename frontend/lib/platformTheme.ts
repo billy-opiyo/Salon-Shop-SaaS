@@ -3,6 +3,7 @@ import type { PlatformTheme } from "@shared/constants/platformStorefront"
 
 export function platformThemeStyle(theme: PlatformTheme): CSSProperties {
 	return {
+		"--platform-theme-preset": theme.preset,
 		"--gold": theme.primary,
 		"--primary": theme.primary,
 		"--gold-dark": theme.primaryDark,

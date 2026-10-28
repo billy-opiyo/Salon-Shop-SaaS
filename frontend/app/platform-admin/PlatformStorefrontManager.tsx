@@ -1,10 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import type { PlatformPolicyContent, PlatformStorefrontDesign } from "@shared/constants/platformStorefront"
+import {
+	PLATFORM_THEME_PALETTES,
+	PLATFORM_THEME_PRESET_OPTIONS,
+	type PlatformThemePresetKey,
+} from "@shared/constants/themePresets"
 import { getImageUploadError } from "@shared/validation/media"
 import type { PlanTier } from "@shared/types/tenant"
+import { platformThemeStyle } from "@/lib/platformTheme"
 
 type Design = PlatformStorefrontDesign
 type PolicyKey = "privacyPolicy" | "termsPolicy" | "cookiePolicy"
@@ -18,6 +24,22 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 	const isOwner = role === "OWNER"
 	const canEditSite = role === "OWNER" || role === "STORE_EDITOR"
 	const canEditSupport = role === "OWNER" || role === "STORE_SUPPORT"
+
+	useEffect(() => {
+		const page = document.querySelector<HTMLElement>(".platform-admin-page")
+		if (!page) return
+		const themeStyle = platformThemeStyle(design.theme)
+		const entries = Object.entries(themeStyle).filter(([key]) => key.startsWith("--"))
+		const previous = new Map(entries.map(([key]) => [key, page.style.getPropertyValue(key)]))
+		for (const [key, value] of entries)
+			if (typeof value === "string") page.style.setProperty(key, value)
+		return () => {
+			for (const [key, value] of previous) {
+				if (value) page.style.setProperty(key, value)
+				else page.style.removeProperty(key)
+			}
+		}
+	}, [design.theme])
 
 	const setContent = (key: keyof Design["content"], value: string) =>
 		setDesign((current) => ({ ...current, content: { ...current.content, [key]: value } }))
@@ -73,8 +95,14 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 		},
 	}))
 
-	const setTheme = (key: keyof Design["theme"], value: string) =>
+	const setTheme = (key: Exclude<keyof Design["theme"], "preset">, value: string) =>
 		setDesign((current) => ({ ...current, theme: { ...current.theme, [key]: value } }))
+
+	const selectThemePreset = (preset: PlatformThemePresetKey) =>
+		setDesign((current) => ({
+			...current,
+			theme: { ...PLATFORM_THEME_PALETTES[preset], preset },
+		}))
 
 	const setPlanText = (tier: PlanTier, key: "name" | "description" | "bestFor", value: string) =>
 		setDesign((current) => ({
@@ -206,23 +234,46 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				<h2 id="platform-storefront-title">Beauty Sphia platform pages</h2>
 				<p>{isOwner ? "Manage platform pages, pricing, billing instructions, and delegated access." : role === "STORE_EDITOR" ? "Edit public platform site content and team profiles. Pricing, billing, and support settings are restricted." : "Manage the support page, FAQs, and support contact details."}</p>
 			</div>
-			<form className="onboarding-form platform-admin-form platform-storefront-form" onSubmit={save}>
+			<nav className="platform-cms-section-nav" aria-label="Platform CMS sections">
+				{[
+					...(canEditSite ? [["Branding and theme", "Branding"], ["Homepage hero", "Homepage"], ["About page", "Site pages"]] : []),
+					...(isOwner ? [["Pricing and plan cards", "Plans & billing"]] : []),
+					...(canEditSupport ? [["Support page", "Support"]] : []),
+				].map(([target, label]) => (
+					<div className="platform-cms-section-action" key={target}>
+						<button className="button button--outline button--small" type="button" onClick={() => Array.from(document.querySelectorAll(".platform-storefront-form legend")).find((legend) => legend.textContent?.trim() === target)?.scrollIntoView({ behavior: "smooth", block: "start" })}>{label}</button>
+						<button className="button button--primary button--small" type="submit" form="platform-cms-form" disabled={saving}>Save {label}</button>
+					</div>
+				))}
+			</nav>
+			<form id="platform-cms-form" className="onboarding-form platform-admin-form platform-storefront-form" onSubmit={save}>
 				{canEditSite && <>
-				<fieldset>
+				<fieldset id="cms-branding">
 					<legend>Branding and theme</legend>
+					<label className="platform-admin-field">
+						Theme preset
+						<select
+							value={design.theme.preset}
+							onChange={(event) => selectThemePreset(event.target.value as PlatformThemePresetKey)}
+						>
+							{PLATFORM_THEME_PRESET_OPTIONS.map((preset) => (
+								<option value={preset.key} key={preset.key}>{preset.label}</option>
+							))}
+						</select>
+					</label>
 					{ textField("Platform name", design.branding.name, (value) => setGroupText("branding", "name", value)) }
 					{ textField("Brand tagline", design.branding.tagline, (value) => setGroupText("branding", "tagline", value)) }
 					<div className="platform-storefront-images">
 						<label>Platform logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void upload("LOGO", event.target.files?.[0])} /><small>Maximum 1 MB.</small>{design.logoUrl && <img className="platform-storefront-image-preview" src={design.logoUrl} alt="Current Beauty Sphia logo" />}</label>
 					</div>
 					<div className="platform-storefront-theme-grid">
-						{(Object.keys(design.theme) as Array<keyof Design["theme"]>).map((key) => (
+						{(Object.keys(PLATFORM_THEME_PALETTES["beauty-sphia"]) as Array<Exclude<keyof Design["theme"], "preset">>).map((key) => (
 							<label key={key}>{key.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`)}<input type="color" value={design.theme[key]} onChange={(event) => setTheme(key, event.target.value)} /></label>
 						))}
 					</div>
 				</fieldset>
 
-				<fieldset>
+				<fieldset id="cms-home">
 					<legend>Homepage hero</legend>
 					<div className="platform-storefront-images">
 						<label>Desktop hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void upload("HERO_DESKTOP", event.target.files?.[0])} /><small>Maximum 1 MB. Used above 1024px.</small>{design.heroDesktopUrl && <img className="platform-storefront-image-preview" src={design.heroDesktopUrl} alt="Current desktop hero" />}</label>

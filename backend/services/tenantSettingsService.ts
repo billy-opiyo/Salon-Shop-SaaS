@@ -133,7 +133,7 @@ export async function updateTenantDesignForUser(
 		where: { tenantId: tenant.id },
 		create: {
 			tenantId: tenant.id,
-			themePreset: input.themePreset ?? "gold",
+			themePreset: input.themePreset ?? "storefront-default",
 			themeMode: input.themeMode ?? "dark",
 			logoUrl: input.logoUrl || null,
 			heroImageUrl: input.heroImageUrl || null,

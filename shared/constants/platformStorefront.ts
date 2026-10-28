@@ -1,5 +1,10 @@
 import { z } from "zod"
 import type { PlanTier } from "@shared/types/tenant"
+import {
+	DEFAULT_PLATFORM_THEME_PRESET,
+	PLATFORM_THEME_PRESET_OPTIONS,
+	type PlatformThemePresetKey,
+} from "@shared/constants/themePresets"
 
 export interface PlatformBranding {
 	readonly name: string
@@ -7,6 +12,7 @@ export interface PlatformBranding {
 }
 
 export interface PlatformTheme {
+	readonly preset: PlatformThemePresetKey
 	readonly primary: string
 	readonly primaryDark: string
 	readonly primaryLight: string
@@ -157,6 +163,7 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		tagline: "Manage | Book | Grow",
 	},
 	theme: {
+		preset: DEFAULT_PLATFORM_THEME_PRESET,
 		primary: "#d7a84f",
 		primaryDark: "#a96f23",
 		primaryLight: "#f1d59b",
@@ -351,6 +358,10 @@ const contentSchema = z.object({
 const text = (max: number) => z.string().trim().min(1).max(max)
 const optionalText = (max: number) => z.string().trim().max(max)
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/)
+const platformThemePresetKeys = PLATFORM_THEME_PRESET_OPTIONS.map((preset) => preset.key) as [
+	PlatformThemePresetKey,
+	...PlatformThemePresetKey[],
+]
 const imageUrl = z.string().trim().max(2000).refine(
 	(value) => value.startsWith("/") || value.startsWith("https://"),
 	"Image URLs must be local paths or use HTTPS.",
@@ -375,6 +386,7 @@ export const platformStorefrontDesignSchema = z.object({
 	heroAlt: text(200),
 	branding: z.object({ name: text(100), tagline: text(160) }),
 	theme: z.object({
+		preset: z.enum(platformThemePresetKeys),
 		primary: color,
 		primaryDark: color,
 		primaryLight: color,

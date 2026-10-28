@@ -1,20 +1,38 @@
 /* Platform Admin layout and form system. Scoped here so storefront and auth UI
    keep their own layouts and control treatments. */
 .platform-admin-page {
-	--admin-surface: #21170d;
-	--admin-surface-raised: #2b1d10;
-	--admin-surface-soft: #191109;
-	--admin-border: rgba(213, 165, 78, .3);
-	--admin-border-strong: rgba(213, 165, 78, .52);
-	--admin-text: #fff6e6;
-	--admin-muted: #ddcdb2;
-	--admin-gold: #edcc83;
+	--admin-surface: var(--surface, #221b11);
+	--admin-surface-raised: color-mix(in srgb, var(--surface, #221b11) 78%, var(--background, #0c0a07));
+	--admin-surface-soft: color-mix(in srgb, var(--surface, #221b11) 55%, var(--background, #0c0a07));
+	--admin-border: var(--line, rgba(213, 165, 78, .3));
+	--admin-border-strong: color-mix(in srgb, var(--line, #5b4728) 72%, var(--primary, #d7a84f));
+	--admin-text: var(--foreground, #fff8e8);
+	--admin-muted: var(--muted, #c8bda8);
+	--admin-gold: var(--primary-light, #f1d59b);
 	box-sizing: border-box;
 	width: min(1360px, calc(100% - clamp(2rem, 6vw, 5rem)));
 	min-width: 0;
 	margin-inline: auto;
 	padding: clamp(2rem, 4vw, 3.5rem) 0 5rem;
 	color: var(--admin-text);
+}
+
+.platform-cms-section-nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.65rem;
+	margin: 1rem 0 1.25rem;
+}
+
+.platform-cms-section-action {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.platform-storefront-form fieldset {
+	scroll-margin-top: 1.5rem;
 }
 
 /* The shared homepage shell clips its artwork. Keep that behavior off the
@@ -482,14 +500,14 @@
 
 .platform-admin-form .platform-storefront-image-preview {
 	display: block;
-	width: min(100%, 28rem);
-	max-height: 12rem;
+	width: 100%;
+	height: 8rem;
 	margin-top: .75rem;
 	border: 1px solid var(--admin-border);
 	border-radius: .65rem;
 	background: var(--admin-surface-soft);
 	object-fit: contain;
-	object-position: left center;
+	object-position: center;
 }
 
 .platform-admin-form .platform-storefront-theme-grid {

@@ -4,8 +4,8 @@ import { auth } from "@/auth"
 import { prisma } from "@backend/db/prisma"
 import { MerchantWorkspaceNavigation } from "@/components/tenant/MerchantWorkspaceNavigation"
 import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
-import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
-import { platformThemeStyle } from "@/lib/platformTheme"
+import { salonThemeStyle } from "@/lib/salonTheme"
+import { DEFAULT_THEME_PRESET, isThemePreset } from "@shared/constants/themePresets"
 
 export default function TenantAdminLayout({
 	children,
@@ -40,6 +40,7 @@ async function TenantAdminLayoutContent({
 					canManageAdmins: true,
 					canManageSecurity: true,
 					canManageBilling: true,
+					tenant: { select: { settings: { select: { themePreset: true } } } },
 				},
 			})
 		: null
@@ -54,12 +55,17 @@ async function TenantAdminLayoutContent({
 				canManageBilling: membership.role === "ADMIN" && membership.canManageBilling,
 			}
 		: null
-	const design = await getPlatformStorefrontDesign()
+	const savedThemePreset = membership?.tenant.settings?.themePreset
+	const themePreset =
+		savedThemePreset && isThemePreset(savedThemePreset)
+			? savedThemePreset
+			: DEFAULT_THEME_PRESET
 
 	return (
 		<div
 			className="platform-site platform-site--with-mobile-actions merchant-workspace-shell"
-			style={platformThemeStyle(design.theme)}
+			data-theme-preset={themePreset}
+			style={salonThemeStyle(themePreset)}
 		>
 			<header className="admin-bookings-header merchant-admin-console-banner">
 				<div className="admin-console-heading">

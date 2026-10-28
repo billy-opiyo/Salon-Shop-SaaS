@@ -1496,7 +1496,7 @@ function bindStorefrontDesignEditor(
 			DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
 		),
 	}
-	setDesignControl("adminDesignThemePreset", settings.themePreset ?? "gold")
+	setDesignControl("adminDesignThemePreset", settings.themePreset ?? DEFAULT_THEME_PRESET)
 	setDesignControl("adminDesignThemeMode", settings.themeMode ?? "dark")
 	setDesignControl(
 		"adminDesignLogoUrl",
@@ -1659,11 +1659,13 @@ function bindStorefrontDesignEditor(
 	}
 	bindUpload("adminDesignLogoFile", "adminDesignLogoUrl", "LOGO")
 	bindUpload("adminDesignHeroFile", "adminDesignHeroUrl", "HERO")
-	const saveButton = document.getElementById("adminSaveStoreDesignBtn")
-	if (!(saveButton instanceof HTMLButtonElement))
+	const saveButtons = Array.from(
+		document.querySelectorAll<HTMLButtonElement>("[data-save-store-design]"),
+	)
+	if (saveButtons.length === 0)
 		return () => fileUploads.forEach((remove) => remove())
 	const saveHandler = async () => {
-		saveButton.disabled = true
+		saveButtons.forEach((button) => (button.disabled = true))
 		setDesignMessage("Saving Salon Design…")
 		const sectionCopy = Object.fromEntries(
 			Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]),
@@ -1732,13 +1734,13 @@ function bindStorefrontDesignEditor(
 					: "Salon Design could not be saved.",
 				"error",
 			)
-			saveButton.disabled = false
+			saveButtons.forEach((button) => (button.disabled = false))
 		}
 	}
-	saveButton.addEventListener("click", saveHandler)
+	saveButtons.forEach((button) => button.addEventListener("click", saveHandler))
 	return () => {
 		fileUploads.forEach((remove) => remove())
-		saveButton.removeEventListener("click", saveHandler)
+		saveButtons.forEach((button) => button.removeEventListener("click", saveHandler))
 	}
 }
 

@@ -78,7 +78,7 @@ export async function provisionTenant(
 					createdByUserId: userId,
 					settings: {
 						create: {
-							themePreset: "gold",
+							themePreset: "storefront-default",
 							themeMode: "dark",
 							heroTitle: input.heroTitle,
 							heroSubtitle: input.heroSubtitle,
