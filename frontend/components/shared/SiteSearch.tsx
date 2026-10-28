@@ -10,6 +10,39 @@ export interface SiteSearchEntry {
 	readonly keywords?: string
 }
 
+function normalizeSearchText(value: string): string {
+	return value
+		.normalize("NFKD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLocaleLowerCase()
+		.replace(/[^\p{L}\p{N}]+/gu, " ")
+		.trim()
+}
+
+function rankSearchEntry(entry: SiteSearchEntry, query: string, terms: readonly string[]): number {
+	const label = normalizeSearchText(entry.label)
+	const description = normalizeSearchText(entry.description ?? "")
+	const keywords = normalizeSearchText(entry.keywords ?? "")
+	const allText = `${label} ${description} ${keywords}`
+	if (!terms.every((term) => allText.includes(term))) return -1
+
+	let score = 0
+	if (label === query) score += 10_000
+	else if (label.startsWith(query)) score += 8_000
+	else if (label.split(" ").some((word) => word.startsWith(query))) score += 7_000
+	else if (label.includes(query)) score += 6_000
+
+	for (const term of terms) {
+		if (label === term) score += 1_500
+		else if (label.split(" ").some((word) => word === term)) score += 1_200
+		else if (label.split(" ").some((word) => word.startsWith(term))) score += 900
+		else if (label.includes(term)) score += 600
+		else if (description.includes(term)) score += 250
+		else if (keywords.includes(term)) score += 100
+	}
+	return score
+}
+
 interface SiteSearchProps {
 	readonly entries: readonly SiteSearchEntry[]
 	readonly label: string
@@ -22,11 +55,15 @@ export function SiteSearch({ entries, label, className = "" }: SiteSearchProps) 
 	const searchRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
 	const results = useMemo(() => {
-		const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
-		return entries.filter((entry) => {
-			const searchableText = (entry.label + " " + (entry.description ?? "") + " " + (entry.keywords ?? "")).toLocaleLowerCase()
-			return terms.every((term) => searchableText.includes(term))
-		}).slice(0, terms.length ? 8 : 6)
+		const normalizedQuery = normalizeSearchText(query)
+		const terms = normalizedQuery.split(/\s+/).filter(Boolean)
+		if (!terms.length) return entries.slice(0, 6)
+		return entries
+			.map((entry, index) => ({ entry, index, score: rankSearchEntry(entry, normalizedQuery, terms) }))
+			.filter((result) => result.score >= 0)
+			.sort((a, b) => b.score - a.score || a.index - b.index)
+			.slice(0, 8)
+			.map(({ entry }) => entry)
 	}, [entries, query])
 
 	useEffect(() => {

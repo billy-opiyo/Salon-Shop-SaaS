@@ -231,7 +231,9 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 							</nav>
 							<div className="form-message" id="adminDesignMessage" style={{display: "none"}}></div>
 							<form id="adminStoreDesignForm" className="admin-gallery-form">
-								<div className="admin-gallery-grid" id="salon-design-branding">
+								<section className="admin-section-card admin-design-group-card" id="salon-design-branding">
+									<h3>Branding and hero</h3>
+									<div className="admin-gallery-grid">
 									<div className="form-group">
 										<label htmlFor="adminDesignThemePreset">Theme preset</label>
 										<select id="adminDesignThemePreset" defaultValue={DEFAULT_THEME_PRESET}>
@@ -278,12 +280,14 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 										<label htmlFor="adminDesignHeroDescription">Hero description</label>
 										<textarea id="adminDesignHeroDescription" rows={3} maxLength={600} />
 									</div>
-								</div>
-								<div className="admin-booking-actions admin-design-save-row">
+									</div>
+									<div className="admin-booking-actions admin-design-save-row">
 									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
 								</div>
+								</section>
 
-								<h3 id="salon-design-structure">Storefront sections</h3>
+								<section className="admin-section-card admin-design-group-card" id="salon-design-structure">
+									<h3>Storefront sections</h3>
 								<div className="admin-design-visibility-grid">
 									{["gallery", "services", "booking", "testimonials", "blog", "visit", "contact"].map((section) => (
 										<label key={section}>
@@ -296,8 +300,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 								<div className="admin-booking-actions admin-design-save-row">
 									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
 								</div>
+								</section>
 
-								<h3 id="salon-design-copy">Section headings and copy</h3>
+								<section className="admin-section-card admin-design-group-card" id="salon-design-copy">
+									<h3>Section headings and copy</h3>
 								<div className="admin-design-copy-grid">
 									{[
 										["gallery", "Gallery"], ["services", "Services"], ["booking", "Booking"],
@@ -315,8 +321,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 								<div className="admin-booking-actions admin-design-save-row">
 									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
 								</div>
+								</section>
 
-								<h3 id="salon-design-contact">Contact, hours, social links, and footer</h3>
+								<section className="admin-section-card admin-design-group-card" id="salon-design-contact">
+									<h3>Contact, hours, social links, and footer</h3>
 								<div className="admin-gallery-grid">
 									<div className="form-group">
 										<label htmlFor="adminDesignPhonePrimary">Primary phone</label>
@@ -357,6 +365,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn" data-save-store-design>Save Salon Design</button>
 									<a className="btn btn-outline" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
 								</div>
+								</section>
 							</form>
 						</div>
 					</section>

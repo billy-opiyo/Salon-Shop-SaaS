@@ -7186,25 +7186,6 @@ h6 {
     scrollbar-color: var(--primary) var(--bg-secondary);
 }
 
-.salon-storefront-loading {
-    min-height: 100svh;
-    display: grid;
-    align-content: center;
-    justify-items: center;
-    gap: 12px;
-    background: #0a0a0a;
-    color: #f4efe7;
-}
-
-.salon-storefront-loading p {
-    margin: 0;
-}
-
-.salon-storefront-loading__mark {
-    color: #d7a84f;
-    font-size: 2rem;
-}
-
 .blog-empty-state {
     flex: 1 0 100%;
     margin: 0;
@@ -11545,6 +11526,10 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 
 .admin-design-section-nav a,
 .admin-design-save-row {
+	scroll-margin-top: 1rem;
+}
+
+.admin-design-group-card {
 	scroll-margin-top: 1rem;
 }
 

@@ -24,11 +24,10 @@
 	margin: 1rem 0 1.25rem;
 }
 
-.platform-cms-section-action {
+.platform-cms-save-row {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.35rem;
+	justify-content: flex-end;
+	margin-top: 1rem;
 }
 
 .platform-storefront-form fieldset {
@@ -126,6 +125,13 @@
 	width: fit-content;
 	max-width: 100%;
 	justify-self: start;
+}
+
+@media (min-width: 1001px) {
+	.platform-admin-page .platform-admin-header__meta > .platform-admin-home-link {
+		justify-self: end;
+		margin-inline: 0;
+	}
 }
 
 .platform-admin-metrics {

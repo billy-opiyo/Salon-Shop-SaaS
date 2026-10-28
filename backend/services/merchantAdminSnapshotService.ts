@@ -57,6 +57,32 @@ export async function hasMerchantAdminPanelAccess(
 	}
 }
 
+export async function hasMerchantAdminPanelAccessForSlug(
+	userId: string,
+	tenantSlug: string,
+): Promise<boolean> {
+	if (!process.env.DATABASE_URL?.trim()) return false
+	try {
+		const membership = await prisma.membership.findFirst({
+			where: {
+				userId,
+				status: "ACTIVE",
+				tenant: { slug: tenantSlug.trim().toLowerCase() },
+			},
+			select: {
+				role: true,
+				canManageAdmins: true,
+				canManageBookings: true,
+				canManageContent: true,
+				canManageSecurity: true,
+			},
+		})
+		return Boolean(membership && hasTenantAdminPermission(membership))
+	} catch {
+		return false
+	}
+}
+
 export class MerchantAdminSnapshotError extends Error {
 	readonly code = "MERCHANT_ADMIN_SNAPSHOT_FAILED" as const
 	constructor(message: string) {
