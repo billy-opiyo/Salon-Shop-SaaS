@@ -15,14 +15,18 @@ export interface MerchantWorkspaceNavigationAccess {
 export function MerchantWorkspaceNavigation({
 	tenantSlug,
 	access,
+	placement = "layout",
 }: {
 	readonly tenantSlug: string
 	readonly access: MerchantWorkspaceNavigationAccess | null
+	readonly placement?: "layout" | "console"
 }) {
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
 	const basePath = `/manage/${tenantSlug}`
+	const isMainConsole = pathname.replace(/\/$/, "") === basePath
 	if (!access) return null
+	if (isMainConsole !== (placement === "console")) return null
 
 	const links = [
 		{ label: "Bookings", href: `${basePath}?section=bookings`, section: "bookings", visible: access.canManageBookings },
@@ -64,6 +68,19 @@ export function MerchantWorkspaceNavigation({
 				const isActive = link.section
 					? normalizedPath === basePath && activeSection === link.section
 					: normalizedPath === link.href.replace(/\/$/, "")
+				if (isMainConsole && link.section) {
+					return (
+						<button
+							key={link.href}
+							type="button"
+							className={`admin-section-tab${isActive ? " active" : ""}`}
+							data-admin-section-tab={link.section}
+							aria-pressed={isActive}
+						>
+							{link.label}
+						</button>
+					)
+				}
 				return (
 				<Link
 					key={link.href}

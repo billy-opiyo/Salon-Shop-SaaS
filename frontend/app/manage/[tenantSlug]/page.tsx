@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { prisma } from "@backend/db/prisma"
 import { SalonAdminRuntime } from "@/components/tenant/SalonAdminRuntime"
+import type { MerchantWorkspaceNavigationAccess } from "@/components/tenant/MerchantWorkspaceNavigation"
 import type { SalonAdminSection } from "@/components/tenant/SalonAdminMarkup"
 
 interface AdminPageProps {
@@ -47,6 +48,7 @@ export default async function TenantAdminPage({
 					canManageContent: true,
 					canManageAdmins: true,
 					canManageSecurity: true,
+					canManageBilling: true,
 				},
 			},
 		},
@@ -57,6 +59,14 @@ export default async function TenantAdminPage({
 	const isOwner = membership.role === "OWNER"
 	const canManageBookings = isOwner || membership.canManageBookings
 	const canManageContent = isOwner || membership.canManageContent
+	const navigationAccess: MerchantWorkspaceNavigationAccess = {
+		isOwner,
+		canManageBookings,
+		canManageContent,
+		canManageAdmins: isOwner || membership.canManageAdmins,
+		canManageSecurity: isOwner || membership.canManageSecurity,
+		canManageBilling: membership.role === "ADMIN" && membership.canManageBilling,
+	}
 	const allowedSections = sectionOrder.filter((section) => {
 		if (section === "bookings" || section === "waitlist" || section === "schedule")
 			return canManageBookings
@@ -80,6 +90,7 @@ export default async function TenantAdminPage({
 			userEmail={session?.user?.email ?? "your account"}
 			initialSection={initialSection}
 			allowedSections={allowedSections}
+			navigationAccess={navigationAccess}
 		/>
 	)
 }

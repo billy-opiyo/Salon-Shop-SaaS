@@ -12,6 +12,7 @@ export interface SalonAdminMarkupProps {
 	readonly userEmail: string
 	readonly initialSection: SalonAdminSection
 	readonly allowedSections: readonly SalonAdminSection[]
+	readonly workspaceNavigation: ReactNode
 }
 
 export type SalonAdminSection =
@@ -34,6 +35,7 @@ export function SalonAdminMarkup({
 	userEmail,
 	initialSection,
 	allowedSections,
+	workspaceNavigation,
 }: SalonAdminMarkupProps): ReactNode {
 	const isAllowed = (section: SalonAdminSection) => allowedSections.includes(section)
 	return (
@@ -129,6 +131,7 @@ export function SalonAdminMarkup({
 				</div>
 
 				<div className="admin-panel" id="adminPanel" style={{display: "block"}}>
+					{workspaceNavigation}
 					<section
 						className={`admin-management-section${initialSection === "design" ? " active" : ""}`}
 						data-admin-section="design"
@@ -1374,7 +1377,7 @@ export function SalonAdminMarkup({
 									</div>
 									<div className="form-group full admin-checkbox-group">
 										<label>
-											<input type="checkbox" id="adminManageActive" checked />
+											<input type="checkbox" id="adminManageActive" defaultChecked />
 											<span>Account Active</span>
 										</label>
 									</div>
@@ -1389,7 +1392,7 @@ export function SalonAdminMarkup({
 												<input
 													type="checkbox"
 													id="adminPermManageBookings"
-													checked
+													defaultChecked
 												/>
 												<span>Manage Bookings</span>
 											</label>
@@ -1397,7 +1400,7 @@ export function SalonAdminMarkup({
 												<input
 													type="checkbox"
 													id="adminPermManageContent"
-													checked
+													defaultChecked
 												/>
 												<span>Manage Content</span>
 											</label>
