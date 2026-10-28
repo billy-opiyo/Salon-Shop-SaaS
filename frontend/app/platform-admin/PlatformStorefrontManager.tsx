@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 
 import type { PlatformPolicyContent, PlatformStorefrontDesign } from "@shared/constants/platformStorefront"
 import {
@@ -19,8 +19,12 @@ const tiers: readonly PlanTier[] = ["starter", "business", "enterprise"]
 
 export function PlatformStorefrontManager({ initialDesign, role }: { readonly initialDesign: Design; readonly role: "OWNER" | "STORE_EDITOR" | "STORE_SUPPORT" }) {
 	const [design, setDesign] = useState<Design>(initialDesign)
-	const [message, setMessage] = useState("")
+	const [feedback, setFeedback] = useState<{
+		readonly message: string
+		readonly type: "status" | "success" | "error" | "notice"
+	} | null>(null)
 	const [saving, setSaving] = useState(false)
+	const [uploadingKind, setUploadingKind] = useState<"LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | null>(null)
 	const isOwner = role === "OWNER"
 	const canEditSite = role === "OWNER" || role === "STORE_EDITOR"
 	const canEditSupport = role === "OWNER" || role === "STORE_SUPPORT"
@@ -157,13 +161,14 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 		})
 
 	const upload = async (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE", file: File | undefined) => {
-		if (!file) return
+		if (!file || saving || uploadingKind) return
 		const error = getImageUploadError(file.size, file.type)
 		if (error) {
-			setMessage(error)
+			setFeedback({ message: error, type: "error" })
 			return
 		}
-		setMessage("Uploading image…")
+		setUploadingKind(kind)
+		setFeedback({ message: "Uploading image…", type: "status" })
 		const formData = new FormData()
 		formData.set("file", file)
 		formData.set("kind", kind)
@@ -176,16 +181,32 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				...current,
 				...(kind === "LOGO" ? { logoUrl: uploadedUrl } : kind === "HERO_DESKTOP" ? { heroDesktopUrl: uploadedUrl } : { heroMobileUrl: uploadedUrl }),
 			}))
-			setMessage("Image uploaded. Save the design to publish it.")
+			setFeedback({ message: "Image uploaded. Save the design to publish it.", type: "notice" })
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "The image could not be uploaded.")
+			setFeedback({
+				message: error instanceof Error ? error.message : "The image could not be uploaded.",
+				type: "error",
+			})
+		} finally {
+			setUploadingKind(null)
 		}
 	}
 
+	const selectImage = (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE") =>
+		(event: ChangeEvent<HTMLInputElement>) => {
+			const file = event.currentTarget.files?.[0]
+			event.currentTarget.value = ""
+			void upload(kind, file)
+		}
+
 	const save = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
+		if (uploadingKind) {
+			setFeedback({ message: "Wait for the image upload to finish before saving.", type: "notice" })
+			return
+		}
 		setSaving(true)
-		setMessage("Saving platform settings…")
+		setFeedback({ message: "Saving platform settings…", type: "status" })
 		try {
 			const response = await fetch("/api/platform-admin/storefront", {
 				method: "PUT",
@@ -195,9 +216,12 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 			const result = (await response.json()) as Design & { error?: string }
 			if (!response.ok) throw new Error(result.error ?? "Platform settings could not be saved.")
 			setDesign(result)
-			setMessage("Beauty Sphia platform settings saved.")
+			setFeedback({ message: "Beauty Sphia platform settings saved.", type: "success" })
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "Platform settings could not be saved.")
+			setFeedback({
+				message: error instanceof Error ? error.message : "Platform settings could not be saved.",
+				type: "error",
+			})
 		} finally {
 			setSaving(false)
 		}
@@ -213,8 +237,8 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 	)
 	const cmsSaveButton = (label: string) => (
 		<div className="platform-cms-save-row">
-			<button className="button button--primary button--small" type="submit" disabled={saving}>
-				{saving ? "Saving…" : `Save ${label}`}
+			<button className="button button--primary button--small" type="submit" disabled={saving || uploadingKind !== null}>
+				{saving ? "Saving…" : uploadingKind ? "Uploading image…" : `Save ${label}`}
 			</button>
 		</div>
 	)
@@ -269,7 +293,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 					{ textField("Platform name", design.branding.name, (value) => setGroupText("branding", "name", value)) }
 					{ textField("Brand tagline", design.branding.tagline, (value) => setGroupText("branding", "tagline", value)) }
 					<div className="platform-storefront-images">
-						<label>Platform logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void upload("LOGO", event.target.files?.[0])} /><small>Maximum 1 MB.</small>{design.logoUrl && <img className="platform-storefront-image-preview" src={design.logoUrl} alt="Current Beauty Sphia logo" />}</label>
+						<label>Platform logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("LOGO")} /><small>Maximum 1 MB.</small>{design.logoUrl && <img className="platform-storefront-image-preview" src={design.logoUrl} alt="Current Beauty Sphia logo" />}</label>
 					</div>
 					<div className="platform-storefront-theme-grid">
 						{(Object.keys(PLATFORM_THEME_PALETTES["beauty-sphia"]) as Array<Exclude<keyof Design["theme"], "preset">>).map((key) => (
@@ -282,8 +306,8 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				<fieldset id="cms-home">
 					<legend>Homepage hero</legend>
 					<div className="platform-storefront-images">
-						<label>Desktop hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void upload("HERO_DESKTOP", event.target.files?.[0])} /><small>Maximum 1 MB. Used above 1024px.</small>{design.heroDesktopUrl && <img className="platform-storefront-image-preview" src={design.heroDesktopUrl} alt="Current desktop hero" />}</label>
-						<label>Mobile/tablet hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => void upload("HERO_MOBILE", event.target.files?.[0])} /><small>Maximum 1 MB. Used at 1024px and below.</small>{design.heroMobileUrl && <img className="platform-storefront-image-preview" src={design.heroMobileUrl} alt="Current mobile and tablet hero" />}</label>
+						<label>Desktop hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_DESKTOP")} /><small>Maximum 1 MB. Used above 1024px.</small>{design.heroDesktopUrl && <img className="platform-storefront-image-preview" src={design.heroDesktopUrl} alt="Current desktop hero" />}</label>
+						<label>Mobile/tablet hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_MOBILE")} /><small>Maximum 1 MB. Used at 1024px and below.</small>{design.heroMobileUrl && <img className="platform-storefront-image-preview" src={design.heroMobileUrl} alt="Current mobile and tablet hero" />}</label>
 					</div>
 					{ textField("Hero image alt text", design.heroAlt, (value) => setDesign((current) => ({ ...current, heroAlt: value }))) }
 					{ textField("Eyebrow", design.homeHero.eyebrow, (value) => setGroupText("homeHero", "eyebrow", value)) }
@@ -337,7 +361,15 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				{policyEditor("Cookie policy", "cookiePolicy", design.cookiePolicy)}
 				<fieldset><legend>Footer</legend>{textField("Footer description", design.content.footerDescription, (value) => setContent("footerDescription", value), true)}{cmsSaveButton("Site pages")}</fieldset>
 				</>}
-				{message && <p className="form-message" role="status">{message}</p>}
+				{feedback && (
+					<p
+						className={`form-message${feedback.type === "success" ? " form-message--success" : feedback.type === "error" ? " form-message--error" : ""}`}
+						role={feedback.type === "error" ? "alert" : "status"}
+						aria-live={feedback.type === "error" ? "assertive" : "polite"}
+					>
+						{feedback.message}
+					</p>
+				)}
 			</form>
 		</section>
 	)

@@ -4727,6 +4727,24 @@ html.splash-active .splash-handwriting-letter {
 	justify-self: start;
 }
 
+.merchant-settings-form .merchant-settings-deposit-field {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(10rem, .8fr);
+	align-items: center;
+	gap: .75rem 1rem;
+	min-width: 0;
+}
+
+.merchant-settings-form .merchant-settings-deposit-field > span {
+	min-width: 0;
+	overflow-wrap: normal;
+}
+
+.merchant-settings-form .merchant-settings-deposit-field > input[type="number"] {
+	width: 100%;
+	min-width: 0;
+}
+
 .merchant-billing-page .auth-form > button {
 	width: fit-content;
 	min-width: min(100%, 12rem);
@@ -4757,6 +4775,9 @@ html.splash-active .splash-handwriting-letter {
 		grid-template-columns: minmax(0, 1fr);
 	}
 	.merchant-settings-form {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.merchant-settings-form .merchant-settings-deposit-field {
 		grid-template-columns: minmax(0, 1fr);
 	}
 	.merchant-settings-form__wide,

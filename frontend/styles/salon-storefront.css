@@ -12224,3 +12224,307 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
 .salon-storefront-root .nav-toggle.active .nav-toggle__icon--menu { display: none; }
 .salon-storefront-root .nav-toggle.active .nav-toggle__icon--close { display: inline-flex; }
 .salon-storefront-root .nav-toggle .nav-toggle__icon svg { position: static; }
+
+/* Merchant routes reuse the legacy salon admin's warm, card-based controls. */
+.merchant-workspace-shell .merchant-workspace-panel .button--outline {
+    border-color: color-mix(in srgb, var(--primary) 46%, var(--border));
+    background: color-mix(in srgb, var(--primary) 7%, var(--bg-primary));
+    color: var(--primary-light, var(--primary));
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.merchant-workspace-shell .merchant-workspace-panel .button--outline:hover,
+.merchant-workspace-shell .merchant-workspace-panel .button--outline:focus-visible {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--on-primary, #17120a);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 20%, transparent);
+    transform: translateY(-1px);
+}
+
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn {
+    min-height: 2.35rem;
+    padding: .55rem .9rem;
+    border: 1px solid color-mix(in srgb, var(--primary) 48%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 8%, var(--bg-secondary));
+    color: var(--primary-light, var(--primary));
+    font-weight: 700;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn:hover,
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn:focus-visible {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--on-primary, #17120a);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 20%, transparent);
+    transform: translateY(-1px);
+}
+
+.merchant-workspace-panel .manage-store-list {
+    gap: .85rem;
+    min-width: 0;
+}
+
+.merchant-workspace-panel .manage-store-list > h2 {
+    margin: .5rem 0 .15rem;
+    color: var(--text-primary);
+    font: 500 clamp(1.25rem, 2vw, 1.65rem)/1.15 var(--serif);
+}
+
+.merchant-workspace-panel .manage-store {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    min-width: 0;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+    border-left: 3px solid color-mix(in srgb, var(--primary) 65%, var(--border));
+    border-radius: .8rem;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--primary)), var(--bg-primary));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .16);
+    backdrop-filter: none;
+}
+
+.merchant-workspace-panel .manage-store > div:first-child { min-width: 0; }
+
+.merchant-workspace-panel .manage-store:has(.manage-store__media) {
+    grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr) auto;
+}
+
+.merchant-workspace-panel .manage-store__media {
+    display: grid;
+    min-width: 0;
+    min-height: 8rem;
+    max-height: 10rem;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+    border-radius: .7rem;
+    background: color-mix(in srgb, var(--primary) 7%, var(--bg-primary));
+    color: var(--text-muted);
+    font-size: .8rem;
+}
+
+.merchant-workspace-panel .manage-store__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 8rem;
+    max-height: 10rem;
+    object-fit: cover;
+}
+
+.merchant-workspace-panel .manage-store:has(.manage-store__media) > div:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.merchant-workspace-panel .manage-store:has(.manage-store__media) .manage-store__actions {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.merchant-workspace-panel .manage-store h2,
+.merchant-workspace-panel .manage-store h3 {
+    margin: .35rem 0 .35rem;
+    color: var(--text-primary);
+    font-family: var(--serif);
+    overflow-wrap: anywhere;
+}
+
+.merchant-workspace-panel .manage-store h2 { font-size: clamp(1.15rem, 2vw, 1.45rem); }
+.merchant-workspace-panel .manage-store h3 { font-size: 1.18rem; }
+
+.merchant-workspace-panel .manage-store p:not(.eyebrow) {
+    margin: .25rem 0 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.merchant-workspace-panel .manage-store__actions,
+.merchant-workspace-panel .manage-store > form {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .55rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.merchant-workspace-panel .manage-store__actions form,
+.merchant-workspace-panel .manage-store > form { margin: 0; }
+
+.merchant-workspace-panel .manage-store__actions details { position: relative; }
+
+.merchant-workspace-panel .manage-store__actions summary {
+    cursor: pointer;
+    color: var(--primary-light, var(--primary));
+    font-weight: 700;
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] {
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: .7rem;
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] .admin-booking-filter-btn {
+    min-height: 5rem;
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 8%, var(--bg-secondary)), var(--bg-primary));
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] .admin-booking-filter-btn strong {
+    color: var(--primary-light, var(--primary));
+}
+
+.merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] .admin-booking-filter-btn span {
+    color: var(--text-muted);
+}
+
+.merchant-workspace-panel .admin-booking-item {
+    border-color: color-mix(in srgb, var(--primary) 26%, var(--border));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--primary)), var(--bg-primary));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .16);
+}
+
+.merchant-workspace-panel .merchant-schedule-day,
+.merchant-workspace-panel .merchant-schedule-summary,
+.merchant-workspace-panel .merchant-schedule-booking {
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--bg-secondary) 92%, var(--primary)), var(--bg-primary));
+}
+
+.merchant-workspace-panel .merchant-schedule-day > h2,
+.merchant-workspace-panel .merchant-schedule-summary h2,
+.merchant-workspace-panel .merchant-schedule-booking h3 {
+    color: var(--text-primary);
+    font-family: var(--serif);
+}
+
+.merchant-workspace-panel .manage-empty-state,
+.merchant-workspace-panel > .manage-empty,
+.merchant-workspace-panel .manage-store-list > .manage-empty {
+    border: 1px dashed color-mix(in srgb, var(--primary) 42%, var(--border));
+    border-radius: .8rem;
+    background: color-mix(in srgb, var(--primary) 5%, var(--bg-secondary));
+    color: var(--text-secondary);
+}
+
+.merchant-workspace-panel .onboarding-form {
+    min-width: 0;
+    padding: clamp(1rem, 2.5vw, 1.5rem);
+    border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+    border-radius: .9rem;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 6%, var(--bg-secondary)), var(--bg-primary));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .14);
+}
+
+.merchant-workspace-panel .onboarding-form > h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font: 500 clamp(1.35rem, 2vw, 1.8rem)/1.15 var(--serif);
+}
+
+.merchant-workspace-panel .onboarding-form .button--primary {
+    justify-self: start;
+}
+
+.merchant-workspace-panel details > form.onboarding-form {
+    margin-top: .8rem;
+}
+
+.merchant-workspace-panel > .manage-page:has(#add-blog-post),
+.merchant-workspace-panel > .manage-page:has(#add-gallery-style) {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    align-items: start;
+    gap: 1rem;
+}
+
+.merchant-workspace-panel > .manage-page:has(#add-blog-post) > .manage-header,
+.merchant-workspace-panel > .manage-page:has(#add-gallery-style) > .manage-header {
+    grid-column: 1 / -1;
+}
+
+.merchant-workspace-panel > .manage-page:has(#add-blog-post) > .manage-store-list,
+.merchant-workspace-panel > .manage-page:has(#add-gallery-style) > .manage-store-list {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.merchant-workspace-panel > .manage-page:has(#add-blog-post) > #add-blog-post,
+.merchant-workspace-panel > .manage-page:has(#add-gallery-style) > #add-gallery-style {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0;
+}
+
+.merchant-workspace-panel .manage-store:has(.service-price-form) {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.merchant-workspace-panel .manage-store .service-price-form {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: end;
+	gap: .75rem;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.merchant-workspace-panel .service-price-form > label {
+	display: grid;
+	gap: .4rem;
+	min-width: 0;
+	color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+    .merchant-workspace-panel .manage-store {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        padding: 1rem;
+    }
+
+    .merchant-workspace-panel .manage-store__actions,
+    .merchant-workspace-panel .manage-store > form {
+        justify-content: flex-start;
+    }
+
+    .merchant-workspace-panel .manage-store:has(.manage-store__media) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .merchant-workspace-panel .manage-store .service-price-form {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+    .merchant-workspace-panel .manage-store:has(.manage-store__media) > div:nth-child(2),
+    .merchant-workspace-panel .manage-store:has(.manage-store__media) .manage-store__actions {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .merchant-workspace-panel > .manage-page:has(#add-blog-post),
+    .merchant-workspace-panel > .manage-page:has(#add-gallery-style) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .merchant-workspace-panel > .manage-page:has(#add-blog-post) > .manage-header,
+    .merchant-workspace-panel > .manage-page:has(#add-gallery-style) > .manage-header,
+    .merchant-workspace-panel > .manage-page:has(#add-blog-post) > .manage-store-list,
+    .merchant-workspace-panel > .manage-page:has(#add-gallery-style) > .manage-store-list,
+    .merchant-workspace-panel > .manage-page:has(#add-blog-post) > #add-blog-post,
+    .merchant-workspace-panel > .manage-page:has(#add-gallery-style) > #add-gallery-style {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

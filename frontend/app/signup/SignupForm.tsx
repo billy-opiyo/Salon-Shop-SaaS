@@ -12,17 +12,20 @@ import { registerAccount } from "./actions"
 
 export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?: string }) {
 	const [message, setMessage] = useState<string>("")
+	const [messageType, setMessageType] = useState<"success" | "error" | "notice" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [turnstileToken, setTurnstileToken] = useState("")
 
 	async function handleGoogleSignUp() {
 		setMessage("")
+		setMessageType(null)
 		setIsSubmitting(true)
 		try {
 			await signIn("google", { callbackUrl: getSafeAuthCallbackUrl(callbackUrl) })
 		} catch {
 			setIsSubmitting(false)
 			setMessage("Google sign-up is temporarily unavailable. Please try again.")
+			setMessageType("error")
 		}
 	}
 
@@ -30,19 +33,23 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 		event.preventDefault()
 		const form = event.currentTarget
 		setMessage("")
+		setMessageType(null)
 		setIsSubmitting(true)
 		try {
 			const result = await registerAccount(new FormData(event.currentTarget))
 			if (!result.ok) {
 				setMessage(result.message)
+				setMessageType("error")
 				return
 			}
 			setMessage(result.verificationSent
 				? "Account created. Check your inbox to verify your email, then sign in to your account."
 				: "Account created, but we could not send the verification email. Contact Beauty Sphia support to finish activating your sign-in.")
+			setMessageType(result.verificationSent ? "success" : "notice")
 			form.reset()
 		} catch {
 			setMessage("Account creation is temporarily unavailable. Please try again.")
+			setMessageType("error")
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -109,7 +116,11 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 				{isSubmitting ? "Creating account…" : "Create account"}
 			</button>
 			{message && (
-				<p className="form-message" role="status">
+				<p
+					className={`form-message${messageType === "success" ? " form-message--success" : messageType === "error" ? " form-message--error" : ""}`}
+					role={messageType === "error" ? "alert" : "status"}
+					aria-live={messageType === "error" ? "assertive" : "polite"}
+				>
 					{message}
 				</p>
 			)}

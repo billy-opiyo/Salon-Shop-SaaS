@@ -18,13 +18,17 @@ export function PlatformRoleManager({
 	const [assignments, setAssignments] = useState(initialAssignments)
 	const [email, setEmail] = useState("")
 	const [role, setRole] = useState<RoleAssignment["role"]>("STORE_EDITOR")
-	const [message, setMessage] = useState("")
+	const [feedback, setFeedback] = useState<{
+		readonly message: string
+		readonly type: "status" | "success" | "error"
+	} | null>(null)
 	const [busy, setBusy] = useState(false)
+	const [removingAssignmentId, setRemovingAssignmentId] = useState<string | null>(null)
 
 	const save = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
 		setBusy(true)
-		setMessage("Saving role…")
+		setFeedback({ message: "Saving role…", type: "status" })
 		try {
 			const response = await fetch("/api/platform-admin/roles", {
 				method: "POST",
@@ -38,9 +42,15 @@ export function PlatformRoleManager({
 				result.assignment as RoleAssignment,
 			].sort((left, right) => left.email.localeCompare(right.email)))
 			setEmail("")
-			setMessage(`${role === "STORE_EDITOR" ? "Store Editor" : "Store Support"} access saved for ${result.assignment.email}.`)
+			setFeedback({
+				message: `${role === "STORE_EDITOR" ? "Store Editor" : "Store Support"} access saved for ${result.assignment.email}.`,
+				type: "success",
+			})
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "The role could not be saved.")
+			setFeedback({
+				message: error instanceof Error ? error.message : "The role could not be saved.",
+				type: "error",
+			})
 		} finally {
 			setBusy(false)
 		}
@@ -48,16 +58,21 @@ export function PlatformRoleManager({
 
 	const remove = async (assignment: RoleAssignment) => {
 		setBusy(true)
-		setMessage(`Removing access for ${assignment.email}…`)
+		setRemovingAssignmentId(assignment.id)
+		setFeedback({ message: `Removing access for ${assignment.email}…`, type: "status" })
 		try {
 			const response = await fetch(`/api/platform-admin/roles?id=${encodeURIComponent(assignment.id)}`, { method: "DELETE" })
 			const result = await response.json() as { error?: string }
 			if (!response.ok) throw new Error(result.error ?? "The role could not be removed.")
 			setAssignments((current) => current.filter((item) => item.id !== assignment.id))
-			setMessage(`Platform access removed for ${assignment.email}.`)
+			setFeedback({ message: `Platform access removed for ${assignment.email}.`, type: "success" })
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "The role could not be removed.")
+			setFeedback({
+				message: error instanceof Error ? error.message : "The role could not be removed.",
+				type: "error",
+			})
 		} finally {
+			setRemovingAssignmentId(null)
 			setBusy(false)
 		}
 	}
@@ -78,12 +93,22 @@ export function PlatformRoleManager({
 				{assignments.map((assignment) => (
 					<article className="platform-admin-row" key={assignment.id}>
 						<div><strong>{assignment.email}</strong><span>{assignment.role === "STORE_EDITOR" ? "Store Editor · site content and team profiles" : "Store Support · support page and FAQs"}</span></div>
-						<button className="button button--ghost button--small" type="button" disabled={busy} onClick={() => void remove(assignment)}>Remove access</button>
+						<button className="button button--ghost button--small" type="button" disabled={busy} onClick={() => void remove(assignment)}>
+							{removingAssignmentId === assignment.id ? "Removing…" : "Remove access"}
+						</button>
 					</article>
 				))}
 				{assignments.length === 0 && <p className="manage-empty">No delegated platform roles yet.</p>}
 			</div>
-			{message && <p className="form-message" role="status">{message}</p>}
+			{feedback && (
+				<p
+					className={`form-message${feedback.type === "success" ? " form-message--success" : feedback.type === "error" ? " form-message--error" : ""}`}
+					role={feedback.type === "error" ? "alert" : "status"}
+					aria-live={feedback.type === "error" ? "assertive" : "polite"}
+				>
+					{feedback.message}
+				</p>
+			)}
 		</section>
 	)
 }

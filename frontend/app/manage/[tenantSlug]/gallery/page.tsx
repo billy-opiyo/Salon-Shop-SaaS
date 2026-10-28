@@ -58,6 +58,13 @@ export default async function MerchantGalleryPage({
 				) : (
 					styles.map((style) => (
 						<article className="manage-store" key={style.id}>
+							<div className="manage-store__media">
+								{style.imageUrl ? (
+									<img src={style.imageUrl} alt={style.styleName} loading="lazy" />
+								) : (
+									<span>Salon style</span>
+								)}
+							</div>
 							<div>
 								<p className="eyebrow">
 									{style.published ? "Published" : "Draft"} ·{" "}

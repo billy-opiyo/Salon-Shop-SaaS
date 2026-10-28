@@ -14,12 +14,14 @@ export function SetupPaymentForm({
 	const router = useRouter()
 	const [phoneNumber, setPhoneNumber] = useState("")
 	const [message, setMessage] = useState("")
+	const [messageType, setMessageType] = useState<"success" | "error" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [requestAccepted, setRequestAccepted] = useState(false)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		setMessage("")
+		setMessageType(null)
 		setRequestAccepted(false)
 		setIsSubmitting(true)
 		try {
@@ -32,14 +34,14 @@ export function SetupPaymentForm({
 				error?: string
 				status?: string
 			}
-			setMessage(
-				response.ok
-					? "Payment request sent. Approve it on your M-Pesa phone, then refresh the status here."
-					: (data.error ?? "Payment could not be started."),
-			)
+			setMessage(response.ok
+				? "Payment request sent. Approve it on your M-Pesa phone, then refresh the status here."
+				: (data.error ?? "Payment could not be started."))
+			setMessageType(response.ok ? "success" : "error")
 			setRequestAccepted(response.ok)
 		} catch {
 			setMessage("Payment could not be started. Please try again.")
+			setMessageType("error")
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -75,7 +77,11 @@ export function SetupPaymentForm({
 				</span>
 			</button>
 			{message && (
-				<p className="form-message" role="status">
+				<p
+					className={`form-message form-message--${messageType ?? "error"}`}
+					role={messageType === "success" ? "status" : "alert"}
+					aria-live={messageType === "success" ? "polite" : "assertive"}
+				>
 					{message}
 				</p>
 			)}
