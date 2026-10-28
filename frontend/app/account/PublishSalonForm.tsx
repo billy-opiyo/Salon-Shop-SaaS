@@ -16,9 +16,16 @@ export function PublishSalonForm({ tenantId }: { readonly tenantId: string }) {
 	const submit = (formData: FormData) => {
 		setFeedback(null)
 		startTransition(async () => {
-			const result = await publishStore(formData)
-			setFeedback(result)
-			if (result.ok) router.refresh()
+			try {
+				const result = await publishStore(formData)
+				setFeedback(result)
+				if (result.ok) router.refresh()
+			} catch {
+				setFeedback({
+					ok: false,
+					message: "Your salon could not be published. Please try again.",
+				})
+			}
 		})
 	}
 

@@ -8,9 +8,34 @@ import { DEFAULT_THEME_PRESET, THEME_PRESET_OPTIONS } from "@shared/constants/th
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
 	readonly staffHref: string
+	readonly settingsHref: string
+	readonly servicesHref: string
+	readonly initialSection: SalonAdminSection
+	readonly allowedSections: readonly SalonAdminSection[]
 }
 
-export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps): ReactNode {
+export type SalonAdminSection =
+	| "bookings"
+	| "waitlist"
+	| "schedule"
+	| "gallery"
+	| "blogs"
+	| "reviews"
+	| "messages"
+	| "services"
+	| "admins"
+	| "security"
+	| "design"
+
+export function SalonAdminMarkup({
+	homeHref,
+	staffHref,
+	settingsHref,
+	servicesHref,
+	initialSection,
+	allowedSections,
+}: SalonAdminMarkupProps): ReactNode {
+	const isAllowed = (section: SalonAdminSection) => allowedSections.includes(section)
 	return (
 		<>
 
@@ -34,6 +59,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 							>← Back to Homepage</a
 						>
 						<a className="btn btn-outline" href={staffHref}>Manage stylist names</a>
+						<a className="btn btn-outline" href={settingsHref}>Booking &amp; payment settings</a>
 					</p>
 				</div>
 
@@ -112,112 +138,125 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					>
 						<button
 							type="button"
-							className="admin-section-tab active"
+							className={`admin-section-tab${initialSection === "bookings" ? " active" : ""}`}
 							data-admin-section-tab="bookings"
 							role="tab"
-							aria-selected="true"
+							aria-selected={initialSection === "bookings"}
+							hidden={!isAllowed("bookings")}
 						>
 							Bookings
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "waitlist" ? " active" : ""}`}
 							data-admin-section-tab="waitlist"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "waitlist"}
+							hidden={!isAllowed("waitlist")}
 						>
 							Waitlist
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "schedule" ? " active" : ""}`}
 							data-admin-section-tab="schedule"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "schedule"}
+							hidden={!isAllowed("schedule")}
 						>
 							Schedule
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "gallery" ? " active" : ""}`}
 							data-admin-section-tab="gallery"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "gallery"}
+							hidden={!isAllowed("gallery")}
 						>
 							Gallery
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "blogs" ? " active" : ""}`}
 							data-admin-section-tab="blogs"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "blogs"}
+							hidden={!isAllowed("blogs")}
 						>
 							Blogs
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "reviews" ? " active" : ""}`}
 							data-admin-section-tab="reviews"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "reviews"}
+							hidden={!isAllowed("reviews")}
 						>
 							Reviews
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "messages" ? " active" : ""}`}
 							data-admin-section-tab="messages"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "messages"}
+							hidden={!isAllowed("messages")}
 						>
 							Messages
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "services" ? " active" : ""}`}
 							data-admin-section-tab="services"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "services"}
+							hidden={!isAllowed("services")}
 						>
 							Services
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "admins" ? " active" : ""}`}
 							data-admin-section-tab="admins"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "admins"}
+							hidden={!isAllowed("admins")}
 						>
 							Admins
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "security" ? " active" : ""}`}
 							data-admin-section-tab="security"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "security"}
+							hidden={!isAllowed("security")}
 						>
 							Security
 						</button>
 						<button
 							type="button"
-							className="admin-section-tab"
+							className={`admin-section-tab${initialSection === "design" ? " active" : ""}`}
 							data-admin-section-tab="design"
 							role="tab"
-							aria-selected="false"
+							aria-selected={initialSection === "design"}
+							hidden={!isAllowed("design")}
 						>
 							Salon Design
 						</button>
 					</div>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "design" ? " active" : ""}`}
 						data-admin-section="design"
 						role="tabpanel"
+						hidden={!isAllowed("design")}
 					>
 						<div className="admin-section-card admin-store-design-card">
 							<h2>Salon Design</h2>
+							<p><a className="admin-inline-link" href={settingsHref}>Open booking and payment settings</a></p>
 							<p>
 								Customize the public storefront without changing your existing
 								services, gallery, bookings, or customer records. Current values are
@@ -371,9 +410,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section active"
+						className={`admin-management-section${initialSection === "bookings" ? " active" : ""}`}
 						data-admin-section="bookings"
 						role="tabpanel"
+						hidden={!isAllowed("bookings")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
@@ -465,9 +505,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "schedule" ? " active" : ""}`}
 						data-admin-section="schedule"
 						role="tabpanel"
+						hidden={!isAllowed("schedule")}
 					>
 						<div className="admin-schedule-wrap">
 							<div className="admin-schedule-toolbar">
@@ -549,9 +590,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "blogs" ? " active" : ""}`}
 						data-admin-section="blogs"
 						role="tabpanel"
+						hidden={!isAllowed("blogs")}
 					>
 						<div className="admin-gallery-wrap admin-blogs-wrap">
 							<div
@@ -672,9 +714,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "gallery" ? " active" : ""}`}
 						data-admin-section="gallery"
 						role="tabpanel"
+						hidden={!isAllowed("gallery")}
 					>
 						<div className="admin-gallery-wrap">
 							<div
@@ -1079,9 +1122,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "reviews" ? " active" : ""}`}
 						data-admin-section="reviews"
 						role="tabpanel"
+						hidden={!isAllowed("reviews")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
@@ -1197,9 +1241,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "messages" ? " active" : ""}`}
 						data-admin-section="messages"
 						role="tabpanel"
+						hidden={!isAllowed("messages")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
@@ -1277,9 +1322,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "waitlist" ? " active" : ""}`}
 						data-admin-section="waitlist"
 						role="tabpanel"
+						hidden={!isAllowed("waitlist")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
@@ -1331,12 +1377,14 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "services" ? " active" : ""}`}
 						data-admin-section="services"
 						role="tabpanel"
+						hidden={!isAllowed("services")}
 					>
 						<div className="admin-section-card admin-services-settings-card">
 							<h3>Service Category Visibility</h3>
+							<p><a className="admin-inline-link" href={servicesHref}>Open the full service catalog manager</a></p>
 							<p>
 								Turn categories ON/OFF based on what this salon currently
 								offers. Changes apply live on the website and booking form.
@@ -1369,9 +1417,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "admins" ? " active" : ""}`}
 						data-admin-section="admins"
 						role="tabpanel"
+						hidden={!isAllowed("admins")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
@@ -1528,9 +1577,10 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 					</section>
 
 					<section
-						className="admin-management-section"
+						className={`admin-management-section${initialSection === "security" ? " active" : ""}`}
 						data-admin-section="security"
 						role="tabpanel"
+						hidden={!isAllowed("security")}
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">

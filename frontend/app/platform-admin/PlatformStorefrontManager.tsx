@@ -293,7 +293,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 					{ textField("Platform name", design.branding.name, (value) => setGroupText("branding", "name", value)) }
 					{ textField("Brand tagline", design.branding.tagline, (value) => setGroupText("branding", "tagline", value)) }
 					<div className="platform-storefront-images">
-						<label>Platform logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("LOGO")} /><small>Maximum 1 MB.</small>{design.logoUrl && <img className="platform-storefront-image-preview" src={design.logoUrl} alt="Current Beauty Sphia logo" />}</label>
+						<label>Platform logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("LOGO")} /><small>Maximum 1 MB.</small>{design.logoUrl && <img className="platform-storefront-image-preview" src={design.logoUrl} alt="Current Beauty Sphia logo" loading="lazy" decoding="async" />}</label>
 					</div>
 					<div className="platform-storefront-theme-grid">
 						{(Object.keys(PLATFORM_THEME_PALETTES["beauty-sphia"]) as Array<Exclude<keyof Design["theme"], "preset">>).map((key) => (
@@ -306,8 +306,8 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 				<fieldset id="cms-home">
 					<legend>Homepage hero</legend>
 					<div className="platform-storefront-images">
-						<label>Desktop hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_DESKTOP")} /><small>Maximum 1 MB. Used above 1024px.</small>{design.heroDesktopUrl && <img className="platform-storefront-image-preview" src={design.heroDesktopUrl} alt="Current desktop hero" />}</label>
-						<label>Mobile/tablet hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_MOBILE")} /><small>Maximum 1 MB. Used at 1024px and below.</small>{design.heroMobileUrl && <img className="platform-storefront-image-preview" src={design.heroMobileUrl} alt="Current mobile and tablet hero" />}</label>
+						<label>Desktop hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_DESKTOP")} /><small>Maximum 1 MB. Used above 1024px.</small>{design.heroDesktopUrl && <img className="platform-storefront-image-preview" src={design.heroDesktopUrl} alt="Current desktop hero" loading="lazy" decoding="async" />}</label>
+						<label>Mobile/tablet hero image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("HERO_MOBILE")} /><small>Maximum 1 MB. Used at 1024px and below.</small>{design.heroMobileUrl && <img className="platform-storefront-image-preview" src={design.heroMobileUrl} alt="Current mobile and tablet hero" loading="lazy" decoding="async" />}</label>
 					</div>
 					{ textField("Hero image alt text", design.heroAlt, (value) => setDesign((current) => ({ ...current, heroAlt: value }))) }
 					{ textField("Eyebrow", design.homeHero.eyebrow, (value) => setGroupText("homeHero", "eyebrow", value)) }

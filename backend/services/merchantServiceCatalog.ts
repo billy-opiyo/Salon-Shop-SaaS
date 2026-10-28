@@ -102,6 +102,41 @@ export async function updateServiceCategoryVisibility(
 	})
 }
 
+export async function updateServiceCategoryVisibilityBatch(
+	userId: string,
+	tenantSlug: string,
+	updates: readonly { readonly categoryId: string; readonly enabled: boolean }[],
+): Promise<void> {
+	if (updates.length === 0)
+		throw new MerchantServiceCatalogError("Choose at least one category to save.")
+	const tenantId = await getTenantId(userId, tenantSlug)
+	await prisma.$transaction(async (transaction) => {
+		const ids = updates.map((update) => update.categoryId)
+		const categories = await transaction.serviceCategory.findMany({
+			where: { id: { in: ids }, tenantId },
+			select: { id: true },
+		})
+		if (categories.length !== ids.length)
+			throw new MerchantServiceCatalogError("One or more service categories were not found.")
+		for (const update of updates) {
+			await transaction.serviceCategory.update({
+				where: { id: update.categoryId },
+				data: { enabled: update.enabled },
+			})
+			await transaction.adminAuditLog.create({
+				data: {
+					tenantId,
+					actorUserId: userId,
+					action: `service-category.visibility.${update.enabled ? "enabled" : "disabled"}`,
+					resourceType: "service-category",
+					resourceId: update.categoryId,
+					metadata: { enabled: update.enabled } as Prisma.InputJsonValue,
+				},
+			})
+		}
+	})
+}
+
 export async function createServiceForUser(
 	userId: string,
 	input: ServiceMutationInput,

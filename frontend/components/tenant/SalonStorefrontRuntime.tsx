@@ -128,14 +128,67 @@ function renderAdminSnapshotList(
 		element.append(empty)
 		return
 	}
+	const isSecurityCollection = elementId.startsWith("adminSecurity") ||
+		elementId === "adminAccountHistoryList" ||
+		elementId === "adminSessionsList" ||
+		elementId === "adminTimelineList"
+	let securityRows: HTMLTableSectionElement | null = null
+	if (isSecurityCollection) {
+		const table = document.createElement("table")
+		table.className = "admin-security-table"
+		const headings = elementId === "adminSecurityActivityList"
+			? ["User", "Sign-in details", "Status / risk", "Time", "Actions"]
+			: elementId === "adminSecurityAlertsList"
+				? ["Alert", "Severity", "Status", "Time", "Actions"]
+				: elementId === "adminSessionsList"
+					? ["User", "Session", "Expires", "Status", "Actions"]
+					: elementId === "adminAccountHistoryList"
+						? ["Change", "Account", "Details", "Time", "Actions"]
+						: ["Event", "Summary", "Type", "Time", "Actions"]
+		const head = document.createElement("thead")
+		const headingRow = document.createElement("tr")
+		for (const value of headings) {
+			const cell = document.createElement("th")
+			cell.scope = "col"
+			cell.textContent = value
+			headingRow.append(cell)
+		}
+		head.append(headingRow)
+		securityRows = document.createElement("tbody")
+		table.append(head, securityRows)
+		element.append(table)
+	}
 
 	items.forEach((item) => {
 		const record =
 			typeof item === "object" && item !== null
 				? (item as AdminSnapshotRecord)
 				: { value: item }
-		const row = document.createElement("article")
-		row.className = "admin-snapshot-row"
+		const row = document.createElement(isSecurityCollection ? "tr" : "article")
+		const isBooking = elementId === "adminBookingsList"
+		const isWaitlist = elementId === "adminWaitlistList"
+		const isGallery = elementId === "adminGalleryList"
+		const isBlog = elementId === "adminBlogsList"
+		const isMessage = elementId === "adminContactList"
+		const isReview = elementId === "adminReviewsList"
+		const isSecurity = elementId.startsWith("adminSecurity") ||
+			elementId === "adminAccountHistoryList" ||
+			elementId === "adminSessionsList" ||
+			elementId === "adminTimelineList"
+		row.className = [
+			"admin-snapshot-row",
+			isBooking ? "admin-booking-item" : "",
+			isWaitlist ? "admin-review-item admin-waitlist-card" : "",
+			isWaitlist && String(record.status ?? "").toUpperCase() === "WAITING" && record.queuePosition
+				? "admin-waitlist-card--queued"
+				: "",
+			isGallery ? "admin-gallery-item" : "",
+			isBlog ? "admin-blog-item" : "",
+			isMessage || isReview || elementId === "adminAdminsList" || elementId === "adminServicesList"
+				? "admin-review-item"
+				: "",
+			isSecurity ? "admin-security-row-main" : "",
+		].filter(Boolean).join(" ")
 		row.dataset.searchText = Object.values(record)
 			.map(formatAdminSnapshotValue)
 			.join(" ")
@@ -165,50 +218,293 @@ function renderAdminSnapshotList(
 		row.dataset.severity = String(record.severity ?? "").toLowerCase()
 		row.dataset.eventType = String(record.eventType ?? "").toLowerCase()
 		row.dataset.createdAt = String(record.createdAt ?? "")
-		const title = document.createElement("strong")
-		title.textContent = String(
-			record.serviceName ??
-				record.styleName ??
-				record.title ??
-				record.subject ??
-				record.name ??
-				record.email ??
-				record.changeType ??
-				record.value ??
-				"Record",
+		row.dataset.updatedAt = String(record.updatedAt ?? "")
+		if (isReview) {
+			row.dataset.rating = String(Number(record.rating ?? 0))
+			row.dataset.featured = String(record.featured === true)
+		}
+		row.dataset.preferredDate = String(record.preferredDate ?? "")
+		row.dataset.preferredTime = String(record.preferredTime ?? "")
+		const person = record.user && typeof record.user === "object"
+			? (record.user as AdminSnapshotRecord)
+			: {}
+		const customerName = [record.firstName, record.lastName]
+			.filter((part): part is string => typeof part === "string" && Boolean(part.trim()))
+			.join(" ") || String(record.customerName ?? record.name ?? person.name ?? record.email ?? "Record")
+		const titleText = String(
+			isBooking || isWaitlist
+				? customerName
+				: isGallery
+					? record.styleName ?? record.title ?? "Untitled style"
+					: isBlog
+						? record.title ?? "Untitled post"
+						: record.name ?? record.subject ?? record.serviceName ?? record.email ?? record.changeType ?? record.summary ?? record.value ?? "Record",
 		)
-		row.append(title)
+		row.dataset.customerName = titleText
 		const details = document.createElement("p")
 		details.textContent = Object.entries(record)
-			.filter(
-				([key]) =>
-					![
-						"serviceName",
-						"styleName",
-						"title",
-						"subject",
-						"name",
-						"email",
-						"value",
-					].includes(key),
-			)
+			.filter(([key]) => !["serviceName", "styleName", "title", "subject", "name", "email", "value", "user", "linkedBooking"].includes(key))
 			.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
 			.join(" · ")
-		row.append(details)
+
+		if (isBooking || isWaitlist) {
+			const header = document.createElement("div")
+			header.className = isWaitlist ? "admin-review-item-head" : "admin-booking-item-head"
+			const identity = document.createElement("div")
+			const name = document.createElement("div")
+			name.className = "admin-booking-name"
+			name.textContent = titleText
+			if (isWaitlist && record.queuePosition !== undefined) {
+				const queueLabel = String(record.queuePositionLabel ?? "").trim()
+				if (queueLabel) {
+					const nameRow = document.createElement("div")
+					nameRow.className = "admin-booking-name-row"
+					const queueChip = document.createElement("span")
+					queueChip.className = "waitlist-queue-chip admin-waitlist-queue-chip"
+					const rank = document.createElement("span")
+					rank.className = "waitlist-queue-chip__rank"
+					rank.textContent = queueLabel
+					const label = document.createElement("span")
+					label.className = "waitlist-queue-chip__text"
+					label.textContent = "in queue"
+					queueChip.append(rank, label)
+					if (record.queueSize) {
+						const size = document.createElement("span")
+						size.className = "waitlist-queue-chip__size"
+						size.textContent = `of ${String(record.queueSize)}`
+						queueChip.append(size)
+					}
+					nameRow.append(name, queueChip)
+					identity.append(nameRow)
+				} else {
+					identity.append(name)
+				}
+			} else {
+				identity.append(name)
+			}
+			const idLine = document.createElement("div")
+			idLine.className = "admin-booking-id"
+			idLine.textContent = `${isWaitlist ? "Waitlist" : "Booking"} ID: ${String(record.id ?? "N/A")}`
+			identity.append(idLine)
+			if (isWaitlist && typeof record.linkedBooking === "object" && record.linkedBooking !== null) {
+				const linkedId = (record.linkedBooking as AdminSnapshotRecord).id
+				if (typeof linkedId === "string" && linkedId) {
+					const linkedBooking = document.createElement("div")
+					linkedBooking.className = "admin-booking-id"
+					linkedBooking.textContent = `Linked Booking: ${linkedId}`
+					identity.append(linkedBooking)
+				}
+			}
+			const statusBadge = document.createElement("span")
+			const statusClass = String(record.status ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "-")
+			statusBadge.className = `admin-status-badge admin-status-${statusClass}`
+			statusBadge.textContent = String(record.status ?? "Unknown")
+			header.append(identity, statusBadge)
+			row.append(header)
+
+			const meta = document.createElement("div")
+			meta.className = isWaitlist ? "admin-review-meta" : "admin-booking-meta"
+			const fields: Array<[string, unknown]> = isWaitlist
+				? [["Waitlist Place", record.queuePositionLabel ? `${String(record.queuePositionLabel)}${record.queueSize ? ` of ${String(record.queueSize)}` : ""}` : "N/A"], ["Waitlist Status", record.status], ["Service", record.serviceName ?? record.service], ["Stylist", record.preferredStylist ?? "Any Available"], ["Preferred date", record.preferredDate], ["Preferred time", record.preferredTime], ["Slot ID", record.preferredSlotId ?? "N/A"], ["Email", record.email], ["Phone", record.phone], ["Joined", record.createdAt], ["Updated", record.updatedAt], ["Notified", record.notifiedAt], ["Notification channel", record.notificationChannel]]
+				: [["Service", record.serviceName ?? record.service], ["Stylist", typeof record.stylist === "object" && record.stylist !== null ? (record.stylist as AdminSnapshotRecord).name : record.stylistName ?? record.stylist ?? "Any Available"], ["Date", record.appointmentDate ?? record.date], ["Time", record.timeLabel ?? record.time], ["Email", record.email], ["Phone", record.phone], ["WhatsApp", record.whatsappStatus], ["Reminder sent", record.reminderSentAt ?? "Not sent"]]
+			for (const [label, value] of fields) {
+				if (value === null || value === undefined || value === "") continue
+				const field = document.createElement("div")
+				const fieldLabel = document.createElement("span")
+				fieldLabel.textContent = `${label}: `
+				field.append(fieldLabel)
+				if (label === "Email" || label === "Phone") {
+					const link = document.createElement("a")
+					link.className = "admin-inline-link"
+					link.href = `${label === "Email" ? "mailto:" : "tel:"}${String(value)}`
+					link.textContent = String(value)
+					field.append(link)
+				} else {
+					const dateField = ["Joined", "Updated", "Notified", "Date", "Preferred date", "Reminder sent"].includes(label)
+					const dateWithTime = ["Joined", "Updated", "Notified", "Reminder sent"].includes(label)
+					field.append(document.createTextNode(dateField ? formatAdminSnapshotDate(value, dateWithTime) : formatAdminSnapshotValue(value)))
+				}
+				meta.append(field)
+			}
+			row.append(meta)
+			const notes = String(record.specialRequests ?? record.notes ?? "").trim()
+			const request = document.createElement("div")
+			request.className = "admin-booking-special-request"
+			const requestLabel = document.createElement("span")
+			requestLabel.textContent = isWaitlist ? "Waitlist notes:" : "Special request:"
+			const requestText = document.createElement("p")
+			requestText.textContent = notes || (isWaitlist ? "No notes provided." : "No special request provided.")
+			request.append(requestLabel, requestText)
+			row.append(request)
+		} else if (isGallery || isBlog) {
+			const media = document.createElement("div")
+			media.className = isGallery ? "admin-gallery-thumb-wrap" : "admin-blog-thumb-wrap"
+			const imageUrl = typeof record.imageUrl === "string" ? record.imageUrl.trim() : ""
+			let safeImageUrl = ""
+			try {
+				const parsed = new URL(imageUrl, window.location.origin)
+				if (parsed.protocol === "http:" || parsed.protocol === "https:") safeImageUrl = parsed.href
+			} catch { /* Leave the legacy no-image placeholder in place. */ }
+			if (safeImageUrl) {
+				const image = document.createElement("img")
+				image.className = isGallery ? "admin-gallery-thumb" : "admin-blog-thumb"
+				image.src = safeImageUrl
+				image.alt = titleText
+				image.loading = "lazy"
+				image.decoding = "async"
+				media.append(image)
+			} else {
+				const placeholder = document.createElement("div")
+				placeholder.className = isGallery ? "admin-gallery-thumb admin-gallery-thumb--empty" : "admin-blog-thumb admin-blog-thumb--empty"
+				placeholder.textContent = "No Image"
+				media.append(placeholder)
+			}
+			if (isGallery && (record.beforeImageUrl || record.beforeImage)) {
+				const badge = document.createElement("span")
+				badge.className = "admin-gallery-badge"
+				badge.textContent = "Before & After"
+				media.append(badge)
+			}
+			const content = document.createElement("div")
+			content.className = isGallery ? "admin-gallery-content" : "admin-blog-content"
+			const heading = document.createElement("h4")
+			heading.textContent = titleText
+			content.append(heading)
+			if (isBlog) {
+				const meta = document.createElement("div")
+				meta.className = "admin-blog-meta"
+				meta.textContent = [record.publishDate, record.readTime].filter(Boolean).map(formatAdminSnapshotValue).join(" · ")
+				content.append(meta)
+			}
+			const summary = document.createElement("p")
+			summary.textContent = isBlog
+				? String(record.excerpt ?? "")
+				: [record.serviceCategory ?? record.category, record.styleType, record.stylistName ? `Stylist: ${String(record.stylistName)}` : "", record.timeTaken ? `Time: ${String(record.timeTaken)}` : ""]
+					.filter(Boolean)
+					.map(formatAdminSnapshotValue)
+					.join(" · ") || String(record.serviceName ?? "Salon style")
+			content.append(summary)
+			if (isGallery) {
+				const tags = document.createElement("div")
+				tags.className = "admin-gallery-tags"
+				for (const [key, label] of [["featuredTrending", "Trending"], ["featuredMostBooked", "Most Booked"], ["priceRange", String(record.priceRange ?? "")]] as const) {
+					if (record[key] !== true && (key !== "priceRange" || !label)) continue
+					const tag = document.createElement("span")
+					tag.textContent = label
+					tags.append(tag)
+				}
+				content.append(tags)
+			}
+			if (isBlog && typeof record.readMoreUrl === "string") {
+				try {
+					const articleUrl = new URL(record.readMoreUrl, window.location.origin)
+					if (articleUrl.protocol === "http:" || articleUrl.protocol === "https:") {
+						const link = document.createElement("a")
+						link.className = "admin-inline-link"
+						link.href = articleUrl.href
+						link.target = "_blank"
+						link.rel = "noopener"
+						link.textContent = "Open Article"
+						content.append(link)
+					}
+				} catch { /* Ignore malformed legacy article links. */ }
+			}
+			row.append(media, content)
+		} else if (isMessage || isReview) {
+			const header = document.createElement("div")
+			header.className = "admin-review-item-head"
+			const name = document.createElement("div")
+			name.className = "admin-booking-name"
+			name.textContent = titleText
+			const statusBadge = document.createElement("span")
+			const statusClass = String(record.status ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "-")
+			statusBadge.className = `admin-status-badge admin-status-${statusClass}`
+			statusBadge.textContent = String(record.status ?? "Unknown")
+			header.append(name, statusBadge)
+			row.append(header)
+			const meta = document.createElement("div")
+			meta.className = "admin-review-meta"
+			meta.textContent = [record.email, record.subject, record.createdAt, record.updatedAt]
+				.filter(Boolean)
+				.map(formatAdminSnapshotValue)
+				.join(" · ")
+			row.append(meta)
+			const message = document.createElement("div")
+			message.className = "admin-booking-special-request"
+			const messageLabel = document.createElement("span")
+			messageLabel.textContent = isMessage ? "Message received:" : "Review:"
+			const messageText = document.createElement("p")
+			messageText.textContent = String(record.message ?? record.text ?? "No content provided.")
+			message.append(messageLabel, messageText)
+			row.append(message)
+		} else if (isSecurity) {
+			const identityCell = document.createElement("td")
+			const title = document.createElement("strong")
+			title.textContent = titleText
+			identityCell.append(title)
+			const email = String(record.email ?? record.attemptedEmail ?? "").trim()
+			if (email && email !== titleText) {
+				const emailLine = document.createElement("div")
+				emailLine.className = "admin-booking-id"
+				emailLine.textContent = email
+				identityCell.append(emailLine)
+			}
+			const detailsCell = document.createElement("td")
+			const summary = record.summary ?? record.eventType ?? record.method ?? record.provider ?? record.changeType
+			detailsCell.textContent = [summary, details.textContent].filter(Boolean).map(formatAdminSnapshotValue).join(" · ")
+			const stateCell = document.createElement("td")
+			const state = String(record.severity ?? record.riskLevel ?? record.status ?? "Recorded")
+			const stateBadge = document.createElement("span")
+			stateBadge.className = `admin-status admin-status-${state.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`
+			stateBadge.textContent = state
+			stateCell.append(stateBadge)
+			const timeCell = document.createElement("td")
+			timeCell.textContent = formatAdminSnapshotValue(record.createdAt ?? record.updatedAt ?? record.expires ?? "")
+			row.append(identityCell, detailsCell, stateCell, timeCell)
+		} else {
+			const title = document.createElement("strong")
+			title.textContent = titleText
+			row.append(title, details)
+		}
 		const inspirationImageUrl =
-			typeof record.inspirationImageUrl === "string"
-				? record.inspirationImageUrl.trim()
+			typeof (record.inspirationImageUrl ?? record.inspirationImage ?? record.referenceImageUrl) === "string"
+				? String(record.inspirationImageUrl ?? record.inspirationImage ?? record.referenceImageUrl).trim()
 				: ""
-		if (inspirationImageUrl) {
+		if (inspirationImageUrl && !isGallery && !isBlog) {
 			try {
 				const safeUrl = new URL(inspirationImageUrl, window.location.origin)
 				if (safeUrl.protocol === "http:" || safeUrl.protocol === "https:") {
 					const imageLink = document.createElement("a")
-					imageLink.className = "admin-inline-link"
+					imageLink.className = isBooking || isWaitlist ? "admin-booking-inspiration-link" : "admin-inline-link"
 					imageLink.href = safeUrl.href
 					imageLink.target = "_blank"
 					imageLink.rel = "noopener noreferrer"
-					imageLink.textContent = "Open inspiration image"
+					if (isBooking || isWaitlist) {
+						const inspiration = document.createElement("div")
+						inspiration.className = "admin-booking-inspiration"
+						const inspirationMeta = document.createElement("div")
+						const inspirationLabel = document.createElement("span")
+						inspirationLabel.textContent = "Inspiration Image: "
+						const fullImageLink = document.createElement("a")
+						fullImageLink.className = "admin-inline-link"
+						fullImageLink.href = safeUrl.href
+						fullImageLink.target = "_blank"
+						fullImageLink.rel = "noopener noreferrer"
+						fullImageLink.textContent = "Open full image"
+						inspirationMeta.append(inspirationLabel, fullImageLink)
+						inspiration.append(inspirationMeta)
+						const image = document.createElement("img")
+						image.className = "admin-booking-inspiration-image"
+						image.src = safeUrl.href
+						image.alt = `Inspiration image for ${customerName}`
+						image.loading = "lazy"
+						image.decoding = "async"
+						imageLink.append(image)
+						inspiration.append(imageLink)
+						row.append(inspiration)
+					} else {
+						imageLink.textContent = "Open inspiration image"
+					}
 					row.append(imageLink)
 				}
 			} catch {
@@ -223,11 +519,15 @@ function renderAdminSnapshotList(
 					: ""
 		const status = typeof record.status === "string" ? record.status : ""
 		const actionGroup = document.createElement("div")
-		actionGroup.className = "admin-platform-actions"
+		actionGroup.className = isGallery || isBlog
+			? "admin-gallery-actions admin-platform-actions"
+			: isSecurity
+				? "admin-security-inline-actions admin-platform-actions"
+				: "admin-booking-actions admin-platform-actions"
 		if (recordId) {
 			const detailButton = document.createElement("button")
 			detailButton.type = "button"
-			detailButton.className = "btn btn-outline admin-platform-detail"
+			detailButton.className = "admin-action-btn admin-platform-detail"
 			detailButton.dataset.adminDetail = JSON.stringify(record)
 			detailButton.textContent = "Details"
 			actionGroup.append(detailButton)
@@ -236,13 +536,14 @@ function renderAdminSnapshotList(
 			action: string,
 			label: string,
 			extra: Record<string, string> = {},
+			actionId = recordId,
 		) => {
-			if (!recordId) return
+			if (!actionId) return
 			const button = document.createElement("button")
 			button.type = "button"
-			button.className = "btn btn-outline admin-platform-action"
+			button.className = `admin-action-btn admin-platform-action${action.endsWith("-delete") ? " danger" : ""}`
 			button.dataset.adminAction = action
-			button.dataset.adminId = recordId
+			button.dataset.adminId = actionId
 			button.dataset.adminDetail = JSON.stringify(record)
 			Object.entries(extra).forEach(([key, value]) => {
 				button.dataset[key] = value
@@ -251,18 +552,31 @@ function renderAdminSnapshotList(
 			actionGroup.append(button)
 		}
 		if (elementId === "adminBookingsList") {
-			if (status === "PENDING" || status === "WAITLISTED")
+			if (status === "PENDING") {
 				addAction("booking-status", "Confirm", { status: "CONFIRMED" })
-			if (
-				status === "PENDING" ||
-				status === "CONFIRMED" ||
-				status === "WAITLISTED"
-			)
-				addAction("booking-status", "Cancel", { status: "CANCELLED" })
-			if (status === "CONFIRMED")
-				addAction("booking-status", "Complete", { status: "COMPLETED" })
+				addAction("booking-status", "Cancel + Release Slot", { status: "CANCELLED" })
+			} else if (status === "CONFIRMED") {
+				addAction("booking-status", "Complete + Release Slot", { status: "COMPLETED" })
+				addAction("booking-status", "Cancel + Release Slot", { status: "CANCELLED" })
+			} else if (status === "WAITLISTED") {
+				const waitlistEntry = record.waitlistEntry
+				const waitlistEntryId =
+					typeof waitlistEntry === "object" && waitlistEntry !== null &&
+					"id" in waitlistEntry && typeof waitlistEntry.id === "string"
+						? waitlistEntry.id
+						: ""
+				if (waitlistEntryId) {
+					addAction("waitlist-convert", "Move to Confirmed", {}, waitlistEntryId)
+				} else {
+					const note = document.createElement("span")
+					note.className = "admin-empty-state"
+					note.textContent = "This booking is not linked to an actionable waitlist entry."
+					actionGroup.append(note)
+				}
+			}
 		}
 		if (elementId === "adminWaitlistList") {
+			const normalizedStatus = status.toUpperCase()
 			const isActiveWaitlistStatus = [
 				"WAITING",
 				"NOTIFIED",
@@ -277,19 +591,32 @@ function renderAdminSnapshotList(
 				typeof linkedBooking.status === "string"
 					? linkedBooking.status
 					: ""
-			if (status === "WAITING")
-				addAction("waitlist-status", "Contact", { status: "CONTACTED" })
-			if (isActiveWaitlistStatus)
-				addAction("waitlist-convert", "Book")
-			if (
-				isActiveWaitlistStatus &&
-				linkedBookingStatus !== "WAITLISTED"
-			)
-				addAction("waitlist-status", "Mark Booked / Close Waitlist", {
-					status: "BOOKED",
-				})
-			if (isActiveWaitlistStatus)
-				addAction("waitlist-status", "Cancel", { status: "CANCELLED" })
+			const isQueued = isActiveWaitlistStatus
+			const linkedBookingId = typeof record.linkedBookingId === "string" ? record.linkedBookingId : ""
+			const linkedBookingIsWaitlisted = linkedBookingStatus.toUpperCase() === "WAITLISTED"
+			const linkedBookingBlocksStatusOnlyActions = Boolean(linkedBookingId) && !linkedBookingIsWaitlisted
+			if (isQueued && linkedBookingIsWaitlisted) {
+				addAction("waitlist-convert", "Move to Confirmed (Locks Slot)")
+			} else if (isQueued) {
+				const disabledMove = document.createElement("button")
+				disabledMove.type = "button"
+				disabledMove.className = "admin-action-btn"
+				disabledMove.disabled = true
+				disabledMove.title = linkedBookingId
+					? `Move to Confirmed is unavailable because the linked booking is already ${linkedBookingStatus.toLowerCase()}.`
+					: "Move to Confirmed requires a linked waitlisted booking so the preferred slot can be locked."
+				disabledMove.textContent = "Move to Confirmed (Locks Slot)"
+				actionGroup.append(disabledMove)
+			}
+			if (isQueued && !linkedBookingBlocksStatusOnlyActions) {
+				if (normalizedStatus !== "WAITING")
+					addAction("waitlist-status", "Set Waiting", { status: "WAITING" })
+				if (["WAITING", "NOTIFIED", "NOTIFICATION_FAILED"].includes(normalizedStatus))
+					addAction("waitlist-status", "Mark Contacted", { status: "CONTACTED" })
+				if (!linkedBookingIsWaitlisted)
+					addAction("waitlist-status", "Mark Booked / Close Waitlist", { status: "BOOKED" })
+				addAction("waitlist-status", "Cancel Request", { status: "CANCELLED" })
+			}
 		}
 		if (elementId === "adminContactList") {
 			if (status !== "NEW")
@@ -334,8 +661,15 @@ function renderAdminSnapshotList(
 			addAction("team-member-remove", "Remove")
 		if (elementId === "adminSecurityAlertsList" && !record.resolvedAt)
 			addAction("security-resolve-alert", "Resolve")
-		row.append(actionGroup)
-		element.append(row)
+		if (isSecurityCollection) {
+			const actionCell = document.createElement("td")
+			actionCell.append(actionGroup)
+			row.append(actionCell)
+			securityRows?.append(row)
+		} else {
+			row.append(actionGroup)
+			element.append(row)
+		}
 	})
 }
 
@@ -350,6 +684,18 @@ function formatAdminSnapshotValue(value: unknown): string {
 	if (Array.isArray(value))
 		return value.map(formatAdminSnapshotValue).join(", ")
 	return JSON.stringify(value)
+}
+
+function formatAdminSnapshotDate(value: unknown, includeTime = false): string {
+	if (!value) return "N/A"
+	const raw = String(value).trim()
+	if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+		const [year, month, day] = raw.split("-").map(Number)
+		return new Date(year, month - 1, day).toLocaleDateString()
+	}
+	const parsed = new Date(raw)
+	if (Number.isNaN(parsed.getTime())) return raw
+	return includeTime ? parsed.toLocaleString() : parsed.toLocaleDateString()
 }
 
 function formField(form: HTMLFormElement, id: string): string {
@@ -1095,6 +1441,7 @@ function bindAdminSnapshotFilters(): () => void {
 			: ""
 	}
 	const apply = () => {
+		applyLegacyReviewAndMessageFilters()
 		const search = getValue("adminSecuritySearchInput")
 		const provider = getValue("adminSecurityProviderFilterSelect")
 		const risk = getValue("adminSecurityRiskFilterSelect")
@@ -1129,6 +1476,37 @@ function bindAdminSnapshotFilters(): () => void {
 			const rows = Array.from(
 				container.querySelectorAll<HTMLElement>(".admin-snapshot-row"),
 			)
+			if (selector === "#adminWaitlistList") {
+				const statusPriority: Record<string, number> = {
+					waiting: 0,
+					notification_failed: 1,
+					notified: 2,
+					contacted: 2,
+					booked: 3,
+					cancelled: 4,
+				}
+				rows.sort((left, right) => {
+					if (mode === "oldest")
+						return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
+					if (mode === "date-time") {
+						const leftDate = `${left.dataset.preferredDate ?? "9999"}T${left.dataset.preferredTime ?? "23:59"}`
+						const rightDate = `${right.dataset.preferredDate ?? "9999"}T${right.dataset.preferredTime ?? "23:59"}`
+						return leftDate.localeCompare(rightDate)
+					}
+					if (mode === "status-waiting-first") {
+						const priorityDiff = (statusPriority[left.dataset.status ?? ""] ?? 9) - (statusPriority[right.dataset.status ?? ""] ?? 9)
+						if (priorityDiff !== 0) return priorityDiff
+						return (left.dataset.createdAt ?? "").localeCompare(right.dataset.createdAt ?? "")
+					}
+					if (mode === "name-az")
+						return (left.dataset.customerName ?? "").localeCompare(right.dataset.customerName ?? "", undefined, { sensitivity: "base" })
+					const leftUpdated = left.dataset.updatedAt || left.dataset.createdAt || ""
+					const rightUpdated = right.dataset.updatedAt || right.dataset.createdAt || ""
+					return rightUpdated.localeCompare(leftUpdated)
+				})
+				rows.forEach((row) => container.append(row))
+				return
+			}
 			if (selector === "#adminSessionsList" && mode === "multi-device-first") {
 				const sessionCountByUser = new Map<string, number>()
 				for (const row of rows) {
@@ -1147,7 +1525,8 @@ function bindAdminSnapshotFilters(): () => void {
 					left.dataset.createdAt ?? "",
 				)
 			})
-			rows.forEach((row) => container.append(row))
+				const destination = container.querySelector<HTMLElement>("tbody") ?? container
+				rows.forEach((row) => destination.append(row))
 			return
 		}
 			rows.sort((left, right) => {
@@ -1179,9 +1558,11 @@ function bindAdminSnapshotFilters(): () => void {
 					left.dataset.createdAt ?? "",
 				)
 			})
-			rows.forEach((row) => container.append(row))
+			const destination = container.querySelector<HTMLElement>("tbody") ?? container
+			rows.forEach((row) => destination.append(row))
 		}
 		sortRows("#adminSecurityActivityList", getValue("adminSecuritySortSelect"))
+		sortRows("#adminWaitlistList", getValue("adminWaitlistSortSelect"))
 		sortRows(
 			"#adminSecurityAlertsList",
 			getValue("adminSecurityAlertsSortSelect"),
@@ -1210,6 +1591,9 @@ function bindAdminSnapshotFilters(): () => void {
 			})
 	}
 	const ids = [
+		"adminReviewsSortSelect",
+		"adminMessagesSortSelect",
+		"adminWaitlistSortSelect",
 		"adminSecuritySortSelect",
 		"adminSecurityAlertsSortSelect",
 		"adminAccountHistorySortSelect",
@@ -1245,6 +1629,28 @@ function bindAdminSnapshotFilters(): () => void {
 		element.addEventListener(eventName, apply)
 		removers.push(() => element.removeEventListener(eventName, apply))
 	})
+	const reviewFilters = document.getElementById("adminReviewStatusFilterControls")
+	const messageFilters = document.getElementById("adminContactStatusFilterControls")
+	const bindStatusFilter = (
+		controls: HTMLElement | null,
+		attribute: "reviewStatusFilter" | "contactStatusFilter",
+	) => {
+		if (!controls) return
+		const handler = (event: Event) => {
+			const target = event.target
+			if (!(target instanceof Element)) return
+			const button = target.closest<HTMLButtonElement>(`button[data-${attribute.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`)
+			if (!button) return
+			const filter = button.dataset[attribute]?.toLowerCase() ?? "all"
+			controls.dataset.activeStatusFilter =
+				controls.dataset.activeStatusFilter === filter ? "all" : filter
+			apply()
+		}
+		controls.addEventListener("click", handler)
+		removers.push(() => controls.removeEventListener("click", handler))
+	}
+	bindStatusFilter(reviewFilters, "reviewStatusFilter")
+	bindStatusFilter(messageFilters, "contactStatusFilter")
 	const clear = document.getElementById("adminSecurityClearFiltersBtn")
 	if (clear instanceof HTMLButtonElement) {
 		const handler = () => {
@@ -1264,6 +1670,64 @@ function bindAdminSnapshotFilters(): () => void {
 	}
 	apply()
 	return () => removers.forEach((remove) => remove())
+}
+
+function applyLegacyReviewAndMessageFilters(): void {
+	const applyList = (
+		listId: string,
+		controlsId: string,
+		filterAttribute: "reviewStatusFilter" | "contactStatusFilter",
+		sortId: string,
+	) => {
+		const list = document.getElementById(listId)
+		const controls = document.getElementById(controlsId)
+		const sortSelect = document.getElementById(sortId)
+		if (!list || !controls) return
+		const activeFilter = controls.dataset.activeStatusFilter ?? "all"
+		const rows = Array.from(list.querySelectorAll<HTMLElement>(".admin-snapshot-row"))
+		for (const row of rows) row.hidden = activeFilter !== "all" && row.dataset.status !== activeFilter
+		controls.querySelectorAll<HTMLButtonElement>(`[data-${filterAttribute.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`).forEach((button) => {
+			const active = button.dataset[filterAttribute]?.toLowerCase() === activeFilter
+			button.classList.toggle("active", active)
+			button.setAttribute("aria-pressed", String(active))
+		})
+		const mode = sortSelect instanceof HTMLSelectElement ? sortSelect.value : ""
+		const timestamp = (row: HTMLElement, key: "createdAt" | "updatedAt") => Date.parse(row.dataset[key] ?? "") || 0
+		if (listId === "adminReviewsList") {
+			rows.sort((a, b) => {
+				if (mode === "newest") return timestamp(b, "updatedAt") - timestamp(a, "updatedAt") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+				if (mode === "highest-rated") return Number(b.dataset.rating) - Number(a.dataset.rating) || Number(b.dataset.featured === "true") - Number(a.dataset.featured === "true") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+				return Number(b.dataset.featured === "true") - Number(a.dataset.featured === "true") || timestamp(b, "updatedAt") - timestamp(a, "updatedAt") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+			})
+		} else {
+			const priorities: Record<string, number> = { new: 0, read: 1, resolved: 2 }
+			rows.sort((a, b) => {
+				if (mode === "oldest") return timestamp(a, "createdAt") - timestamp(b, "createdAt") || timestamp(a, "updatedAt") - timestamp(b, "updatedAt")
+				if (mode === "status-new-first") return (priorities[a.dataset.status ?? ""] ?? 9) - (priorities[b.dataset.status ?? ""] ?? 9) || timestamp(b, "updatedAt") - timestamp(a, "updatedAt") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+				if (mode === "status-unresolved-first") return Number(a.dataset.status === "resolved") - Number(b.dataset.status === "resolved") || timestamp(b, "updatedAt") - timestamp(a, "updatedAt") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+				if (mode === "name-az") return (a.dataset.customerName ?? "").localeCompare(b.dataset.customerName ?? "", undefined, { sensitivity: "base" })
+				return timestamp(b, "updatedAt") - timestamp(a, "updatedAt") || timestamp(b, "createdAt") - timestamp(a, "createdAt")
+			})
+		}
+		rows.forEach((row) => list.append(row))
+		let filteredEmpty = list.querySelector<HTMLElement>("[data-legacy-filter-empty]")
+		const hasVisibleRows = rows.some((row) => !row.hidden)
+		if (activeFilter !== "all" && rows.length > 0 && !hasVisibleRows) {
+			if (!filteredEmpty) {
+				filteredEmpty = document.createElement("p")
+				filteredEmpty.className = "admin-empty-state"
+				filteredEmpty.dataset.legacyFilterEmpty = "true"
+				list.append(filteredEmpty)
+			}
+			filteredEmpty.textContent = listId === "adminReviewsList"
+				? `No ${activeFilter} reviews found.`
+				: `No ${activeFilter} messages found.`
+		} else {
+			filteredEmpty?.remove()
+		}
+	}
+	applyList("adminReviewsList", "adminReviewStatusFilterControls", "reviewStatusFilter", "adminReviewsSortSelect")
+	applyList("adminContactList", "adminContactStatusFilterControls", "contactStatusFilter", "adminMessagesSortSelect")
 }
 
 function bindAdminBookingFilters(): {
@@ -1315,6 +1779,12 @@ function bindAdminBookingFilters(): {
 					continue
 				const clone = sourceRow.cloneNode(true)
 				if (!(clone instanceof HTMLElement)) continue
+				clone.classList.remove("admin-review-item", "admin-waitlist-card")
+				clone.classList.add(
+					"admin-booking-item",
+					"admin-booking-item-waitlisted",
+					"admin-booking-item-waitlist-record",
+				)
 				clone.hidden = false
 				clone.dataset.status = "waitlisted"
 				clone.dataset.bookingWaitlistClone = "true"
@@ -1744,12 +2214,199 @@ function bindStorefrontDesignEditor(
 	}
 }
 
-export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
+export function bindAdminSnapshotAdapter(
+	tenantSlug: string,
+	userEmail = "your account",
+): () => void {
 	const loginForm = document.getElementById("adminLoginForm")
 	const panel = document.getElementById("adminPanel")
 	const confirmationModal = document.getElementById("adminConfirmModal")
 	let pendingConfirmationButton: HTMLButtonElement | null = null
 	let confirmedActionButton: HTMLButtonElement | null = null
+	const removeTabHandlers: Array<() => void> = []
+	const pendingServiceCategoryChanges = new Map<string, boolean>()
+	const serviceCategorySaveButton = document.getElementById(
+		"adminSaveServiceCategoriesBtn",
+	)
+	const serviceCategoryMessage = document.getElementById("adminServicesMessage")
+	const renderServiceCategoryControls = (services: readonly unknown[]) => {
+		const mount = document.getElementById("adminServiceCategoryToggles")
+		if (!mount) return
+		mount.replaceChildren()
+		const categories = services
+			.map((item) => item as AdminSnapshotRecord)
+			.filter((category): category is AdminSnapshotRecord & { id: string } =>
+				typeof category.id === "string",
+			)
+			.map((category) => ({
+				id: category.id,
+				label: String(category.label ?? "Service category"),
+				savedEnabled: category.enabled === true,
+				enabled: pendingServiceCategoryChanges.has(category.id)
+					? pendingServiceCategoryChanges.get(category.id) === true
+					: category.enabled === true,
+			}))
+		const active = categories.filter((category) => category.enabled)
+			.sort((a, b) => a.label.localeCompare(b.label))
+		const inactive = categories.filter((category) => !category.enabled)
+			.sort((a, b) => a.label.localeCompare(b.label))
+
+		const summary = document.createElement("div")
+		summary.className = "admin-service-settings-summary"
+		summary.setAttribute("aria-live", "polite")
+		for (const [label, count, state] of [
+			["Active", active.length, "is-active"],
+			["Inactive", inactive.length, "is-inactive"],
+		] as const) {
+			const item = document.createElement("div")
+			item.className = `admin-service-settings-summary-item ${state}`
+			item.append(document.createTextNode(`${label}: `))
+			const value = document.createElement("strong")
+			value.textContent = String(count)
+			item.append(value)
+			summary.append(item)
+		}
+		mount.append(summary)
+
+		const groups = document.createElement("div")
+		groups.className = "admin-service-settings-groups"
+		const renderGroup = (
+			label: string,
+			items: typeof active,
+			state: "active" | "inactive",
+		) => {
+			const section = document.createElement("section")
+			section.className = `admin-service-settings-group is-${state}-group`
+			const header = document.createElement("header")
+			header.className = "admin-service-settings-group-head"
+			const heading = document.createElement("h4")
+			heading.className = "admin-service-settings-group-title"
+			const icon = document.createElement("span")
+			icon.className = `admin-service-settings-group-icon is-${state}`
+			icon.setAttribute("aria-hidden", "true")
+			icon.textContent = state === "active" ? "✓" : "⏸"
+			heading.append(icon, document.createTextNode(` ${label}`))
+			const description = document.createElement("p")
+			description.textContent = state === "active"
+				? "These categories are visible on the live website and booking form."
+				: "These categories are hidden from public view until re-enabled."
+			header.append(heading, description)
+			const cards = document.createElement("div")
+			cards.className = "admin-service-settings-cards"
+			if (items.length === 0) {
+				const empty = document.createElement("div")
+				empty.className = "admin-service-settings-empty"
+				empty.textContent = state === "active"
+					? "No active categories right now."
+					: "All categories are currently active."
+				cards.append(empty)
+			}
+			for (const category of items) {
+				const enabled = state === "active"
+				const card = document.createElement("article")
+				card.className = `admin-service-category-card ${enabled ? "is-enabled" : "is-disabled"}`
+				const main = document.createElement("div")
+				main.className = "admin-service-category-main"
+				const copy = document.createElement("div")
+				copy.className = "admin-service-category-copy"
+				const titleRow = document.createElement("div")
+				titleRow.className = "admin-service-category-title-row"
+				const title = document.createElement("h4")
+				title.className = "admin-service-category-title"
+				title.textContent = category.label
+				const pill = document.createElement("span")
+				pill.className = `admin-service-category-pill ${enabled ? "is-visible" : "is-hidden"}`
+				pill.textContent = enabled ? "ACTIVE" : "OFF"
+				titleRow.append(title, pill)
+				const visibility = document.createElement("p")
+				visibility.className = `admin-service-category-state ${enabled ? "is-visible" : "is-hidden"}`
+				visibility.textContent = enabled ? "Visible on website" : "Hidden on website"
+				copy.append(titleRow, visibility)
+
+				const switchLabel = document.createElement("label")
+				switchLabel.className = "admin-service-toggle"
+				const input = document.createElement("input")
+				input.type = "checkbox"
+				input.id = `adminServiceCategory_${category.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`
+				input.dataset.serviceCategoryId = category.id
+				input.dataset.serviceCategoryToggle = category.id
+				input.checked = enabled
+				switchLabel.htmlFor = input.id
+				switchLabel.setAttribute("aria-label", `Toggle ${category.label}`)
+				const slider = document.createElement("span")
+				slider.className = "admin-service-toggle-slider"
+				slider.setAttribute("aria-hidden", "true")
+				switchLabel.append(input, slider)
+				input.addEventListener("change", () => {
+					if (input.checked === category.savedEnabled)
+						pendingServiceCategoryChanges.delete(category.id)
+					else pendingServiceCategoryChanges.set(category.id, input.checked)
+					if (serviceCategorySaveButton instanceof HTMLButtonElement)
+						serviceCategorySaveButton.disabled = pendingServiceCategoryChanges.size === 0
+					if (serviceCategoryMessage) {
+						serviceCategoryMessage.textContent = pendingServiceCategoryChanges.size > 0
+							? "Unsaved category changes. Save to apply them to the storefront."
+							: ""
+						serviceCategoryMessage.classList.remove("success", "error")
+						serviceCategoryMessage.style.display = pendingServiceCategoryChanges.size > 0
+							? "block"
+							: "none"
+					}
+					renderServiceCategoryControls(services)
+				})
+				main.append(copy, switchLabel)
+				card.append(main)
+				cards.append(card)
+			}
+			section.append(header, cards)
+			groups.append(section)
+		}
+		renderGroup("Active Services", active, "active")
+		renderGroup("Inactive Services", inactive, "inactive")
+		mount.append(groups)
+	}
+	if (serviceCategorySaveButton instanceof HTMLButtonElement) {
+		serviceCategorySaveButton.disabled = true
+		const saveServiceCategories = async () => {
+			const updates = Array.from(pendingServiceCategoryChanges, ([categoryId, enabled]) => ({
+				categoryId,
+				enabled,
+			}))
+			if (updates.length === 0) return
+			serviceCategorySaveButton.disabled = true
+			if (serviceCategoryMessage) {
+				serviceCategoryMessage.textContent = "Saving service categories…"
+				serviceCategoryMessage.classList.remove("success", "error")
+				serviceCategoryMessage.style.display = "block"
+			}
+			try {
+				const response = await fetch(
+					`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
+					{
+						method: "POST",
+						credentials: "same-origin",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ action: "category-visibility-bulk", updates }),
+					},
+				)
+				const result = (await response.json()) as { error?: string }
+				if (!response.ok) throw new Error(result.error ?? "Service categories could not be saved.")
+				pendingServiceCategoryChanges.clear()
+				if (serviceCategoryMessage) {
+					serviceCategoryMessage.textContent = "Service category settings saved."
+					serviceCategoryMessage.classList.add("success")
+				}
+			} catch (error) {
+				if (serviceCategoryMessage) {
+					serviceCategoryMessage.textContent = error instanceof Error ? error.message : "Service categories could not be saved."
+					serviceCategoryMessage.classList.add("error")
+				}
+			}
+			serviceCategorySaveButton.disabled = pendingServiceCategoryChanges.size === 0
+		}
+		serviceCategorySaveButton.addEventListener("click", saveServiceCategories)
+		removeTabHandlers.push(() => serviceCategorySaveButton.removeEventListener("click", saveServiceCategories))
+	}
 	const closeConfirmation = () => {
 		confirmationModal?.classList.remove("active")
 		confirmationModal?.setAttribute("aria-hidden", "true")
@@ -1757,7 +2414,6 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	}
 	const userState = document.getElementById("adminUserState")
 	const authMessage = document.getElementById("adminAuthMessage")
-	const removeTabHandlers: Array<() => void> = []
 	const profanityWordsInput = document.getElementById("adminProfanityWords")
 	const saveProfanityButton = document.getElementById("adminSaveProfanityList")
 	const profanityStorageKey = `rb_admin_profanity_words_${tenantSlug}`
@@ -1807,7 +2463,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 	)
 	if (loginForm instanceof HTMLElement) loginForm.style.display = "none"
 	if (panel instanceof HTMLElement) panel.style.display = "block"
-	if (userState) userState.textContent = "Signed in with platform account"
+	if (userState) userState.textContent = `Signed in as ${userEmail}`
 	if (authMessage) authMessage.textContent = ""
 
 	let removeSnapshotFilters: () => void = () => undefined
@@ -2206,10 +2862,14 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 		.forEach((tab) => {
 			const handler = () => {
 				const section = tab.dataset.adminSectionTab
-				if (!section) return
+				if (!section || tab.hidden) return
 				document
 					.querySelectorAll<HTMLElement>("[data-admin-section-tab]")
-					.forEach((item) => item.classList.toggle("active", item === tab))
+					.forEach((item) => {
+						const active = item === tab
+						item.classList.toggle("active", active)
+						item.setAttribute("aria-selected", String(active))
+					})
 				document
 					.querySelectorAll<HTMLElement>("[data-admin-section]")
 					.forEach((item) =>
@@ -2218,6 +2878,9 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 							item.dataset.adminSection === section,
 						),
 					)
+				const nextUrl = new URL(window.location.href)
+				nextUrl.searchParams.set("section", section)
+				window.history.replaceState(window.history.state, "", nextUrl)
 			}
 			tab.addEventListener("click", handler)
 			removeTabHandlers.push(() => tab.removeEventListener("click", handler))
@@ -2643,45 +3306,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 			const blogs = Array.isArray(snapshot.blogs) ? snapshot.blogs : []
 			const services = Array.isArray(snapshot.services) ? snapshot.services : []
 			removeTabHandlers.push(bindStorefrontDesignEditor(tenantSlug, snapshot))
-			const categoryMount = document.getElementById(
-				"adminServiceCategoryToggles",
-			)
-			if (categoryMount) {
-				categoryMount.replaceChildren()
-				services.forEach((item) => {
-					const category = item as AdminSnapshotRecord
-					if (typeof category.id !== "string") return
-					const label = document.createElement("label")
-					label.className = "admin-service-toggle"
-					const input = document.createElement("input")
-					input.type = "checkbox"
-					input.checked = category.enabled === true
-					input.addEventListener("change", () => {
-						void fetch(
-							`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
-							{
-								method: "POST",
-								credentials: "same-origin",
-								headers: { "content-type": "application/json" },
-								body: JSON.stringify({
-									action: "category-visibility",
-									id: category.id,
-									enabled: input.checked,
-								}),
-							},
-						).catch(() => {
-							input.checked = !input.checked
-						})
-					})
-					label.append(
-						input,
-						document.createTextNode(
-							String(category.label ?? "Service category"),
-						),
-					)
-					categoryMount.append(label)
-				})
-			}
+			renderServiceCategoryControls(services)
 			scheduleBookings = bookings.filter(
 				(item): item is AdminSnapshotRecord =>
 					typeof item === "object" && item !== null,
@@ -2725,6 +3350,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				messages,
 				"No messages found.",
 			)
+			applyLegacyReviewAndMessageFilters()
 			renderAdminSnapshotList(
 				"adminGalleryList",
 				gallery,
@@ -2780,12 +3406,9 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				adminConfirmedCount: bookings.filter(
 					(item) => (item as AdminSnapshotRecord).status === "CONFIRMED",
 				).length,
-				adminWaitlistedBookingCount: waitlist.length
-					? waitlist.length
-					: bookings.filter(
-							(item) =>
-								(item as AdminSnapshotRecord).status === "WAITLISTED",
-							).length,
+				adminWaitlistedBookingCount: bookings.filter(
+					(item) => (item as AdminSnapshotRecord).status === "WAITLISTED",
+				).length,
 				adminCompletedCount: bookings.filter(
 					(item) => (item as AdminSnapshotRecord).status === "COMPLETED",
 				).length,
@@ -2799,13 +3422,31 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				adminReviewsApprovedCount: reviews.filter(
 					(item) => (item as AdminSnapshotRecord).status === "APPROVED",
 				).length,
+				adminReviewsRejectedCount: reviews.filter(
+					(item) => (item as AdminSnapshotRecord).status === "REJECTED",
+				).length,
 				adminMessagesTotalCount: messages.length,
 				adminMessagesNewCount: messages.filter(
 					(item) => (item as AdminSnapshotRecord).status === "NEW",
 				).length,
+				adminMessagesReadCount: messages.filter(
+					(item) => (item as AdminSnapshotRecord).status === "READ",
+				).length,
+				adminMessagesResolvedCount: messages.filter(
+					(item) => (item as AdminSnapshotRecord).status === "RESOLVED",
+				).length,
 				adminWaitlistTotalCount: waitlist.length,
 				adminWaitlistWaitingCount: waitlist.filter(
 					(item) => (item as AdminSnapshotRecord).status === "WAITING",
+				).length,
+				adminWaitlistContactedCount: waitlist.filter(
+					(item) => (item as AdminSnapshotRecord).status === "CONTACTED",
+				).length,
+				adminWaitlistBookedCount: waitlist.filter(
+					(item) => (item as AdminSnapshotRecord).status === "BOOKED",
+				).length,
+				adminWaitlistCancelledCount: waitlist.filter(
+					(item) => (item as AdminSnapshotRecord).status === "CANCELLED",
 				).length,
 				adminAdminsTotalCount: team.length,
 				adminAdminsActiveCount: team.filter(
@@ -2844,6 +3485,15 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 				adminSessionsOnlineCount: Number(
 					securityStats.activeSessions ?? securitySessions.length,
 				),
+				adminSessionsMultiDeviceCount: (() => {
+					const users = new Map<string, number>()
+					securitySessions.forEach((item) => {
+						const userId = (item as AdminSnapshotRecord).userId
+						if (typeof userId === "string" && userId)
+							users.set(userId, (users.get(userId) ?? 0) + 1)
+					})
+					return Array.from(users.values()).filter((count) => count >= 2).length
+				})(),
 				adminSessionsOnlineUsersCount: Number(securityStats.activeUsers ?? 0),
 				adminTimelineTotalCount: Number(
 					securityStats.totalTimelineEvents ?? securityTimeline.length,
@@ -2956,6 +3606,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						latestMessages,
 						"No messages found.",
 					)
+					applyLegacyReviewAndMessageFilters()
 					renderAdminSnapshotList(
 						"adminGalleryList",
 						latestGallery,
@@ -2971,45 +3622,7 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						latestServices,
 						"No services found.",
 					)
-					const categoryMount = document.getElementById(
-						"adminServiceCategoryToggles",
-					)
-					if (categoryMount) {
-						categoryMount.replaceChildren()
-						latestServices.forEach((item) => {
-							const category = recordValue(item)
-							if (typeof category.id !== "string") return
-							const label = document.createElement("label")
-							label.className = "admin-service-toggle"
-							const input = document.createElement("input")
-							input.type = "checkbox"
-							input.checked = category.enabled === true
-							input.addEventListener("change", () => {
-								void fetch(
-									`/api/manage/${encodeURIComponent(tenantSlug)}/actions`,
-									{
-										method: "POST",
-										credentials: "same-origin",
-										headers: { "content-type": "application/json" },
-										body: JSON.stringify({
-											action: "category-visibility",
-											id: category.id,
-											enabled: input.checked,
-										}),
-									},
-								).catch(() => {
-									input.checked = !input.checked
-								})
-							})
-							label.append(
-								input,
-								document.createTextNode(
-									String(category.label ?? "Service category"),
-								),
-							)
-							categoryMount.append(label)
-						})
-					}
+					renderServiceCategoryControls(latestServices)
 					renderAdminSnapshotList(
 						"adminAdminsList",
 						latestTeam,
@@ -3048,11 +3661,9 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						adminConfirmedCount: latestBookings.filter(
 							(item) => recordValue(item).status === "CONFIRMED",
 						).length,
-						adminWaitlistedBookingCount: latestWaitlist.length
-							? latestWaitlist.length
-							: latestBookings.filter(
-									(item) => recordValue(item).status === "WAITLISTED",
-								).length,
+						adminWaitlistedBookingCount: latestBookings.filter(
+							(item) => recordValue(item).status === "WAITLISTED",
+						).length,
 						adminCompletedCount: latestBookings.filter(
 							(item) => recordValue(item).status === "COMPLETED",
 						).length,
@@ -3066,13 +3677,31 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						adminReviewsApprovedCount: latestReviews.filter(
 							(item) => recordValue(item).status === "APPROVED",
 						).length,
+						adminReviewsRejectedCount: latestReviews.filter(
+							(item) => recordValue(item).status === "REJECTED",
+						).length,
 						adminMessagesTotalCount: latestMessages.length,
 						adminMessagesNewCount: latestMessages.filter(
 							(item) => recordValue(item).status === "NEW",
 						).length,
+						adminMessagesReadCount: latestMessages.filter(
+							(item) => recordValue(item).status === "READ",
+						).length,
+						adminMessagesResolvedCount: latestMessages.filter(
+							(item) => recordValue(item).status === "RESOLVED",
+						).length,
 						adminWaitlistTotalCount: latestWaitlist.length,
 						adminWaitlistWaitingCount: latestWaitlist.filter(
 							(item) => recordValue(item).status === "WAITING",
+						).length,
+						adminWaitlistContactedCount: latestWaitlist.filter(
+							(item) => recordValue(item).status === "CONTACTED",
+						).length,
+						adminWaitlistBookedCount: latestWaitlist.filter(
+							(item) => recordValue(item).status === "BOOKED",
+						).length,
+						adminWaitlistCancelledCount: latestWaitlist.filter(
+							(item) => recordValue(item).status === "CANCELLED",
 						).length,
 						adminAdminsTotalCount: latestTeam.length,
 						adminAdminsActiveCount: latestTeam.filter(
@@ -3115,6 +3744,15 @@ export function bindAdminSnapshotAdapter(tenantSlug: string): () => void {
 						adminSessionsOnlineCount: Number(
 							latestStats.activeSessions ?? latestSessions.length,
 						),
+						adminSessionsMultiDeviceCount: (() => {
+							const users = new Map<string, number>()
+							latestSessions.forEach((item) => {
+								const userId = recordValue(item).userId
+								if (typeof userId === "string" && userId)
+									users.set(userId, (users.get(userId) ?? 0) + 1)
+							})
+							return Array.from(users.values()).filter((count) => count >= 2).length
+						})(),
 						adminSessionsOnlineUsersCount: Number(latestStats.activeUsers ?? 0),
 						adminTimelineTotalCount: Number(
 							latestStats.totalTimelineEvents ?? latestTimeline.length,

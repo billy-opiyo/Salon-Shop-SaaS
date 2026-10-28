@@ -15,9 +15,10 @@ interface BlogPageProps {
 
 export default async function MerchantBlogPage({ params }: BlogPageProps) {
 	const { tenantSlug } = await params
+	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=blogs`)
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/blog`))
-	let posts
+	let posts: Awaited<ReturnType<typeof listBlogsForUser>>
 	try {
 		posts = await listBlogsForUser(session.user.id, tenantSlug)
 	} catch (error) {

@@ -15,10 +15,11 @@ export default async function MerchantReviewsPage({
 	params,
 }: ReviewsPageProps) {
 	const { tenantSlug } = await params
+	redirect(`/manage/${encodeURIComponent(tenantSlug)}?section=reviews`)
 	const session = await auth()
 	if (!session?.user?.id)
 		redirect(getLoginUrlForPath(`/manage/${tenantSlug}/reviews`))
-	let reviews
+	let reviews: Awaited<ReturnType<typeof listReviewsForUser>>
 	try {
 		reviews = await listReviewsForUser(session.user.id, tenantSlug)
 	} catch (error) {

@@ -2,19 +2,37 @@
 
 import { useEffect } from "react"
 
-import { SalonAdminMarkup } from "@/components/tenant/SalonAdminMarkup"
+import {
+	SalonAdminMarkup,
+	type SalonAdminSection,
+} from "@/components/tenant/SalonAdminMarkup"
 import { bindAdminSnapshotAdapter } from "@/components/tenant/SalonStorefrontRuntime"
 
 interface SalonAdminRuntimeProps {
 	readonly tenantSlug: string
+	readonly userEmail: string
+	readonly initialSection: SalonAdminSection
+	readonly allowedSections: readonly SalonAdminSection[]
 }
 
-export function SalonAdminRuntime({ tenantSlug }: SalonAdminRuntimeProps) {
-	useEffect(() => bindAdminSnapshotAdapter(tenantSlug), [tenantSlug])
+export function SalonAdminRuntime({
+	tenantSlug,
+	userEmail,
+	initialSection,
+	allowedSections,
+}: SalonAdminRuntimeProps) {
+	useEffect(() => bindAdminSnapshotAdapter(tenantSlug, userEmail), [tenantSlug, userEmail])
 
 	return (
 		<div className="salon-admin-root">
-			<SalonAdminMarkup homeHref={`/${tenantSlug}`} staffHref={`/manage/${tenantSlug}/staff`} />
+			<SalonAdminMarkup
+				homeHref={`/${tenantSlug}`}
+				staffHref={`/manage/${tenantSlug}/staff`}
+				settingsHref={`/manage/${tenantSlug}/settings`}
+				servicesHref={`/manage/${tenantSlug}/services?view=catalog`}
+				initialSection={initialSection}
+				allowedSections={allowedSections}
+			/>
 		</div>
 	)
 }
