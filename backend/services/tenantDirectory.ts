@@ -1,5 +1,6 @@
 import "server-only"
 
+import { headers } from "next/headers"
 import { unstable_cache } from "next/cache"
 import { cache } from "react"
 import { prisma } from "@backend/db/prisma"
@@ -10,6 +11,7 @@ import {
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
 import { safeMapEmbedUrl } from "@shared/safeMapEmbedUrl"
+import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
 import {
 	DEFAULT_SALON_BLOGS,
 	DEFAULT_SALON_GALLERY,
@@ -33,7 +35,7 @@ const fixtureTenant: TenantStorefront = {
 	locationLabel: "Nairobi, Kenya",
 	planTier: "business",
 	theme: {
-		preset: "gold",
+		preset: DEFAULT_THEME_PRESET,
 		mode: "dark",
 		primaryColor: "#d7a84f",
 	},
@@ -204,6 +206,17 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 
 export const listPublicTenantCards = loadPublicTenantCards
 
+async function canPreviewDraftRoyalBraids(): Promise<boolean> {
+	if (
+		process.env.NODE_ENV !== "production" ||
+		process.env.VERCEL_GIT_COMMIT_REF === "staging" ||
+		process.env.PLATFORM_DEMO_STORES === "true"
+	)
+		return true
+	const host = (await headers()).get("host")?.split(":", 1)[0].toLowerCase()
+	return host === "beauty-sphia-staging.vercel.app"
+}
+
 export const getTenantStorefront = cache(async (
 	slug: string,
 ): Promise<TenantStorefront | null> => {
@@ -306,9 +319,16 @@ export const getTenantStorefront = cache(async (
 
 		if (!tenant) return fixture ?? null
 
-		// Public storefront routes must never expose a draft salon. New salons
-		// become discoverable only after the owner publishes them from /account.
-		if (tenant.status !== "ACTIVE") return null
+		// Keep normal draft tenants private. Royal Braids is intentionally listed
+		// as the staging reference salon, so its draft storefront can be previewed
+		// only from local development or the staging deployment.
+		if (tenant.status !== "ACTIVE") {
+			const isAllowedRoyalBraidsDraft =
+				tenant.status === "DRAFT" &&
+				normalizedSlug === "royal-braids" &&
+				(await canPreviewDraftRoyalBraids())
+			if (!isAllowedRoyalBraidsDraft) return null
+		}
 
 		const planTier = tenant.subscription?.plan.tier.toLowerCase()
 		const resolvedPlan =
@@ -327,7 +347,7 @@ export const getTenantStorefront = cache(async (
 			locationLabel: [tenant.city, tenant.country].filter(Boolean).join(", "),
 			planTier: resolvedPlan,
 			theme: {
-				preset: tenant.settings?.themePreset ?? "gold",
+				preset: tenant.settings?.themePreset ?? DEFAULT_THEME_PRESET,
 				mode: tenant.settings?.themeMode === "light" ? "light" : "dark",
 				primaryColor: "#d7a84f",
 			},

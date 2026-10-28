@@ -4,7 +4,6 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
-import { platformThemeStyle } from "@/lib/platformTheme"
 import {
 	getBillingSnapshotForUser,
 	MerchantBillingError,
@@ -88,7 +87,7 @@ export default async function MerchantBillingPage({
 					: "No free usage period is currently scheduled."
 
 	return (
-		<div className="platform-site merchant-billing-page" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site merchant-billing-page">
 		<main className="manage-page">
 			<header className="manage-header">
 				<div>

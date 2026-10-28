@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import type React from "react"
 
-import { THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
+import { DEFAULT_THEME_PRESET, THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
 
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
@@ -223,12 +223,18 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 								services, gallery, bookings, or customer records. Current values are
 								loaded before you save.
 							</p>
+							<nav className="admin-design-section-nav" aria-label="Salon design sections">
+								<a className="btn btn-outline" href="#salon-design-branding">Branding</a>
+								<a className="btn btn-outline" href="#salon-design-structure">Storefront sections</a>
+								<a className="btn btn-outline" href="#salon-design-copy">Page content</a>
+								<a className="btn btn-outline" href="#salon-design-contact">Contact &amp; hours</a>
+							</nav>
 							<div className="form-message" id="adminDesignMessage" style={{display: "none"}}></div>
 							<form id="adminStoreDesignForm" className="admin-gallery-form">
-								<div className="admin-gallery-grid">
+								<div className="admin-gallery-grid" id="salon-design-branding">
 									<div className="form-group">
 										<label htmlFor="adminDesignThemePreset">Theme preset</label>
-										<select id="adminDesignThemePreset" defaultValue="gold">
+										<select id="adminDesignThemePreset" defaultValue={DEFAULT_THEME_PRESET}>
 											{THEME_PRESET_OPTIONS.map((preset) => (
 												<option value={preset.key} key={preset.key}>
 													{preset.label}
@@ -273,8 +279,11 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 										<textarea id="adminDesignHeroDescription" rows={3} maxLength={600} />
 									</div>
 								</div>
+								<div className="admin-booking-actions admin-design-save-row">
+									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
+								</div>
 
-								<h3>Storefront sections</h3>
+								<h3 id="salon-design-structure">Storefront sections</h3>
 								<div className="admin-design-visibility-grid">
 									{["gallery", "services", "booking", "testimonials", "blog", "visit", "contact"].map((section) => (
 										<label key={section}>
@@ -284,7 +293,11 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 									))}
 								</div>
 
-								<h3>Section headings and copy</h3>
+								<div className="admin-booking-actions admin-design-save-row">
+									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
+								</div>
+
+								<h3 id="salon-design-copy">Section headings and copy</h3>
 								<div className="admin-design-copy-grid">
 									{[
 										["gallery", "Gallery"], ["services", "Services"], ["booking", "Booking"],
@@ -299,7 +312,11 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 									))}
 								</div>
 
-								<h3>Contact, hours, social links, and footer</h3>
+								<div className="admin-booking-actions admin-design-save-row">
+									<button type="button" className="btn btn-primary" data-save-store-design>Save Salon Design</button>
+								</div>
+
+								<h3 id="salon-design-contact">Contact, hours, social links, and footer</h3>
 								<div className="admin-gallery-grid">
 									<div className="form-group">
 										<label htmlFor="adminDesignPhonePrimary">Primary phone</label>
@@ -337,7 +354,7 @@ export function SalonAdminMarkup({ homeHref, staffHref }: SalonAdminMarkupProps)
 									<div className="form-group"><label htmlFor="adminDesignCraftedBy">Footer attribution</label><input id="adminDesignCraftedBy" /></div>
 								</div>
 								<div className="admin-booking-actions">
-									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn">Save Salon Design</button>
+									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn" data-save-store-design>Save Salon Design</button>
 									<a className="btn btn-outline" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
 								</div>
 							</form>

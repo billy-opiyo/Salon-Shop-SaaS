@@ -8,6 +8,7 @@ import {
 } from "@backend/services/tenantSettingsService"
 import { saveTenantSettings } from "./actions"
 import {
+	DEFAULT_THEME_PRESET,
 	THEME_PRESET_OPTIONS,
 	isThemePreset,
 } from "@shared/constants/themePresets"
@@ -36,7 +37,7 @@ export default async function MerchantSettingsPage({
 	const savedThemePreset = settings?.themePreset ?? ""
 	const selectedThemePreset = isThemePreset(savedThemePreset)
 		? savedThemePreset
-		: "gold"
+		: DEFAULT_THEME_PRESET
 	return (
 		<main className="manage-page">
 			<header className="manage-header">
@@ -54,7 +55,7 @@ export default async function MerchantSettingsPage({
 			<form className="onboarding-form merchant-settings-form" action={saveTenantSettings}>
 				<input type="hidden" name="tenantSlug" value={tenantSlug} />
 				<label>
-					Color theme
+					Theme preset
 					<select name="themePreset" defaultValue={selectedThemePreset} required>
 						{THEME_PRESET_OPTIONS.map((preset) => (
 							<option key={preset.key} value={preset.key}>

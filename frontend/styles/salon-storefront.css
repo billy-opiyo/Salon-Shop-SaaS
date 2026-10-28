@@ -58,13 +58,14 @@
    appearance: { mode: "dark", preset: "rose-gold" }
 
    Available presets: gold, champagne, rose-gold, emerald, plum-gold,
-   terracotta, teal, blush, lavender.
+   terracotta, teal, blush, lavender, and Storefront Default (the current gold UI).
 */
 :root[data-theme-preset] {
     --focus-gold: var(--primary);
 }
 
-:root[data-theme-preset="gold"] {
+:root[data-theme-preset="gold"],
+:root[data-theme-preset="storefront-default"] {
     --primary: #C8963E;
     --primary-dark: #A6792D;
     --primary-light: #E8C27A;
@@ -11535,6 +11536,22 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     margin: 0;
 }
 
+.admin-design-section-nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 1rem 0 1.25rem;
+}
+
+.admin-design-section-nav a,
+.admin-design-save-row {
+	scroll-margin-top: 1rem;
+}
+
+.admin-design-save-row {
+	margin: 1rem 0 1.5rem;
+}
+
 .admin-design-visibility-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -12209,13 +12226,13 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
 .tenant-image-upload-field__preview,
 .admin-design-image-preview {
     display: block;
-    width: min(100%, 28rem);
-    max-height: 13rem;
+    width: 100%;
+    height: 8rem;
     border: 1px solid var(--border);
     border-radius: .65rem;
     background: var(--bg-secondary);
     object-fit: contain;
-    object-position: left center;
+    object-position: center;
 }
 .admin-design-image-preview[hidden] { display: none; }
 .salon-storefront-root .nav-toggle .nav-toggle__icon--close { display: none; }
