@@ -6009,18 +6009,12 @@ html.splash-active .splash-handwriting-letter {
 }
 
 @media (max-width: 1199px) {
-	.merchant-workspace-shell::after {
-		content: "";
-		display: block;
-		height: calc(5.25rem + env(safe-area-inset-bottom, 0px));
-	}
-
 	.merchant-workspace-shell > main {
 		padding-bottom: 0;
 	}
 
 	.merchant-workspace-shell .back-to-top {
-		bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+		bottom: 1.25rem;
 	}
 }
 

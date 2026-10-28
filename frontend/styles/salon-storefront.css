@@ -12000,26 +12000,37 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
 
 .merchant-workspace-panel .merchant-workspace-navigation {
     position: static;
+    display: grid;
     width: 100%;
-    flex-wrap: wrap;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+    align-items: stretch;
     gap: .55rem;
     overflow: visible;
     margin: 0 0 1.15rem;
-    padding: 0 0 1rem;
-    border: 0;
-    border-bottom: 1px solid var(--border);
-    background: transparent;
-    box-shadow: none;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    background: var(--bg-card);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .14);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 .merchant-workspace-panel .merchant-workspace-navigation a {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 2.7rem;
+    align-items: center;
+    justify-content: center;
     padding: .55rem .85rem;
     border: 1px solid var(--border);
     background: var(--bg-primary);
     color: var(--text-secondary);
     font-size: .83rem;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
 }
 
 .merchant-workspace-panel .merchant-workspace-navigation a[aria-current="page"],
@@ -12147,11 +12158,12 @@ body.reduced-motion .salon-storefront-root .animate-on-scroll {
     }
 
     .merchant-workspace-panel .merchant-workspace-navigation {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        margin-right: -.75rem;
-        padding: 0 .75rem .8rem 0;
-        scrollbar-width: thin;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+        flex-wrap: initial;
+        overflow: visible;
+        margin: 0 0 1rem;
+        padding: .6rem;
     }
 
     .merchant-workspace-panel .admin-booking-filter-controls[aria-label="Booking status totals"],
@@ -12258,10 +12270,6 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
 /* Use the reference admin console as the active workspace shell. */
 .merchant-workspace-shell:has(.salon-admin-root) > .merchant-admin-console-banner,
 .merchant-workspace-shell:has(.salon-admin-root) > .merchant-admin-session {
-    display: none;
-}
-
-.merchant-workspace-shell:has(.salon-admin-root) .merchant-workspace-navigation {
     display: none;
 }
 
@@ -12626,6 +12634,137 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     }
 
     .merchant-workspace-panel .admin-booking-filter-controls[aria-label$="status totals"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* The fixed salon mobile navigation must stay readable with every storefront theme. */
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions {
+    border-top-color: #d9c8b7;
+    background: #fffaf4;
+}
+
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a,
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:hover,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:hover,
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:focus-visible,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:focus-visible,
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active {
+    color: #3d2d21;
+    text-shadow: none;
+}
+
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:hover,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:hover,
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:focus-visible,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:focus-visible,
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active {
+    background: #f2e7d9;
+}
+
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"] {
+    box-shadow: inset 0 -2px 0 #8b6429;
+}
+
+html.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg,
+body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
+    color: inherit;
+    stroke: currentColor;
+}
+
+/* Keep salon-admin navigation, controls, and visibility toggles within the viewport. */
+.merchant-workspace-shell .merchant-workspace-panel,
+.merchant-workspace-shell .salon-admin-root,
+.merchant-workspace-shell .salon-admin-root > #admin,
+.merchant-workspace-shell .admin-section-card {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.merchant-workspace-shell .admin-design-visibility-grid label {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 3rem;
+    gap: .7rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.merchant-workspace-shell .admin-design-visibility-grid label input[type="checkbox"] {
+    box-sizing: border-box;
+    width: 1.1rem;
+    height: 1.1rem;
+    min-width: 1.1rem;
+    min-height: 1.1rem;
+    flex: 0 0 1.1rem;
+    margin: 0;
+    align-self: center;
+    accent-color: var(--primary);
+}
+
+.merchant-workspace-shell .admin-design-visibility-grid label span {
+    min-width: 0;
+    flex: 1 1 auto;
+    line-height: 1.35;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+    .merchant-workspace-shell {
+        overflow-x: clip;
+    }
+
+    .merchant-workspace-shell .merchant-workspace-panel,
+    .merchant-workspace-shell .salon-admin-root,
+    .merchant-workspace-shell .salon-admin-root > #admin,
+    .merchant-workspace-shell .admin-section-card {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .merchant-workspace-shell .admin-design-section-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+        gap: .5rem;
+    }
+
+    .merchant-workspace-shell .admin-design-section-nav .btn,
+    .merchant-workspace-shell .admin-booking-actions > .btn {
+        box-sizing: border-box;
+        min-width: 0;
+        max-width: 100%;
+        justify-content: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .merchant-workspace-shell .admin-booking-actions {
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 420px) {
+    .merchant-workspace-shell .admin-design-visibility-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .merchant-workspace-panel .merchant-workspace-navigation {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

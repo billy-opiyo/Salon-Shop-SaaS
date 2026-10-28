@@ -7,7 +7,6 @@ import { DEFAULT_THEME_PRESET, THEME_PRESET_OPTIONS } from "@shared/constants/th
 
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
-	readonly staffHref: string
 	readonly settingsHref: string
 	readonly servicesHref: string
 	readonly userEmail: string
@@ -30,7 +29,6 @@ export type SalonAdminSection =
 
 export function SalonAdminMarkup({
 	homeHref,
-	staffHref,
 	settingsHref,
 	servicesHref,
 	userEmail,
@@ -60,8 +58,6 @@ export function SalonAdminMarkup({
 						<a className="btn btn-outline" href={homeHref + "#home"} data-admin-home-link
 							>← Back to Homepage</a
 						>
-						<a className="btn btn-outline" href={staffHref}>Manage stylist names</a>
-						<a className="btn btn-outline" href={settingsHref}>Booking &amp; payment settings</a>
 					</p>
 				</div>
 
@@ -133,123 +129,6 @@ export function SalonAdminMarkup({
 				</div>
 
 				<div className="admin-panel" id="adminPanel" style={{display: "block"}}>
-					<div
-						className="admin-section-tabs"
-						role="tablist"
-						aria-label="Admin sections"
-					>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "bookings" ? " active" : ""}`}
-							data-admin-section-tab="bookings"
-							role="tab"
-							aria-selected={initialSection === "bookings"}
-							hidden={!isAllowed("bookings")}
-						>
-							Bookings
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "waitlist" ? " active" : ""}`}
-							data-admin-section-tab="waitlist"
-							role="tab"
-							aria-selected={initialSection === "waitlist"}
-							hidden={!isAllowed("waitlist")}
-						>
-							Waitlist
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "schedule" ? " active" : ""}`}
-							data-admin-section-tab="schedule"
-							role="tab"
-							aria-selected={initialSection === "schedule"}
-							hidden={!isAllowed("schedule")}
-						>
-							Schedule
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "gallery" ? " active" : ""}`}
-							data-admin-section-tab="gallery"
-							role="tab"
-							aria-selected={initialSection === "gallery"}
-							hidden={!isAllowed("gallery")}
-						>
-							Gallery
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "blogs" ? " active" : ""}`}
-							data-admin-section-tab="blogs"
-							role="tab"
-							aria-selected={initialSection === "blogs"}
-							hidden={!isAllowed("blogs")}
-						>
-							Blogs
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "reviews" ? " active" : ""}`}
-							data-admin-section-tab="reviews"
-							role="tab"
-							aria-selected={initialSection === "reviews"}
-							hidden={!isAllowed("reviews")}
-						>
-							Reviews
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "messages" ? " active" : ""}`}
-							data-admin-section-tab="messages"
-							role="tab"
-							aria-selected={initialSection === "messages"}
-							hidden={!isAllowed("messages")}
-						>
-							Messages
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "services" ? " active" : ""}`}
-							data-admin-section-tab="services"
-							role="tab"
-							aria-selected={initialSection === "services"}
-							hidden={!isAllowed("services")}
-						>
-							Services
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "admins" ? " active" : ""}`}
-							data-admin-section-tab="admins"
-							role="tab"
-							aria-selected={initialSection === "admins"}
-							hidden={!isAllowed("admins")}
-						>
-							Admins
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "security" ? " active" : ""}`}
-							data-admin-section-tab="security"
-							role="tab"
-							aria-selected={initialSection === "security"}
-							hidden={!isAllowed("security")}
-						>
-							Security
-						</button>
-						<button
-							type="button"
-							className={`admin-section-tab${initialSection === "design" ? " active" : ""}`}
-							data-admin-section-tab="design"
-							role="tab"
-							aria-selected={initialSection === "design"}
-							hidden={!isAllowed("design")}
-						>
-							Salon Design
-						</button>
-					</div>
-
 					<section
 						className={`admin-management-section${initialSection === "design" ? " active" : ""}`}
 						data-admin-section="design"
@@ -1386,10 +1265,10 @@ export function SalonAdminMarkup({
 					>
 						<div className="admin-section-card admin-services-settings-card">
 							<h3>Service Category Visibility</h3>
-							<p><a className="admin-inline-link" href={servicesHref}>Open the full service catalog manager</a></p>
 							<p>
 								Turn categories ON/OFF based on what this salon currently
-								offers. Changes apply live on the website and booking form.
+								offers. Changes apply live on the website and booking form.{" "}
+								<a className="admin-inline-link" href={servicesHref}>Open the full service catalog manager.</a>
 							</p>
 							<div
 								className="form-message"
