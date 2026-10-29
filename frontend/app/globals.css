@@ -7346,3 +7346,12 @@ html.splash-active .splash-handwriting-letter {
 		text-wrap: pretty;
 	}
 }
+
+@media (min-width: 1200px) {
+	.android-app-download-prompt {
+		inset-inline: auto 30px;
+		width: min(420px, calc(100vw - 60px));
+		margin-inline: 0;
+		bottom: 88px;
+	}
+}
