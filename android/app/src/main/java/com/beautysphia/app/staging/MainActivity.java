@@ -81,8 +81,10 @@ public class MainActivity extends BridgeActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 hideSwipeRefreshIndicator();
-                launchPageLoaded = true;
-                scheduleLaunchOverlayHide(view);
+                if (isConfiguredRemotePage(url) || isOfflineFallbackPage(url)) {
+                    launchPageLoaded = true;
+                    scheduleLaunchOverlayHide(view);
+                }
             }
 
             private void showOfflinePage(WebView view, String failedUrl) {
@@ -281,8 +283,9 @@ public class MainActivity extends BridgeActivity {
             FrameLayout.LayoutParams indicatorLayout = new FrameLayout.LayoutParams(
                 dp(44), dp(44), Gravity.TOP | Gravity.CENTER_HORIZONTAL
             );
-            indicatorLayout.topMargin = -dp(46);
+            indicatorLayout.topMargin = dp(2);
             content.addView(pullRefreshIndicator, indicatorLayout);
+            pullRefreshIndicator.setElevation(dp(8));
         }
         webView.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
@@ -360,8 +363,8 @@ public class MainActivity extends BridgeActivity {
         float progress = Math.min(1f, Math.max(0f, distance / refreshDistance));
         pullRefreshIndicator.animate().cancel();
         pullRefreshIndicator.setVisibility(View.VISIBLE);
-        pullRefreshIndicator.setTranslationY(Math.min(dp(76), distance * 0.9f));
-        pullRefreshIndicator.setAlpha(Math.min(1f, 0.2f + progress * 0.8f));
+        pullRefreshIndicator.setTranslationY(Math.min(dp(76), distance * 0.75f));
+        pullRefreshIndicator.setAlpha(Math.min(1f, 0.32f + progress * 0.68f));
         pullRefreshIndicator.setPullProgress(progress);
     }
 
@@ -370,7 +373,7 @@ public class MainActivity extends BridgeActivity {
         swipeRefreshRunning = false;
         pullRefreshIndicator.setRefreshing(false);
         pullRefreshIndicator.animate()
-            .translationY(-dp(46))
+            .translationY(-dp(50))
             .alpha(0f)
             .setDuration(180)
             .withEndAction(() -> pullRefreshIndicator.setVisibility(View.INVISIBLE))
@@ -386,6 +389,21 @@ public class MainActivity extends BridgeActivity {
             launchHideScheduled = false;
             if (launchPageLoaded) hideNativeLaunchOverlay();
         }, delay);
+    }
+
+    private boolean isConfiguredRemotePage(String pageUrl) {
+        if (pageUrl == null || getBridge() == null) return false;
+        Uri page = Uri.parse(pageUrl);
+        Uri configured = Uri.parse(getBridge().getServerUrl());
+        return configured.getScheme() != null
+            && configured.getHost() != null
+            && configured.getScheme().equalsIgnoreCase(page.getScheme())
+            && configured.getHost().equalsIgnoreCase(page.getHost())
+            && configured.getPort() == page.getPort();
+    }
+
+    private boolean isOfflineFallbackPage(String pageUrl) {
+        return pageUrl != null && pageUrl.startsWith("file:///android_asset/public/offline.html");
     }
 
     private int parseThemeColor(String value, int fallback) {
