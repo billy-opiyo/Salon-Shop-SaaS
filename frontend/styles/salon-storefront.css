@@ -8317,10 +8317,14 @@ body.light-mode input[type="datetime-local"]::-webkit-calendar-picker-indicator 
     }
 }
 
-/* Keep the tenant mobile navigation readable on the light storefront surface. */
-body.light-mode .salon-storefront-root .saas-tenant-mobile-actions {
+/* Keep the mobile navigation on the same surface as the storefront header. */
+.salon-storefront-root .saas-tenant-mobile-actions {
     border-top-color: var(--border);
-    background: color-mix(in srgb, var(--bg-card) 94%, var(--primary) 6%);
+    background: var(--storefront-navigation-surface, var(--bg-secondary));
+}
+
+body.light-mode .salon-storefront-root {
+    --storefront-navigation-surface: rgba(247, 242, 234, 0.86);
 }
 
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a {
@@ -8332,7 +8336,7 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:hover,
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:focus-visible,
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active {
-    background: color-mix(in srgb, var(--primary) 10%, var(--bg-card));
+    background: transparent;
     color: var(--text-primary);
     text-shadow: none;
 }
@@ -12642,11 +12646,11 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     }
 }
 
-/* The fixed salon mobile navigation must stay readable with every storefront theme. */
+/* Keep the fixed salon mobile navigation theme-driven in both appearance modes. */
 html.light-mode .salon-storefront-root .saas-tenant-mobile-actions,
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions {
-    border-top-color: #d9c8b7;
-    background: #fffaf4;
+    border-top-color: var(--border);
+    background: var(--storefront-navigation-surface, var(--bg-secondary));
 }
 
 html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a,
@@ -12671,7 +12675,7 @@ html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-curren
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
 html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active,
 body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a:active {
-    background: #f2e7d9;
+    background: transparent;
 }
 
 html.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-current="page"],
@@ -12862,4 +12866,37 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
     .merchant-admin-loading-card {
         animation: none;
     }
+}
+
+/* Keep the Salon Design actions compact when the legacy mobile layout stacks
+   every admin action button into a full-width grid row. */
+@media (max-width: 1024px) {
+    .merchant-workspace-shell .admin-store-design-card .admin-design-save-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: .65rem;
+    }
+
+    .merchant-workspace-shell .admin-store-design-card .admin-design-save-row > .btn {
+        box-sizing: border-box;
+        width: auto;
+        min-width: 0;
+        min-height: 2.65rem;
+        max-width: 100%;
+        flex: 1 1 9rem;
+        justify-content: center;
+        padding: .6rem .85rem;
+        font-size: .86rem;
+        line-height: 1.2;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* The bright progress shimmer reads as a white streak across the splash image.
+   The gold fill still tracks progress without that overlay. */
+.salon-storefront-root .splash-progress-fill::after {
+    display: none;
 }

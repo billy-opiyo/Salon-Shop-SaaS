@@ -2,6 +2,8 @@
 
 import { useEffect } from "react"
 import { signIn, signOut } from "next-auth/react"
+import { openNativeGoogleSignIn } from "@/lib/mobileGoogleAuth"
+import { initializeMobileAppSwitchLink } from "@/lib/mobile-app-switch"
 
 import { registerAccount } from "@/app/signup/actions"
 import {
@@ -5505,6 +5507,11 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 		googleButton.setAttribute("aria-busy", "true")
 		setAuthMessage("Redirecting to Google…", "success")
 		try {
+			if (await openNativeGoogleSignIn(`${window.location.pathname}${window.location.search}${window.location.hash}`)) {
+				googleButton.disabled = false
+				googleButton.removeAttribute("aria-busy")
+				return
+			}
 			await signIn("google", {
 				callbackUrl: window.location.href,
 			})
@@ -7402,6 +7409,8 @@ export function SalonStorefrontRuntime({
 		)
 		const removeAccount = bindAccountMutationAdapter(tenantSlug ?? "")
 		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
+		const removeAppSwitchLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-mobile-app-switch-link]"))
+			.map((anchor) => initializeMobileAppSwitchLink(anchor))
 		return () => {
 			removeSplash()
 			removeImageSizeGuard()
@@ -7413,6 +7422,7 @@ export function SalonStorefrontRuntime({
 			removePublic()
 			removeAccount()
 			removeNavigation()
+			removeAppSwitchLinks.forEach((remove) => remove())
 		}
 	}, [clientConfig, tenantSlug, turnstileSiteKey])
 

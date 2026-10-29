@@ -1,0 +1,183 @@
+import groovy.json.JsonSlurper
+
+apply plugin: 'com.android.application'
+
+def buildTarget = System.getenv('CAPACITOR_BUILD_TARGET')
+def stagingAppId = 'com.beautysphia.app.staging'
+def productionAppId = 'com.beautysphia.app'
+def stagingSiteUrl = 'https://beauty-sphia-staging.vercel.app'
+def releaseStoreFile = System.getenv('BEAUTY_SPHIA_ANDROID_KEYSTORE')
+def releaseStorePassword = System.getenv('BEAUTY_SPHIA_ANDROID_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('BEAUTY_SPHIA_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('BEAUTY_SPHIA_ANDROID_KEY_PASSWORD')
+def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+def expectedProductionCertificateSha256 = System.getenv('BEAUTY_SPHIA_ANDROID_EXPECTED_CERT_SHA256')
+def productionSiteUrl = System.getenv('BEAUTY_SPHIA_PRODUCTION_URL')
+def expectedAppId = buildTarget == 'staging' ? stagingAppId : buildTarget == 'production' ? productionAppId : null
+def expectedSiteUrl = buildTarget == 'staging' ? stagingSiteUrl : buildTarget == 'production' ? productionSiteUrl : null
+
+if (!expectedAppId || !expectedSiteUrl) {
+    throw new GradleException('Select a configured Android target through the npm Android build command.')
+}
+if (buildTarget == 'production' && productionSiteUrl == stagingSiteUrl) {
+    throw new GradleException('Production Android builds cannot use the staging website origin.')
+}
+if (System.getenv('CAPACITOR_APP_ID') != expectedAppId || System.getenv('CAPACITOR_SERVER_URL') != expectedSiteUrl) {
+    throw new GradleException('Android app identity or website URL does not match the selected build target.')
+}
+
+android {
+    namespace = "com.beautysphia.app.staging"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId expectedAppId
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) signingConfig signingConfigs.release
+        }
+    }
+}
+
+repositories {
+    flatDir { dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs' }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+def verifyAndroidTargetConfig = tasks.register('verifyAndroidTargetConfig') {
+    group = 'verification'
+    description = 'Checks generated Capacitor config and Android identity against the explicit build target.'
+    doLast {
+        def configFile = file('src/main/assets/capacitor.config.json')
+        if (!configFile.isFile()) throw new GradleException('Missing generated Capacitor Android config; run the matching npm Android command.')
+        def config
+        try { config = new JsonSlurper().parse(configFile) }
+        catch (Exception ignored) { throw new GradleException('Generated Capacitor Android config is invalid JSON.') }
+        if (config?.appId != expectedAppId || config?.server?.url != expectedSiteUrl || config?.server?.cleartext != false) {
+            throw new GradleException('Generated Capacitor config does not match the selected HTTPS site and app identity.')
+        }
+        if (android.defaultConfig.applicationId != expectedAppId) {
+            throw new GradleException('Gradle application ID does not match the selected Android target.')
+        }
+    }
+}
+
+def verifyProductionReleaseInputs = tasks.register('verifyProductionReleaseInputs') {
+    group = 'verification'
+    description = 'Checks production URL, app identity, and signing inputs before release packaging.'
+    doLast {
+        if (buildTarget != 'production' || !productionSiteUrl || System.getenv('CAPACITOR_SERVER_URL') != productionSiteUrl) {
+            throw new GradleException('Production release requires the explicitly configured production HTTPS site URL.')
+        }
+        if (System.getenv('BEAUTY_SPHIA_RELEASE_WRAPPER') != '1'
+            || System.getenv('BEAUTY_SPHIA_PRODUCTION_RELEASE_ENABLED') != '1') {
+            throw new GradleException('Production APK/AAB generation is disabled. Use the approved npm release command after production launch approval.')
+        }
+        if (!hasReleaseSigning) throw new GradleException('Production release signing is incomplete; configure all four BEAUTY_SPHIA_ANDROID_* signing values.')
+        def keystore = new File(releaseStoreFile)
+        if (!keystore.isAbsolute() || !keystore.isFile()) throw new GradleException('Production keystore must be an existing file at an absolute path.')
+        def repositoryRoot = rootProject.projectDir.parentFile.canonicalFile
+        if (keystore.canonicalFile.toPath().startsWith(repositoryRoot.toPath())) {
+            throw new GradleException('Production keystore must be outside the repository.')
+        }
+        def expectedFingerprint = (expectedProductionCertificateSha256 ?: '').replace(':', '').trim()
+        if (!(expectedFingerprint ==~ /(?i)[0-9a-f]{64}/)) {
+            throw new GradleException('Set BEAUTY_SPHIA_ANDROID_EXPECTED_CERT_SHA256 to the approved production certificate fingerprint.')
+        }
+        def signing = android.signingConfigs.findByName('release')
+        if (!signing || android.buildTypes.release.signingConfig?.name != 'release') {
+            throw new GradleException('Production release must use the configured production signing key; debug signing is not allowed.')
+        }
+    }
+}
+
+tasks.configureEach { candidate ->
+    if (candidate.name in ['assembleDebug', 'packageDebug']) {
+        candidate.dependsOn(verifyAndroidTargetConfig)
+        candidate.doFirst {
+            if (buildTarget != 'staging') throw new GradleException('Debug APK builds are reserved for the staging target.')
+        }
+    }
+    if (candidate.name in ['assembleRelease', 'bundleRelease', 'packageRelease']) {
+        candidate.dependsOn(verifyAndroidTargetConfig)
+        if (buildTarget == 'production') candidate.dependsOn(verifyProductionReleaseInputs)
+        candidate.doFirst {
+            if (buildTarget != 'production') throw new GradleException('Release APK/AAB builds are reserved for the production target.')
+        }
+    }
+}
+
+tasks.register('copyStagingApk') {
+    dependsOn 'assembleDebug'
+    doLast {
+        def builtApk = file("$buildDir/outputs/apk/debug/app-debug.apk")
+        if (!builtApk.isFile()) throw new GradleException('Staging debug APK was not produced.')
+        exec {
+            commandLine 'node', '../../scripts/verify-android-release.mjs', 'apk', builtApk.absolutePath
+            environment 'CAPACITOR_BUILD_TARGET', 'staging'
+            environment 'CAPACITOR_SERVER_URL', stagingSiteUrl
+        }
+        copy { from builtApk; into "$buildDir/outputs/apk/staging"; rename { 'beauty-sphia-staging.apk' } }
+    }
+}
+
+tasks.register('copyProductionApk') {
+    dependsOn 'assembleRelease'
+    doLast {
+        def builtApk = file("$buildDir/outputs/apk/release/app-release.apk")
+        if (!builtApk.isFile()) throw new GradleException('Signed production APK was not produced.')
+        exec {
+            commandLine 'node', '../../scripts/verify-android-release.mjs', 'apk', builtApk.absolutePath
+            environment 'CAPACITOR_BUILD_TARGET', 'production'
+            environment 'CAPACITOR_SERVER_URL', productionSiteUrl
+        }
+        copy { from builtApk; into "$buildDir/outputs/apk/production"; rename { 'beauty-sphia.apk' } }
+    }
+}
+
+tasks.register('copyProductionAab') {
+    dependsOn 'bundleRelease'
+    doLast {
+        def builtAab = file("$buildDir/outputs/bundle/release/app-release.aab")
+        if (!builtAab.isFile()) throw new GradleException('Signed production AAB was not produced.')
+        exec {
+            commandLine 'node', '../../scripts/verify-android-release.mjs', 'aab', builtAab.absolutePath
+            environment 'CAPACITOR_BUILD_TARGET', 'production'
+            environment 'CAPACITOR_SERVER_URL', productionSiteUrl
+        }
+        copy { from builtAab; into "$buildDir/outputs/bundle/production"; rename { 'beauty-sphia.aab' } }
+    }
+}

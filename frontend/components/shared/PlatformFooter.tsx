@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { CurrentYear } from "@/components/shared/CurrentYear"
+import { MobileAppSwitchLink } from "@/components/shared/MobileAppSwitchLink"
 
 type SocialIconName = "whatsapp" | "facebook" | "tiktok" | "instagram"
 
@@ -43,6 +44,7 @@ export function PlatformFooter({
 					<Link href="/#contact">Contact</Link>
 					<a href={`mailto:${supportEmail}`}>{supportEmail}</a>
 					<a href={`tel:${phone}`}>{phone}</a>
+					<MobileAppSwitchLink />
 				</nav>
 				<nav className="platform-footer__links platform-footer__policies" aria-label="Policies">
 					<span className="eyebrow">Policies</span>

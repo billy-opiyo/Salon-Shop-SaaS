@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react"
 import { GoogleIcon } from "@/components/shared/GoogleIcon"
 import { TurnstileWidget } from "@/components/shared/TurnstileWidget"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
+import { openNativeGoogleSignIn } from "@/lib/mobileGoogleAuth"
 
 import { registerAccount } from "./actions"
 
@@ -21,6 +22,10 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 		setMessageType(null)
 		setIsSubmitting(true)
 		try {
+			if (await openNativeGoogleSignIn(getSafeAuthCallbackUrl(callbackUrl))) {
+				setIsSubmitting(false)
+				return
+			}
 			await signIn("google", { callbackUrl: getSafeAuthCallbackUrl(callbackUrl) })
 		} catch {
 			setIsSubmitting(false)

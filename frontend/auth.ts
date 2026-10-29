@@ -13,6 +13,7 @@ import {
 	RateLimitExceededError,
 } from "@backend/services/rateLimit"
 import { credentialsSchema } from "@shared/validation/auth"
+import { consumeMobileGoogleTicket } from "@backend/services/mobileGoogleTicketService"
 
 async function recordAuthenticationAttempt(input: {
 	readonly userId?: string
@@ -47,6 +48,32 @@ const googleProvider =
 				clientSecret: process.env.AUTH_GOOGLE_SECRET,
 			})
 		: null
+
+const mobileGoogleTicketProvider = Credentials({
+	id: "mobile-google-ticket",
+	name: "Beauty Sphia mobile Google sign-in",
+	credentials: {
+		ticket: { label: "Ticket", type: "text" },
+		state: { label: "State", type: "text" },
+		verifier: { label: "Verifier", type: "text" },
+	},
+	async authorize(rawCredentials) {
+		if (typeof rawCredentials.ticket !== "string" || typeof rawCredentials.state !== "string" || typeof rawCredentials.verifier !== "string") return null
+		const user = await consumeMobileGoogleTicket({
+			ticket: rawCredentials.ticket,
+			state: rawCredentials.state,
+			verifier: rawCredentials.verifier,
+		})
+		if (!user) return null
+		await recordAuthenticationAttempt({
+			userId: user.id,
+			email: user.email,
+			provider: "mobile-google",
+			status: "success",
+		})
+		return user
+	},
+})
 
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 	adapter: PrismaAdapter(prisma),
@@ -116,6 +143,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 				}
 			},
 		}),
+		mobileGoogleTicketProvider,
 		...(googleProvider ? [googleProvider] : []),
 	],
 	callbacks: {

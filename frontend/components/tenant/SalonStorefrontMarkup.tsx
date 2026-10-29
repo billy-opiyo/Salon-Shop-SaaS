@@ -1609,6 +1609,7 @@ export function SalonStorefrontMarkup({
 							<li><a href="#booking">Book Now</a></li>
 							<li><a href="#visit">Visit Us</a></li>
 							<li><a href="#contact">Contact</a></li>
+							<li><a href="#mobile-app" data-mobile-app-switch-link>Download Mobile App</a></li>
 						</ul>
 					</div>
 					<div>
