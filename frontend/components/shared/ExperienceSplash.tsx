@@ -106,7 +106,7 @@ export function ExperienceSplash({
 
 	return (
 		<div
-			className={`splash-screen${isExiting ? " splash-hide" : ""}`}
+			className={`splash-screen splash-screen--platform${isExiting ? " splash-hide" : ""}`}
 			role="status"
 			aria-live="polite"
 		>
@@ -183,8 +183,11 @@ export function ExperienceSplash({
 						/>
 					</div>
 				</div>
-				<p className="splash-loading-text">
-					Preparing your salon...
+				<p className="splash-loading-text" aria-label="Preparing Your Salon Experience...">
+					<span>Preparing Your Salon Experience</span>
+					<span className="splash-loading-dots" aria-hidden="true">
+						<span>.</span><span>.</span><span>.</span>
+					</span>
 				</p>
 			</div>
 		</div>
