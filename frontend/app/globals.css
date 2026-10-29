@@ -7654,3 +7654,20 @@ html.splash-active .splash-handwriting-letter {
 		margin-top: 1rem;
 	}
 }
+
+@media (max-width: 1024px) {
+	/* Center the hero copy on phones and tablets without changing its CTA layout. */
+	.platform-home-shell .platform-hero--editorial .platform-hero__copy {
+		width: 100%;
+		margin-inline: auto;
+		text-align: center;
+	}
+
+	.platform-home-shell .platform-hero--editorial .platform-hero__copy > .platform-hero__eyebrow,
+	.platform-home-shell .platform-hero--editorial .platform-hero__copy > .platform-hero__audience,
+	.platform-home-shell .platform-hero--editorial .platform-hero__copy > h1,
+	.platform-home-shell .platform-hero--editorial .platform-hero__copy > .platform-hero__description {
+		margin-inline: auto;
+		text-align: center;
+	}
+}
