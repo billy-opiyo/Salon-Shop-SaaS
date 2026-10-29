@@ -23,6 +23,9 @@ export function StoreSetupForm({
 	const formatAmount = (amountMinor: number) => new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency,
+		currencyDisplay: "code",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
 	}).format(amountMinor / 100)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -46,7 +49,7 @@ export function StoreSetupForm({
 	return (
 		<form className="auth-form onboarding-form" onSubmit={handleSubmit}>
 			<label>
-				Salon or business name
+				Salon or business name <span className="onboarding-required" aria-hidden="true">*</span>
 				<input name="businessName" type="text" required maxLength={120} />
 			</label>
 			<label>
@@ -68,7 +71,7 @@ export function StoreSetupForm({
 				/>
 			</label>
 			<label>
-				Salon web address
+				Salon web address <span className="onboarding-required" aria-hidden="true">*</span>
 				<input
 					name="slug"
 					type="text"
@@ -100,7 +103,7 @@ export function StoreSetupForm({
 					<input name="city" type="text" maxLength={80} placeholder="Nairobi" />
 				</label>
 				<label>
-					Country
+					Country <span className="onboarding-required" aria-hidden="true">*</span>
 					<input
 						name="country"
 						type="text"
@@ -115,10 +118,11 @@ export function StoreSetupForm({
 			<input name="currency" type="hidden" value={currency} readOnly />
 			<fieldset className="legal-consent">
 				<legend>Platform agreement</legend>
+				<p className="legal-consent__help">All three acknowledgments are required to create your salon.</p>
 				<label>
 					<input name="termsAccepted" type="checkbox" required />
 					<span>
-						I agree to the{" "}
+						I agree to the <span className="onboarding-required" aria-hidden="true">*</span>{" "}
 						<Link href="/terms" target="_blank">
 							Terms of Service
 						</Link>
@@ -128,7 +132,7 @@ export function StoreSetupForm({
 				<label>
 					<input name="privacyAccepted" type="checkbox" required />
 					<span>
-						I acknowledge the{" "}
+						I acknowledge the <span className="onboarding-required" aria-hidden="true">*</span>{" "}
 						<Link href="/privacy" target="_blank">
 							Privacy Policy
 						</Link>
@@ -138,7 +142,7 @@ export function StoreSetupForm({
 				<label>
 					<input name="cookiesAccepted" type="checkbox" required />
 					<span>
-						I acknowledge the{" "}
+						I acknowledge the <span className="onboarding-required" aria-hidden="true">*</span>{" "}
 						<Link href="/cookies" target="_blank">
 							Cookie Policy
 						</Link>

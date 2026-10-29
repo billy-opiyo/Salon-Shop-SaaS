@@ -42,7 +42,7 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 	const homeHref = isHome ? "#home" : "/"
 	const plansHref = isHome ? "#plans" : "/#plans"
 	const brand = <>
-		<Image className="brand-mark__image" src={logoUrl} alt={`${brandName} logo`} unoptimized width={48} height={48} />
+		<Image className="brand-mark__image" src={logoUrl} alt={`${brandName} logo`} unoptimized={/^https?:\/\//i.test(logoUrl)} width={48} height={48} />
 		<span className="brand-mark__copy">
 			<strong className="brand-mark__title">{brandName}</strong>
 			<span className="brand-mark__tagline">{brandTagline}</span>

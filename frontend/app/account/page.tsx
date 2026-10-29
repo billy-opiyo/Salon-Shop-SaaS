@@ -54,18 +54,26 @@ export default async function AccountPage() {
 					{salons.length ? <div className="platform-account-salons__grid">{salons.map((salon) => {
 						const setupPaymentRequired = salon.subscription?.status === "setup_payment_required"
 						const readyToPublish = salon.subscription?.status === "setup_paid_pending_activation"
+						const membership = salon.memberships[0]
+						const canManageBilling = membership?.role === "OWNER" || (membership?.role === "ADMIN" && membership.canManageBilling)
+						const canPublish = membership?.role === "OWNER" || membership?.canManageContent
+						const nextStep = setupPaymentRequired
+							? canManageBilling ? "Next step: complete setup payment" : "Next step: ask the salon owner or billing administrator to complete setup payment"
+							: readyToPublish
+								? canPublish ? "Next step: publish your salon" : "Next step: ask the salon owner or a content manager to publish your salon"
+								: canManageBilling ? "Next step: check setup status" : "Setup is being confirmed; contact the salon owner if this takes longer than expected"
 						return (
 							<article className="platform-account-salon" key={salon.id}>
 								<div>
 								<p className="eyebrow">{salon.subscription?.plan.displayName ?? "Salon"} · {formatSalonStatus(salon.status)}</p>
 									<h3>{salon.businessName}</h3>
 									<span>Storefront path: /{salon.slug}</span>
-									{salon.status === "DRAFT" && <span className="platform-account-salon__next-step">{setupPaymentRequired ? "Next step: complete setup payment" : readyToPublish ? "Next step: publish your salon" : "Setup is being confirmed"}</span>}
+									{salon.status === "DRAFT" && <span className="platform-account-salon__next-step">{nextStep}</span>}
 								</div>
 								<div className="platform-account-salon__actions">
-									{salon.status === "DRAFT" && setupPaymentRequired && <Link className="button button--primary button--small" href={`/manage/${salon.slug}/billing?setup=required`}>Continue setup payment</Link>}
-									{salon.status === "DRAFT" && readyToPublish && <PublishSalonForm tenantId={salon.id} />}
-									{salon.status === "DRAFT" && !setupPaymentRequired && !readyToPublish && <Link className="button button--outline button--small" href={`/manage/${salon.slug}/billing`}>Check payment status</Link>}
+									{salon.status === "DRAFT" && setupPaymentRequired && canManageBilling && <Link className="button button--primary button--small" href={`/manage/${salon.slug}/billing?setup=required`}>Continue setup payment</Link>}
+									{salon.status === "DRAFT" && readyToPublish && canPublish && <PublishSalonForm tenantId={salon.id} />}
+									{salon.status === "DRAFT" && !setupPaymentRequired && !readyToPublish && canManageBilling && <Link className="button button--outline button--small" href={`/manage/${salon.slug}/billing`}>Check payment status</Link>}
 									{salon.status !== "DRAFT" && <Link className="button button--outline button--small" href={`/manage/${salon.slug}`}>Manage salon</Link>}
 									{salon.status === "ACTIVE" && <Link className="button button--ghost button--small" href={`/${salon.slug}`}>View storefront</Link>}
 								</div>

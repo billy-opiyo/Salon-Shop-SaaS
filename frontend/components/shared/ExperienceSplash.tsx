@@ -116,7 +116,6 @@ export function ExperienceSplash({
 					alt=""
 					fill
 					sizes="100vw"
-					unoptimized
 					priority
 				/>
 			</div>
@@ -179,7 +178,7 @@ export function ExperienceSplash({
 							alt=""
 							width={96}
 							height={96}
-							unoptimized
+							unoptimized={/^https?:\/\//i.test(logoUrl)}
 							priority
 						/>
 					</div>

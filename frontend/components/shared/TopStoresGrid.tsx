@@ -63,7 +63,7 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 
 	return (
 		<div className="top-stores-list">
-			{stores.map((store) => (
+			{stores.map((store, index) => (
 				<article className={`top-store${store.isDemo ? " top-store--soon" : ""}`} key={store.slug}>
 					<div className="top-store__image">
 						<Image
@@ -72,8 +72,8 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 							alt={`${store.name} storefront`}
 							fill
 							sizes="(max-width: 700px) 100vw, (max-width: 1000px) 50vw, 33vw"
-							loading="lazy"
-							unoptimized
+							loading={index === 0 ? "eager" : "lazy"}
+							unoptimized={/^https?:\/\//i.test(store.imageUrl)}
 						/>
 					</div>
 					<div className="top-store__content">

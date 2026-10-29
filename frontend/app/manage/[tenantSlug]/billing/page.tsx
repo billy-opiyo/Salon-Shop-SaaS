@@ -12,6 +12,8 @@ import {
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
+import { platformThemeStyle } from "@/lib/platformTheme"
 
 interface BillingPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -22,9 +24,13 @@ function formatDate(value: Date | null): string {
 }
 
 function formatAmount(amountMinor: number, currency: string): string {
-	return new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(
-		amountMinor / 100,
-	)
+	return new Intl.NumberFormat("en-KE", {
+		style: "currency",
+		currency,
+		currencyDisplay: "code",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	}).format(amountMinor / 100)
 }
 
 function formatSubscriptionStatus(status: string | null | undefined): string {
@@ -66,29 +72,42 @@ export default async function MerchantBillingPage({
 	const pricing = planTier ? design.plans[planTier] : null
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 	const subscriptionStatus = billing.subscription?.status
-	const trialEndsAt = subscriptionStatus === "cancelled"
-		? null
-		: billing.subscription?.trialEndsAt ?? null
 	const activationPending = subscriptionStatus === "setup_payment_required" || subscriptionStatus === "setup_paid_pending_activation"
-	const freeUsageValue = trialEndsAt
-		? formatDate(trialEndsAt)
-		: activationPending
-			? "Starts after publication"
-			: subscriptionStatus === "cancelled"
-				? "Period ended"
+	const subscriptionCancelled = subscriptionStatus === "cancelled"
+	const cancellationScheduled = Boolean(billing.subscription?.cancelAtPeriodEnd) && !subscriptionCancelled
+	const periodEnd = subscriptionStatus === "trialing"
+		? billing.subscription?.trialEndsAt ?? billing.subscription?.currentPeriodEnd ?? null
+		: billing.subscription?.currentPeriodEnd ?? null
+	const freeUsageValue = activationPending
+		? "Starts after publication"
+		: subscriptionCancelled
+			? "Period ended"
+			: periodEnd
+				? formatDate(periodEnd)
 				: "Not scheduled"
-	const freeUsageDescription = trialEndsAt
-		? `${freeUsageLabel} of free usage ends on this date; monthly billing begins afterward.`
-		: subscriptionStatus === "setup_payment_required"
-			? `Your ${freeUsageLabel} free usage begins after the setup payment is confirmed and your salon is published.`
-			: subscriptionStatus === "setup_paid_pending_activation"
-				? `Your ${freeUsageLabel} free usage begins when you publish your salon.`
-				: subscriptionStatus === "cancelled"
-					? "This subscription has been cancelled."
-					: "No free usage period is currently scheduled."
+	let freeUsageDescription: string
+	if (subscriptionStatus === "setup_payment_required") {
+		freeUsageDescription = `Your ${freeUsageLabel} free usage begins after the setup payment is confirmed and your salon is published.`
+	} else if (subscriptionStatus === "setup_paid_pending_activation") {
+		freeUsageDescription = `Your ${freeUsageLabel} free usage begins when you publish your salon.`
+	} else if (subscriptionCancelled) {
+		freeUsageDescription = "This subscription has been cancelled."
+	} else if (cancellationScheduled && periodEnd) {
+		freeUsageDescription = `Cancellation is scheduled for ${formatDate(periodEnd)}.`
+	} else if (subscriptionStatus === "trialing" && periodEnd) {
+		freeUsageDescription = `${freeUsageLabel} of free usage ends on this date; monthly billing begins afterward.`
+	} else if (subscriptionStatus === "payment_due") {
+		freeUsageDescription = "A subscription payment is due. Complete payment to keep your salon active."
+	} else if (subscriptionStatus === "suspended") {
+		freeUsageDescription = "Your salon is suspended until the outstanding payment is resolved."
+	} else if (periodEnd) {
+		freeUsageDescription = `Next renewal date: ${formatDate(periodEnd)}.`
+	} else {
+		freeUsageDescription = "No renewal date is currently scheduled."
+	}
 
 	return (
-		<div className="platform-site merchant-billing-page">
+		<div className="platform-site platform-site--with-mobile-actions merchant-billing-page" style={platformThemeStyle(design.theme)}>
 		<main className="manage-page">
 			<header className="manage-header">
 				<div>
@@ -265,37 +284,55 @@ export default async function MerchantBillingPage({
 			<section className="manage-card" aria-labelledby="billing-actions-title">
 				<p className="eyebrow">Subscription controls</p>
 				<h2 id="billing-actions-title">Manage subscription</h2>
-				<form className="auth-form" action={changePlan}>
-					<input type="hidden" name="tenantSlug" value={tenantSlug} />
-					<label>
-						Change plan
-						<select name="tier" defaultValue={planTier ?? "starter"}>
-							<option value="starter">Starter</option>
-							<option value="business">Business</option>
-							<option value="enterprise">Enterprise</option>
-						</select>
-					</label>
-					<button className="button button--outline" type="submit">
-						Save plan
-					</button>
-				</form>
-				<form className="auth-form" action={cancelSubscription}>
-					<input type="hidden" name="tenantSlug" value={tenantSlug} />
-					<label>
-						<input
-							name="confirmation"
-							value="confirmed"
-							type="checkbox"
-							required
-						/>
-						I understand the cancellation effective date shown above.
-					</label>
-					<button className="button button--outline" type="submit">
-						Confirm cancellation
-					</button>
-				</form>
+				{subscriptionCancelled || cancellationScheduled ? (
+					<p className="merchant-billing-owner-note">
+						{subscriptionCancelled
+							? "This subscription has ended. Contact Beauty Sphia support if you need help restoring the salon."
+							: "Cancellation is already scheduled. Contact Beauty Sphia support if you need to change that schedule."}{" "}
+						<a href={`mailto:${design.contact.supportEmail}?subject=${encodeURIComponent(`Subscription help for ${billing.businessName}`)}`}>
+							Contact support
+						</a>
+					</p>
+				) : billing.memberships[0]?.role === "OWNER" ? (
+					<>
+						<form className="auth-form" action={changePlan}>
+							<input type="hidden" name="tenantSlug" value={tenantSlug} />
+							<label>
+								Change plan
+								<select name="tier" defaultValue={planTier ?? "starter"}>
+									<option value="starter">Starter</option>
+									<option value="business">Business</option>
+									<option value="enterprise">Enterprise</option>
+								</select>
+							</label>
+							<button className="button button--outline" type="submit">
+								Save plan
+							</button>
+						</form>
+						<form className="auth-form" action={cancelSubscription}>
+							<input type="hidden" name="tenantSlug" value={tenantSlug} />
+							<label>
+								<input
+									name="confirmation"
+									value="confirmed"
+									type="checkbox"
+									required
+								/>
+								I understand the cancellation effective date shown above.
+							</label>
+							<button className="button button--outline" type="submit">
+								Confirm cancellation
+							</button>
+						</form>
+					</>
+				) : (
+					<p className="merchant-billing-owner-note">
+						Only the salon owner can change the plan or cancel the subscription. Contact the owner if you need these changes.
+					</p>
+				)}
 			</section>
 		</main>
+		<PlatformMobileActions />
 		</div>
 	)
 }
