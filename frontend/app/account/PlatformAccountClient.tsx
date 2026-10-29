@@ -2,7 +2,9 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useState, type ChangeEvent, type FormEvent } from "react"
+import { Eye, EyeOff } from "lucide-react"
+import { createPortal } from "react-dom"
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 
@@ -44,9 +46,15 @@ export function PlatformAccountClient({
 	const [preferences, setPreferences] = useState<Preferences>(initialSnapshot.preferences ?? defaultPreferences)
 	const [currentPassword, setCurrentPassword] = useState("")
 	const [newPassword, setNewPassword] = useState("")
+	const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+	const [showNewPassword, setShowNewPassword] = useState(false)
 	const [message, setMessage] = useState("")
 	const [error, setError] = useState(false)
 	const [pendingAction, setPendingAction] = useState<string | null>(null)
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+	const [deleteError, setDeleteError] = useState("")
+	const deleteTriggerRef = useRef<HTMLButtonElement>(null)
+	const deleteCancelRef = useRef<HTMLButtonElement>(null)
 	const busy = pendingAction !== null
 	const [editingBooking, setEditingBooking] = useState<string | null>(null)
 	const [newDate, setNewDate] = useState("")
@@ -56,6 +64,40 @@ export function PlatformAccountClient({
 		setMessage(text)
 		setError(isError)
 	}
+
+	useEffect(() => {
+		if (!deleteDialogOpen) return
+		const dialog = document.querySelector<HTMLElement>(".platform-account-delete-dialog")
+		if (!dialog?.contains(document.activeElement)) {
+			if (busy) dialog?.focus()
+			else deleteCancelRef.current?.focus()
+		}
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape" && !busy) {
+				setDeleteDialogOpen(false)
+				setDeleteError("")
+				deleteTriggerRef.current?.focus()
+				return
+			}
+			if (event.key === "Tab") {
+				const buttons = dialog?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")
+				const first = buttons?.[0]
+				const last = buttons ? buttons[buttons.length - 1] : undefined
+				if (!first || !last) {
+					event.preventDefault()
+					dialog?.focus()
+				} else if (event.shiftKey && document.activeElement === first) {
+					event.preventDefault()
+					last.focus()
+				} else if (!event.shiftKey && document.activeElement === last) {
+					event.preventDefault()
+					first.focus()
+				}
+			}
+		}
+		document.addEventListener("keydown", handleKeyDown)
+		return () => document.removeEventListener("keydown", handleKeyDown)
+	}, [deleteDialogOpen, busy])
 
 	const patchAccount = async (body: Record<string, unknown>): Promise<boolean> => {
 		const response = await fetch("/api/account", {
@@ -225,7 +267,7 @@ export function PlatformAccountClient({
 	}
 
 	const deleteAccount = async () => {
-		if (!canDeleteAccount || !window.confirm("Permanently delete your Beauty Sphia account? This cannot be undone.")) return
+		if (!canDeleteAccount || busy) return
 		setPendingAction("delete")
 		setStatus("Deleting your account…")
 		try {
@@ -236,10 +278,25 @@ export function PlatformAccountClient({
 			router.replace("/")
 			router.refresh()
 		} catch (deleteError) {
-			setStatus(deleteError instanceof Error ? deleteError.message : "Your account could not be deleted.", true)
+			const failureMessage = deleteError instanceof Error ? deleteError.message : "Your account could not be deleted."
+			setDeleteError(failureMessage)
+			setStatus(failureMessage, true)
 		} finally {
 			setPendingAction(null)
 		}
+	}
+
+	const openDeleteDialog = () => {
+		if (!canDeleteAccount || busy) return
+		setDeleteError("")
+		setDeleteDialogOpen(true)
+	}
+
+	const closeDeleteDialog = () => {
+		if (busy) return
+		setDeleteDialogOpen(false)
+		setDeleteError("")
+		deleteTriggerRef.current?.focus()
 	}
 
 	const today = toLocalDateInputValue(new Date())
@@ -265,8 +322,21 @@ export function PlatformAccountClient({
 				<section className="platform-account-panel" aria-labelledby="platform-password-title">
 					<p className="eyebrow">Account security</p><h2 id="platform-password-title">Password and sign-in</h2>
 					<form className="platform-account-form" onSubmit={changePassword}>
-						<label>Current password<input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
-						<label>New password<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><small>Use at least 12 characters.</small></label>
+						<div className="platform-account-password-group">
+							<label htmlFor="platform-account-current-password">Current password</label>
+							<div className="platform-account-password-field">
+								<input id="platform-account-current-password" type={showCurrentPassword ? "text" : "password"} autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+								<button className="platform-account-password-toggle" type="button" aria-label={showCurrentPassword ? "Hide current password" : "Show current password"} aria-pressed={showCurrentPassword} onClick={() => setShowCurrentPassword((visible) => !visible)}>{showCurrentPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button>
+							</div>
+						</div>
+						<div className="platform-account-password-group">
+							<label htmlFor="platform-account-new-password">New password</label>
+							<div className="platform-account-password-field">
+								<input id="platform-account-new-password" type={showNewPassword ? "text" : "password"} autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
+								<button className="platform-account-password-toggle" type="button" aria-label={showNewPassword ? "Hide new password" : "Show new password"} aria-pressed={showNewPassword} onClick={() => setShowNewPassword((visible) => !visible)}>{showNewPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}</button>
+							</div>
+							<small>Use at least 12 characters.</small>
+						</div>
 						<button className="button button--primary" type="submit" disabled={busy} aria-busy={pendingAction === "password"}>{pendingAction === "password" ? "Changing…" : "Change password"}</button>
 					</form>
 					<button className="button button--primary platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy} aria-busy={pendingAction === "password-reset"}>{pendingAction === "password-reset" ? "Sending…" : "Send password reset email"}</button>
@@ -317,9 +387,23 @@ export function PlatformAccountClient({
 
 				<section className="platform-account-panel platform-account-panel--wide platform-account-danger" aria-labelledby="platform-delete-title">
 					<p className="eyebrow">Privacy controls</p><h2 id="platform-delete-title">Delete your account</h2>
-					{canDeleteAccount ? <><p>Deleting your account permanently removes your Beauty Sphia sign-in and personal profile.</p><button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy} aria-busy={pendingAction === "delete"}>{pendingAction === "delete" ? "Deleting…" : "Delete account permanently"}</button></> : <p>Transfer or remove your salon ownership before deleting this account. Your salon workspaces are connected to this sign-in.</p>}
+					<p id="platform-delete-help">{canDeleteAccount ? "Deleting your account permanently removes your Beauty Sphia sign-in and personal profile." : "This account owns one or more salon workspaces. Transfer ownership or remove those workspaces before deleting the account."}</p>
+					<button ref={deleteTriggerRef} className="button button--outline platform-account-delete-button" type="button" onClick={openDeleteDialog} disabled={!canDeleteAccount || busy} aria-haspopup="dialog" aria-describedby="platform-delete-help">Delete account permanently</button>
+					{!canDeleteAccount && <small className="platform-account-delete-help">Your salon workspaces are connected to this sign-in, so account deletion is blocked until ownership is transferred or the workspaces are removed.</small>}
 				</section>
 			</div>
+			{deleteDialogOpen && createPortal(<div className="platform-account-delete-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDeleteDialog() }}>
+				<section className="platform-account-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="platform-account-delete-dialog-title" aria-describedby="platform-account-delete-dialog-description" tabIndex={-1}>
+					<p className="eyebrow">Privacy controls</p>
+					<h2 id="platform-account-delete-dialog-title">Delete your account?</h2>
+					<p id="platform-account-delete-dialog-description">This permanently removes your Beauty Sphia sign-in and personal profile. This action cannot be undone.</p>
+					{deleteError && <p className="platform-account-delete-dialog__error" role="alert">{deleteError}</p>}
+					<div className="platform-account-delete-dialog__actions">
+						<button ref={deleteCancelRef} className="button button--outline" type="button" onClick={closeDeleteDialog} disabled={busy}>Cancel</button>
+						<button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy} aria-busy={pendingAction === "delete"}>{pendingAction === "delete" ? "Deleting…" : "Delete"}</button>
+					</div>
+				</section>
+			</div>, document.body)}
 		</div>
 	)
 }
