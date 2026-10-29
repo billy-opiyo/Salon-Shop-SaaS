@@ -71,14 +71,14 @@ export function ExperienceSplash({
 
 			hideTimeoutId = window.setTimeout(() => {
 				setIsExiting(true)
-				document.documentElement.classList.remove("splash-active")
-				document.body.classList.remove("splash-active")
 				completeTimeoutId = window.setTimeout(() => {
 					try {
 						window.sessionStorage.setItem(SPLASH_SESSION_KEY, "true")
 					} catch {
 						// The splash remains usable when session storage is unavailable.
 					}
+					root.classList.remove("splash-active")
+					body.classList.remove("splash-active")
 					root.classList.add("splash-complete")
 					body.classList.add("splash-complete")
 				}, prefersReducedMotion ? 0 : SPLASH_EXIT_TRANSITION_MS)
