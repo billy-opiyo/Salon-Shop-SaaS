@@ -4515,9 +4515,15 @@ html.splash-active .splash-handwriting-letter {
 	text-align: center;
 }
 
-/* Keep the sticky brand mark aligned with the 24px content gutter. */
+/* Keep the sticky platform header aligned to the same centered content column. */
 .platform-header {
 	padding-left: max(1.5rem, calc((100% - 1180px) / 2));
+}
+
+@media (min-width: 1200px) {
+	.platform-header {
+		padding-right: max(1.5rem, calc((100% - 1180px) / 2));
+	}
 }
 
 @media (max-width: 600px) {
