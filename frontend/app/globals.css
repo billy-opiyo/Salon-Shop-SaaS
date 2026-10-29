@@ -21,6 +21,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html.native-pull-refresh-active,
+html.native-pull-refresh-active * {
+	-webkit-user-select: none !important;
+	user-select: none !important;
+	-webkit-touch-callout: none !important;
+}
+
+html.native-pull-refresh-active ::selection {
+	background: transparent;
+	color: inherit;
+}
+
 a,
 button,
 input,
