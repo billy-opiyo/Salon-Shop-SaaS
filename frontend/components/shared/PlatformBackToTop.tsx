@@ -1,16 +1,38 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { MouseEvent } from "react"
 
 export function PlatformBackToTop() {
 	const [isVisible, setIsVisible] = useState(false)
+	const buttonRef = useRef<HTMLAnchorElement>(null)
 
 	useEffect(() => {
-		const updateVisibility = () => setIsVisible(window.scrollY > 500)
+		let frame = 0
+		const updateVisibility = () => {
+			window.cancelAnimationFrame(frame)
+			frame = window.requestAnimationFrame(() => {
+				const buttonRect = buttonRef.current?.getBoundingClientRect()
+				const contactControls = document.querySelectorAll<HTMLElement>(
+					".platform-contact__form :is(a, button, input, textarea, select)",
+				)
+				const overlapsContactControl = Boolean(buttonRect && Array.from(contactControls).some((control) => {
+					const rect = control.getBoundingClientRect()
+					return rect.width > 0 && rect.height > 0 &&
+						rect.left < buttonRect.right && rect.right > buttonRect.left &&
+						rect.top < buttonRect.bottom && rect.bottom > buttonRect.top
+				}))
+				setIsVisible(window.scrollY > 500 && !overlapsContactControl)
+			})
+		}
 		window.addEventListener("scroll", updateVisibility, { passive: true })
+		window.addEventListener("resize", updateVisibility)
 		updateVisibility()
-		return () => window.removeEventListener("scroll", updateVisibility)
+		return () => {
+			window.cancelAnimationFrame(frame)
+			window.removeEventListener("scroll", updateVisibility)
+			window.removeEventListener("resize", updateVisibility)
+		}
 	}, [])
 
 	const scrollToTop = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -25,6 +47,7 @@ export function PlatformBackToTop() {
 
 	return (
 		<a
+			ref={buttonRef}
 			href="#home"
 			className={`platform-back-to-top${isVisible ? " visible" : ""}`}
 			aria-label="Back to top"

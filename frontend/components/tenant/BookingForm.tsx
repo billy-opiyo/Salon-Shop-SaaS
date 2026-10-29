@@ -18,6 +18,7 @@ export function BookingForm({ tenantSlug, services }: BookingFormProps) {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessful, setIsSuccessful] = useState(false);
+  const [turnstileAttempt, setTurnstileAttempt] = useState(0);
   const minDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const bookableServices = services.filter((service) => !service.isCosmeticProduct);
 
@@ -30,7 +31,8 @@ export function BookingForm({ tenantSlug, services }: BookingFormProps) {
       return;
     }
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const selectedService = bookableServices.find((service) => (service.id ?? service.name) === form.get("serviceKey"));
     if (!selectedService) {
       setMessage("Choose an available service.");
@@ -64,12 +66,14 @@ export function BookingForm({ tenantSlug, services }: BookingFormProps) {
       }
       setIsSuccessful(true);
       setMessage("Your booking request was received. We will confirm the slot shortly.");
-      event.currentTarget.reset();
+      formElement.reset();
       setTurnstileToken("");
     } catch {
       setMessage("We could not reach the booking service. Please try again.");
     } finally {
       setIsSubmitting(false);
+      setTurnstileToken("");
+      setTurnstileAttempt((attempt) => attempt + 1);
     }
   }
 
@@ -85,7 +89,7 @@ export function BookingForm({ tenantSlug, services }: BookingFormProps) {
         <label>Preferred time<select name="timeLabel" required defaultValue=""><option value="" disabled>Select a time</option>{TIME_OPTIONS.map((time) => <option key={time} value={time}>{time}</option>)}</select></label>
         <label className="booking-form__wide">Special requests<textarea name="specialRequests" rows={3} maxLength={2000} placeholder="Anything your stylist should know?" /></label>
       </div>
-      <TurnstileWidget onToken={setTurnstileToken} />
+      <TurnstileWidget key={turnstileAttempt} onToken={setTurnstileToken} />
       <button className="button button--primary" type="submit" disabled={isSubmitting}>{isSubmitting ? "Sending request…" : "Request appointment"}</button>
       {message && <p className={`form-message ${isSuccessful ? "form-message--success" : ""}`} role={isSuccessful ? "status" : "alert"}>{message}</p>}
     </form>

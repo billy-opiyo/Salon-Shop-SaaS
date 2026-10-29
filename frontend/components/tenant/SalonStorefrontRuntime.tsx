@@ -109,6 +109,7 @@ declare global {
 				},
 			) => string
 			remove: (widgetId: string) => void
+			reset: (widgetId?: string) => void
 		}
 	}
 }
@@ -4362,6 +4363,7 @@ function bindPublicParityAdapters(
 				"error",
 			)
 		} finally {
+			resetTurnstile(contactForm)
 			if (submitButton) submitButton.disabled = false
 		}
 	}
@@ -4409,6 +4411,7 @@ function bindPublicParityAdapters(
 				"error",
 			)
 		} finally {
+			resetTurnstile(reviewForm)
 			if (submitButton instanceof HTMLButtonElement)
 				submitButton.disabled = false
 		}
@@ -4650,6 +4653,16 @@ function getTurnstileToken(form: HTMLFormElement): string {
 	return input?.value.trim() ?? ""
 }
 
+function resetTurnstile(form: HTMLFormElement): void {
+	const container = form.querySelector<HTMLElement>("[data-saas-turnstile]")
+	const input = form.querySelector<HTMLInputElement>(
+		'input[name="turnstileToken"]',
+	)
+	if (input) input.value = ""
+	const widgetId = container?.dataset.saasTurnstileWidgetId
+	if (widgetId) window.turnstile?.reset(widgetId)
+}
+
 function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
 	if (!siteKey || form.querySelector("[data-saas-turnstile]")) return
 
@@ -4667,7 +4680,7 @@ function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
 		if (!window.turnstile || container.dataset.saasTurnstileRendered === "true")
 			return
 		container.dataset.saasTurnstileRendered = "true"
-		window.turnstile.render(container, {
+		container.dataset.saasTurnstileWidgetId = window.turnstile.render(container, {
 			sitekey: siteKey,
 			callback: (token) => {
 				input.value = token
@@ -5487,6 +5500,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 				"error",
 			)
 		} finally {
+			if (isSignup) resetTurnstile(form)
 			submitButton.disabled = false
 			submitButton.removeAttribute("aria-busy")
 		}
@@ -6108,6 +6122,7 @@ function bindBookingAdapter(
 				"error",
 			)
 		} finally {
+			resetTurnstile(form)
 			setBookingLoading(button, false)
 		}
 	}
@@ -6216,7 +6231,7 @@ function bindBookingAdapter(
 			if (timeInput instanceof HTMLInputElement) timeInput.value = preferredTime
 			renderAvailability(BOOKING_TIME_SLOTS, bookedSlots)
 			setBookingMessage(
-				"You’ve joined the waitlist. Confirm below to save this as a waitlisted booking.",
+				"You’ve joined the waitlist. Complete the refreshed security check, then confirm below to save this as a waitlisted booking.",
 				"success",
 			)
 		} catch {
@@ -6225,6 +6240,7 @@ function bindBookingAdapter(
 				"error",
 			)
 		} finally {
+			resetTurnstile(form)
 			waitlistButton.disabled = false
 			waitlistButton.removeAttribute("aria-busy")
 		}
