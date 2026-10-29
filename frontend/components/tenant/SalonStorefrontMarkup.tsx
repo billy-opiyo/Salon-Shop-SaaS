@@ -1940,7 +1940,7 @@ export function SalonStorefrontMarkup({
 					<h3 id="manageAccountTitle">Manage Account</h3>
 				</div>
 
-				<div className="form-message" id="manageAccountMessage"></div>
+				<div className="form-message" id="manageAccountMessage" role="status" aria-live="polite" aria-atomic="true"></div>
 
 				<div className="manage-account-body">
 					<section className="manage-account-section">

@@ -5269,6 +5269,8 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 	)
 	const backdrop = document.getElementById("deleteAccountConfirmBackdrop")
 	const message = document.getElementById("manageAccountMessage")
+	const avatarUploadLabel = document.querySelector<HTMLElement>(".manage-account-upload-btn")
+	const avatarUploadLabelText = avatarUploadLabel?.textContent ?? "Add / Change Picture"
 	const newPasswordInput = document.getElementById("manageAccountNewPassword")
 	const profileInputs = [
 		document.getElementById("manageAccountName"),
@@ -5320,6 +5322,17 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		message.classList.toggle("error", error)
 		message.classList.toggle("success", !error)
 	}
+	const setButtonPending = (element: Element | null, pendingText: string): (() => void) => {
+		if (!(element instanceof HTMLButtonElement)) return () => undefined
+		const originalText = element.textContent ?? ""
+		const wasDisabled = element.disabled
+		element.disabled = true
+		element.textContent = pendingText
+		return () => {
+			element.disabled = wasDisabled
+			element.textContent = originalText
+		}
+	}
 	const uploadAvatar = async (): Promise<void> => {
 		if (!(avatarInput instanceof HTMLInputElement)) return
 		const file = avatarInput.files?.[0]
@@ -5331,6 +5344,7 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 			return
 		}
 		avatarInput.disabled = true
+		if (avatarUploadLabel) avatarUploadLabel.textContent = "Uploading…"
 		setMessage("Uploading your profile picture…")
 		try {
 			const formData = new FormData()
@@ -5353,6 +5367,7 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		} finally {
 			avatarInput.value = ""
 			avatarInput.disabled = false
+			if (avatarUploadLabel) avatarUploadLabel.textContent = avatarUploadLabelText
 		}
 	}
 	const sendPasswordResetEmail = async (): Promise<void> => {
@@ -5423,36 +5438,44 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 			!(phone instanceof HTMLInputElement)
 		)
 			return
-		if (!(await patchAccount({ name: name.value, phone: phone.value }))) return
-		profileInputs.forEach((input) => (input.dataset.dirty = ""))
-		const displayName = name.value.trim() || email.value.trim()
-		const dropdownName = document.getElementById("authProfileName")
-		const dashboardName = document.getElementById("dashboardProfileName")
-		if (dropdownName) dropdownName.textContent = `Welcome, ${displayName}`
-		if (dashboardName) dashboardName.textContent = displayName || "Not provided"
-		const currentAvatar = document.querySelector<HTMLImageElement>("#authProfileTrigger img[data-account-avatar]")?.src ?? null
-		renderReferenceAccountAvatar(currentAvatar, displayName)
-		const requestedEmail = email.value.trim().toLowerCase()
-		const currentEmail = (email.dataset.currentValue ?? "").trim().toLowerCase()
-		if (requestedEmail && requestedEmail !== currentEmail) {
-			const response = await fetch(
-				"/api/account?tenant=" + encodeURIComponent(tenantSlug),
-				{
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({ email: requestedEmail }),
-				},
-			)
-			const result = await readReferenceJson(response)
-			if (!response.ok) {
-				setMessage(result.error ?? "Email change could not be requested.", true)
+		const restoreButton = setButtonPending(profileButton, "Saving…")
+		setMessage("Saving your profile…")
+		try {
+			if (!(await patchAccount({ name: name.value, phone: phone.value }))) return
+			profileInputs.forEach((input) => (input.dataset.dirty = ""))
+			const displayName = name.value.trim() || email.value.trim()
+			const dropdownName = document.getElementById("authProfileName")
+			const dashboardName = document.getElementById("dashboardProfileName")
+			if (dropdownName) dropdownName.textContent = `Welcome, ${displayName}`
+			if (dashboardName) dashboardName.textContent = displayName || "Not provided"
+			const currentAvatar = document.querySelector<HTMLImageElement>("#authProfileTrigger img[data-account-avatar]")?.src ?? null
+			renderReferenceAccountAvatar(currentAvatar, displayName)
+			const requestedEmail = email.value.trim().toLowerCase()
+			const currentEmail = (email.dataset.currentValue ?? "").trim().toLowerCase()
+			if (requestedEmail && requestedEmail !== currentEmail) {
+				const response = await fetch(
+					"/api/account?tenant=" + encodeURIComponent(tenantSlug),
+					{
+						method: "POST",
+						headers: { "content-type": "application/json" },
+						body: JSON.stringify({ email: requestedEmail }),
+					},
+				)
+				const result = await readReferenceJson(response)
+				if (!response.ok) {
+					setMessage(result.error ?? "Email change could not be requested.", true)
+					return
+				}
+				email.dataset.currentValue = requestedEmail
+				setMessage("Profile saved. Check your new email to confirm the address change.")
 				return
 			}
-			email.dataset.currentValue = requestedEmail
-			setMessage("Profile saved. Check your new email to confirm the address change.")
-			return
+			setMessage("Profile saved.")
+		} catch {
+			setMessage("Your profile could not be saved. Please try again.", true)
+		} finally {
+			restoreButton()
 		}
-		setMessage("Profile saved.")
 	}
 	const changePassword = async (): Promise<void> => {
 		const current = document.getElementById("manageAccountCurrentPassword")
@@ -5462,15 +5485,18 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 			!(next instanceof HTMLInputElement)
 		)
 			return
-		if (
-			await patchAccount({
-				currentPassword: current.value,
-				newPassword: next.value,
-			})
-		) {
-			setMessage("Password changed.")
-			current.value = ""
-			next.value = ""
+		const restoreButton = setButtonPending(passwordButton, "Changing…")
+		setMessage("Changing your password…")
+		try {
+			if (await patchAccount({ currentPassword: current.value, newPassword: next.value })) {
+				setMessage("Password changed.")
+				current.value = ""
+				next.value = ""
+			}
+		} catch {
+			setMessage("Password could not be changed. Please try again.", true)
+		} finally {
+			restoreButton()
 		}
 	}
 	const savePreferences = async (): Promise<void> => {
@@ -5491,8 +5517,10 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 			!(notifyPush instanceof HTMLInputElement)
 		)
 			return
-		if (
-			await patchAccount({
+		const restoreButton = setButtonPending(preferencesButton, "Saving…")
+		setMessage("Saving your preferences…")
+		try {
+			if (await patchAccount({
 				theme: theme.value,
 				fontSize: fontSize.value,
 				highContrast: highContrast.checked,
@@ -5500,15 +5528,19 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 				notifyEmail: notifyEmail.checked,
 				notifySms: notifySms.checked,
 				notifyPush: notifyPush.checked,
-			})
-		) {
-			applyAccountDisplayPreferences({
-				fontSize: fontSize.value as "small" | "medium" | "large",
-				highContrast: highContrast.checked,
-				reducedMotion: reducedMotion.checked,
-			})
-			theme.dataset.dirty = ""
-			setMessage("Preferences saved.")
+			})) {
+				applyAccountDisplayPreferences({
+					fontSize: fontSize.value as "small" | "medium" | "large",
+					highContrast: highContrast.checked,
+					reducedMotion: reducedMotion.checked,
+				})
+				theme.dataset.dirty = ""
+				setMessage("Preferences saved.")
+			}
+		} catch {
+			setMessage("Preferences could not be saved. Please try again.", true)
+		} finally {
+			restoreButton()
 		}
 	}
 	const updateThemeImmediately = async (): Promise<void> => {
@@ -5516,9 +5548,14 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		if (!(theme instanceof HTMLSelectElement) || (theme.value !== "dark" && theme.value !== "light")) return
 		theme.dataset.dirty = "true"
 		applyStorefrontColorMode(theme.value)
-		if (await patchAccount({ theme: theme.value })) {
-			theme.dataset.dirty = ""
-			setMessage("Theme preference saved.")
+		setMessage("Saving theme preference…")
+		try {
+			if (await patchAccount({ theme: theme.value })) {
+				theme.dataset.dirty = ""
+				setMessage("Theme preference saved.")
+			}
+		} catch {
+			setMessage("Theme preference could not be saved. Please try again.", true)
 		}
 	}
 	const openDelete = (): void => {
@@ -5534,15 +5571,23 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		document.body.style.overflow = ""
 	}
 	const confirmDelete = async (): Promise<void> => {
-		const response = await fetch("/api/account", { method: "DELETE" })
-		const result = await readReferenceJson(response)
-		if (!response.ok) {
-			setMessage(result.error ?? "Account could not be deleted.", true)
-			closeDelete()
-			return
+		const restoreButton = setButtonPending(confirmDeleteButton, "Deleting…")
+		setMessage("Deleting your account…")
+		try {
+			const response = await fetch("/api/account", { method: "DELETE" })
+			const result = await readReferenceJson(response)
+			if (!response.ok) {
+				setMessage(result.error ?? "Account could not be deleted.", true)
+				closeDelete()
+				return
+			}
+			await signOut({ redirect: false })
+			window.location.reload()
+		} catch {
+			setMessage("Account could not be deleted. Please try again.", true)
+		} finally {
+			restoreButton()
 		}
-		await signOut({ redirect: false })
-		window.location.reload()
 	}
 	const toggleCurrentPassword = (): void => togglePasswordVisibility("manageAccountCurrentPassword", currentPasswordToggle, "current password")
 	const toggleNewPassword = (): void => togglePasswordVisibility("manageAccountNewPassword", newPasswordToggle, "new password")
