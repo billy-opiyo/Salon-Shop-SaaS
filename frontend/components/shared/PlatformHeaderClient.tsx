@@ -104,7 +104,7 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 			<div className="platform-account" ref={accountMenuRef}>
 				<button
 					ref={accountTriggerRef}
-					className="platform-account__trigger"
+					className={`platform-account__trigger${!isSignedIn ? " platform-account__trigger--login" : ""}`}
 					type="button"
 					aria-label={isSignedIn ? "Open account menu" : "Open login and signup menu"}
 					aria-haspopup="menu"

@@ -8393,6 +8393,7 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-curren
     left: 30px;
     width: 40px;
     height: 40px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -8411,7 +8412,7 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions a[aria-curren
 }
 
 .floating-whatsapp i {
-    font-size: 21px;
+    font-size: 24px;
     line-height: 1;
 }
 

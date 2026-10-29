@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewOutlineProvider;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -231,15 +230,10 @@ public class MainActivity extends BridgeActivity {
         logoContainer.setElevation(dp(10));
         logoContainer.setClipToOutline(true);
         ImageView logo = new ImageView(this);
-        logo.setImageResource(R.drawable.launch_logo);
-        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        logo.setClipToOutline(true);
-        logo.setOutlineProvider(new ViewOutlineProvider() {
-            @Override public void getOutline(View view, android.graphics.Outline outline) {
-                outline.setOval(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-        FrameLayout.LayoutParams logoLayout = new FrameLayout.LayoutParams(dp(116), dp(116), Gravity.CENTER);
+        logo.setImageResource(R.drawable.launch_logo_app);
+        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        logo.setClipToOutline(false);
+        FrameLayout.LayoutParams logoLayout = new FrameLayout.LayoutParams(dp(100), dp(100), Gravity.CENTER);
         logoContainer.addView(logo, logoLayout);
         FrameLayout.LayoutParams containerLayout = new FrameLayout.LayoutParams(dp(144), dp(144), Gravity.CENTER);
         overlay.addView(logoContainer, containerLayout);

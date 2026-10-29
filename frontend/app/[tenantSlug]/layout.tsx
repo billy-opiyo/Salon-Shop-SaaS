@@ -1,6 +1,7 @@
 import type { Viewport } from "next"
 import "../../styles/salon-storefront.css"
 import { getTenantStorefrontBrand } from "@backend/services/tenantDirectory"
+import { SALON_THEME_PALETTES, isThemePreset } from "@shared/constants/themePresets"
 import {
 	TenantNotFoundProvider,
 	type TenantNotFoundBrand,
@@ -12,9 +13,11 @@ export async function generateViewport({
 	const { tenantSlug } = await params
 	const brand = await getTenantStorefrontBrand(tenantSlug)
 	const isLight = brand?.theme.mode === "light"
+	const preset = brand?.theme.preset
+	const paletteBackground = preset && isThemePreset(preset) ? SALON_THEME_PALETTES[preset].background : "#0a0a0a"
 	return {
 		colorScheme: isLight ? "light" : "dark",
-		themeColor: isLight ? "#f8f5f0" : "#0a0a0a",
+		themeColor: isLight ? "#f7f2ea" : paletteBackground,
 	}
 }
 
