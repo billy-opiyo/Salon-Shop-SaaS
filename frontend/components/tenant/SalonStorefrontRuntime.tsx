@@ -4717,6 +4717,7 @@ function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
 interface SessionUser {
 	readonly name?: string | null
 	readonly email?: string | null
+	readonly image?: string | null
 }
 
 function readSessionUser(payload: unknown): SessionUser | null {
@@ -4729,7 +4730,68 @@ function readSessionUser(payload: unknown): SessionUser | null {
 		"name" in user && typeof user.name === "string" ? user.name : null
 	const email =
 		"email" in user && typeof user.email === "string" ? user.email : null
-	return name || email ? { name, email } : null
+	const image =
+		"image" in user && typeof user.image === "string" ? user.image : null
+	return name || email ? { name, email, image } : null
+}
+
+function safeAccountAvatarUrl(value: string | null | undefined): string | null {
+	if (!value) return null
+	try {
+		const url = new URL(value, window.location.origin)
+		return url.protocol === "https:" || url.origin === window.location.origin
+			? url.href
+			: null
+	} catch {
+		return null
+	}
+}
+
+function renderReferenceAccountAvatar(
+	imageUrl: string | null | undefined,
+	displayName: string,
+): void {
+	const safeImageUrl = safeAccountAvatarUrl(imageUrl)
+	const initial = displayName.trim().charAt(0).toUpperCase() || "C"
+	const profileTrigger = document.getElementById("authProfileTrigger")
+	const profileInitial = document.getElementById("authProfileInitial")
+	const avatarPreview = document.getElementById("manageAccountAvatarPreview")
+	const avatarInitial = document.getElementById("manageAccountAvatarInitial")
+
+	if (profileInitial) profileInitial.textContent = initial
+	if (avatarInitial) avatarInitial.textContent = initial
+	for (const [container, alt] of [
+		[profileTrigger, ""],
+		[avatarPreview, "Your profile photo"],
+	] as const) {
+		if (!container) continue
+		let image = container.querySelector<HTMLImageElement>("img[data-account-avatar]")
+		if (!safeImageUrl) {
+			image?.remove()
+			continue
+		}
+		if (!image) {
+			image = document.createElement("img")
+			image.dataset.accountAvatar = "true"
+			image.alt = alt
+			image.decoding = "async"
+			container.prepend(image)
+		}
+		image.src = safeImageUrl
+	}
+	profileInitial?.classList.toggle("hidden", Boolean(safeImageUrl))
+	avatarInitial?.classList.toggle("hidden", Boolean(safeImageUrl))
+}
+
+function applyAccountDisplayPreferences(preferences: {
+	readonly fontSize: "small" | "medium" | "large"
+	readonly highContrast: boolean
+	readonly reducedMotion: boolean
+}): void {
+	const root = document.documentElement
+	root.dataset.clientFontSize = preferences.fontSize
+	root.dataset.clientHighContrast = String(preferences.highContrast)
+	root.dataset.clientReducedMotion = String(preferences.reducedMotion)
 }
 
 function setAuthMessage(message: string, type: "error" | "success"): void {
@@ -4801,6 +4863,7 @@ function updateReferenceAuthUi(user: SessionUser | null): void {
 	reviewSubmitWrap?.classList.toggle("hidden", !signedIn)
 
 	const displayName = user?.name || user?.email || "Client"
+	renderReferenceAccountAvatar(user?.image, displayName)
 	if (profileInitial)
 		profileInitial.textContent = displayName.charAt(0).toUpperCase()
 	if (profileName)
@@ -4948,6 +5011,10 @@ function showFavoritesToast(message: string): void {
 function renderReferenceDashboard(
 	snapshot: ClientAccountSnapshotPayload,
 ): void {
+	renderReferenceAccountAvatar(
+		snapshot.profile.image,
+		snapshot.profile.name || snapshot.profile.email,
+	)
 	const profileControls = {
 		name: document.getElementById("manageAccountName"),
 		email: document.getElementById("manageAccountEmail"),
@@ -4972,6 +5039,7 @@ function renderReferenceDashboard(
 		notifyPush: document.getElementById("manageAccountNotifPush"),
 	}
 	if (snapshot.preferences) {
+		applyAccountDisplayPreferences(snapshot.preferences)
 		if (preferenceControls.theme instanceof HTMLSelectElement && !preferenceControls.theme.dataset.dirty) {
 			preferenceControls.theme.value = snapshot.preferences.theme
 			applyStorefrontColorMode(snapshot.preferences.theme)
@@ -5179,9 +5247,13 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 
 function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 	const profileButton = document.getElementById("manageAccountSaveProfileBtn")
+	const avatarInput = document.getElementById("manageAccountAvatarInput")
 	const passwordButton = document.getElementById(
 		"manageAccountChangePasswordBtn",
 	)
+	const resetPasswordButton = document.getElementById("manageAccountResetPasswordBtn")
+	const currentPasswordToggle = document.getElementById("manageAccountCurrentPasswordToggle")
+	const newPasswordToggle = document.getElementById("manageAccountNewPasswordToggle")
 	const deleteButton = document.getElementById("manageAccountDeleteBtn")
 	const preferencesButton = document.getElementById(
 		"manageAccountSavePreferencesBtn",
@@ -5248,6 +5320,86 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		message.classList.toggle("error", error)
 		message.classList.toggle("success", !error)
 	}
+	const uploadAvatar = async (): Promise<void> => {
+		if (!(avatarInput instanceof HTMLInputElement)) return
+		const file = avatarInput.files?.[0]
+		if (!file) return
+		const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
+		if (!allowedTypes.has(file.type) || file.size > 1024 * 1024) {
+			setMessage("Choose a JPG, PNG, WebP, or GIF image under 1 MB.", true)
+			avatarInput.value = ""
+			return
+		}
+		avatarInput.disabled = true
+		setMessage("Uploading your profile picture…")
+		try {
+			const formData = new FormData()
+			formData.set("avatar", file)
+			const response = await fetch("/api/account/avatar", { method: "POST", body: formData })
+			const payload = await response.json().catch(() => ({})) as { image?: unknown; error?: unknown }
+			if (!response.ok || typeof payload.image !== "string") {
+				const error = typeof payload.error === "string" ? payload.error : "The image could not be saved."
+				throw new Error(error)
+			}
+			const nameInput = document.getElementById("manageAccountName")
+			const displayName = nameInput instanceof HTMLInputElement
+				? nameInput.value
+				: document.getElementById("authProfileName")?.textContent ?? "Client"
+			renderReferenceAccountAvatar(payload.image, displayName)
+			window.dispatchEvent(new CustomEvent("beauty-sphia:profile-image-updated", { detail: { image: payload.image } }))
+			setMessage("Your profile picture was updated.")
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "The image could not be saved.", true)
+		} finally {
+			avatarInput.value = ""
+			avatarInput.disabled = false
+		}
+	}
+	const sendPasswordResetEmail = async (): Promise<void> => {
+		const email = document.getElementById("manageAccountEmail")
+		if (!(email instanceof HTMLInputElement) || !email.value.trim()) {
+			setMessage("Enter your account email address first.", true)
+			return
+		}
+		if (resetPasswordButton instanceof HTMLButtonElement) {
+			resetPasswordButton.disabled = true
+			resetPasswordButton.textContent = "Sending…"
+		}
+		try {
+			const response = await fetch("/api/auth/password-reset", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					action: "request",
+					email: email.value.trim(),
+					callbackUrl: window.location.href,
+				}),
+			})
+			const result = await readReferenceJson(response)
+			setMessage(
+				response.ok ? result.message ?? "If an account exists for that email, a password reset link has been sent." : result.error ?? "Password reset email could not be sent.",
+				!response.ok,
+			)
+		} catch {
+			setMessage("Password reset email could not be sent. Please try again.", true)
+		} finally {
+			if (resetPasswordButton instanceof HTMLButtonElement) {
+				resetPasswordButton.disabled = false
+				resetPasswordButton.textContent = "Send Reset Email"
+			}
+		}
+	}
+	const togglePasswordVisibility = (inputId: string, button: HTMLElement | null, label: string): void => {
+		const input = document.getElementById(inputId)
+		if (!(input instanceof HTMLInputElement) || !button) return
+		const visible = input.type === "password"
+		input.type = visible ? "text" : "password"
+		button.setAttribute("aria-pressed", String(visible))
+		button.setAttribute("aria-label", `${visible ? "Hide" : "Show"} ${label}`)
+		const icon = button.querySelector("i")
+		icon?.classList.toggle("fa-eye", !visible)
+		icon?.classList.toggle("fa-eye-slash", visible)
+	}
 	const patchAccount = async (
 		payload: Record<string, unknown>,
 	): Promise<boolean> => {
@@ -5273,6 +5425,13 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 			return
 		if (!(await patchAccount({ name: name.value, phone: phone.value }))) return
 		profileInputs.forEach((input) => (input.dataset.dirty = ""))
+		const displayName = name.value.trim() || email.value.trim()
+		const dropdownName = document.getElementById("authProfileName")
+		const dashboardName = document.getElementById("dashboardProfileName")
+		if (dropdownName) dropdownName.textContent = `Welcome, ${displayName}`
+		if (dashboardName) dashboardName.textContent = displayName || "Not provided"
+		const currentAvatar = document.querySelector<HTMLImageElement>("#authProfileTrigger img[data-account-avatar]")?.src ?? null
+		renderReferenceAccountAvatar(currentAvatar, displayName)
 		const requestedEmail = email.value.trim().toLowerCase()
 		const currentEmail = (email.dataset.currentValue ?? "").trim().toLowerCase()
 		if (requestedEmail && requestedEmail !== currentEmail) {
@@ -5343,6 +5502,11 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 				notifyPush: notifyPush.checked,
 			})
 		) {
+			applyAccountDisplayPreferences({
+				fontSize: fontSize.value as "small" | "medium" | "large",
+				highContrast: highContrast.checked,
+				reducedMotion: reducedMotion.checked,
+			})
 			theme.dataset.dirty = ""
 			setMessage("Preferences saved.")
 		}
@@ -5380,8 +5544,14 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 		await signOut({ redirect: false })
 		window.location.reload()
 	}
+	const toggleCurrentPassword = (): void => togglePasswordVisibility("manageAccountCurrentPassword", currentPasswordToggle, "current password")
+	const toggleNewPassword = (): void => togglePasswordVisibility("manageAccountNewPassword", newPasswordToggle, "new password")
+	avatarInput?.addEventListener("change", uploadAvatar)
 	profileButton?.addEventListener("click", saveProfile)
 	passwordButton?.addEventListener("click", changePassword)
+	resetPasswordButton?.addEventListener("click", sendPasswordResetEmail)
+	currentPasswordToggle?.addEventListener("click", toggleCurrentPassword)
+	newPasswordToggle?.addEventListener("click", toggleNewPassword)
 	preferencesButton?.addEventListener("click", savePreferences)
 	const themeSelect = document.getElementById("manageAccountThemeSelect")
 	themeSelect?.addEventListener("change", updateThemeImmediately)
@@ -5393,8 +5563,12 @@ function bindAccountMutationAdapter(tenantSlug = ""): () => void {
 	return () => {
 		profileInputs.forEach((input) => input.removeEventListener("input", markProfileInputDirty))
 		newPasswordInput?.removeEventListener("input", updatePasswordStrength)
+		avatarInput?.removeEventListener("change", uploadAvatar)
 		profileButton?.removeEventListener("click", saveProfile)
 		passwordButton?.removeEventListener("click", changePassword)
+		resetPasswordButton?.removeEventListener("click", sendPasswordResetEmail)
+		currentPasswordToggle?.removeEventListener("click", toggleCurrentPassword)
+		newPasswordToggle?.removeEventListener("click", toggleNewPassword)
 		preferencesButton?.removeEventListener("click", savePreferences)
 		themeSelect?.removeEventListener("change", updateThemeImmediately)
 		deleteButton?.removeEventListener("click", openDelete)
