@@ -349,6 +349,11 @@ body.splash-active .platform-home-shell {
   pointer-events: none;
 }
 
+body.splash-revealing .platform-home-shell {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 html.splash-active,
 body.splash-active {
   overflow: hidden;
@@ -357,7 +362,7 @@ body.splash-active {
 .platform-home-shell {
   opacity: 1;
   pointer-events: auto;
-  transition: opacity .25s ease;
+  transition: opacity .85s ease;
 }
 
 /* Keep platform typography identical to the Royal Braids storefront tokens. */
@@ -417,7 +422,7 @@ main {
 .splash-screen.splash-hide {
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-100%);
+  transform: scale(1.015);
   pointer-events: none;
 }
 
@@ -638,24 +643,23 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .splash-screen--platform .splash-loading-dots span {
-  opacity: 0;
-  transform: none;
-  animation: platform-splash-dot-sequence 1.2s steps(1, end) infinite;
+  opacity: .28;
+  transform: translateY(0);
+  animation: platform-splash-dot-sequence .72s ease-in-out infinite;
 }
 
 .splash-screen--platform .splash-loading-dots span:nth-child(2) {
-  animation-delay: .3s;
+  animation-delay: .12s;
 }
 
 .splash-screen--platform .splash-loading-dots span:nth-child(3) {
-  animation-delay: .6s;
+  animation-delay: .24s;
 }
 
 @keyframes platform-splash-dot-sequence {
   0%,
-  24.99% { opacity: 1; }
-  25%,
-  100% { opacity: 0; }
+  100% { opacity: .28; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-.045em); }
 }
 
 @keyframes platform-splash-dot {

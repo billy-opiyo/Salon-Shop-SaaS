@@ -39,7 +39,7 @@ export function AndroidAppUpdatePrompt({
 
 	const checkForUpdate = useCallback(async () => {
 		if (!websiteChannel || !siteOrigin || window.location.origin !== siteOrigin
-			|| !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android" || !navigator.onLine) return
+			|| !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return
 		try {
 			const info = await App.getInfo()
 			const appChannel = resolveAndroidUpdateChannel(
@@ -89,16 +89,20 @@ export function AndroidAppUpdatePrompt({
 		let handle: PluginListenerHandle | undefined
 		const check = () => { if (active) void checkForUpdate() }
 		check()
+		const retryTimers = [2_000, 6_000].map((delay) => window.setTimeout(check, delay))
 		const interval = window.setInterval(check, 3 * 60 * 1000)
 		document.addEventListener("visibilitychange", check)
+		window.addEventListener("online", check)
 		void App.addListener("appStateChange", ({ isActive }) => { if (isActive) check() }).then((created) => {
 			if (active) handle = created
 			else void created.remove()
 		})
 		return () => {
 			active = false
+			retryTimers.forEach(window.clearTimeout)
 			window.clearInterval(interval)
 			document.removeEventListener("visibilitychange", check)
+			window.removeEventListener("online", check)
 			if (handle) void handle.remove()
 		}
 	}, [checkForUpdate])

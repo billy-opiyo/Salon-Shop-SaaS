@@ -31,13 +31,13 @@ export function ExperienceSplash({
 			// Session storage can be unavailable in restricted browser contexts.
 		}
 		if (alreadyCompleted) {
-			root.classList.remove("splash-active")
-			body.classList.remove("splash-active")
+			root.classList.remove("splash-active", "splash-revealing")
+			body.classList.remove("splash-active", "splash-revealing")
 			root.classList.add("splash-complete")
 			body.classList.add("splash-complete")
 			return () => {
-				root.classList.remove("splash-active", "splash-complete")
-				body.classList.remove("splash-active", "splash-complete")
+				root.classList.remove("splash-active", "splash-revealing", "splash-complete")
+				body.classList.remove("splash-active", "splash-revealing", "splash-complete")
 			}
 		}
 		// Treat the splash as a one-time session entrance as soon as it starts.
@@ -70,6 +70,8 @@ export function ExperienceSplash({
 			}
 
 			hideTimeoutId = window.setTimeout(() => {
+				root.classList.add("splash-revealing")
+				body.classList.add("splash-revealing")
 				setIsExiting(true)
 				completeTimeoutId = window.setTimeout(() => {
 					try {
@@ -77,8 +79,8 @@ export function ExperienceSplash({
 					} catch {
 						// The splash remains usable when session storage is unavailable.
 					}
-					root.classList.remove("splash-active")
-					body.classList.remove("splash-active")
+					root.classList.remove("splash-active", "splash-revealing")
+					body.classList.remove("splash-active", "splash-revealing")
 					root.classList.add("splash-complete")
 					body.classList.add("splash-complete")
 				}, prefersReducedMotion ? 0 : SPLASH_EXIT_TRANSITION_MS)
@@ -90,8 +92,8 @@ export function ExperienceSplash({
 			window.cancelAnimationFrame(animationFrameId)
 			window.clearTimeout(hideTimeoutId)
 			window.clearTimeout(completeTimeoutId)
-			root.classList.remove("splash-active", "splash-complete")
-			body.classList.remove("splash-active", "splash-complete")
+			root.classList.remove("splash-active", "splash-revealing", "splash-complete")
+			body.classList.remove("splash-active", "splash-revealing", "splash-complete")
 		}
 	}, [])
 
