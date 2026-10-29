@@ -5125,6 +5125,28 @@ html.splash-active .splash-handwriting-letter {
 	}
 }
 
+/* The splash status remains animated even when the OS asks for reduced motion;
+   this opacity-only pulse stays subtle while making the live loading state clear. */
+@media (prefers-reduced-motion: reduce) {
+	.splash-screen--platform .splash-loading-dots span {
+		animation: platform-splash-dot-reduced .72s ease-in-out infinite !important;
+		transform: none;
+	}
+
+	.splash-screen--platform .splash-loading-dots span:nth-child(2) {
+		animation-delay: .12s !important;
+	}
+
+	.splash-screen--platform .splash-loading-dots span:nth-child(3) {
+		animation-delay: .24s !important;
+	}
+}
+
+@keyframes platform-splash-dot-reduced {
+	0%, 100% { opacity: .3; }
+	50% { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.platform-floating-whatsapp,
 	.platform-back-to-top {
