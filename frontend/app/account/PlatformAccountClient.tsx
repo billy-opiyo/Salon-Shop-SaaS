@@ -46,7 +46,8 @@ export function PlatformAccountClient({
 	const [newPassword, setNewPassword] = useState("")
 	const [message, setMessage] = useState("")
 	const [error, setError] = useState(false)
-	const [busy, setBusy] = useState(false)
+	const [pendingAction, setPendingAction] = useState<string | null>(null)
+	const busy = pendingAction !== null
 	const [editingBooking, setEditingBooking] = useState<string | null>(null)
 	const [newDate, setNewDate] = useState("")
 	const [newTime, setNewTime] = useState("")
@@ -69,7 +70,7 @@ export function PlatformAccountClient({
 
 	const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
-		setBusy(true)
+		setPendingAction("profile")
 		setStatus("Saving your profile…")
 		try {
 			if (!(await patchAccount({ name, phone }))) return
@@ -95,7 +96,7 @@ export function PlatformAccountClient({
 		} catch {
 			setStatus("Your profile could not be saved. Please try again.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
@@ -106,7 +107,7 @@ export function PlatformAccountClient({
 			setStatus("Choose an image under 1 MB.", true)
 			return
 		}
-		setBusy(true)
+		setPendingAction("avatar")
 		setStatus("Uploading your profile picture…")
 		try {
 			const formData = new FormData()
@@ -122,13 +123,13 @@ export function PlatformAccountClient({
 			setStatus(uploadError instanceof Error ? uploadError.message : "The image could not be saved.", true)
 		} finally {
 			event.target.value = ""
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
 	const changePassword = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
-		setBusy(true)
+		setPendingAction("password")
 		setStatus("Updating your password…")
 		try {
 			if (await patchAccount({ currentPassword, newPassword })) {
@@ -139,12 +140,13 @@ export function PlatformAccountClient({
 		} catch {
 			setStatus("Your password could not be changed. Please try again.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
 	const requestPasswordReset = async () => {
-		setBusy(true)
+		setPendingAction("password-reset")
+		setStatus("Sending your password reset email…")
 		try {
 			const response = await fetch("/api/auth/password-reset", {
 				method: "POST",
@@ -156,13 +158,13 @@ export function PlatformAccountClient({
 		} catch {
 			setStatus("Password reset email could not be sent.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
 	const savePreferences = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
-		setBusy(true)
+		setPendingAction("preferences")
 		setStatus("Saving your preferences…")
 		try {
 			if (await patchAccount(preferences)) {
@@ -172,13 +174,14 @@ export function PlatformAccountClient({
 		} catch {
 			setStatus("Your preferences could not be saved.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
 	const cancelBooking = async (bookingId: string, tenantSlug: string) => {
 		if (!window.confirm("Cancel this appointment?")) return
-		setBusy(true)
+		setPendingAction(`cancel:${bookingId}`)
+		setStatus("Cancelling your appointment…")
 		try {
 			const response = await fetch("/api/account/bookings", {
 				method: "POST",
@@ -192,7 +195,7 @@ export function PlatformAccountClient({
 		} catch (cancelError) {
 			setStatus(cancelError instanceof Error ? cancelError.message : "This appointment could not be cancelled.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
@@ -201,7 +204,8 @@ export function PlatformAccountClient({
 			setStatus("Choose a new date and time first.", true)
 			return
 		}
-		setBusy(true)
+		setPendingAction(`reschedule:${booking.id}`)
+		setStatus("Saving your new appointment time…")
 		try {
 			const response = await fetch("/api/account/bookings/reschedule", {
 				method: "POST",
@@ -216,13 +220,14 @@ export function PlatformAccountClient({
 		} catch (rescheduleError) {
 			setStatus(rescheduleError instanceof Error ? rescheduleError.message : "That appointment time is unavailable.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
 	const deleteAccount = async () => {
 		if (!canDeleteAccount || !window.confirm("Permanently delete your Beauty Sphia account? This cannot be undone.")) return
-		setBusy(true)
+		setPendingAction("delete")
+		setStatus("Deleting your account…")
 		try {
 			const response = await fetch("/api/account", { method: "DELETE" })
 			const result = await response.json().catch(() => ({})) as { error?: string }
@@ -233,7 +238,7 @@ export function PlatformAccountClient({
 		} catch (deleteError) {
 			setStatus(deleteError instanceof Error ? deleteError.message : "Your account could not be deleted.", true)
 		} finally {
-			setBusy(false)
+			setPendingAction(null)
 		}
 	}
 
@@ -247,13 +252,13 @@ export function PlatformAccountClient({
 					<p className="eyebrow">Profile</p><h2 id="platform-profile-title">Personal details</h2>
 					<div className="platform-account-avatar-row">
 						{image ? <Image className="platform-account-profile-image" src={image} alt="Your profile picture" width={88} height={88} unoptimized /> : <div className="platform-account-profile-initial" aria-hidden="true">{snapshot.profile.email.charAt(0).toUpperCase()}</div>}
-						<label className="button button--outline button--small">Change picture<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={uploadAvatar} disabled={busy} /><small>JPG, PNG, WebP, or GIF · up to 1 MB</small></label>
+						<label className="button button--outline button--small" aria-busy={pendingAction === "avatar"}>{pendingAction === "avatar" ? "Uploading…" : "Change picture"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={uploadAvatar} disabled={busy} /><small>JPG, PNG, WebP, or GIF · up to 1 MB</small></label>
 					</div>
 					<form className="platform-account-form" onSubmit={saveProfile}>
 						<label>Full name<input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required /></label>
 						<label>Email address<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />{pendingEmail ? <small>Confirmation sent to {pendingEmail}. Your current email remains active until you verify it.</small> : <small>Email changes take effect after you confirm the message sent to the new address.</small>}</label>
 						<label>Phone number<input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={40} /></label>
-						<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button>
+						<button className="button button--primary" type="submit" disabled={busy} aria-busy={pendingAction === "profile"}>{pendingAction === "profile" ? "Saving…" : "Save profile"}</button>
 					</form>
 				</section>
 
@@ -262,9 +267,9 @@ export function PlatformAccountClient({
 					<form className="platform-account-form" onSubmit={changePassword}>
 						<label>Current password<input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
 						<label>New password<input type="password" autoComplete="new-password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><small>Use at least 12 characters.</small></label>
-						<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Updating…" : "Change password"}</button>
+						<button className="button button--primary" type="submit" disabled={busy} aria-busy={pendingAction === "password"}>{pendingAction === "password" ? "Changing…" : "Change password"}</button>
 					</form>
-					<button className="button button--primary platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy}>Send password reset email</button>
+					<button className="button button--primary platform-account-password-reset" type="button" onClick={() => void requestPasswordReset()} disabled={busy} aria-busy={pendingAction === "password-reset"}>{pendingAction === "password-reset" ? "Sending…" : "Send password reset email"}</button>
 					<h3 className="platform-account-subheading">Recent sign-ins</h3>
 					{snapshot.loginHistory.length ? <ul className="platform-account-history">{snapshot.loginHistory.slice(0, 6).map((item) => <li key={item.id}><strong>{item.provider}</strong><span>{item.status} · {item.riskLevel ?? "standard"}</span><small>{item.country ?? "Unknown location"} · {new Date(item.createdAt).toLocaleDateString("en-KE")}</small></li>)}</ul> : <p className="platform-account-empty">Recent sign-ins will appear here.</p>}
 				</section>
@@ -283,7 +288,7 @@ export function PlatformAccountClient({
 							<label><input type="checkbox" checked={preferences.notifySms} onChange={(event) => setPreferences((current) => ({ ...current, notifySms: event.target.checked }))} /> SMS notifications</label>
 							<label><input type="checkbox" checked={preferences.notifyPush} onChange={(event) => setPreferences((current) => ({ ...current, notifyPush: event.target.checked }))} /> Push notifications</label>
 						</div>
-						<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save preferences"}</button>
+						<button className="button button--primary" type="submit" disabled={busy} aria-busy={pendingAction === "preferences"}>{pendingAction === "preferences" ? "Saving…" : "Save preferences"}</button>
 					</form>
 				</section>
 
@@ -294,8 +299,8 @@ export function PlatformAccountClient({
 						const canReschedule = ["pending", "confirmed"].includes(booking.status)
 						return <article className="platform-account-booking" key={booking.id}>
 							<div className="platform-account-booking__details"><p className="eyebrow">{booking.tenantName}</p><h3>{booking.serviceName}</h3><span>{booking.appointmentDate} at {booking.timeLabel} · {booking.stylistName ?? "Any available stylist"}</span>{booking.specialRequests && <small>Note: {booking.specialRequests}</small>}</div>
-							<div className="platform-account-booking__actions"><span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span><Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>{canManage && <button className="button button--outline button--small" type="button" disabled={busy} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>Cancel</button>}{canReschedule && <button className="button button--outline button--small" type="button" disabled={busy} aria-expanded={editingBooking === booking.id} onClick={() => { setEditingBooking((current) => current === booking.id ? null : booking.id); setNewDate(booking.appointmentDate); setNewTime(booking.timeLabel) }}>{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}</button>}</div>
-							{editingBooking === booking.id && <form className="platform-account-reschedule" onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}><label>New date<input type="date" min={today} value={newDate} onChange={(event) => setNewDate(event.target.value)} required /></label><label>New time<input type="text" value={newTime} onChange={(event) => setNewTime(event.target.value)} placeholder="e.g. 10:30 AM" maxLength={40} required /></label><button className="button button--primary button--small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save new time"}</button><small>The salon will confirm availability for your requested time.</small></form>}
+							<div className="platform-account-booking__actions"><span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span><Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>{canManage && <button className="button button--outline button--small" type="button" disabled={busy} aria-busy={pendingAction === `cancel:${booking.id}`} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>{pendingAction === `cancel:${booking.id}` ? "Cancelling…" : "Cancel"}</button>}{canReschedule && <button className="button button--outline button--small" type="button" disabled={busy} aria-expanded={editingBooking === booking.id} onClick={() => { setEditingBooking((current) => current === booking.id ? null : booking.id); setNewDate(booking.appointmentDate); setNewTime(booking.timeLabel) }}>{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}</button>}</div>
+							{editingBooking === booking.id && <form className="platform-account-reschedule" onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}><label>New date<input type="date" min={today} value={newDate} onChange={(event) => setNewDate(event.target.value)} required /></label><label>New time<input type="text" value={newTime} onChange={(event) => setNewTime(event.target.value)} placeholder="e.g. 10:30 AM" maxLength={40} required /></label><button className="button button--primary button--small" type="submit" disabled={busy} aria-busy={pendingAction === `reschedule:${booking.id}`}>{pendingAction === `reschedule:${booking.id}` ? "Saving…" : "Save new time"}</button><small>The salon will confirm availability for your requested time.</small></form>}
 						</article>
 					})}</div> : <p className="platform-account-empty">No appointments are linked to your Beauty Sphia account yet. Browse salons to book your next visit.</p>}
 				</section>
@@ -312,7 +317,7 @@ export function PlatformAccountClient({
 
 				<section className="platform-account-panel platform-account-panel--wide platform-account-danger" aria-labelledby="platform-delete-title">
 					<p className="eyebrow">Privacy controls</p><h2 id="platform-delete-title">Delete your account</h2>
-					{canDeleteAccount ? <><p>Deleting your account permanently removes your Beauty Sphia sign-in and personal profile.</p><button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy}>Delete account permanently</button></> : <p>Transfer or remove your salon ownership before deleting this account. Your salon workspaces are connected to this sign-in.</p>}
+					{canDeleteAccount ? <><p>Deleting your account permanently removes your Beauty Sphia sign-in and personal profile.</p><button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy} aria-busy={pendingAction === "delete"}>{pendingAction === "delete" ? "Deleting…" : "Delete account permanently"}</button></> : <p>Transfer or remove your salon ownership before deleting this account. Your salon workspaces are connected to this sign-in.</p>}
 				</section>
 			</div>
 		</div>
