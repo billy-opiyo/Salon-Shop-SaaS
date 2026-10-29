@@ -15,6 +15,7 @@ export function ContactForm({ tenantSlug = "royal-braids" }: ContactFormProps) {
 	const [status, setStatus] = useState<FormStatus>("idle")
 	const [message, setMessage] = useState("")
 	const [token, setToken] = useState("")
+	const [turnstileAttempt, setTurnstileAttempt] = useState(0)
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault()
@@ -61,18 +62,21 @@ export function ContactForm({ tenantSlug = "royal-braids" }: ContactFormProps) {
 		} catch {
 			setStatus("error")
 			setMessage("The message could not be sent. Please try again.")
+		} finally {
+			setToken("")
+			setTurnstileAttempt((attempt) => attempt + 1)
 		}
 	}
 
 	return (
-		<form className="platform-contact__form" onSubmit={handleSubmit} noValidate>
+		<form className="platform-contact__form" onSubmit={handleSubmit}>
 			<div className="platform-contact__row">
 				<label>
-					<span>Your name</span>
+					<span>Your name <span className="platform-contact__required" aria-hidden="true">*</span></span>
 					<input name="name" required minLength={2} maxLength={160} placeholder="Jane Doe" />
 				</label>
 				<label>
-					<span>Email address</span>
+					<span>Email address <span className="platform-contact__required" aria-hidden="true">*</span></span>
 					<input
 						name="email"
 						type="email"
@@ -83,7 +87,7 @@ export function ContactForm({ tenantSlug = "royal-braids" }: ContactFormProps) {
 				</label>
 			</div>
 			<label>
-				<span>Subject</span>
+				<span>Subject <span className="platform-contact__required" aria-hidden="true">*</span></span>
 				<input
 					name="subject"
 					required
@@ -93,7 +97,7 @@ export function ContactForm({ tenantSlug = "royal-braids" }: ContactFormProps) {
 				/>
 			</label>
 			<label>
-				<span>Message</span>
+				<span>Message <span className="platform-contact__required" aria-hidden="true">*</span></span>
 				<textarea
 					name="message"
 					required
@@ -103,7 +107,7 @@ export function ContactForm({ tenantSlug = "royal-braids" }: ContactFormProps) {
 					placeholder="Tell us about your salon or your question…"
 				/>
 			</label>
-			<TurnstileWidget onToken={setToken} />
+			<TurnstileWidget key={turnstileAttempt} onToken={setToken} />
 			{status === "success" && (
 				<p className="form-message--success" role="status">
 					{message}

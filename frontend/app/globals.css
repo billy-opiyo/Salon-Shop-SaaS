@@ -3365,6 +3365,11 @@ html.splash-active .splash-handwriting-letter {
   font-size: .78rem;
 }
 
+.platform-contact__required {
+  margin-left: .15rem;
+  color: var(--gold-soft, var(--gold));
+}
+
 .platform-contact__form input,
 .platform-contact__form textarea {
   width: 100%;

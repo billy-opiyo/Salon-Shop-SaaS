@@ -15,6 +15,7 @@ declare global {
 				},
 			) => string
 			remove: (widgetId: string) => void
+			reset: (widgetId?: string) => void
 		}
 	}
 }
