@@ -5502,6 +5502,92 @@ html.splash-active .splash-handwriting-letter {
 	opacity: .55;
 }
 
+.platform-account-delete-help {
+	display: block;
+	max-width: 58ch;
+	margin-top: .65rem;
+	color: var(--muted);
+	line-height: 1.55;
+}
+
+.platform-account-delete-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100002;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+	background: rgba(9, 7, 5, .76);
+	backdrop-filter: blur(8px);
+}
+
+.platform-account-delete-dialog {
+	width: min(100%, 29rem);
+	max-height: min(90vh, 42rem);
+	overflow: auto;
+	padding: clamp(1.25rem, 4vw, 2rem);
+	border: 1px solid rgba(224, 113, 105, .48);
+	border-radius: 1.1rem;
+	background: var(--surface, #251b10);
+	color: var(--foreground, #fff8e8);
+	box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .52);
+}
+
+.platform-account-delete-dialog:focus {
+	outline: 2px solid var(--gold);
+	outline-offset: 3px;
+}
+
+.platform-account-delete-dialog > .eyebrow {
+	color: #ffb6ad;
+}
+
+.platform-account-delete-dialog h2 {
+	margin: .35rem 0 .75rem;
+	font-family: var(--font-heading, Georgia, serif);
+	font-size: clamp(1.4rem, 5vw, 1.8rem);
+}
+
+.platform-account-delete-dialog > p:not(.eyebrow) {
+	color: var(--muted);
+	line-height: 1.65;
+}
+
+.platform-account-delete-dialog .platform-account-delete-dialog__error {
+	color: #ffb6ad;
+}
+
+.platform-account-delete-dialog__actions {
+	display: flex;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+	gap: .7rem;
+	margin-top: 1.5rem;
+}
+
+.platform-account-delete-dialog__actions .button {
+	min-width: 6.5rem;
+}
+
+.platform-account-delete-dialog__actions .platform-account-delete-button {
+	background: rgba(150, 43, 43, .2);
+}
+
+.platform-account-delete-dialog__actions .platform-account-delete-button:hover,
+.platform-account-delete-dialog__actions .platform-account-delete-button:focus-visible {
+	background: rgba(150, 43, 43, .34);
+}
+
+@media (max-width: 480px) {
+	.platform-account-delete-dialog__actions {
+		flex-direction: column-reverse;
+	}
+
+	.platform-account-delete-dialog__actions .button {
+		width: 100%;
+	}
+}
+
 /* Center the requested public page section headings and actions. */
 .platform-showcase > .eyebrow,
 .platform-showcase .showcase-copy,
@@ -5887,6 +5973,49 @@ html.splash-active .splash-handwriting-letter {
 .platform-account-reschedule input:focus-visible {
 	outline: 2px solid var(--gold);
 	outline-offset: 2px;
+}
+
+.platform-account-password-group {
+	display: grid;
+	gap: .4rem;
+}
+
+.platform-account-password-field {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.platform-account-form .platform-account-password-field input {
+	padding-right: 3.25rem;
+}
+
+.platform-account-password-toggle {
+	position: absolute;
+	right: .35rem;
+	top: 50%;
+	display: grid;
+	width: 2.3rem;
+	height: 2.3rem;
+	place-items: center;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transform: translateY(-50%);
+}
+
+.platform-account-password-toggle:hover,
+.platform-account-password-toggle:focus-visible {
+	background: color-mix(in srgb, var(--gold) 12%, transparent);
+	color: var(--gold-soft);
+}
+
+.platform-account-password-toggle:focus-visible {
+	outline: 2px solid var(--gold);
+	outline-offset: 1px;
 }
 
 .platform-account-form__row {
