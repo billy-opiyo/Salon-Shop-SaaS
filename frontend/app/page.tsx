@@ -45,6 +45,9 @@ function formatPlanAmount(amountMinor: number, currency: string): string {
 	return new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency,
+		currencyDisplay: "code",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
 	}).format(amountMinor / 100)
 }
 

@@ -16,6 +16,7 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 	const [messageType, setMessageType] = useState<"success" | "error" | "notice" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const [turnstileToken, setTurnstileToken] = useState("")
+	const [turnstileAttempt, setTurnstileAttempt] = useState(0)
 
 	async function handleGoogleSignUp() {
 		setMessage("")
@@ -42,6 +43,8 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 		setIsSubmitting(true)
 		try {
 			const result = await registerAccount(new FormData(event.currentTarget))
+			setTurnstileToken("")
+			setTurnstileAttempt((attempt) => attempt + 1)
 			if (!result.ok) {
 				setMessage(result.message)
 				setMessageType("error")
@@ -53,6 +56,8 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 			setMessageType(result.verificationSent ? "success" : "notice")
 			form.reset()
 		} catch {
+			setTurnstileToken("")
+			setTurnstileAttempt((attempt) => attempt + 1)
 			setMessage("Account creation is temporarily unavailable. Please try again.")
 			setMessageType("error")
 		} finally {
@@ -112,7 +117,7 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 				readOnly
 			/>
 			<input name="callbackUrl" type="hidden" value={getSafeAuthCallbackUrl(callbackUrl)} readOnly />
-			<TurnstileWidget onToken={setTurnstileToken} />
+			<TurnstileWidget key={turnstileAttempt} onToken={setTurnstileToken} />
 			<button
 				className="button button--primary auth-submit-btn"
 				type="submit"

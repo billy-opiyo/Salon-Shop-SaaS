@@ -181,6 +181,10 @@ export async function listTenantsForUser(userId: string) {
 			slug: true,
 			businessName: true,
 			status: true,
+			memberships: {
+				where: { userId, status: "ACTIVE" },
+				select: { role: true, canManageBilling: true, canManageContent: true },
+			},
 			subscription: {
 				select: {
 					status: true,
