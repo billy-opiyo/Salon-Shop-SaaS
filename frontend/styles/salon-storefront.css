@@ -12901,3 +12901,35 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
 .salon-storefront-root .splash-progress-fill::after {
     display: none;
 }
+
+/* Client account display preferences apply across Beauty Sphia and its salons. */
+html[data-client-font-size="small"] {
+    font-size: 15px;
+}
+
+html[data-client-font-size="large"] {
+    font-size: 18px;
+}
+
+html[data-client-high-contrast="true"] .salon-storefront-root {
+    --text-primary: #ffffff;
+    --text-secondary: #f0eadf;
+    --text-muted: #e1d8c8;
+    --border: rgba(255, 255, 255, .62);
+}
+
+html[data-client-high-contrast="true"] body.light-mode .salon-storefront-root {
+    --text-primary: #17120b;
+    --text-secondary: #342a1d;
+    --text-muted: #4b4031;
+    --border: rgba(45, 34, 18, .55);
+}
+
+html[data-client-reduced-motion="true"] .salon-storefront-root *,
+html[data-client-reduced-motion="true"] .salon-storefront-root *::before,
+html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+}
