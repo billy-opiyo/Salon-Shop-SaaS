@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
+import { useEffect, useRef } from "react"
 
 export interface MerchantWorkspaceNavigationAccess {
 	readonly canManageBookings: boolean
@@ -23,8 +24,21 @@ export function MerchantWorkspaceNavigation({
 }) {
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
+	const currentRoute = `${pathname}?${searchParams.toString()}`
+	const previousRoute = useRef(currentRoute)
 	const basePath = `/manage/${tenantSlug}`
 	const isMainConsole = pathname.replace(/\/$/, "") === basePath
+	useEffect(() => {
+		if (previousRoute.current === currentRoute) return
+		previousRoute.current = currentRoute
+		const frame = window.requestAnimationFrame(() => {
+			const page = document.querySelector<HTMLElement>(
+				".merchant-workspace-panel main.manage-page",
+			)
+			page?.scrollIntoView({ behavior: "smooth", block: "start" })
+		})
+		return () => window.cancelAnimationFrame(frame)
+	}, [currentRoute])
 	if (!access) return null
 	if (isMainConsole !== (placement === "console")) return null
 

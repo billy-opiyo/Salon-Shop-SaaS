@@ -1,4 +1,5 @@
 import "../../../styles/salon-storefront.css"
+import { Suspense } from "react"
 import Link from "next/link"
 import { auth } from "@/auth"
 import { prisma } from "@backend/db/prisma"
@@ -13,7 +14,27 @@ export default function TenantAdminLayout({
 		children: React.ReactNode
 		params: Promise<{ tenantSlug: string }>
 	}>) {
-	return <TenantAdminLayoutContent params={params}>{children}</TenantAdminLayoutContent>
+	return (
+		<Suspense fallback={<TenantAdminLoadingShell />}>
+			<TenantAdminLayoutContent params={params}>{children}</TenantAdminLayoutContent>
+		</Suspense>
+	)
+}
+
+function TenantAdminLoadingShell() {
+	return (
+		<div className="platform-site merchant-workspace-shell" aria-busy="true">
+			<header className="admin-bookings-header merchant-admin-console-banner">
+				<div className="admin-console-heading">
+					<div className="section-subtitle">Salon Admin</div>
+					<h1 className="section-title">Salon admin</h1>
+				</div>
+			</header>
+			<div className="admin-panel merchant-workspace-panel merchant-workspace-loading">
+				<p role="status">Loading the selected salon admin page…</p>
+			</div>
+		</div>
+	)
 }
 
 async function TenantAdminLayoutContent({

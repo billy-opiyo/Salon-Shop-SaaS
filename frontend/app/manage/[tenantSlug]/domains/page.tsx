@@ -17,16 +17,19 @@ export default async function MerchantDomainsPage({
 	const { tenantSlug } = await params
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/domains`))
-	let domains
+	let domains: Awaited<ReturnType<typeof listDomainsForUser>> = []
+	let domainMessage: string | null = null
 	try {
 		domains = await listDomainsForUser(session.user.id, tenantSlug)
 	} catch (error) {
-		if (
-			error instanceof TenantDomainError ||
-			(error instanceof Error && error.name === "AuthorizationError")
-		)
+		if (error instanceof Error && error.name === "AuthorizationError")
 			redirect(`/manage/${tenantSlug}`)
+		if (error instanceof TenantDomainError) {
+			domains = []
+			domainMessage = error.message
+		} else {
 		throw error
+		}
 	}
 	return (
 		<main className="manage-page">
@@ -39,15 +42,21 @@ export default async function MerchantDomainsPage({
 					</p>
 				</div>
 			</header>
-			<DomainManager
-				tenantSlug={tenantSlug}
-				initialDomains={domains.map((domain) => ({
-					...domain,
-					verifiedAt: domain.verifiedAt?.toISOString() ?? null,
-					verificationTokenExpiresAt:
-						domain.verificationTokenExpiresAt?.toISOString() ?? null,
-				}))}
-			/>
+			{domainMessage ? (
+				<p className="form-message form-message--error" role="status">
+					{domainMessage}
+				</p>
+			) : (
+				<DomainManager
+					tenantSlug={tenantSlug}
+					initialDomains={domains.map((domain) => ({
+						...domain,
+						verifiedAt: domain.verifiedAt?.toISOString() ?? null,
+						verificationTokenExpiresAt:
+							domain.verificationTokenExpiresAt?.toISOString() ?? null,
+					}))}
+				/>
+			)}
 		</main>
 	)
 }

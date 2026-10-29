@@ -3131,12 +3131,12 @@ export function bindAdminSnapshotAdapter(
 					})
 				document
 					.querySelectorAll<HTMLElement>("[data-admin-section]")
-					.forEach((item) =>
-						item.classList.toggle(
-							"active",
-							item.dataset.adminSection === section,
-						),
-					)
+					.forEach((item) => {
+						const active = item.dataset.adminSection === section
+						item.classList.toggle("active", active)
+						if (active)
+							item.scrollIntoView({ behavior: "smooth", block: "start" })
+					})
 				const nextUrl = new URL(window.location.href)
 				nextUrl.searchParams.set("section", section)
 				window.history.replaceState(window.history.state, "", nextUrl)
