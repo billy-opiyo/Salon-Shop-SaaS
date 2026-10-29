@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { useRef, useState, type FormEvent } from "react"
 
 import type { PlatformTeamMemberView } from "@shared/types/platformTeam"
 import { getImageUploadError } from "@shared/validation/media"
@@ -70,6 +70,7 @@ export function PlatformTeamManager({
 	const [removingId, setRemovingId] = useState<string | null>(null)
 	const [message, setMessage] = useState("")
 	const [error, setError] = useState("")
+	const formRef = useRef<HTMLFormElement>(null)
 
 	function updateField<K extends keyof TeamFormState>(
 		field: K,
@@ -104,7 +105,10 @@ export function PlatformTeamManager({
 		setAvatar(null)
 		setMessage("")
 		setError("")
-		window.scrollTo({ top: 0, behavior: "smooth" })
+		window.requestAnimationFrame(() => {
+			formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+			formRef.current?.querySelector<HTMLInputElement>('input[name="name"]')?.focus({ preventScroll: true })
+		})
 	}
 
 	async function submit(event: FormEvent<HTMLFormElement>) {
@@ -194,7 +198,7 @@ export function PlatformTeamManager({
 					Add team member
 				</button>
 			</div>
-			<form className="platform-team-form platform-admin-form" onSubmit={submit}>
+			<form id="platform-team-form" ref={formRef} className="platform-team-form platform-admin-form" onSubmit={submit}>
 				<div className="platform-team-form__grid">
 					<label>Name<input name="name" value={form.name} onChange={(event) => updateField("name", event.target.value)} required maxLength={120} /></label>
 					<label>Role<input name="role" value={form.role} onChange={(event) => updateField("role", event.target.value)} required maxLength={120} /></label>

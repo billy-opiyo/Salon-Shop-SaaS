@@ -31,7 +31,11 @@
 }
 
 .platform-storefront-form fieldset {
-	scroll-margin-top: 1.5rem;
+	scroll-margin-top: 9rem;
+}
+
+.platform-team-form {
+	scroll-margin-top: 9rem;
 }
 
 /* The shared homepage shell clips its artwork. Keep that behavior off the
@@ -618,6 +622,11 @@
 		gap: 1rem;
 		margin-bottom: 1.25rem;
 		padding: .75rem 0 1rem;
+	}
+
+	.platform-storefront-form fieldset,
+	.platform-team-form {
+		scroll-margin-top: 14rem;
 	}
 
 	.platform-admin-header__meta {
