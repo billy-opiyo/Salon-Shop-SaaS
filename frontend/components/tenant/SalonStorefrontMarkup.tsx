@@ -149,6 +149,7 @@ export function SalonStorefrontMarkup({
 					<a href="#blog">Blog</a>
 					<a href="#visit">Visit Us</a>
 					<a href="#contact">Contact</a>
+					<a href="https://beauty-sphia-staging.vercel.app/">Beauty Sphia Home</a>
 				</nav>
 
 				<div className="header-actions">
