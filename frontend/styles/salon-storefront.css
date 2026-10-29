@@ -12772,3 +12772,94 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* Keep route changes inside the salon console feeling immediate and in view. */
+.merchant-workspace-panel {
+    width: min(1280px, calc(100% - 1.5rem));
+}
+
+.merchant-workspace-panel main.manage-page,
+.merchant-workspace-panel [data-admin-section] {
+    scroll-margin-top: 1rem;
+}
+
+.merchant-admin-loading-card {
+    min-height: 8rem;
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    border-radius: .85rem;
+    background: linear-gradient(100deg, var(--bg-primary) 25%, color-mix(in srgb, var(--bg-card) 70%, var(--primary) 8%) 45%, var(--bg-primary) 65%);
+    background-size: 220% 100%;
+    animation: merchant-admin-loading-sheen 1.3s ease-in-out infinite;
+}
+
+@keyframes merchant-admin-loading-sheen {
+    to { background-position-x: -220%; }
+}
+
+.merchant-billing-page .manage-page {
+    display: grid;
+    align-content: start;
+    gap: 1.1rem;
+}
+
+.merchant-billing-page .manage-header,
+.merchant-billing-page .manage-grid {
+    margin: 0;
+}
+
+.merchant-billing-page .manage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 0;
+}
+
+.merchant-billing-page .manage-page > .manage-card {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1024px) {
+    .merchant-workspace-shell .admin-design-section-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+        gap: .55rem;
+    }
+
+    .merchant-workspace-shell .admin-design-section-nav .btn {
+        box-sizing: border-box;
+        min-width: 0;
+        min-height: 2.55rem;
+        max-width: 100%;
+        padding: .5rem .65rem;
+        font-size: .82rem;
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 760px) {
+    .merchant-workspace-panel {
+        width: calc(100% - .75rem);
+        padding: .8rem;
+    }
+
+    .merchant-billing-page .manage-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .85rem;
+    }
+
+    .merchant-billing-page .manage-card {
+        min-height: 0;
+        padding: 1.1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .merchant-admin-loading-card {
+        animation: none;
+    }
+}
