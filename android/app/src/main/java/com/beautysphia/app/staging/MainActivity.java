@@ -1,9 +1,13 @@
 package com.beautysphia.app.staging;
 
 import android.app.DownloadManager;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,6 +16,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.animation.LinearInterpolator;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -32,6 +37,9 @@ public class MainActivity extends BridgeActivity {
     private float swipeStartY;
     private boolean swipeStartedAtTop;
     private boolean swipeRefreshRejected;
+    private boolean swipeRefreshTracking;
+    private boolean swipeRefreshRunning;
+    private PullRefreshIndicator pullRefreshIndicator;
     private long launchStartedAtMs;
     private boolean launchPageLoaded;
     private boolean launchHideScheduled;
@@ -72,6 +80,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                hideSwipeRefreshIndicator();
                 launchPageLoaded = true;
                 scheduleLaunchOverlayHide(view);
             }
@@ -264,6 +273,17 @@ public class MainActivity extends BridgeActivity {
     private void enableSwipeToReload(WebView webView) {
         final int refreshDistance = dp(84);
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        FrameLayout content = findViewById(android.R.id.content);
+        if (content != null) {
+            android.content.SharedPreferences theme = getSharedPreferences("active_theme", MODE_PRIVATE);
+            int accent = parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79));
+            pullRefreshIndicator = new PullRefreshIndicator(accent);
+            FrameLayout.LayoutParams indicatorLayout = new FrameLayout.LayoutParams(
+                dp(44), dp(44), Gravity.TOP | Gravity.CENTER_HORIZONTAL
+            );
+            indicatorLayout.topMargin = -dp(46);
+            content.addView(pullRefreshIndicator, indicatorLayout);
+        }
         webView.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
@@ -271,41 +291,90 @@ public class MainActivity extends BridgeActivity {
                     swipeStartY = event.getY();
                     swipeStartedAtTop = !webView.canScrollVertically(-1);
                     swipeRefreshRejected = false;
+                    swipeRefreshTracking = false;
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    if (swipeStartedAtTop) {
-                        float horizontal = Math.abs(event.getX() - swipeStartX);
-                        float vertical = event.getY() - swipeStartY;
+                    float horizontal = Math.abs(event.getX() - swipeStartX);
+                    float vertical = event.getY() - swipeStartY;
+                    if (swipeStartedAtTop && !swipeRefreshRejected && !swipeRefreshRunning) {
                         if (horizontal > touchSlop && horizontal > Math.abs(vertical)) {
                             swipeRefreshRejected = true;
+                            break;
                         }
+                        if (vertical > touchSlop && vertical > horizontal && !webView.canScrollVertically(-1)) {
+                            swipeRefreshTracking = true;
+                            showPullProgress(vertical, refreshDistance);
+                            return true;
+                        }
+                    }
+                    if (swipeRefreshTracking) {
+                        showPullProgress(Math.max(0f, vertical), refreshDistance);
+                        return true;
                     }
                     break;
                 case MotionEvent.ACTION_POINTER_DOWN:
                 case MotionEvent.ACTION_CANCEL:
+                    if (swipeRefreshTracking) hideSwipeRefreshIndicator();
                     swipeRefreshRejected = true;
                     swipeStartedAtTop = false;
+                    swipeRefreshTracking = false;
                     break;
                 case MotionEvent.ACTION_UP:
                     float distanceY = event.getY() - swipeStartY;
                     float distanceX = Math.abs(event.getX() - swipeStartX);
-                    boolean shouldReload = swipeStartedAtTop
+                    boolean wasTracking = swipeRefreshTracking;
+                    boolean shouldReload = wasTracking
+                        && swipeStartedAtTop
                         && !swipeRefreshRejected
                         && distanceY >= refreshDistance
                         && distanceY > distanceX * 1.25f
                         && !webView.canScrollVertically(-1);
                     swipeStartedAtTop = false;
                     swipeRefreshRejected = false;
+                    swipeRefreshTracking = false;
                     if (shouldReload) {
+                        swipeRefreshRunning = true;
+                        if (pullRefreshIndicator != null) {
+                            pullRefreshIndicator.setPullProgress(1f);
+                            pullRefreshIndicator.setRefreshing(true);
+                            pullRefreshIndicator.animate()
+                                .translationY(dp(70))
+                                .alpha(1f)
+                                .setDuration(160)
+                                .start();
+                        }
                         webView.reload();
                         return true;
                     }
-                    break;
+                    if (wasTracking) hideSwipeRefreshIndicator();
+                    return wasTracking;
                 default:
                     break;
             }
             return false;
         });
+    }
+
+    private void showPullProgress(float distance, int refreshDistance) {
+        if (pullRefreshIndicator == null) return;
+        float progress = Math.min(1f, Math.max(0f, distance / refreshDistance));
+        pullRefreshIndicator.animate().cancel();
+        pullRefreshIndicator.setVisibility(View.VISIBLE);
+        pullRefreshIndicator.setTranslationY(Math.min(dp(76), distance * 0.9f));
+        pullRefreshIndicator.setAlpha(Math.min(1f, 0.2f + progress * 0.8f));
+        pullRefreshIndicator.setPullProgress(progress);
+    }
+
+    private void hideSwipeRefreshIndicator() {
+        if (pullRefreshIndicator == null || !swipeRefreshRunning && pullRefreshIndicator.getVisibility() != View.VISIBLE) return;
+        swipeRefreshRunning = false;
+        pullRefreshIndicator.setRefreshing(false);
+        pullRefreshIndicator.animate()
+            .translationY(-dp(46))
+            .alpha(0f)
+            .setDuration(180)
+            .withEndAction(() -> pullRefreshIndicator.setVisibility(View.INVISIBLE))
+            .start();
     }
 
     private void scheduleLaunchOverlayHide(WebView webView) {
@@ -340,5 +409,69 @@ public class MainActivity extends BridgeActivity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private final class PullRefreshIndicator extends View {
+        private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF arcBounds = new RectF();
+        private final int accentColor;
+        private float pullProgress;
+        private float rotationDegrees;
+        private ValueAnimator rotationAnimator;
+        private boolean refreshing;
+
+        PullRefreshIndicator(int accentColor) {
+            super(MainActivity.this);
+            this.accentColor = accentColor;
+            setClickable(false);
+            setFocusable(false);
+            setVisibility(View.INVISIBLE);
+            float stroke = dp(3);
+            trackPaint.setStyle(Paint.Style.STROKE);
+            trackPaint.setStrokeWidth(stroke);
+            trackPaint.setStrokeCap(Paint.Cap.ROUND);
+            trackPaint.setColor(Color.argb(64, Color.red(accentColor), Color.green(accentColor), Color.blue(accentColor)));
+            progressPaint.setStyle(Paint.Style.STROKE);
+            progressPaint.setStrokeWidth(stroke);
+            progressPaint.setStrokeCap(Paint.Cap.ROUND);
+            progressPaint.setColor(accentColor);
+        }
+
+        void setPullProgress(float progress) {
+            pullProgress = Math.max(0f, Math.min(1f, progress));
+            invalidate();
+        }
+
+        void setRefreshing(boolean value) {
+            refreshing = value;
+            if (rotationAnimator != null) {
+                rotationAnimator.cancel();
+                rotationAnimator = null;
+            }
+            if (refreshing) {
+                rotationAnimator = ValueAnimator.ofFloat(0f, 360f);
+                rotationAnimator.setDuration(850L);
+                rotationAnimator.setInterpolator(new LinearInterpolator());
+                rotationAnimator.setRepeatCount(ValueAnimator.INFINITE);
+                rotationAnimator.addUpdateListener(animator -> {
+                    rotationDegrees = (float) animator.getAnimatedValue();
+                    invalidate();
+                });
+                rotationAnimator.start();
+            }
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            float inset = dp(6);
+            arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
+            canvas.drawArc(arcBounds, -90f, 360f, false, trackPaint);
+            float start = refreshing ? rotationDegrees - 90f : -90f;
+            float sweep = refreshing ? 270f : 360f * pullProgress;
+            if (sweep > 0f) canvas.drawArc(arcBounds, start, sweep, false, progressPaint);
+        }
     }
 }
