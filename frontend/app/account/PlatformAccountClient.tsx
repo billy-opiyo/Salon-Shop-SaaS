@@ -287,7 +287,7 @@ export function PlatformAccountClient({
 	}
 
 	const openDeleteDialog = () => {
-		if (!canDeleteAccount || busy) return
+		if (busy) return
 		setDeleteError("")
 		setDeleteDialogOpen(true)
 	}
@@ -388,7 +388,7 @@ export function PlatformAccountClient({
 				<section className="platform-account-panel platform-account-panel--wide platform-account-danger" aria-labelledby="platform-delete-title">
 					<p className="eyebrow">Privacy controls</p><h2 id="platform-delete-title">Delete your account</h2>
 					<p id="platform-delete-help">{canDeleteAccount ? "Deleting your account permanently removes your Beauty Sphia sign-in and personal profile." : "This account owns one or more salon workspaces. Transfer ownership or remove those workspaces before deleting the account."}</p>
-					<button ref={deleteTriggerRef} className="button button--outline platform-account-delete-button" type="button" onClick={openDeleteDialog} disabled={!canDeleteAccount || busy} aria-haspopup="dialog" aria-describedby="platform-delete-help">Delete account permanently</button>
+					<button ref={deleteTriggerRef} className="button button--outline platform-account-delete-button" type="button" onClick={openDeleteDialog} disabled={busy} aria-haspopup="dialog" aria-describedby="platform-delete-help">Delete account permanently</button>
 					{!canDeleteAccount && <small className="platform-account-delete-help">Your salon workspaces are connected to this sign-in, so account deletion is blocked until ownership is transferred or the workspaces are removed.</small>}
 				</section>
 			</div>
@@ -396,11 +396,12 @@ export function PlatformAccountClient({
 				<section className="platform-account-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="platform-account-delete-dialog-title" aria-describedby="platform-account-delete-dialog-description" tabIndex={-1}>
 					<p className="eyebrow">Privacy controls</p>
 					<h2 id="platform-account-delete-dialog-title">Delete your account?</h2>
-					<p id="platform-account-delete-dialog-description">This permanently removes your Beauty Sphia sign-in and personal profile. This action cannot be undone.</p>
+					<p id="platform-account-delete-dialog-description">{canDeleteAccount ? "This permanently removes your Beauty Sphia sign-in and personal profile. This action cannot be undone." : "This account still owns one or more salon workspaces. Transfer ownership or remove those workspaces before you can delete this account."}</p>
 					{deleteError && <p className="platform-account-delete-dialog__error" role="alert">{deleteError}</p>}
+					{!canDeleteAccount && <p><Link className="button button--outline button--small" href="/account#account-salons-title" onClick={closeDeleteDialog}>View your salons</Link></p>}
 					<div className="platform-account-delete-dialog__actions">
 						<button ref={deleteCancelRef} className="button button--outline" type="button" onClick={closeDeleteDialog} disabled={busy}>Cancel</button>
-						<button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={busy} aria-busy={pendingAction === "delete"}>{pendingAction === "delete" ? "Deleting…" : "Delete"}</button>
+						<button className="button button--outline platform-account-delete-button" type="button" onClick={() => void deleteAccount()} disabled={!canDeleteAccount || busy} aria-busy={pendingAction === "delete"}>{pendingAction === "delete" ? "Deleting…" : "Delete"}</button>
 					</div>
 				</section>
 			</div>, document.body)}
