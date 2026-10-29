@@ -1,0 +1,10 @@
+{
+	"enabled": false,
+	"channel": "production",
+	"applicationId": "com.beautysphia.app",
+	"versionCode": 0,
+	"versionName": "1.0.0",
+	"apkUrl": "/downloads/beauty-sphia.apk",
+	"signingCertificateSha256": "",
+	"releaseNotes": "Production updates remain disabled until the site and signing identity are established."
+}

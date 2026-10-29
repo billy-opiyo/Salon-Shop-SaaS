@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="color-scheme" content="dark light" />
+		<title>Connection unavailable · Beauty Sphia</title>
+		<style>
+			:root { color-scheme: dark; --bg: #17120c; --surface: #251b10; --text: #fff8e8; --muted: #c8bda8; --primary: #d7a84f; }
+			* { box-sizing: border-box; }
+			body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, color-mix(in srgb, var(--primary) 16%, var(--surface)), var(--bg) 62%); color: var(--text); font: 16px/1.55 system-ui, sans-serif; }
+			main { width: min(100%, 28rem); padding: 2rem; border: 1px solid color-mix(in srgb, var(--primary) 32%, transparent); border-radius: 1.5rem; background: var(--surface); text-align: center; box-shadow: 0 1.5rem 4rem #0006; }
+			.brand { color: var(--primary); font-size: .76rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+			h1 { margin: .8rem 0; font-family: Georgia, serif; font-size: clamp(1.8rem, 7vw, 2.5rem); }
+			p { color: var(--muted); }
+			button { min-height: 48px; margin-top: .75rem; padding: .8rem 1.2rem; border: 0; border-radius: 999px; background: var(--primary); color: #17120c; font: inherit; font-weight: 700; }
+			button:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+		</style>
+	</head>
+	<body>
+		<main role="alert" aria-labelledby="offline-title">
+			<p class="brand">Beauty Sphia</p>
+			<h1 id="offline-title">Internet unavailable</h1>
+			<p id="offline-copy">Connect to Wi-Fi or mobile data to continue. We’ll return you to the page you were viewing when the connection is back.</p>
+			<button id="retry" type="button">Try again</button>
+			<p id="status" aria-live="polite"></p>
+		</main>
+		<script>
+			(() => {
+				const query = new URLSearchParams(location.search)
+				const colors = { background: "--bg", surface: "--surface", text: "--text", muted: "--muted", primary: "--primary" }
+				for (const [key, variable] of Object.entries(colors)) {
+					const value = query.get(key)
+					if (value && /^#[0-9a-f]{6}$/i.test(value)) document.documentElement.style.setProperty(variable, value)
+				}
+				const failedUrl = query.get("url")
+				const status = document.getElementById("status")
+				let checking = false
+				async function retry() {
+					if (checking || !failedUrl || !navigator.onLine) return
+					checking = true
+					status.textContent = "Checking connection…"
+					try {
+						await fetch(failedUrl, { method: "HEAD", mode: "no-cors", cache: "no-store", signal: AbortSignal.timeout(5000) })
+						location.replace(failedUrl)
+					} catch {
+						status.textContent = "Still offline. We’ll keep checking."
+					} finally { checking = false }
+				}
+				document.getElementById("retry").addEventListener("click", retry)
+				addEventListener("online", retry)
+				addEventListener("pageshow", retry)
+				setInterval(retry, 3000)
+			})()
+		</script>
+	</body>
+</html>

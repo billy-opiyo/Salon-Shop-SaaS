@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react"
 
 import { GoogleIcon } from "@/components/shared/GoogleIcon"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
+import { openNativeGoogleSignIn } from "@/lib/mobileGoogleAuth"
 
 export function LoginForm({
 	callbackUrl,
@@ -44,6 +45,10 @@ export function LoginForm({
 		setMessage("")
 		setIsSubmitting(true)
 		try {
+			if (await openNativeGoogleSignIn(getSafeAuthCallbackUrl(callbackUrl))) {
+				setIsSubmitting(false)
+				return
+			}
 			await signIn("google", {
 				callbackUrl: getSafeAuthCallbackUrl(callbackUrl),
 			})

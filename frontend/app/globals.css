@@ -55,6 +55,220 @@ html::-webkit-scrollbar-thumb:hover {
   background: #ffe3a2;
 }
 
+.android-app-download-prompt {
+  position: fixed;
+  z-index: 1200;
+  inset-inline: max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(760px, calc(100% - 28px));
+  margin-inline: auto;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, #17120c 92%, transparent);
+  color: #fff8e8;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(18px);
+}
+
+.android-app-download-prompt__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 13px;
+  color: var(--gold-soft);
+  background: color-mix(in srgb, var(--gold) 13%, transparent);
+}
+
+.android-app-download-prompt__copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.android-app-download-prompt__copy strong {
+  font-size: .9rem;
+}
+
+.android-app-download-prompt__copy span {
+  overflow: hidden;
+  color: #c8bda8;
+  font-size: .77rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.android-app-download-prompt__action {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #17120c;
+  font-size: .82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.android-app-download-prompt__action:focus-visible,
+.android-app-download-prompt__close:focus-visible {
+  outline: 3px solid #fff8e8;
+  outline-offset: 3px;
+}
+
+.android-app-download-prompt__close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #c8bda8;
+  cursor: pointer;
+}
+
+.android-app-download-prompt__close:hover {
+  background: rgba(255, 248, 232, .1);
+  color: #fff8e8;
+}
+
+.android-native-dialog-backdrop,
+.android-update-backdrop {
+  position: fixed;
+  z-index: 100000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(10, 8, 5, .64);
+  backdrop-filter: blur(8px);
+}
+
+.android-native-dialog,
+.android-update-dialog {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--native-dialog-primary, var(--gold)) 36%, transparent);
+  border-radius: 22px;
+  background: var(--native-dialog-surface, #251b10);
+  color: var(--native-dialog-text, #fff8e8);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .42);
+}
+
+.android-native-dialog h2,
+.android-update-dialog h2 {
+  margin: 0 0 10px;
+  font: 600 1.45rem/1.2 var(--font-heading, Georgia, serif);
+}
+
+.android-native-dialog p,
+.android-update-dialog p {
+  color: var(--native-dialog-muted, #c8bda8);
+  line-height: 1.55;
+}
+
+.android-native-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.android-native-dialog__actions button,
+.android-update-dialog__action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--native-dialog-primary, var(--gold)) 40%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--native-dialog-primary, var(--gold)) 14%, transparent);
+  color: var(--native-dialog-text, #fff8e8);
+  font: inherit;
+  font-weight: 700;
+}
+
+.android-native-dialog__actions button:last-child,
+.android-update-dialog__action {
+  border-color: var(--native-dialog-primary, var(--gold));
+  background: var(--native-dialog-primary, var(--gold));
+  color: #17120c;
+}
+
+.android-update-dialog__eyebrow {
+  color: var(--native-dialog-primary, var(--gold)) !important;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.android-update-dialog__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--native-dialog-muted, #c8bda8);
+}
+
+.android-update-dialog__note {
+  margin-bottom: 0;
+  font-size: .76rem;
+}
+
+@media (max-width: 460px) {
+  .android-app-download-prompt {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .android-app-download-prompt__icon {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+  }
+
+  .android-app-download-prompt__copy strong {
+    font-size: .8rem;
+  }
+
+  .android-app-download-prompt__copy span {
+    font-size: .69rem;
+  }
+
+  .android-app-download-prompt__action {
+    min-height: 38px;
+    padding-inline: 10px;
+    font-size: .74rem;
+  }
+
+  .android-app-download-prompt__close {
+    width: 28px;
+    flex-basis: 28px;
+  }
+}
+
 body {
   margin: 0;
   background:
