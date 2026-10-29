@@ -26,7 +26,7 @@ const manifest = {
   versionName: verified.versionName,
   apkUrl: "/downloads/beauty-sphia-staging.apk",
   signingCertificateSha256: verified.certificateSha256,
-  releaseNotes: "Smoother launch, pull-to-refresh gesture, and update notifications.",
+  releaseNotes: "Pull-to-refresh no longer selects page text while dragging.",
 }
 
 copyFileSync(path.resolve(artifact), apkPath)

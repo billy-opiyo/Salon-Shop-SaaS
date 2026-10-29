@@ -80,6 +80,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                setPullSelectionSuppressed(view, false);
                 hideSwipeRefreshIndicator();
                 if (isConfiguredRemotePage(url) || isOfflineFallbackPage(url)) {
                     launchPageLoaded = true;
@@ -306,6 +307,7 @@ public class MainActivity extends BridgeActivity {
                         }
                         if (vertical > touchSlop && vertical > horizontal && !webView.canScrollVertically(-1)) {
                             swipeRefreshTracking = true;
+                            setPullSelectionSuppressed(webView, true);
                             showPullProgress(vertical, refreshDistance);
                             return true;
                         }
@@ -317,7 +319,10 @@ public class MainActivity extends BridgeActivity {
                     break;
                 case MotionEvent.ACTION_POINTER_DOWN:
                 case MotionEvent.ACTION_CANCEL:
-                    if (swipeRefreshTracking) hideSwipeRefreshIndicator();
+                    if (swipeRefreshTracking) {
+                        setPullSelectionSuppressed(webView, false);
+                        hideSwipeRefreshIndicator();
+                    }
                     swipeRefreshRejected = true;
                     swipeStartedAtTop = false;
                     swipeRefreshTracking = false;
@@ -349,7 +354,10 @@ public class MainActivity extends BridgeActivity {
                         webView.reload();
                         return true;
                     }
-                    if (wasTracking) hideSwipeRefreshIndicator();
+                    if (wasTracking) {
+                        setPullSelectionSuppressed(webView, false);
+                        hideSwipeRefreshIndicator();
+                    }
                     return wasTracking;
                 default:
                     break;
@@ -366,6 +374,14 @@ public class MainActivity extends BridgeActivity {
         pullRefreshIndicator.setTranslationY(Math.min(dp(76), distance * 0.75f));
         pullRefreshIndicator.setAlpha(Math.min(1f, 0.32f + progress * 0.68f));
         pullRefreshIndicator.setPullProgress(progress);
+    }
+
+    private void setPullSelectionSuppressed(WebView webView, boolean suppressed) {
+        String active = suppressed ? "true" : "false";
+        webView.evaluateJavascript(
+            "(function(){var root=document.documentElement;if(!root)return;root.classList.toggle('native-pull-refresh-active'," + active + ");if(" + active + "){var selection=window.getSelection();if(selection)selection.removeAllRanges();}})();",
+            null
+        );
     }
 
     private void hideSwipeRefreshIndicator() {
