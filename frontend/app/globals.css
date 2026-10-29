@@ -59,8 +59,10 @@ html::-webkit-scrollbar-thumb:hover {
   position: fixed;
   z-index: 1200;
   inset-inline: max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right));
-  bottom: max(14px, env(safe-area-inset-bottom));
-  display: flex;
+	bottom: 88px;
+	display: grid;
+	grid-template-columns: 42px minmax(0, 1fr) auto 34px;
+	grid-template-areas: "icon copy action close" "remember remember remember remember";
   align-items: center;
   gap: 12px;
   width: min(760px, calc(100% - 28px));
@@ -75,6 +77,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 .android-app-download-prompt__icon {
+	grid-area: icon;
   display: grid;
   width: 42px;
   height: 42px;
@@ -87,6 +90,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 .android-app-download-prompt__copy {
+	grid-area: copy;
   display: grid;
   min-width: 0;
   flex: 1;
@@ -106,6 +110,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 .android-app-download-prompt__action {
+	grid-area: action;
   display: inline-flex;
   min-height: 42px;
   align-items: center;
@@ -120,6 +125,25 @@ html::-webkit-scrollbar-thumb:hover {
   white-space: nowrap;
 }
 
+.android-app-download-prompt__remember {
+	grid-area: remember;
+	display: inline-flex;
+	width: fit-content;
+	align-items: center;
+	gap: .5rem;
+	color: #c8bda8;
+	font-size: .76rem;
+	line-height: 1.2;
+	cursor: pointer;
+}
+
+.android-app-download-prompt__remember input {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	accent-color: var(--gold);
+}
+
 .android-app-download-prompt__action:focus-visible,
 .android-app-download-prompt__close:focus-visible {
   outline: 3px solid #fff8e8;
@@ -127,6 +151,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 .android-app-download-prompt__close {
+	grid-area: close;
   display: grid;
   width: 34px;
   height: 34px;
@@ -239,7 +264,8 @@ html::-webkit-scrollbar-thumb:hover {
 
 @media (max-width: 460px) {
   .android-app-download-prompt {
-    gap: 8px;
+		grid-template-columns: 38px minmax(0, 1fr) auto 28px;
+		gap: 8px;
     padding: 10px;
   }
 
@@ -267,6 +293,10 @@ html::-webkit-scrollbar-thumb:hover {
     width: 28px;
     flex-basis: 28px;
   }
+
+	.android-app-download-prompt__remember {
+		font-size: .7rem;
+	}
 }
 
 body {
@@ -4801,12 +4831,13 @@ html.splash-active .splash-handwriting-letter {
 
 .platform-floating-whatsapp {
 	left: 30px;
+	padding: 0;
 	background: #1f9d4f;
 	color: #07130b;
 	box-shadow: 0 8px 25px rgba(31, 157, 79, .28);
 }
 
-.platform-floating-whatsapp i { color: #fff; font-size: 23px; line-height: 1; }
+.platform-floating-whatsapp i { color: #fff; font-size: 25px; line-height: 1; }
 
 .platform-floating-whatsapp:hover,
 .platform-floating-whatsapp:focus-visible {
@@ -5287,6 +5318,12 @@ html.splash-active .splash-handwriting-letter {
 	cursor: pointer;
 	line-height: 1;
 	transition: color .18s ease, background .18s ease;
+}
+.platform-account__trigger--login {
+	min-width: 3rem;
+	min-height: 3rem;
+	flex-direction: column;
+	gap: .16rem;
 }
 .platform-account__trigger span {
 	font-size: .7rem;
@@ -6702,6 +6739,90 @@ html.splash-active .splash-handwriting-letter {
 	max-width: 66ch;
 	margin-inline: 0;
 	text-align: left;
+}
+
+/* Tablet layouts: keep platform cards readable and the tenant action bar
+   available across portrait and landscape tablet widths. */
+@media (min-width: 721px) and (max-width: 1024px) {
+	.platform-hero--editorial {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem;
+		min-height: 0;
+		padding: clamp(2rem, 5vw, 3.5rem);
+	}
+
+	.platform-hero__copy { max-width: 58rem; }
+	.platform-hero__benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.platform-support-grid,
+	.platform-team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.top-stores-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.platform-home-shell .contact-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+	.platform-header .platform-nav {
+		border: 1px solid color-mix(in srgb, var(--gold-soft) 28%, transparent);
+		background: #1b140c;
+	}
+}
+
+@media (min-width: 801px) and (max-width: 1024px) {
+	.platform-home-shell .plans-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.platform-home-shell .plan-card--featured { transform: none; }
+}
+
+@media (max-width: 1199px) {
+	.android-app-download-prompt {
+		bottom: calc(4.5rem + 44px + 14px + env(safe-area-inset-bottom, 0px));
+	}
+
+	.salon-storefront-root .saas-tenant-mobile-actions {
+		position: fixed;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		z-index: 40;
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: .25rem;
+		padding: .5rem max(.5rem, env(safe-area-inset-left)) max(.5rem, env(safe-area-inset-bottom));
+		border-top: 1px solid var(--border);
+		background: var(--storefront-navigation-surface, var(--bg-secondary));
+	}
+
+	.salon-storefront-root .saas-tenant-mobile-actions a {
+		display: grid;
+		min-width: 0;
+		min-height: 3.65rem;
+		align-content: center;
+		justify-items: center;
+		gap: .15rem;
+		padding: .4rem .15rem;
+	}
+
+	.salon-storefront-root .saas-tenant-mobile-actions small {
+		max-width: 100%;
+		overflow: hidden;
+		font-size: .62rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.salon-storefront-root .site-shell {
+		padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.salon-storefront-root .floating-whatsapp,
+	.salon-storefront-root .back-to-top {
+		bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.salon-storefront-root .floating-whatsapp { padding: 0; }
+	.salon-storefront-root .floating-whatsapp i { font-size: 24px; }
+	body.splash-active .salon-storefront-root .saas-tenant-mobile-actions,
+	body:has(#authModal[aria-hidden="false"]) .salon-storefront-root .saas-tenant-mobile-actions {
+		display: none;
+	}
+
+	.platform-floating-whatsapp { padding: 0; }
+	.platform-floating-whatsapp i { font-size: 25px; }
 }
 
 .platform-home-shell .plan-card__pricing {

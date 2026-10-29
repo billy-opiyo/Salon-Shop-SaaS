@@ -58,14 +58,14 @@ function isLightColor(hex: string): boolean {
 }
 
 function getThemeColors(): SystemBarsOptions {
-	const root = document.querySelector<HTMLElement>(".platform-site, .salon-storefront-root") ?? document.documentElement
+	const root = document.querySelector<HTMLElement>(".platform-site, .salon-storefront-root, .tenant-storefront-not-found") ?? document.documentElement
 	const style = getComputedStyle(root)
-	const background = readCssColor(style, ["--background", "--bg-primary", "--bg"], COLOR_FALLBACKS.background)
+	const background = readCssColor(style, ["--bg-primary", "--background", "--bg"], COLOR_FALLBACKS.background)
 	return {
 		background,
-		surface: readCssColor(style, ["--surface", "--bg-card", "--bg-secondary"], COLOR_FALLBACKS.surface),
-		text: readCssColor(style, ["--foreground", "--text-primary"], COLOR_FALLBACKS.text),
-		muted: readCssColor(style, ["--muted", "--text-secondary"], COLOR_FALLBACKS.muted),
+		surface: readCssColor(style, ["--bg-card", "--surface", "--bg-secondary"], COLOR_FALLBACKS.surface),
+		text: readCssColor(style, ["--text-primary", "--foreground"], COLOR_FALLBACKS.text),
+		muted: readCssColor(style, ["--text-secondary", "--muted"], COLOR_FALLBACKS.muted),
 		primary: readCssColor(style, ["--primary", "--gold"], COLOR_FALLBACKS.primary),
 		lightIcons: !isLightColor(background),
 	}
@@ -93,14 +93,23 @@ export function AndroidNativeBridge() {
 	exitPromptRef.current = exitPrompt
 
 	useEffect(() => {
-		if (!isAndroid) return
 		let active = true
 		const handles: PluginListenerHandle[] = []
 		let themeTimer = 0
 
 		const applyTheme = () => {
 			if (!active) return
-			void SystemBars.setColors(getThemeColors()).catch(() => undefined)
+			const colors = getThemeColors()
+			const themeColors = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+			if (themeColors.length === 0) {
+				const themeColor = document.createElement("meta")
+				themeColor.name = "theme-color"
+				document.head.append(themeColor)
+				themeColor.content = colors.background
+			} else {
+				themeColors.forEach((themeColor) => { themeColor.content = colors.background })
+			}
+			if (isAndroid) void SystemBars.setColors(colors).catch(() => undefined)
 		}
 		const scheduleTheme = () => {
 			window.clearTimeout(themeTimer)
@@ -108,52 +117,59 @@ export function AndroidNativeBridge() {
 		}
 		applyTheme()
 		const observer = new MutationObserver(scheduleTheme)
-		observer.observe(document.documentElement, { attributes: true, childList: true, subtree: true, attributeFilter: ["class", "style"] })
-
-		void App.addListener("backButton", () => {
-			if (exitPromptRef.current) return
-			setExitPrompt(true)
-		}).then((handle) => {
-			if (active) handles.push(handle)
-			else void handle.remove()
+		observer.observe(document.documentElement, {
+			attributes: true,
+			childList: true,
+			subtree: true,
+			attributeFilter: ["class", "style", "data-theme-preset"],
 		})
 
-		void App.addListener("appStateChange", ({ isActive }) => {
-			if (isActive) scheduleTheme()
-		}).then((handle) => {
-			if (active) handles.push(handle)
-			else void handle.remove()
-		})
+		if (isAndroid) {
+			void App.addListener("backButton", () => {
+				if (exitPromptRef.current) return
+				setExitPrompt(true)
+			}).then((handle) => {
+				if (active) handles.push(handle)
+				else void handle.remove()
+			})
 
-		void App.addListener("appUrlOpen", async ({ url }) => {
-			let callback: URL
-			try { callback = new URL(url) } catch { return }
-			const pending = parsePendingAuth(window.localStorage.getItem(PENDING_MOBILE_GOOGLE_AUTH_KEY))
-			if (!pending || callback.host !== "auth" || callback.pathname !== "/callback"
-				|| callback.protocol !== `${pending.applicationId}:` || callback.searchParams.get("state") !== pending.state) return
-			const ticket = callback.searchParams.get("ticket")
-			if (!ticket || !/^[A-Za-z0-9_-]{40,60}$/.test(ticket)) return
-			try {
-				await Browser.close()
-				const result = await signIn("mobile-google-ticket", {
-					ticket,
-					state: pending.state,
-					verifier: pending.verifier,
-					redirect: false,
-				})
-				if (result?.error) throw new Error("Google sign-in could not be verified. Please try again.")
-				window.localStorage.removeItem(PENDING_MOBILE_GOOGLE_AUTH_KEY)
-				const safeCallback = getSafeLocalCallbackUrl(pending.callbackUrl)
-				router.replace(safeCallback ?? "/")
-				router.refresh()
-			} catch {
-				window.localStorage.removeItem(PENDING_MOBILE_GOOGLE_AUTH_KEY)
-				setAuthError("Google sign-in could not be completed. Please try again.")
-			}
-		}).then((handle) => {
-			if (active) handles.push(handle)
-			else void handle.remove()
-		})
+			void App.addListener("appStateChange", ({ isActive }) => {
+				if (isActive) scheduleTheme()
+			}).then((handle) => {
+				if (active) handles.push(handle)
+				else void handle.remove()
+			})
+
+			void App.addListener("appUrlOpen", async ({ url }) => {
+				let callback: URL
+				try { callback = new URL(url) } catch { return }
+				const pending = parsePendingAuth(window.localStorage.getItem(PENDING_MOBILE_GOOGLE_AUTH_KEY))
+				if (!pending || callback.host !== "auth" || callback.pathname !== "/callback"
+					|| callback.protocol !== `${pending.applicationId}:` || callback.searchParams.get("state") !== pending.state) return
+				const ticket = callback.searchParams.get("ticket")
+				if (!ticket || !/^[A-Za-z0-9_-]{40,60}$/.test(ticket)) return
+				try {
+					await Browser.close()
+					const result = await signIn("mobile-google-ticket", {
+						ticket,
+						state: pending.state,
+						verifier: pending.verifier,
+						redirect: false,
+					})
+					if (result?.error) throw new Error("Google sign-in could not be verified. Please try again.")
+					window.localStorage.removeItem(PENDING_MOBILE_GOOGLE_AUTH_KEY)
+					const safeCallback = getSafeLocalCallbackUrl(pending.callbackUrl)
+					router.replace(safeCallback ?? "/")
+					router.refresh()
+				} catch {
+					window.localStorage.removeItem(PENDING_MOBILE_GOOGLE_AUTH_KEY)
+					setAuthError("Google sign-in could not be completed. Please try again.")
+				}
+			}).then((handle) => {
+				if (active) handles.push(handle)
+				else void handle.remove()
+			})
+		}
 
 		return () => {
 			active = false
