@@ -9,7 +9,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -25,7 +27,11 @@ public class MainActivity extends BridgeActivity {
     private static final int REQUEST_INSTALL_PERMISSION = 8012;
     private static final long MIN_LAUNCH_OVERLAY_MS = 2_000L;
     private View nativeLaunchOverlay;
-    private View launchLogoContainer;
+    private ImageView launchLogo;
+    private float swipeStartX;
+    private float swipeStartY;
+    private boolean swipeStartedAtTop;
+    private boolean swipeRefreshRejected;
     private long launchStartedAtMs;
     private boolean launchPageLoaded;
     private boolean launchHideScheduled;
@@ -52,6 +58,7 @@ public class MainActivity extends BridgeActivity {
         if (getBridge() == null) return;
         WebView webView = getBridge().getWebView();
         webView.setVerticalScrollBarEnabled(false);
+        enableSwipeToReload(webView);
         getBridge().setWebViewClient(new BridgeWebViewClient(getBridge()) {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
@@ -218,50 +225,87 @@ public class MainActivity extends BridgeActivity {
         int backgroundColor = parseThemeColor(theme.getString("background", null), Color.rgb(23, 18, 12));
         int surfaceColor = parseThemeColor(theme.getString("surface", null), Color.rgb(37, 27, 16));
         GradientDrawable background = new GradientDrawable();
-        background.setColor(backgroundColor);
+        background.setColor(surfaceColor);
         overlay.setBackground(background);
         overlay.setClickable(true);
-        FrameLayout logoContainer = new FrameLayout(this);
-        GradientDrawable circle = new GradientDrawable();
-        circle.setShape(GradientDrawable.OVAL);
-        circle.setColor(surfaceColor);
-        circle.setStroke(dp(2), parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79)));
-        logoContainer.setBackground(circle);
-        logoContainer.setElevation(dp(10));
-        logoContainer.setClipToOutline(true);
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.launch_logo_app);
-        logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        logo.setClipToOutline(false);
-        FrameLayout.LayoutParams logoLayout = new FrameLayout.LayoutParams(dp(100), dp(100), Gravity.CENTER);
-        logoContainer.addView(logo, logoLayout);
-        FrameLayout.LayoutParams containerLayout = new FrameLayout.LayoutParams(dp(144), dp(144), Gravity.CENTER);
-        overlay.addView(logoContainer, containerLayout);
+        logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        logo.setBackground(createLaunchLogoShape(backgroundColor));
+        logo.setClipToOutline(true);
+        logo.setElevation(dp(8));
+        FrameLayout.LayoutParams logoLayout = new FrameLayout.LayoutParams(dp(90), dp(90), Gravity.CENTER);
+        overlay.addView(logo, logoLayout);
         content.addView(overlay, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
         nativeLaunchOverlay = overlay;
-        launchLogoContainer = logoContainer;
+        launchLogo = logo;
     }
 
     public void applyLaunchTheme(int backgroundColor, int surfaceColor) {
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
         if (nativeLaunchOverlay != null) {
             GradientDrawable launchBackground = new GradientDrawable();
-            launchBackground.setColor(backgroundColor);
+            launchBackground.setColor(surfaceColor);
             nativeLaunchOverlay.setBackground(launchBackground);
         }
-        if (launchLogoContainer != null) {
-            GradientDrawable circle = new GradientDrawable();
-            circle.setShape(GradientDrawable.OVAL);
-            circle.setColor(surfaceColor);
-            circle.setStroke(dp(2), parseThemeColor(
-                getSharedPreferences("active_theme", MODE_PRIVATE).getString("primary", null),
-                Color.rgb(215, 168, 79)
-            ));
-            launchLogoContainer.setBackground(circle);
-        }
+        if (launchLogo != null) launchLogo.setBackground(createLaunchLogoShape(backgroundColor));
+    }
+
+    private GradientDrawable createLaunchLogoShape(int surfaceColor) {
+        GradientDrawable squircle = new GradientDrawable();
+        squircle.setColor(surfaceColor);
+        squircle.setCornerRadius(dp(22));
+        return squircle;
+    }
+
+    private void enableSwipeToReload(WebView webView) {
+        final int refreshDistance = dp(84);
+        final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        webView.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    swipeStartX = event.getX();
+                    swipeStartY = event.getY();
+                    swipeStartedAtTop = !webView.canScrollVertically(-1);
+                    swipeRefreshRejected = false;
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (swipeStartedAtTop) {
+                        float horizontal = Math.abs(event.getX() - swipeStartX);
+                        float vertical = event.getY() - swipeStartY;
+                        if (horizontal > touchSlop && horizontal > Math.abs(vertical)) {
+                            swipeRefreshRejected = true;
+                        }
+                    }
+                    break;
+                case MotionEvent.ACTION_POINTER_DOWN:
+                case MotionEvent.ACTION_CANCEL:
+                    swipeRefreshRejected = true;
+                    swipeStartedAtTop = false;
+                    break;
+                case MotionEvent.ACTION_UP:
+                    float distanceY = event.getY() - swipeStartY;
+                    float distanceX = Math.abs(event.getX() - swipeStartX);
+                    boolean shouldReload = swipeStartedAtTop
+                        && !swipeRefreshRejected
+                        && distanceY >= refreshDistance
+                        && distanceY > distanceX * 1.25f
+                        && !webView.canScrollVertically(-1);
+                    swipeStartedAtTop = false;
+                    swipeRefreshRejected = false;
+                    if (shouldReload) {
+                        webView.reload();
+                        return true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        });
     }
 
     private void scheduleLaunchOverlayHide(WebView webView) {
@@ -290,7 +334,7 @@ public class MainActivity extends BridgeActivity {
         if (content == null) return;
         View overlay = nativeLaunchOverlay;
         nativeLaunchOverlay = null;
-        launchLogoContainer = null;
+        launchLogo = null;
         overlay.animate().alpha(0f).setDuration(180).withEndAction(() -> content.removeView(overlay)).start();
     }
 
