@@ -1,10 +1,10 @@
 {
-	"enabled": false,
-	"channel": "staging",
-	"applicationId": "com.beautysphia.app.staging",
-	"versionCode": 0,
-	"versionName": "1.0.0",
-	"apkUrl": "/downloads/beauty-sphia-staging.apk",
-	"signingCertificateSha256": "",
-	"releaseNotes": ""
+  "enabled": true,
+  "channel": "staging",
+  "applicationId": "com.beautysphia.app.staging",
+  "versionCode": 2,
+  "versionName": "1.0.1",
+  "apkUrl": "/downloads/beauty-sphia-staging.apk",
+  "signingCertificateSha256": "dd3399211eed1a03a3270e3df943fba6eb7fcceee2935231c4f7372f209b1498",
+  "releaseNotes": "App experience and website improvements."
 }
