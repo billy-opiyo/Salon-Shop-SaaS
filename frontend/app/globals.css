@@ -5137,6 +5137,21 @@ html.splash-active .splash-handwriting-letter {
 	}
 }
 
+/* Keep the About page calls to action centered inside their card at every size. */
+.platform-about-page .platform-about-cta {
+	justify-items: center;
+}
+
+.platform-about-page .platform-about-cta .platform-hero__actions {
+	width: 100%;
+	justify-self: stretch;
+	justify-content: center;
+}
+
+.platform-about-page .platform-about-cta .platform-hero__actions > .button {
+	flex: 0 1 auto;
+}
+
 /* The splash status remains animated even when the OS asks for reduced motion;
    this opacity-only pulse stays subtle while making the live loading state clear. */
 @media (prefers-reduced-motion: reduce) {
