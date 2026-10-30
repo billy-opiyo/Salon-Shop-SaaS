@@ -7679,11 +7679,11 @@ html.splash-active .splash-handwriting-letter {
 .platform-account-review-list,
 .platform-account-favorites,
 .platform-team-grid,
-.platform-support-faq__list,
-.top-stores-list {
+.platform-support-faq__list {
 	max-block-size: min(72vh, 42rem);
 	overflow-x: hidden;
 	overflow-y: auto;
+	overscroll-behavior-y: contain;
 	padding-right: .4rem;
 	scrollbar-gutter: stable;
 	scrollbar-width: thin;
@@ -7696,8 +7696,7 @@ html.splash-active .splash-handwriting-letter {
 .platform-account-review-list::-webkit-scrollbar,
 .platform-account-favorites::-webkit-scrollbar,
 .platform-team-grid::-webkit-scrollbar,
-.platform-support-faq__list::-webkit-scrollbar,
-.top-stores-list::-webkit-scrollbar {
+.platform-support-faq__list::-webkit-scrollbar {
 	width: .6rem;
 }
 
@@ -7707,8 +7706,7 @@ html.splash-active .splash-handwriting-letter {
 .platform-account-review-list::-webkit-scrollbar-track,
 .platform-account-favorites::-webkit-scrollbar-track,
 .platform-team-grid::-webkit-scrollbar-track,
-.platform-support-faq__list::-webkit-scrollbar-track,
-.top-stores-list::-webkit-scrollbar-track {
+.platform-support-faq__list::-webkit-scrollbar-track {
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--gold) 8%, var(--background));
 }
@@ -7719,9 +7717,21 @@ html.splash-active .splash-handwriting-letter {
 .platform-account-review-list::-webkit-scrollbar-thumb,
 .platform-account-favorites::-webkit-scrollbar-thumb,
 .platform-team-grid::-webkit-scrollbar-thumb,
-.platform-support-faq__list::-webkit-scrollbar-thumb,
-.top-stores-list::-webkit-scrollbar-thumb {
+.platform-support-faq__list::-webkit-scrollbar-thumb {
 	border: 2px solid color-mix(in srgb, var(--gold) 8%, var(--background));
 	border-radius: 999px;
 	background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+}
+
+.top-store--revealed {
+	animation: top-store-reveal .38s ease both;
+}
+
+@keyframes top-store-reveal {
+	from { opacity: 0; transform: translateY(12px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.top-store--revealed { animation: none; }
 }
