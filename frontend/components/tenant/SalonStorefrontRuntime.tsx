@@ -447,6 +447,15 @@ function renderAdminSnapshotList(
 			const messageText = document.createElement("p")
 			messageText.textContent = String(record.message ?? record.text ?? "No content provided.")
 			message.append(messageLabel, messageText)
+			if (isMessage && typeof record.emailDeliveryStatus === "string") {
+				const deliveryStatus = document.createElement("p")
+				deliveryStatus.className = "admin-review-meta"
+				deliveryStatus.textContent = `Salon email alert: ${record.emailDeliveryStatus}`
+				if (typeof record.emailDeliveryError === "string" && record.emailDeliveryError) {
+					deliveryStatus.textContent += ` · ${record.emailDeliveryError}`
+				}
+				row.append(deliveryStatus)
+			}
 			row.append(message)
 		} else if (isSecurity) {
 			const identityCell = document.createElement("td")

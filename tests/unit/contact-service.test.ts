@@ -82,6 +82,8 @@ describe("public contact message delivery", () => {
 				channel: "EMAIL",
 				templateKey: "contact.alert",
 				destination: "bookings@royalbraids.ke",
+				idempotencyKeySuffix: "message-a",
+				subject: expect.objectContaining({ contactMessageId: "message-a" }),
 			}),
 		)
 	})
