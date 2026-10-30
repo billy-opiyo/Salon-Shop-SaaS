@@ -122,7 +122,12 @@ test.describe("storefront booking availability and waitlist", () => {
 		future.setUTCDate(future.getUTCDate() + 5)
 		const appointmentDate = future.toISOString().slice(0, 10)
 		let bookingRequest: CapturedRequest | undefined
+		let accountRefreshes = 0
 		await page.addInitScript(() => localStorage.setItem("royal_braids_terms_accepted_v1", "true"))
+		await page.route("**/api/account?tenantSlug=royal-braids", async (route) => {
+			accountRefreshes += 1
+			await route.fulfill({ status: 401, json: { error: "Sign in required" } })
+		})
 		await page.route("**/api/bookings/availability?**", async (route) => {
 			await route.fulfill({ json: { timeSlots: ["9:00 AM"], bookedSlots: [] } })
 		})
@@ -178,6 +183,11 @@ test.describe("storefront booking availability and waitlist", () => {
 		})
 		await page.locator("#submitBtn").click()
 		await expect(page.locator("#bookingSuccess")).toBeVisible()
+		await expect(page.locator("#submitBtn")).toBeEnabled()
+		await expect(page.locator("#submitBtn")).not.toHaveClass(/btn-loading/)
+		await expect(page.locator("#submitBtn")).not.toHaveAttribute("aria-busy", "true")
+		await expect(page.locator("#submitBtn")).toContainText("Confirm Booking")
+		await expect.poll(() => accountRefreshes).toBe(1)
 		expect(bookingRequest?.body).toMatchObject({ appointmentDate, timeLabel: "9:00 AM" })
 		expect(bookingRequest?.includesInspiration).toBe(true)
 	})

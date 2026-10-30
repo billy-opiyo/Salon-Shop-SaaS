@@ -4108,7 +4108,8 @@ function setBookingMessage(message: string, type: "error" | "success"): void {
 function setBookingLoading(button: HTMLButtonElement, loading: boolean): void {
 	button.disabled = loading
 	button.classList.toggle("btn-loading", loading)
-	button.setAttribute("aria-busy", String(loading))
+	if (loading) button.setAttribute("aria-busy", "true")
+	else button.removeAttribute("aria-busy")
 	const label = button.querySelector<HTMLElement>("[data-booking-submit-label]")
 	if (label) label.textContent = loading ? "Processing..." : "Confirm Booking"
 	else button.textContent = loading ? "Processing..." : "Confirm Booking"
@@ -4499,7 +4500,10 @@ function bindPublicParityAdapters(
 				response.ok ? "success" : "error",
 				response.ok ? 3500 : 4000,
 			)
-			if (response.ok) reviewForm.reset()
+			if (response.ok) {
+				reviewForm.reset()
+				void loadReferenceDashboardData(tenantSlug)
+			}
 		} catch {
 			setReferenceFormMessage(
 				"reviewMessage",
@@ -4507,13 +4511,16 @@ function bindPublicParityAdapters(
 				"error",
 			)
 		} finally {
-			resetTurnstile(reviewForm)
-			setPublicFormButtonLoading(
-				submitButton instanceof HTMLButtonElement ? submitButton : null,
-				false,
-				"Submitting...",
-				"Submit Review",
-			)
+			try {
+				resetTurnstile(reviewForm)
+			} finally {
+				setPublicFormButtonLoading(
+					submitButton instanceof HTMLButtonElement ? submitButton : null,
+					false,
+					"Submitting...",
+					"Submit Review",
+				)
+			}
 		}
 	}
 	const clearFormFeedback = (elementId: string): void =>
@@ -4768,7 +4775,13 @@ function resetTurnstile(form: HTMLFormElement): void {
 	)
 	if (input) input.value = ""
 	const widgetId = container?.dataset.saasTurnstileWidgetId
-	if (widgetId) window.turnstile?.reset(widgetId)
+	if (widgetId) {
+		try {
+			window.turnstile?.reset(widgetId)
+		} catch {
+			// External widget cleanup must not block form state recovery.
+		}
+	}
 }
 
 function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
@@ -6455,14 +6468,18 @@ function bindBookingAdapter(
 							: "Booking Request Received"
 			showBookingSuccess()
 			pendingWaitlist = null
+			void loadReferenceDashboardData(tenantSlug)
 		} catch {
 			setBookingMessage(
 				"The booking service could not be reached. Please try again.",
 				"error",
 			)
 		} finally {
-			resetTurnstile(form)
-			setBookingLoading(button, false)
+			try {
+				resetTurnstile(form)
+			} finally {
+				setBookingLoading(button, false)
+			}
 		}
 	}
 
