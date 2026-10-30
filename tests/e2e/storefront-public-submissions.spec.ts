@@ -58,6 +58,7 @@ test.describe("storefront contact and review submissions", () => {
 	}) => {
 		let requestBody: Record<string, unknown> | undefined
 		let includesReviewPhoto = false
+		let accountRefreshes = 0
 		let releaseResponse!: () => void
 		const responseGate = new Promise<void>((resolve) => {
 			releaseResponse = resolve
@@ -88,6 +89,29 @@ test.describe("storefront contact and review submissions", () => {
 			await responseGate
 			await route.fulfill({ status: 201, json: { reviewId: "review-test", status: "pending" } })
 		})
+		await page.route("**/api/account?tenantSlug=royal-braids", async (route) => {
+			accountRefreshes += 1
+			await route.fulfill({
+				status: 200,
+				json: {
+					profile: { name: "Test Client", email: "client@example.com", phone: null, image: null },
+					preferences: null,
+					bookings: [],
+					reviews: accountRefreshes > 1 ? [{
+						id: "review-test",
+						tenantName: "Royal Braids",
+						tenantSlug: "royal-braids",
+						serviceName: null,
+						rating: 5,
+						text: "The service was excellent and I loved the final style.",
+						status: "pending",
+						createdAt: new Date().toISOString(),
+					}] : [],
+					favorites: [],
+					loginHistory: [],
+				},
+			})
+		})
 		const sessionResponse = page.waitForResponse("**/api/auth/session**")
 		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
 		await sessionResponse
@@ -111,6 +135,10 @@ test.describe("storefront contact and review submissions", () => {
 		await expect(submit).toHaveText("Submit Review")
 		await expect(page.locator("#reviewMessage")).toHaveText(
 			"Thank you! Your review was submitted and is pending approval.",
+		)
+		await expect.poll(() => accountRefreshes).toBeGreaterThan(1)
+		await expect(page.locator("#dashboardReviewsList")).toContainText(
+			"The service was excellent and I loved the final style.",
 		)
 		expect(requestBody).toMatchObject({
 			tenantSlug: "royal-braids",
