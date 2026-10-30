@@ -81,12 +81,26 @@ export async function createPublicContactMessage(
 	})
 
 	// Notify the salon owner, matching the legacy contact-message email.
-	const salonEmail =
+	let salonEmail =
 		tenant.settings?.emailBookings || tenant.settings?.emailPrimary
+	if (process.env.VERCEL_ENV === "preview" && tenant.status === "DRAFT") {
+		try {
+			const draftOwner = await prisma.membership.findFirst({
+				where: {
+					tenantId: tenant.id,
+					role: "OWNER",
+					status: "ACTIVE",
+				},
+				select: { user: { select: { email: true } } },
+			})
+			salonEmail = draftOwner?.user.email?.trim() || salonEmail
+		} catch {
+			// Keep the saved contact message available if owner lookup fails.
+		}
+	}
 	if (salonEmail) {
 		await dispatchNotification({
 			tenantId: tenant.id,
-			userId,
 			channel: NotificationChannel.EMAIL,
 			templateKey: "contact.alert",
 			destination: salonEmail,
