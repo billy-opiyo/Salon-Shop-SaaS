@@ -20,6 +20,25 @@ export class PlatformAdminActionError extends Error {
 	readonly code = "PLATFORM_ADMIN_ACTION_FAILED" as const
 }
 
+function normalizePlatformClientCopy<T>(value: T): T {
+	if (typeof value === "string") {
+		return value.replace(/\bcustomers?\b/gi, (match): string => {
+			const replacement = match.toLowerCase().endsWith("s") ? "clients" : "client"
+			if (match === match.toUpperCase()) return replacement.toUpperCase()
+			if (match[0] === match[0].toUpperCase())
+				return replacement[0].toUpperCase() + replacement.slice(1)
+			return replacement
+		}) as T
+	}
+	if (Array.isArray(value)) return value.map((item) => normalizePlatformClientCopy(item)) as T
+	if (value && typeof value === "object") {
+		return Object.fromEntries(
+			Object.entries(value).map(([key, item]) => [key, normalizePlatformClientCopy(item)]),
+		) as T
+	}
+	return value
+}
+
 function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign {
 	const asRecord = (item: unknown): Record<string, unknown> =>
 		item && typeof item === "object" && !Array.isArray(item)
@@ -42,7 +61,7 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 	const currentTerms = asRecord(current.termsPolicy)
 	const currentCookies = asRecord(current.cookiePolicy)
 	const supportEmail = process.env.PLATFORM_SUPPORT_EMAIL?.trim() || DEFAULT_PLATFORM_STOREFRONT.contact.supportEmail
-	return {
+	return normalizePlatformClientCopy({
 		...DEFAULT_PLATFORM_STOREFRONT,
 		...current,
 		logoUrl: (typeof record.logoUrl === "string" ? record.logoUrl : current.logoUrl as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.logoUrl,
@@ -76,7 +95,7 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 		termsPolicy: { ...DEFAULT_PLATFORM_STOREFRONT.termsPolicy, ...currentTerms },
 		cookiePolicy: { ...DEFAULT_PLATFORM_STOREFRONT.cookiePolicy, ...currentCookies },
 		content: { ...DEFAULT_PLATFORM_STOREFRONT.content, ...currentContent },
-	}
+	})
 }
 
 const loadPlatformStorefrontDesign = unstable_cache(async (): Promise<PlatformStorefrontDesign> => {
@@ -154,12 +173,12 @@ export async function updatePlatformStorefrontDesign(
 			? `platform-${Date.now()}`
 			: current.billing.priceVersion,
 	}
-	const design = platformStorefrontDesignSchema.parse({
+	const design = platformStorefrontDesignSchema.parse(normalizePlatformClientCopy({
 		...current,
 		...input,
 		billing: nextBilling,
 		content: { ...current.content, ...input.content },
-	})
+	}))
 	const storedDesign = {
 		branding: design.branding,
 		theme: design.theme,

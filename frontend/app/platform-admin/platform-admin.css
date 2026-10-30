@@ -239,7 +239,29 @@
 	display: grid;
 	gap: .25rem;
 	min-width: 0;
+	max-block-size: min(65vh, 34rem);
+	overflow-x: hidden;
+	overflow-y: auto;
 	margin-top: .75rem;
+	padding-right: .4rem;
+	scrollbar-gutter: stable;
+	scrollbar-width: thin;
+	scrollbar-color: var(--admin-gold) color-mix(in srgb, var(--admin-gold) 9%, var(--admin-surface));
+}
+
+.platform-admin-list::-webkit-scrollbar {
+	width: .6rem;
+}
+
+.platform-admin-list::-webkit-scrollbar-track {
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--admin-gold) 9%, var(--admin-surface));
+}
+
+.platform-admin-list::-webkit-scrollbar-thumb {
+	border: 2px solid color-mix(in srgb, var(--admin-gold) 9%, var(--admin-surface));
+	border-radius: 999px;
+	background: var(--admin-gold);
 }
 
 .platform-admin-row {

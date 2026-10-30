@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import { prisma } from "@backend/db/prisma"
 import { consumeRateLimit, hashRateLimitSubject } from "@backend/services/rateLimit"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 
 export const dynamic = "force-dynamic"
@@ -31,7 +32,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 			where: { slug: parsed.data.tenantSlug.toLowerCase() },
 			select: { id: true, status: true },
 		})
-		if (!tenant || tenant.status !== "ACTIVE") {
+		if (!tenant || !(await tenantAllowsPublicActions(parsed.data.tenantSlug, tenant.status))) {
 			return NextResponse.json({ error: "This salon is not currently accepting bookings." }, { status: 404 })
 		}
 		if (parsed.data.stylistId) {

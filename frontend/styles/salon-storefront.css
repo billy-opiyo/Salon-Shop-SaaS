@@ -6629,6 +6629,13 @@ h6 {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 24px;
+    max-height: min(72vh, 42rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 4px 8px 4px 2px;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     opacity: 1;
     transform: translateY(0);
     transition:
@@ -9071,6 +9078,138 @@ body.light-mode #serviceSelect::-webkit-scrollbar-track {
 body.light-mode #serviceSelect::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, var(--primary-light), var(--primary));
     border-color: var(--primary-border);
+}
+
+/* Repeated salon records stay contained, with scrollbar colors following the active salon theme. */
+body :is(
+    .admin-gallery-list,
+    .admin-blogs-list,
+    .admin-bookings-list,
+    .admin-review-list,
+    .admin-waitlist-list,
+    .admin-security-table-wrap.is-vertical-scroll-active,
+    .admin-schedule-day-events,
+    #adminContactList,
+    #adminAdminsList,
+    #dashboardBookingsList,
+    #dashboardReviewsList,
+    #dashboardFavoritesList,
+    #dashboardLoginHistoryList,
+    .testimonials-grid,
+    .blog-grid,
+    .testimonial-text,
+    .admin-blog-content p,
+    .blog-card-excerpt
+) {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+}
+
+body :is(
+    .admin-gallery-list,
+    .admin-blogs-list,
+    .admin-bookings-list,
+    .admin-review-list,
+    .admin-waitlist-list,
+    .admin-security-table-wrap.is-vertical-scroll-active,
+    .admin-schedule-day-events,
+    #adminContactList,
+    #adminAdminsList,
+    #dashboardBookingsList,
+    #dashboardReviewsList,
+    #dashboardFavoritesList,
+    #dashboardLoginHistoryList,
+    .testimonials-grid,
+    .blog-grid,
+    .testimonial-text,
+    .admin-blog-content p,
+    .blog-card-excerpt
+)::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+body :is(
+    .admin-gallery-list,
+    .admin-blogs-list,
+    .admin-bookings-list,
+    .admin-review-list,
+    .admin-waitlist-list,
+    .admin-security-table-wrap.is-vertical-scroll-active,
+    .admin-schedule-day-events,
+    #adminContactList,
+    #adminAdminsList,
+    #dashboardBookingsList,
+    #dashboardReviewsList,
+    #dashboardFavoritesList,
+    #dashboardLoginHistoryList,
+    .testimonials-grid,
+    .blog-grid,
+    .testimonial-text,
+    .admin-blog-content p,
+    .blog-card-excerpt
+)::-webkit-scrollbar-track {
+    border-radius: var(--radius-full);
+    background: var(--scrollbar-track);
+}
+
+body :is(
+    .admin-gallery-list,
+    .admin-blogs-list,
+    .admin-bookings-list,
+    .admin-review-list,
+    .admin-waitlist-list,
+    .admin-security-table-wrap.is-vertical-scroll-active,
+    .admin-schedule-day-events,
+    #adminContactList,
+    #adminAdminsList,
+    #dashboardBookingsList,
+    #dashboardReviewsList,
+    #dashboardFavoritesList,
+    #dashboardLoginHistoryList,
+    .testimonials-grid,
+    .blog-grid,
+    .testimonial-text,
+    .admin-blog-content p,
+    .blog-card-excerpt
+)::-webkit-scrollbar-thumb {
+    border: 2px solid var(--scrollbar-track);
+    border-radius: var(--radius-full);
+    background: var(--scrollbar-thumb);
+}
+
+body :is(
+    .admin-gallery-list,
+    .admin-blogs-list,
+    .admin-bookings-list,
+    .admin-review-list,
+    .admin-waitlist-list,
+    .admin-security-table-wrap.is-vertical-scroll-active,
+    .admin-schedule-day-events,
+    #adminContactList,
+    #adminAdminsList,
+    #dashboardBookingsList,
+    #dashboardReviewsList,
+    #dashboardFavoritesList,
+    #dashboardLoginHistoryList,
+    .testimonials-grid,
+    .blog-grid,
+    .testimonial-text,
+    .admin-blog-content p,
+    .blog-card-excerpt
+)::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--primary-light), var(--primary));
+}
+
+@media (max-width: 1199px) {
+    .admin-management-section[data-admin-section="admins"] #adminAdminsList {
+        --admin-admins-visible-cards: 4;
+        max-height: min(65vh, calc((var(--admin-admin-card-height) * var(--admin-admins-visible-cards)) + (12px * (var(--admin-admins-visible-cards) - 1))));
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-right: 8px;
+        scrollbar-gutter: stable;
+    }
 }
 
 /* Booking service list option highlighting */

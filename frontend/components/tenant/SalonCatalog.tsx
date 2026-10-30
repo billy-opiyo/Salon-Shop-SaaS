@@ -38,6 +38,7 @@ export interface SalonReviewItem {
 	readonly source?: string
 	readonly rating: number
 	readonly text: string
+	readonly photoUrl?: string
 	readonly featured?: boolean
 	readonly status?: string
 	readonly createdAt?: string
@@ -277,6 +278,17 @@ export function SalonTestimonials({
 				))}
 			</div>
 			<p className="testimonial-text">&quot;{review.text}&quot;</p>
+			{review.photoUrl ? (
+				<div className="testimonial-review-photo-wrap">
+					<img
+						className="testimonial-review-photo"
+						src={review.photoUrl}
+						alt={`${review.name}'s review photo`}
+						loading="lazy"
+						decoding="async"
+					/>
+				</div>
+			) : null}
 			<div className="testimonial-author">
 				<div className="testimonial-avatar">{review.name.charAt(0).toUpperCase()}</div>
 				<div className="testimonial-author-info">
