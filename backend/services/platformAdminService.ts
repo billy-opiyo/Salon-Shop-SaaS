@@ -2,7 +2,7 @@ import "server-only"
 
 import { randomUUID } from "node:crypto"
 import { cache } from "react"
-import { revalidateTag, unstable_cache } from "next/cache"
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@backend/db/prisma"
@@ -223,6 +223,10 @@ export async function updatePlatformStorefrontDesign(
 		}),
 	])
 	revalidateTag("platform-storefront-design", { expire: 0 })
+	// Platform CMS content is rendered through the shared root layout and across
+	// multiple public routes. Invalidate the route tree as well as the data tag so
+	// a previously cached page cannot keep showing the old design after a save.
+	revalidatePath("/", "layout")
 	return design
 }
 
