@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@backend/db/prisma";
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess";
 import type { ClientAccountSnapshot } from "@shared/types/clientAccount";
 
 export type { ClientAccountSnapshot } from "@shared/types/clientAccount";
@@ -27,7 +28,10 @@ export async function getClientAccountSnapshot(
     where: { slug: normalizedSlug },
     select: { id: true, status: true },
   }) : null
-  if (normalizedSlug && (!tenant || tenant.status !== "ACTIVE"))
+  if (
+    normalizedSlug &&
+    (!tenant || !(await tenantAllowsPublicActions(normalizedSlug, tenant.status)))
+  )
     throw new ClientAccountError("This salon is not currently available.")
 
   const user = await prisma.user.findUnique({

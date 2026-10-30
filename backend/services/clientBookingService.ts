@@ -3,6 +3,7 @@ import "server-only"
 import { BookingStatus, Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import {
 	notifyBookingCustomer,
 	notifyNextWaitlistedCustomer,
@@ -22,7 +23,7 @@ async function resolveTenant(userId: string, tenantSlug: string) {
 		where: { slug: tenantSlug.trim().toLowerCase() },
 		select: { id: true, status: true, businessName: true },
 	})
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(tenantSlug, tenant.status)))
 		throw new ClientBookingError("This salon is not currently available.")
 	const user = await prisma.user.findUnique({
 		where: { id: userId },

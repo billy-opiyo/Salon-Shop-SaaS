@@ -3,6 +3,7 @@ import "server-only"
 import { WaitlistStatus } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 
 export class ClientWaitlistError extends Error {
 	readonly code = "CLIENT_WAITLIST_FAILED" as const
@@ -100,7 +101,7 @@ export async function getClientWaitlistQueueInfo(input: {
 		where: { slug: normalizeSlug(input.tenantSlug) },
 		select: { id: true, status: true },
 	})
-	if (!tenant || tenant.status !== "ACTIVE") {
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status))) {
 		throw new ClientWaitlistError("This salon is not currently available.")
 	}
 

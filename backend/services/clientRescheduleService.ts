@@ -3,6 +3,7 @@ import "server-only"
 import { BookingStatus, Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import { notifyBookingCustomer } from "@backend/services/notificationService"
 
 export class ClientRescheduleError extends Error {
@@ -29,7 +30,7 @@ export async function rescheduleClientBooking(
 		where: { slug: tenantSlug.trim().toLowerCase() },
 		select: { id: true, status: true, businessName: true },
 	})
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(tenantSlug, tenant.status)))
 		throw new ClientRescheduleError("This salon is not currently available.")
 	const appointmentDate = new Date(`${input.appointmentDate}T00:00:00.000Z`)
 	if (
