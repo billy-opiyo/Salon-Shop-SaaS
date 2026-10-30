@@ -7,6 +7,7 @@ import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
+import { sanitizeNotificationErrorMessage } from "@backend/services/notificationService"
 
 export class MerchantMessageError extends Error {
 	readonly code = "MERCHANT_MESSAGE_FAILED" as const
@@ -92,7 +93,9 @@ export async function listMessagesForUser(userId: string, tenantSlug: string) {
 		return {
 			...message,
 			emailDeliveryStatus: delivery?.status ?? null,
-			emailDeliveryError: delivery?.errorMessage ?? null,
+			emailDeliveryError: sanitizeNotificationErrorMessage(
+				delivery?.errorMessage,
+			),
 		}
 	})
 }
