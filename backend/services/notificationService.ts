@@ -83,9 +83,27 @@ async function sendResendEmail(
 			body: JSON.stringify({ from, to: [to], subject, html }),
 		})
 		if (!response.ok) {
+			const providerError = (await response.json().catch(() => null)) as
+				| { readonly name?: unknown; readonly message?: unknown }
+				| null
+			const providerName =
+				typeof providerError?.name === "string" &&
+				/^[a-z0-9_-]{1,80}$/i.test(providerError.name)
+					? providerError.name
+					: ""
+			const providerMessage =
+				typeof providerError?.message === "string"
+					? providerError.message.replace(/\s+/g, " ").trim().slice(0, 240)
+					: ""
 			return {
 				ok: false,
-				error: `Email provider rejected the message (${response.status}).`,
+				error: [
+					`Email provider rejected the message (${response.status})`,
+					providerName,
+					providerMessage,
+				]
+					.filter(Boolean)
+					.join(": "),
 			}
 		}
 		const data = (await response.json().catch(() => null)) as {

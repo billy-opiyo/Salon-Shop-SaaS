@@ -47,7 +47,7 @@ async function getTenantId(
 
 export async function listMessagesForUser(userId: string, tenantSlug: string) {
 	const tenantId = await getTenantId(userId, tenantSlug)
-	return prisma.contactMessage.findMany({
+	const messages = await prisma.contactMessage.findMany({
 		where: { tenantId },
 		orderBy: { createdAt: "desc" },
 		select: {
@@ -59,6 +59,41 @@ export async function listMessagesForUser(userId: string, tenantSlug: string) {
 			status: true,
 			createdAt: true,
 		},
+	})
+	if (messages.length === 0) return messages
+
+	const deliveries = await prisma.notificationDelivery.findMany({
+		where: { tenantId, templateKey: "contact.alert" },
+		orderBy: { createdAt: "desc" },
+		take: 500,
+		select: {
+			idempotencyKey: true,
+			status: true,
+			errorMessage: true,
+			templateData: true,
+		},
+	})
+	return messages.map((message) => {
+		const delivery =
+			deliveries.find(
+				(item) => item.idempotencyKey.split(":").slice(-1)[0] === message.id,
+			) ??
+			deliveries.find((item) => {
+				const data = item.templateData
+				if (!data || typeof data !== "object" || Array.isArray(data)) return false
+				const contact = data as Record<string, unknown>
+				return (
+					contact.contactName === message.name &&
+					contact.contactEmail === message.email &&
+					contact.contactSubject === message.subject &&
+					contact.message === message.message
+				)
+			})
+		return {
+			...message,
+			emailDeliveryStatus: delivery?.status ?? null,
+			emailDeliveryError: delivery?.errorMessage ?? null,
+		}
 	})
 }
 

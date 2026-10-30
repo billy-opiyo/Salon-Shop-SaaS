@@ -90,7 +90,9 @@ export async function createPublicContactMessage(
 			channel: NotificationChannel.EMAIL,
 			templateKey: "contact.alert",
 			destination: salonEmail,
+			idempotencyKeySuffix: message.id,
 			subject: {
+				contactMessageId: message.id,
 				businessName: tenant.businessName,
 				contactName: input.name,
 				contactEmail: input.email.toLowerCase(),
