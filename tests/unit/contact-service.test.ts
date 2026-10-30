@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("server-only", () => ({}))
 
@@ -9,6 +9,7 @@ const transactionMock = vi.hoisted(() => ({
 
 const prismaMock = vi.hoisted(() => ({
 	tenant: { findUnique: vi.fn() },
+	membership: { findFirst: vi.fn() },
 	$transaction: vi.fn(),
 }))
 
@@ -27,8 +28,13 @@ vi.mock("../../backend/services/notificationService", () => ({
 import { createPublicContactMessage } from "../../backend/services/contactService"
 
 describe("public contact message delivery", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs()
+	})
+
 	beforeEach(() => {
 		vi.clearAllMocks()
+		vi.stubEnv("VERCEL_ENV", "test")
 		prismaMock.$transaction.mockImplementation(
 			async (callback: (transaction: typeof transactionMock) => unknown) =>
 				callback(transactionMock),
@@ -84,6 +90,37 @@ describe("public contact message delivery", () => {
 				destination: "bookings@royalbraids.ke",
 				idempotencyKeySuffix: "message-a",
 				subject: expect.objectContaining({ contactMessageId: "message-a" }),
+			}),
+		)
+		expect(dispatchNotification).not.toHaveBeenCalledWith(
+			expect.objectContaining({ userId: "client-a" }),
+		)
+	})
+
+	it("routes preview DRAFT contact alerts to the salon owner for Resend sandbox delivery", async () => {
+		vi.stubEnv("VERCEL_ENV", "preview")
+		prismaMock.membership.findFirst.mockResolvedValue({
+			user: { email: "babsohaleem01@gmail.com" },
+		})
+
+		await createPublicContactMessage({
+			tenantSlug: "royal-braids",
+			name: "Jane Doe",
+			email: "jane@example.com",
+			subject: "Appointment question",
+			message: "Please tell me your next available appointment.",
+			turnstileToken: "test-token",
+		})
+
+		const { dispatchNotification } = await import("../../backend/services/notificationService")
+		expect(prismaMock.membership.findFirst).toHaveBeenCalledWith({
+			where: { tenantId: "tenant-a", role: "OWNER", status: "ACTIVE" },
+			select: { user: { select: { email: true } } },
+		})
+		expect(dispatchNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				templateKey: "contact.alert",
+				destination: "babsohaleem01@gmail.com",
 			}),
 		)
 	})
