@@ -888,10 +888,9 @@ export function SalonStorefrontMarkup({
 								<path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
 								<polyline points="22 4 12 14.01 9 11.01"></polyline>
 							</svg>
-							<h3>Booking Confirmed!</h3>
-							<p style={{color: "var(--text-secondary)"}}>
-								Check your email for confirmation details. We&apos;ll send a reminder
-								on Whatsapp 2 Hours before your appointment.
+							<h3>Booking Request Received</h3>
+							<p id="bookingSuccessMessage" style={{color: "var(--text-secondary)"}}>
+								Your request is with the salon. They&apos;ll contact you to confirm your appointment.
 							</p>
 							<div
 								className="post-booking-auth-prompt hidden"
