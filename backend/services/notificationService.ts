@@ -38,6 +38,13 @@ function env(name: string): string {
 	return (process.env[name] ?? "").trim()
 }
 
+export function sanitizeNotificationErrorMessage(
+	value: string | null | undefined,
+): string | null {
+	if (!value) return null
+	return value.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted email]")
+}
+
 function escapeHtml(value: unknown): string {
 	return String(value ?? "")
 		.replaceAll("&", "&amp;")
@@ -93,7 +100,9 @@ async function sendResendEmail(
 					: ""
 			const providerMessage =
 				typeof providerError?.message === "string"
-					? providerError.message.replace(/\s+/g, " ").trim().slice(0, 240)
+					? (sanitizeNotificationErrorMessage(
+							providerError.message.replace(/\s+/g, " ").trim().slice(0, 240),
+						) ?? "")
 					: ""
 			return {
 				ok: false,
