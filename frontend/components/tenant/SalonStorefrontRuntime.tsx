@@ -6425,6 +6425,7 @@ function bindBookingAdapter(
 					? payload.status
 					: undefined
 			const isWaitlisted = bookingStatus === "WAITLISTED"
+			const isConfirmed = bookingStatus === "CONFIRMED"
 			setBookingMessage(
 				isWaitlisted
 					? "Your waitlisted booking is saved. The salon will contact you when they can confirm a slot."
@@ -6433,6 +6434,15 @@ function bindBookingAdapter(
 						: "Booking request received. We will confirm your appointment shortly.",
 				"success",
 			)
+			const successMessage = document.getElementById("bookingSuccessMessage")
+			if (successMessage)
+				successMessage.textContent = isWaitlisted
+					? "The salon will contact you if this appointment slot becomes available."
+					: paymentPending
+						? "Approve the M-Pesa prompt to complete payment. The salon will confirm your appointment shortly."
+						: isConfirmed
+							? "Your appointment is confirmed. Check your email for details and reminders."
+							: "Your request is with the salon. They’ll contact you to confirm your appointment."
 			const successHeading =
 				document.querySelector<HTMLHeadingElement>("#bookingSuccess h3")
 			if (successHeading)
@@ -6440,7 +6450,9 @@ function bindBookingAdapter(
 					? "You’re on the Waitlist"
 					: paymentPending
 						? "Payment Pending"
-						: "Booking Confirmed!"
+						: isConfirmed
+							? "Booking Confirmed!"
+							: "Booking Request Received"
 			showBookingSuccess()
 			pendingWaitlist = null
 		} catch {
