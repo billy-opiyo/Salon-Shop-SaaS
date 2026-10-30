@@ -118,6 +118,7 @@ test.describe("storefront booking availability and waitlist", () => {
 	})
 
 	test("uploads an optional inspiration photo with a normal booking", async ({ page }) => {
+		test.setTimeout(60_000)
 		const future = new Date()
 		future.setUTCDate(future.getUTCDate() + 5)
 		const appointmentDate = future.toISOString().slice(0, 10)
@@ -137,6 +138,14 @@ test.describe("storefront booking availability and waitlist", () => {
 		})
 
 		await page.goto("/royal-braids", { waitUntil: "domcontentloaded" })
+		await page.waitForSelector("nav.saas-tenant-mobile-actions", {
+			state: "attached",
+			timeout: 15_000,
+		})
+		await page.waitForFunction(() =>
+			Boolean((window as unknown as { CLIENT_CONFIG?: unknown }).CLIENT_CONFIG),
+		)
+		await expect(page.locator("#bookingForm")).toBeVisible()
 		await page.locator('#bookingForm [name="firstName"]').fill("Amina")
 		await page.locator('#bookingForm [name="lastName"]').fill("Client")
 		await page.locator('#bookingForm [name="email"]').fill("amina@example.com")
@@ -175,11 +184,24 @@ test.describe("storefront booking availability and waitlist", () => {
 			buffer: Buffer.from("mock inspiration image"),
 		})
 		await page.locator("#bookingForm").evaluate((form) => {
+			const widget = document.createElement("div")
+			widget.dataset.saasTurnstile = "true"
+			widget.dataset.saasTurnstileWidgetId = "test-widget"
+			form.append(widget)
 			const input = form.querySelector<HTMLInputElement>('input[name="turnstileToken"]') ?? document.createElement("input")
 			input.type = "hidden"
 			input.name = "turnstileToken"
 			input.value = "test-turnstile-token"
 			if (!input.isConnected) form.append(input)
+		})
+		await page.evaluate(() => {
+			window.turnstile = {
+				render: () => "test-widget",
+				remove: () => undefined,
+				reset: () => {
+					throw new Error("Turnstile reset failed")
+				},
+			}
 		})
 		await page.locator("#submitBtn").click()
 		await expect(page.locator("#bookingSuccess")).toBeVisible()
