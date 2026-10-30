@@ -64,7 +64,11 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 	return (
 		<div className="top-stores-list">
 			{stores.map((store, index) => (
-				<article className={`top-store${store.isDemo ? " top-store--soon" : ""}`} key={store.slug}>
+				<article
+					className={`top-store${store.isDemo ? " top-store--soon" : ""}${showAll && index >= limit ? " top-store--revealed" : ""}`}
+					key={store.slug}
+					style={showAll && index >= limit ? { animationDelay: `${Math.min(index - limit, 6) * 45}ms` } : undefined}
+				>
 					<div className="top-store__image">
 						<Image
 							className="top-store__image-content"
@@ -84,10 +88,7 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 							<span className="top-store__soon-label">Coming soon</span>
 						) : (
 							<>
-								<RatingStars
-									rating={store.rating}
-									reviewCount={store.reviewCount}
-								/>
+								<RatingStars rating={store.rating} reviewCount={store.reviewCount} />
 								<StoreTransitionLink className="top-store__link" href={store.href} prefetch={!showAll}>
 									Open {store.name} Salon →
 								</StoreTransitionLink>
