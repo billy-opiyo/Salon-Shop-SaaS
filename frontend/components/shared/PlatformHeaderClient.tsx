@@ -88,11 +88,11 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 	return <header className="platform-header">
 		{isHome ? <PlatformBrandMark>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label={`${brandName} homepage`}>{brand}</Link>}
 		<nav id="platform-navigation" className={"platform-nav" + (menuOpen ? " is-open" : "")} aria-label="Platform navigation">
-			<Link href={homeHref} onClick={() => setMenuOpen(false)}>Home</Link>
-			<Link href="/stores" onClick={() => setMenuOpen(false)}>Salons</Link>
-			<Link href={plansHref} onClick={() => setMenuOpen(false)}>Pricings</Link>
-			<Link href="/about" onClick={() => setMenuOpen(false)}>About</Link>
-			<Link href="/support" onClick={() => setMenuOpen(false)}>Support</Link>
+			<Link href={homeHref} prefetch={!isHome} onClick={() => setMenuOpen(false)}>Home</Link>
+			<Link href="/stores" prefetch onClick={() => setMenuOpen(false)}>Salons</Link>
+			<Link href={plansHref} prefetch={!isHome} onClick={() => setMenuOpen(false)}>Pricings</Link>
+			<Link href="/about" prefetch onClick={() => setMenuOpen(false)}>About</Link>
+			<Link href="/support" prefetch onClick={() => setMenuOpen(false)}>Support</Link>
 		</nav>
 		<div className="platform-header__actions">
 			<SiteSearch
@@ -117,11 +117,11 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 				</button>
 				{accountMenuOpen && <div className="platform-account__menu" id="platform-account-menu" role="menu" aria-label="Account options">
 					{isSignedIn ? <>
-						<Link href="/account" role="menuitem" onClick={() => setAccountMenuOpen(false)}>My account</Link>
+						<Link href="/account" prefetch role="menuitem" onClick={() => setAccountMenuOpen(false)}>My account</Link>
 						<button type="button" role="menuitem" onClick={handleSignOut}>Log out</button>
 					</> : <>
-						<Link href="/login" role="menuitem" onClick={() => setAccountMenuOpen(false)}>Log in</Link>
-						<Link href="/signup" role="menuitem" onClick={() => setAccountMenuOpen(false)}>Sign up</Link>
+						<Link href="/login" prefetch role="menuitem" onClick={() => setAccountMenuOpen(false)}>Log in</Link>
+						<Link href="/signup" prefetch role="menuitem" onClick={() => setAccountMenuOpen(false)}>Sign up</Link>
 					</>}
 				</div>}
 			</div>

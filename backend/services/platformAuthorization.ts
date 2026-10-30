@@ -1,6 +1,7 @@
 import "server-only"
 
 import { PlatformAdminRole as PrismaPlatformAdminRole } from "@prisma/client"
+import { unstable_cache } from "next/cache"
 
 import { prisma } from "@backend/db/prisma"
 
@@ -92,5 +93,32 @@ export async function isPlatformAdmin(
 		return (await getPlatformAdminRole(userId, email)) !== null
 	} catch {
 		return isPlatformOwner(userId, email)
+	}
+}
+
+// The shared public header only needs a best-effort role hint to expose the
+// Platform Admin search shortcut. Keep that hint off the page-render critical
+// path after its first lookup. Protected routes continue to use fresh role
+// checks through assertPlatformAdmin/assertPlatformAdminPermission.
+const hasCachedPlatformAdminNavigationRole = unstable_cache(
+	async (email: string) => Boolean(await prisma.platformAdminRoleAssignment.findUnique({
+		where: { email },
+		select: { role: true },
+	})),
+	["platform-admin-navigation-role"],
+	{ revalidate: 60, tags: ["platform-admin-navigation-role"] },
+)
+
+export async function isPlatformAdminForNavigation(
+	userId: string,
+	email?: string | null,
+): Promise<boolean> {
+	if (isPlatformOwner(userId, email)) return true
+	const normalizedEmail = email?.trim().toLowerCase()
+	if (!normalizedEmail) return false
+	try {
+		return await hasCachedPlatformAdminNavigationRole(normalizedEmail)
+	} catch {
+		return false
 	}
 }

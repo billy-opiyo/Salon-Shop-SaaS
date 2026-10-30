@@ -31,6 +31,7 @@ export function PlatformMobileActions({
 				<Link
 					key={item.name}
 					href={item.href}
+					prefetch={item.name !== active && item.href !== "#home"}
 					aria-current={active === item.name ? "page" : undefined}
 				>
 					<PlatformActionIcon name={item.name} />

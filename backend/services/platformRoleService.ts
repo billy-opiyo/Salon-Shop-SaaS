@@ -1,6 +1,7 @@
 import "server-only"
 
 import { PlatformAdminRole } from "@prisma/client"
+import { revalidateTag } from "next/cache"
 
 import { prisma } from "@backend/db/prisma"
 import {
@@ -45,7 +46,7 @@ export async function assignPlatformRole(
 		throw new PlatformRoleError("The configured Owner account cannot be changed here.")
 	if (roleInput !== PlatformAdminRole.STORE_EDITOR && roleInput !== PlatformAdminRole.STORE_SUPPORT)
 		throw new PlatformRoleError("Choose Store Editor or Store Support.")
-	return prisma.$transaction(async (transaction) => {
+	const assignment = await prisma.$transaction(async (transaction) => {
 		const assignment = await transaction.platformAdminRoleAssignment.upsert({
 			where: { email },
 			create: { email, role: roleInput, assignedByUserId: actorUserId },
@@ -63,6 +64,8 @@ export async function assignPlatformRole(
 		})
 		return assignment
 	})
+	revalidateTag("platform-admin-navigation-role", { expire: 0 })
+	return assignment
 }
 
 export async function removePlatformRoleAssignment(
@@ -88,4 +91,5 @@ export async function removePlatformRoleAssignment(
 			},
 		})
 	})
+	revalidateTag("platform-admin-navigation-role", { expire: 0 })
 }
