@@ -9,6 +9,7 @@ import {
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import type { ContactRequestInput } from "@shared/validation/contact"
 
 export class ContactRequestError extends Error {
@@ -40,7 +41,7 @@ export async function createPublicContactMessage(
 			settings: { select: { emailPrimary: true, emailBookings: true } },
 		},
 	})
-	if (!tenant || tenant.status !== "ACTIVE") {
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status))) {
 		throw new ContactRequestError("This salon is not currently available.")
 	}
 

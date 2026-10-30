@@ -1,6 +1,7 @@
 import "server-only"
 
 import { prisma } from "@backend/db/prisma"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 
 export class FavoriteRequestError extends Error {
 	readonly code = "FAVORITE_REQUEST_FAILED" as const
@@ -20,7 +21,7 @@ async function resolveTenantStyle(
 		where: { slug: tenantSlug.trim().toLowerCase() },
 		select: { id: true, status: true },
 	})
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(tenantSlug, tenant.status)))
 		throw new FavoriteRequestError("This salon is not currently available.")
 
 	const style = await prisma.galleryStyle.findFirst({

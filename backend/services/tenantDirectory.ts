@@ -1,10 +1,10 @@
 import "server-only"
 
-import { headers } from "next/headers"
 import { unstable_cache } from "next/cache"
 import { cache } from "react"
 import { prisma } from "@backend/db/prisma"
 import { resolveTenantSlugByHost } from "@backend/services/tenantDomainService"
+import { canPreviewRoyalBraidsDraft } from "@backend/services/publicTenantAccess"
 import type { TenantStorefront } from "@shared/types/tenant"
 import {
 	DEFAULT_STOREFRONT_DESIGN,
@@ -213,17 +213,6 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 
 export const listPublicTenantCards = loadPublicTenantCards
 
-async function canPreviewDraftRoyalBraids(): Promise<boolean> {
-	if (
-		process.env.NODE_ENV !== "production" ||
-		process.env.VERCEL_GIT_COMMIT_REF === "staging" ||
-		process.env.PLATFORM_DEMO_STORES === "true"
-	)
-		return true
-	const host = (await headers()).get("host")?.split(":", 1)[0].toLowerCase()
-	return host === "beauty-sphia-staging.vercel.app"
-}
-
 export const getTenantStorefrontBrand = cache(async (
 	slug: string,
 ): Promise<TenantStorefrontBrand | null> => {
@@ -255,7 +244,7 @@ export const getTenantStorefrontBrand = cache(async (
 			!(
 				tenant.status === "DRAFT" &&
 				normalizedSlug === "royal-braids" &&
-				(await canPreviewDraftRoyalBraids())
+				(await canPreviewRoyalBraidsDraft())
 			)
 		)
 			return null
@@ -362,7 +351,7 @@ export const getTenantStorefront = cache(async (
 					where: { status: "APPROVED" },
 					orderBy: { createdAt: "desc" },
 					take: 100,
-					select: { id: true, name: true, rating: true, text: true, featured: true, createdAt: true },
+					select: { id: true, name: true, rating: true, text: true, photoUrl: true, featured: true, createdAt: true },
 				},
 				blogPosts: {
 					where: { published: true },
@@ -382,7 +371,7 @@ export const getTenantStorefront = cache(async (
 			const isAllowedRoyalBraidsDraft =
 				tenant.status === "DRAFT" &&
 				normalizedSlug === "royal-braids" &&
-				(await canPreviewDraftRoyalBraids())
+				(await canPreviewRoyalBraidsDraft())
 			if (!isAllowedRoyalBraidsDraft) return null
 		}
 
@@ -518,6 +507,7 @@ export const getTenantStorefront = cache(async (
 				author: review.name,
 				rating: review.rating,
 				text: review.text,
+				photoUrl: review.photoUrl ?? undefined,
 				featured: review.featured,
 				role: undefined,
 				createdAt: review.createdAt.toISOString(),

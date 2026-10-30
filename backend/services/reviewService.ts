@@ -8,6 +8,8 @@ import {
 	hashRateLimitSubject,
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
+import { uploadReviewPhoto } from "@backend/services/mediaService"
 import type {
 	ReviewEditInput,
 	ReviewReportInput,
@@ -27,6 +29,7 @@ export async function createClientReview(
 	userId: string,
 	input: ReviewRequestInput,
 	remoteAddress?: string,
+	photoFile?: { readonly file: Buffer; readonly mimeType: string; readonly fileName: string },
 ): Promise<{ readonly id: string; readonly status: string }> {
 	if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
 		throw new ReviewRequestError(
@@ -44,7 +47,7 @@ export async function createClientReview(
 			select: { name: true, email: true, emailVerified: true },
 		}),
 	])
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status)))
 		throw new ReviewRequestError("This salon is not currently available.")
 	if (!user || !user.emailVerified)
 		throw new ReviewRequestError(
@@ -57,16 +60,26 @@ export async function createClientReview(
 		kind: "client-review",
 		intervalMs: 86_400_000,
 	})
+	const photo = photoFile
+		? await uploadReviewPhoto(
+			tenant.id,
+			userId,
+			photoFile.file,
+			photoFile.mimeType,
+			photoFile.fileName,
+		)
+		: null
 
 	const review = await prisma.$transaction(async (transaction) => {
 		const created = await transaction.review.create({
 			data: {
 				tenantId: tenant.id,
 				userId,
-				name: user.name?.trim() || user.email.split("@")[0] || "Client",
+				name: input.name,
 				rating: input.rating,
 				serviceName: input.serviceName,
 				text: input.text,
+				photoUrl: photo?.url,
 				status: ReviewStatus.PENDING,
 			},
 			select: { id: true, status: true },
@@ -89,12 +102,14 @@ export async function editClientReview(
 	userId: string,
 	input: ReviewEditInput,
 ): Promise<void> {
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: input.tenantSlug.toLowerCase() },
+		select: { id: true, status: true },
+	})
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status)))
+		throw new ReviewRequestError("This salon is not currently available.")
 	const review = await prisma.review.findFirst({
-		where: {
-			id: input.id,
-			userId,
-			tenant: { slug: input.tenantSlug.toLowerCase(), status: "ACTIVE" },
-		},
+		where: { id: input.id, userId, tenantId: tenant.id },
 		select: { id: true, tenantId: true },
 	})
 	if (!review) throw new ReviewRequestError("Review not found.")
@@ -102,6 +117,7 @@ export async function editClientReview(
 		await transaction.review.update({
 			where: { id: review.id },
 			data: {
+				name: input.name,
 				rating: input.rating,
 				serviceName: input.serviceName,
 				text: input.text,
@@ -134,7 +150,7 @@ export async function reportClientReview(
 		where: { slug: input.tenantSlug.toLowerCase() },
 		select: { id: true, status: true },
 	})
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status)))
 		throw new ReviewRequestError("This salon is not currently available.")
 	const review = await prisma.review.findFirst({
 		where: { id: input.id, tenantId: tenant.id, status: ReviewStatus.APPROVED },

@@ -10,6 +10,7 @@ import {
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { hasEntitlement } from "@shared/constants/plans"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import { recalculateWaitlistQueuePositions } from "@backend/services/waitlistQueueService"
 import {
 	uploadPublicBookingInspiration,
@@ -51,7 +52,7 @@ export async function createPublicWaitlistEntry(
 			subscription: { select: { plan: { select: { tier: true } } } },
 		},
 	})
-	if (!tenant || tenant.status !== "ACTIVE")
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status)))
 		throw new WaitlistRequestError(
 			"This salon is not currently accepting requests.",
 		)

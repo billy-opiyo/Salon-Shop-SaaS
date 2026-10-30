@@ -152,6 +152,23 @@ export async function uploadGalleryImage(
 	return uploadDirectToR2(tenantId, uploadedById, "GALLERY", file, metadata)
 }
 
+export async function uploadReviewPhoto(
+	tenantId: string,
+	uploadedById: string,
+	file: Buffer,
+	mimeType: string,
+	fileName: string,
+): Promise<MediaUploadResult> {
+	validateImageMetadata(file.length, mimeType)
+	const metadata: MediaMetadata = {
+		fileName: `${tenantId}/${fileName}`,
+		mimeType,
+		size: file.length,
+		mediaType: "image",
+	}
+	return uploadDirectToR2(tenantId, uploadedById, "REVIEW", file, metadata)
+}
+
 export async function uploadPublicBookingInspiration(
 	tenantId: string,
 	file: Buffer,
@@ -259,7 +276,7 @@ export async function verifyPublicBookingInspiration(
 async function uploadDirectToR2(
 	tenantId: string,
 	uploadedById: string | undefined,
-	kind: "AVATAR" | "GALLERY" | "BOOKING_INSPIRATION",
+	kind: "AVATAR" | "GALLERY" | "REVIEW" | "BOOKING_INSPIRATION",
 	file: Buffer,
 	metadata: MediaMetadata,
 ): Promise<MediaUploadResult> {

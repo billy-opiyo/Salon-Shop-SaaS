@@ -12,6 +12,11 @@ import {
 	reviewReportSchema,
 	reviewRequestSchema,
 } from "@shared/validation/review"
+import { getImageUploadError, MAX_IMAGE_UPLOAD_BYTES } from "@shared/validation/media"
+import {
+	MediaProviderConfigurationError,
+	MediaUploadError,
+} from "@backend/services/mediaService"
 
 export const dynamic = "force-dynamic"
 
@@ -23,8 +28,30 @@ export async function POST(request: Request): Promise<NextResponse> {
 			{ status: 401 },
 		)
 	let body: unknown
+	let photoFile: { readonly file: Buffer; readonly mimeType: string; readonly fileName: string } | undefined
 	try {
-		body = await request.json()
+		if (request.headers.get("content-type")?.includes("multipart/form-data")) {
+			const formData = await request.formData()
+			body = Object.fromEntries(
+				[...formData.entries()].filter(
+					(entry): entry is [string, string] => typeof entry[1] === "string",
+				),
+			)
+			const file = formData.get("reviewPhoto")
+			if (file instanceof File && file.size > 0) {
+				if (file.size > MAX_IMAGE_UPLOAD_BYTES)
+					return NextResponse.json({ error: "The review photo must be 1 MB or smaller." }, { status: 413 })
+				const imageError = getImageUploadError(file.size, file.type)
+				if (imageError) return NextResponse.json({ error: imageError }, { status: 400 })
+				photoFile = {
+					file: Buffer.from(await file.arrayBuffer()),
+					mimeType: file.type,
+					fileName: file.name,
+				}
+			}
+		} else {
+			body = await request.json()
+		}
 	} catch {
 		return NextResponse.json(
 			{ error: "Invalid request body." },
@@ -42,6 +69,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 			session.user.id,
 			parsed.data,
 			request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			photoFile,
 		)
 		return NextResponse.json(
 			{ reviewId: result.id, status: result.status },
@@ -53,6 +81,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 				{ error: error.message },
 				{ status: error.message.startsWith("Security") ? 403 : 400 },
 			)
+		if (error instanceof MediaProviderConfigurationError)
+			return NextResponse.json({ error: error.message }, { status: 503 })
+		if (error instanceof MediaUploadError)
+			return NextResponse.json({ error: error.message }, { status: 400 })
 		return NextResponse.json(
 			{ error: "The review could not be submitted." },
 			{ status: 500 },

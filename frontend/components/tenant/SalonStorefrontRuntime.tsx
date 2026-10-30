@@ -4107,6 +4107,7 @@ function setBookingMessage(message: string, type: "error" | "success"): void {
 
 function setBookingLoading(button: HTMLButtonElement, loading: boolean): void {
 	button.disabled = loading
+	button.classList.toggle("btn-loading", loading)
 	button.setAttribute("aria-busy", String(loading))
 	const label = button.querySelector<HTMLElement>("[data-booking-submit-label]")
 	if (label) label.textContent = loading ? "Processing..." : "Confirm Booking"
@@ -4214,17 +4215,46 @@ function openReferenceWhatsAppOrder(serviceName: string, price: string): void {
 	)
 }
 
+const referenceFormMessageTimers = new Map<string, number>()
+
 function setReferenceFormMessage(
 	elementId: string,
 	message: string,
 	type: "error" | "success",
+	durationMs = 4000,
 ): void {
 	const element = document.getElementById(elementId)
 	if (!element) return
+	const activeTimer = referenceFormMessageTimers.get(elementId)
+	if (activeTimer !== undefined) window.clearTimeout(activeTimer)
+	referenceFormMessageTimers.delete(elementId)
 	element.textContent = message
 	element.classList.remove("error", "success")
 	element.classList.add(type)
+	element.setAttribute("role", type === "error" ? "alert" : "status")
+	element.setAttribute("aria-live", type === "error" ? "assertive" : "polite")
 	element.style.display = message ? "block" : "none"
+	if (message && durationMs > 0) {
+		const timer = window.setTimeout(() => {
+			element.style.display = "none"
+			element.textContent = ""
+			referenceFormMessageTimers.delete(elementId)
+		}, durationMs)
+		referenceFormMessageTimers.set(elementId, timer)
+	}
+}
+
+function setPublicFormButtonLoading(
+	button: HTMLButtonElement | null,
+	loading: boolean,
+	loadingText: string,
+	resetText: string,
+): void {
+	if (!button) return
+	button.disabled = loading
+	button.classList.toggle("btn-loading", loading)
+	button.setAttribute("aria-busy", String(loading))
+	button.textContent = loading ? loadingText : resetText
 }
 
 function showTransientPopup(id: string, durationMs: number): () => void {
@@ -4326,7 +4356,7 @@ function bindPublicParityAdapters(
 		const submitButton = contactForm.querySelector<HTMLButtonElement>(
 			"button[type=submit]",
 		)
-		if (submitButton) submitButton.disabled = true
+		setPublicFormButtonLoading(submitButton, true, "Sending...", "Send Message")
 		try {
 			const response = await fetch("/api/contact", {
 				method: "POST",
@@ -4364,7 +4394,7 @@ function bindPublicParityAdapters(
 			)
 		} finally {
 			resetTurnstile(contactForm)
-			if (submitButton) submitButton.disabled = false
+			setPublicFormButtonLoading(submitButton, false, "Sending...", "Send Message")
 		}
 	}
 
@@ -4373,35 +4403,101 @@ function bindPublicParityAdapters(
 		event.stopImmediatePropagation()
 		if (!(reviewForm instanceof HTMLFormElement)) return
 		const rating = document.getElementById("reviewRating")
+		const name = document.getElementById("reviewName")
 		const service = document.getElementById("reviewService")
 		const text = document.getElementById("reviewText")
 		const submitButton = document.getElementById("submitReviewBtn")
 		if (
 			!(rating instanceof HTMLSelectElement) ||
+			!(name instanceof HTMLInputElement) ||
 			!(text instanceof HTMLTextAreaElement)
 		)
 			return
-		if (submitButton instanceof HTMLButtonElement) submitButton.disabled = true
+		const nameValue = name.value.trim()
+		const reviewText = text.value.trim()
+		if (nameValue.length < 2 || nameValue.length > 80) {
+			setReferenceFormMessage(
+				"reviewMessage",
+				"Name must be between 2 and 80 characters.",
+				"error",
+				4000,
+			)
+			return
+		}
+		if (!Number.isInteger(Number(rating.value)) || Number(rating.value) < 1 || Number(rating.value) > 5) {
+			setReferenceFormMessage("reviewMessage", "Please select a rating from 1 to 5.", "error", 4000)
+			return
+		}
+		if (reviewText.length < 10 || reviewText.length > 3000) {
+			setReferenceFormMessage("reviewMessage", "Please write between 10 and 3,000 characters for your review.", "error", 4000)
+			return
+		}
+		const turnstileToken = getTurnstileToken(reviewForm)
+		if (!turnstileToken) {
+			setReferenceFormMessage(
+				"reviewMessage",
+				"Security verification is required before submitting your review.",
+				"error",
+				4000,
+			)
+			return
+		}
+		const photoInput = document.getElementById("reviewPhoto")
+		const photoFile =
+			photoInput instanceof HTMLInputElement ? photoInput.files?.[0] : undefined
+		if (photoFile) {
+			const photoError = getImageUploadError(photoFile.size, photoFile.type)
+			if (photoError) {
+				setReferenceFormMessage("reviewMessage", photoError, "error", 4000)
+				return
+			}
+		}
+		setPublicFormButtonLoading(
+			submitButton instanceof HTMLButtonElement ? submitButton : null,
+			true,
+			"Submitting...",
+			"Submit Review",
+		)
 		try {
+			const reviewPayload = {
+				tenantSlug,
+				name: nameValue,
+				rating: Number(rating.value),
+				serviceName:
+					service instanceof HTMLSelectElement ? service.value : "",
+				text: reviewText,
+				turnstileToken,
+			}
+			let body: BodyInit = JSON.stringify(reviewPayload)
+			const headers: HeadersInit = { "content-type": "application/json" }
+			if (photoFile) {
+				const formData = new FormData()
+				Object.entries(reviewPayload).forEach(([key, value]) =>
+					formData.set(key, String(value)),
+				)
+				formData.set("reviewPhoto", photoFile)
+				body = formData
+				delete (headers as Record<string, string>)["content-type"]
+			}
 			const response = await fetch("/api/reviews", {
 				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					tenantSlug,
-					rating: Number(rating.value),
-					serviceName:
-						service instanceof HTMLSelectElement ? service.value : "",
-					text: text.value.trim(),
-					turnstileToken: getTurnstileToken(reviewForm),
-				}),
+				headers,
+				body,
 			})
 			const result = await readReferenceJson(response)
+			if (response.status === 401) {
+				const signInMessage = "Please log in to submit a review."
+				setReferenceFormMessage("reviewMessage", signInMessage, "error", 4000)
+				openSignInModal(signInMessage)
+				return
+			}
 			setReferenceFormMessage(
 				"reviewMessage",
 				response.ok
-					? "Your review was submitted for approval."
+					? "Thank you! Your review was submitted and is pending approval."
 					: (result.error ?? "The review could not be submitted."),
 				response.ok ? "success" : "error",
+				response.ok ? 3500 : 4000,
 			)
 			if (response.ok) reviewForm.reset()
 		} catch {
@@ -4412,10 +4508,20 @@ function bindPublicParityAdapters(
 			)
 		} finally {
 			resetTurnstile(reviewForm)
-			if (submitButton instanceof HTMLButtonElement)
-				submitButton.disabled = false
+			setPublicFormButtonLoading(
+				submitButton instanceof HTMLButtonElement ? submitButton : null,
+				false,
+				"Submitting...",
+				"Submit Review",
+			)
 		}
 	}
+	const clearFormFeedback = (elementId: string): void =>
+		setReferenceFormMessage(elementId, "", "success", 0)
+	const clearContactFeedback = (): void => clearFormFeedback("contactFormMessage")
+	const clearReviewFeedback = (): void => clearFormFeedback("reviewMessage")
+	contactForm?.addEventListener("input", clearContactFeedback)
+	reviewForm?.addEventListener("input", clearReviewFeedback)
 	const favoriteLoginMessage = (galleryStyleId: string): string => {
 		const galleryItem = galleryItems.find((item) => item.id === galleryStyleId)
 		const category = galleryItem?.serviceCategory?.trim().toLowerCase() ?? ""
@@ -4619,6 +4725,8 @@ function bindPublicParityAdapters(
 	return () => {
 		contactForm?.removeEventListener("submit", submitContact, true)
 		reviewForm?.removeEventListener("submit", submitReview, true)
+		contactForm?.removeEventListener("input", clearContactFeedback)
+		reviewForm?.removeEventListener("input", clearReviewFeedback)
 		termsCheckbox?.removeEventListener("change", updateTermsAcceptance)
 		termsAcceptButton?.removeEventListener("click", acceptTerms)
 		contactSuccessClose?.removeEventListener("click", closeContactSuccess)

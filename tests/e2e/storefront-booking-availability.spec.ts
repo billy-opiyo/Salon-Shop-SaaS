@@ -93,17 +93,21 @@ test.describe("storefront booking availability and waitlist", () => {
 			buffer: Buffer.from("mock inspiration image"),
 		})
 		await page.locator("#bookingForm").evaluate((form) => {
-			const input = document.createElement("input")
+			const input = form.querySelector<HTMLInputElement>('input[name="turnstileToken"]') ?? document.createElement("input")
 			input.type = "hidden"
 			input.name = "turnstileToken"
 			input.value = "test-turnstile-token"
-			form.append(input)
+			if (!input.isConnected) form.append(input)
 		})
 
 		await page.locator("#waitlistTimeSelect").selectOption("slot-10")
 		await page.locator("#joinWaitlistBtn").click()
-		await expect(page.locator("#bookingMessage")).toContainText("Confirm below")
+		await expect(page.locator("#bookingMessage")).toContainText("confirm below")
 		await expect(page.locator("#timeSelect")).toHaveValue("10:00 AM")
+		await page.locator("#bookingForm").evaluate((form) => {
+			const input = form.querySelector<HTMLInputElement>('input[name="turnstileToken"]')
+			if (input) input.value = "refreshed-test-turnstile-token"
+		})
 		await page.locator("#submitBtn").click()
 		await expect(page.locator("#bookingSuccess h3")).toHaveText("You’re on the Waitlist")
 
@@ -166,11 +170,11 @@ test.describe("storefront booking availability and waitlist", () => {
 			buffer: Buffer.from("mock inspiration image"),
 		})
 		await page.locator("#bookingForm").evaluate((form) => {
-			const input = document.createElement("input")
+			const input = form.querySelector<HTMLInputElement>('input[name="turnstileToken"]') ?? document.createElement("input")
 			input.type = "hidden"
 			input.name = "turnstileToken"
 			input.value = "test-turnstile-token"
-			form.append(input)
+			if (!input.isConnected) form.append(input)
 		})
 		await page.locator("#submitBtn").click()
 		await expect(page.locator("#bookingSuccess")).toBeVisible()

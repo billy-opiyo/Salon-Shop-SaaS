@@ -9,6 +9,7 @@ import {
 } from "@backend/services/rateLimit"
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { dispatchNotification } from "@backend/services/notificationService"
+import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
 import { resolveBookingPaymentPlan } from "@shared/constants/bookingPayments"
 import {
 	uploadPublicBookingInspiration,
@@ -93,7 +94,7 @@ export async function createPublicBooking(
 		},
 	})
 
-	if (!tenant || tenant.status !== "ACTIVE") {
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status))) {
 		throw new BookingRequestError(
 			"This salon is not currently accepting online bookings.",
 		)

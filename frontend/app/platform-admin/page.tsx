@@ -30,6 +30,7 @@ function formatAmount(amountMinor: number, currency: string): string {
 	return new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency,
+		currencyDisplay: "code",
 	}).format(amountMinor / 100)
 }
 

@@ -1189,6 +1189,7 @@ export function SalonStorefrontMarkup({
 									type="text"
 									id="reviewName"
 									placeholder="Amina Ochieng"
+									maxLength={80}
 									required
 								/>
 							</div>
@@ -1219,6 +1220,7 @@ export function SalonStorefrontMarkup({
 								<textarea
 									id="reviewText"
 									rows={4}
+									maxLength={3000}
 									placeholder="Tell us what you loved about your appointment..."
 									required
 								></textarea>

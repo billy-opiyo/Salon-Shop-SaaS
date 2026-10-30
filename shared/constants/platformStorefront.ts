@@ -174,17 +174,17 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		line: "#5b4728",
 	},
 	homeHero: {
-		eyebrow: "The salon platform for owners and customers",
-		audience: "Salon Owners · Stylists · Customers",
+		eyebrow: "The salon platform for owners and clients",
+		audience: "Salon Owners · Stylists · Clients",
 		title: "A better salon experience for",
 		highlight: "everyone",
-		description: "Beauty Sphia helps salon owners manage bookings, clients, and daily operations. Customers can discover salons, explore services, and book appointments with ease.",
+		description: "Beauty Sphia helps salon owners manage bookings, clients, and daily operations. Clients can discover salons, explore services, and book appointments with ease.",
 		actionLabel: "Start Your Salon",
 		signature: "More Clients · Less Admin · Bigger Dreams",
 		benefits: [
-			{ title: "Online Bookings", description: "Help customers book anytime and keep your salon schedule organized." },
+			{ title: "Online Bookings", description: "Help clients book anytime and keep your salon schedule organized." },
 			{ title: "Client Management", description: "Build lasting relationships. Keep your clients organized and loyal." },
-			{ title: "Salon Discovery", description: "Help customers find your salon, explore services, and book a visit." },
+			{ title: "Salon Discovery", description: "Help clients find your salon, explore services, and book a visit." },
 			{ title: "Business Growth", description: "Make data-driven decisions. Track growth and make smarter decisions." },
 		],
 	},
@@ -215,8 +215,8 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		faqDescription: "Find guidance on getting started, running a salon workspace, bookings, and subscription payments.",
 		faqs: [
 			{ question: "How do I create a salon workspace?", answer: "Create or sign in to your Beauty Sphia account, choose Start Your Salon, complete the salon details, and select a plan. The workspace is created for your account and is not visible to other salon owners." },
-			{ question: "When can customers see my salon storefront?", answer: "After the setup payment is confirmed, open your merchant workspace and publish your salon. You can then share its public storefront link with customers." },
-			{ question: "How do customers book an appointment?", answer: "Customers can open a salon storefront, choose a service and an available time, then submit the booking form. The salon team can review and manage bookings from its own workspace." },
+			{ question: "When can clients see my salon storefront?", answer: "After the setup payment is confirmed, open your merchant workspace and publish your salon. You can then share its public storefront link with clients." },
+			{ question: "How do clients book an appointment?", answer: "Clients can open a salon storefront, choose a service and an available time, then submit the booking form. The salon team can review and manage bookings from its own workspace." },
 			{ question: "How do I pay a setup fee or subscription invoice?", answer: "Open the salon billing page, enter the M-Pesa phone number that should receive the STK prompt, and approve the payment on that phone. The current Paybill or Till instructions are shown with the invoice." },
 			{ question: "Where can I update salon details and services?", answer: "Sign in with an active salon team account, open that salon's management workspace, and use its settings and content areas to update branding, contact details, services, hours, gallery, and other storefront information." },
 			{ question: "I cannot sign in or find the answer I need. What should I do?", answer: "Use the Log in option to return to your account. If you still need help with account access, billing, bookings, or setup, contact the Beauty Sphia support team using the email or WhatsApp details on this page." },
@@ -253,7 +253,7 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		},
 		business: {
 			name: "Business",
-			description: "Run daily salon operations with deeper customer workflows.",
+			description: "Run daily salon operations with deeper client workflows.",
 			bestFor: "A busy salon with a growing team and daily appointment flow.",
 			monthlyAmountMinor: 330000,
 			setupFeeMinor: 500000,
@@ -281,9 +281,9 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 	privacyPolicy: {
 		eyebrow: "Platform policy",
 		title: "Privacy Policy",
-		introduction: "We use account, salon, booking, and operational data to provide the platform, protect accounts, and support customer workflows.",
+		introduction: "We use account, salon, booking, and operational data to provide the platform, protect accounts, and support client workflows.",
 		sections: [
-			{ heading: "Data stewardship", body: "Salon owners must collect and use customer information lawfully, explain their own salon practices, and keep access limited to authorized team members." },
+			{ heading: "Data stewardship", body: "Salon owners must collect and use client information lawfully, explain their own salon practices, and keep access limited to authorized team members." },
 			{ heading: "Security", body: "We use authentication, authorization, rate limits, audit records, and provider safeguards appropriate to the platform services enabled for a workspace." },
 			{ heading: "Agreement", body: "By creating a salon workspace, you acknowledge this privacy policy." },
 		],
@@ -291,10 +291,10 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 	termsPolicy: {
 		eyebrow: "Platform policy",
 		title: "Terms of Service",
-		introduction: "These terms govern salon workspace creation, storefront publishing, bookings, customer communication, and responsible use of the Beauty Sphia salon platform.",
+		introduction: "These terms govern salon workspace creation, storefront publishing, bookings, client communication, and responsible use of the Beauty Sphia salon platform.",
 		sections: [
-			{ heading: "Workspace responsibility", body: "Owners are responsible for accurate salon information, lawful content, customer consent, and the services offered through their storefront." },
-			{ heading: "Platform use", body: "Do not misuse the platform, attempt unauthorized access, upload harmful content, or use customer information outside the purposes disclosed to customers." },
+			{ heading: "Workspace responsibility", body: "Owners are responsible for accurate salon information, lawful content, client consent, and the services offered through their storefront." },
+			{ heading: "Platform use", body: "Do not misuse the platform, attempt unauthorized access, upload harmful content, or use client information outside the purposes disclosed to clients." },
 			{ heading: "Agreement", body: "By creating a salon workspace, you confirm that you have read and agree to these terms." },
 		],
 	},
@@ -322,7 +322,7 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		howSteps: [
 			{ title: "Create", description: "Set up your salon identity, services, team, and public salon address." },
 			{ title: "Customize", description: "Bring your brand to life with the preserved salon storefront experience." },
-			{ title: "Grow", description: "Manage bookings, content, customers, and daily operations from one workspace." },
+			{ title: "Grow", description: "Manage bookings, content, clients, and daily operations from one workspace." },
 		],
 		plansEyebrow: "Transparent pricings",
 		plansTitle: "Pricings that grow with your salon.",

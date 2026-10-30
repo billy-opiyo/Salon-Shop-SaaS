@@ -72,6 +72,7 @@ export interface TenantReview {
 	readonly author: string
 	readonly rating: number
 	readonly text: string
+	readonly photoUrl?: string
 	readonly featured?: boolean
 	readonly role?: string
 	readonly source?: string

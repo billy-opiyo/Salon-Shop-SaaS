@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const reviewRequestSchema = z.object({
 	tenantSlug: z.string().trim().min(3).max(48),
+	name: z.string().trim().min(2).max(80),
 	rating: z.number().int().min(1).max(5),
 	serviceName: z.string().trim().max(160).optional(),
 	text: z.string().trim().min(10).max(3000),
