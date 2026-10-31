@@ -242,7 +242,8 @@
 	max-block-size: min(65vh, 34rem);
 	overflow-x: hidden;
 	overflow-y: auto;
-	overscroll-behavior-y: contain;
+	overscroll-behavior-y: auto;
+	-webkit-overflow-scrolling: touch;
 	margin-top: .75rem;
 	padding-right: .4rem;
 	scrollbar-gutter: stable;

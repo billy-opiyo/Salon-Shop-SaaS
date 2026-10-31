@@ -7695,7 +7695,8 @@ html.splash-active .splash-handwriting-letter {
 	max-block-size: min(72vh, 42rem);
 	overflow-x: hidden;
 	overflow-y: auto;
-	overscroll-behavior-y: contain;
+	overscroll-behavior-y: auto;
+	-webkit-overflow-scrolling: touch;
 	padding-right: .4rem;
 	scrollbar-gutter: stable;
 	scrollbar-width: thin;
