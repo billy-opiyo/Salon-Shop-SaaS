@@ -187,6 +187,7 @@ function renderAdminSnapshotList(
 		const isBlog = elementId === "adminBlogsList"
 		const isMessage = elementId === "adminContactList"
 		const isReview = elementId === "adminReviewsList"
+		const isPendingInvitation = elementId === "adminPendingInvitationsList"
 		const isSecurity = elementId.startsWith("adminSecurity") ||
 			elementId === "adminAccountHistoryList" ||
 			elementId === "adminSessionsList" ||
@@ -200,7 +201,7 @@ function renderAdminSnapshotList(
 				: "",
 			isGallery ? "admin-gallery-item" : "",
 			isBlog ? "admin-blog-item" : "",
-			isMessage || isReview || elementId === "adminAdminsList" || elementId === "adminServicesList"
+			isMessage || isReview || elementId === "adminAdminsList" || elementId === "adminServicesList" || isPendingInvitation
 				? "admin-review-item"
 				: "",
 			isSecurity ? "admin-security-row-main" : "",
@@ -263,11 +264,36 @@ function renderAdminSnapshotList(
 						? record.title ?? "Untitled post"
 						: elementId === "adminAdminsList"
 							? person.name ?? person.email ?? "Team member"
+							: isPendingInvitation
+								? record.inviteeEmail ?? "Pending invitation"
 							: record.name ?? record.subject ?? record.serviceName ?? record.email ?? record.changeType ?? record.summary ?? record.value ?? "Record",
 		)
 		row.dataset.customerName = titleText
 		const details = document.createElement("p")
-		if (elementId === "adminAdminsList") {
+		if (elementId === "adminPendingInvitationsList") {
+			const invitePermissions = record.permissions && typeof record.permissions === "object"
+				? record.permissions as AdminSnapshotRecord
+				: {}
+			details.textContent = `Pending · expires ${formatAdminSnapshotDate(record.expiresAt)}`
+			const permissionWrap = document.createElement("div")
+			permissionWrap.className = "admin-record-details-permissions admin-pending-invitation-permissions"
+			for (const [permission, permissionLabel] of [
+				["canManageBookings", "Bookings and schedules"],
+				["canManageContent", "Storefront content"],
+				["canManageSecurity", "Security and domains"],
+			] as const) {
+				const label = document.createElement("label")
+				const input = document.createElement("input")
+				input.type = "checkbox"
+				input.checked = invitePermissions[permission] === true
+				input.dataset.pendingPermission = permission
+				const text = document.createElement("span")
+				text.textContent = permissionLabel
+				label.append(input, text)
+				permissionWrap.append(label)
+			}
+			row.append(permissionWrap)
+		} else if (elementId === "adminAdminsList") {
 			const role = String(record.role ?? "STAFF").toLowerCase()
 			const roleLabel = role === "owner"
 				? "Salon owner"
@@ -678,7 +704,7 @@ function renderAdminSnapshotList(
 			: isSecurity
 				? "admin-booking-actions admin-security-inline-actions admin-platform-actions"
 				: "admin-booking-actions admin-platform-actions"
-		if (recordId && !isSecurity) {
+		if (recordId && !isSecurity && !isPendingInvitation) {
 			const detailButton = document.createElement("button")
 			detailButton.type = "button"
 			detailButton.className = "admin-action-btn admin-platform-detail"
@@ -830,6 +856,8 @@ function renderAdminSnapshotList(
 		}
 		if (elementId === "adminAdminsList")
 			addAction("team-member-remove", "Remove")
+		if (isPendingInvitation)
+			addAction("team-invitation-permissions", "Save section access")
 		if (isSecurityCollection) {
 			if (elementId === "adminSecurityActivityList") {
 				if (typeof record.userId === "string" && record.userId) {
@@ -2942,6 +2970,18 @@ export function bindAdminSnapshotAdapter(
 						: "Updating…"
 		button.textContent = pendingLabel
 		const payload: Record<string, unknown> = { action, id }
+		let endpoint = `/api/manage/${encodeURIComponent(tenantSlug)}/actions`
+		if (action === "team-invitation-permissions") {
+			const row = button.closest<HTMLElement>(".admin-review-item")
+			if (!row) return
+			payload.action = "permissions"
+			payload.invitationId = id
+			for (const permission of ["canManageBookings", "canManageContent", "canManageSecurity"] as const) {
+				const input = row.querySelector<HTMLInputElement>(`[data-pending-permission="${permission}"]`)
+				payload[permission] = input?.checked === true
+			}
+			endpoint = `/api/manage/${encodeURIComponent(tenantSlug)}/invitations`
+		}
 		if (button.dataset.status) payload.status = button.dataset.status
 		if (button.dataset.featured)
 			payload.featured = button.dataset.featured === "true"
@@ -2949,7 +2989,7 @@ export function bindAdminSnapshotAdapter(
 			payload.published = button.dataset.published === "true"
 		if (button.dataset.durationMinutes)
 			payload.durationMinutes = Number(button.dataset.durationMinutes)
-		void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+		void fetch(endpoint, {
 			method: "POST",
 			credentials: "same-origin",
 			headers: { "content-type": "application/json" },
@@ -3711,6 +3751,9 @@ export function bindAdminSnapshotAdapter(
 			)
 			renderSchedule()
 			const team = Array.isArray(snapshot.team) ? snapshot.team : []
+			const teamInvitations = Array.isArray(snapshot.teamInvitations)
+				? snapshot.teamInvitations
+				: []
 			const security = snapshot.security as AdminSnapshotRecord | undefined
 			const securityLogins = Array.isArray(security?.logins)
 				? security.logins
@@ -3762,6 +3805,11 @@ export function bindAdminSnapshotAdapter(
 				"No services found.",
 			)
 			renderAdminSnapshotList("adminAdminsList", team, "No team members found.")
+			renderAdminSnapshotList(
+				"adminPendingInvitationsList",
+				teamInvitations,
+				"No pending invitations. Invite a team member from the Team tab.",
+			)
 			renderAdminSnapshotList(
 				"adminSecurityActivityList",
 				securityLogins,

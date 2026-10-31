@@ -1333,10 +1333,18 @@ export function SalonAdminMarkup({
 								<div className="admin-gallery-form-head">
 									<h3 id="admin-access-guide-title">Assign Salon Admin access</h3>
 								</div>
-								<p>Use the Team tab to invite people and manage their invitation status. New members join without Salon Admin section access.</p>
-								<p>After a member accepts, use <strong>Details</strong> beside their name in the directory to grant bookings, storefront content, or security access.</p>
+								<p>Use the Team tab to invite people and manage invitation status. Then assign access to a pending invite below or use <strong>Details</strong> beside an accepted member.</p>
 								<p>The salon owner keeps full access and is the only person who can change these assignments.</p>
-								<a className="btn btn-outline" href={teamHref}>Open Team</a>
+								<a className="btn btn-outline admin-open-team-button" href={teamHref}>Open Team</a>
+							</section>
+							<section className="admin-gallery-list-wrap admin-pending-invitations" aria-labelledby="admin-pending-invitations-title">
+								<div className="admin-gallery-list-head">
+									<h3 id="admin-pending-invitations-title">Pending invites · assign section access</h3>
+									<p>Choose the sections the invitee can access after accepting.</p>
+								</div>
+								<div className="admin-gallery-list" id="adminPendingInvitationsList">
+									<div className="admin-empty-state">No pending invitations.</div>
+								</div>
 							</section>
 							<div className="admin-gallery-list-wrap">
 								<div className="admin-gallery-list-head">

@@ -13441,6 +13441,48 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
 }
 
+.salon-admin-root .admin-open-team-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    width: fit-content;
+    max-width: 100%;
+    text-align: center;
+}
+
+.salon-admin-root .admin-pending-invitations {
+    min-width: 0;
+}
+
+.salon-admin-root .admin-pending-invitations .admin-gallery-list-head p {
+    margin: .35rem 0 0;
+    color: var(--text-secondary);
+}
+
+.salon-admin-root .admin-pending-invitation-permissions {
+    width: 100%;
+    min-width: 0;
+}
+
+.salon-admin-root .admin-pending-invitation-permissions > label {
+    min-width: 0;
+}
+
+.salon-admin-root #adminPendingInvitationsList .admin-review-item {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.salon-admin-root #adminPendingInvitationsList .admin-platform-actions > button {
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+}
+
 .salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar .form-group,
 .salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar input,
 .salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar select {

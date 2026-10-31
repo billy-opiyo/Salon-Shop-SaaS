@@ -92,7 +92,7 @@ export async function TopStoresGrid({ limit = 3, showAll = false, brandName = "B
 						) : (
 							<>
 								<RatingStars rating={store.rating} reviewCount={store.reviewCount} brandName={brandName} />
-								<StoreTransitionLink className="top-store__link" href={store.href} prefetch={!showAll}>
+								<StoreTransitionLink className="button button--outline top-store__link" href={store.href} prefetch={!showAll}>
 									Open {store.name} Salon →
 								</StoreTransitionLink>
 							</>
