@@ -5525,6 +5525,61 @@ h6 {
     min-width: 120px;
 }
 
+.admin-record-details-dialog {
+    width: min(720px, 96vw);
+    text-align: left;
+}
+
+.admin-record-details-content {
+    display: grid;
+    min-width: 0;
+    gap: .65rem;
+}
+
+.admin-record-details-content > p {
+    margin: 0;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.admin-record-details-content > textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 5rem;
+    padding: .75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: inherit;
+    resize: vertical;
+}
+
+.admin-record-details-content > textarea:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.admin-record-details-permissions {
+    display: grid;
+    gap: .55rem;
+}
+
+.admin-record-details-permissions > label {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    color: var(--text-primary);
+}
+
+.admin-record-details-content > .btn {
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .admin-confirm-actions #adminConfirmOk {
     background: #b93a3a;
     color: #fff;

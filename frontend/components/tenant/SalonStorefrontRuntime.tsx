@@ -3033,17 +3033,64 @@ export function bindAdminSnapshotAdapter(
 				}
 			})
 	}
+	const recordDetailsModal = document.getElementById("adminRecordDetailsModal")
+	const recordDetailsDialog = recordDetailsModal?.querySelector<HTMLElement>(".admin-record-details-dialog")
+	const recordDetailsPanel = document.getElementById("adminRecordDetailsContent")
+	const recordDetailsClose = document.getElementById("adminRecordDetailsClose")
+	let recordDetailsOpener: HTMLButtonElement | null = null
+	const closeRecordDetails = () => {
+		if (!recordDetailsModal) return
+		recordDetailsModal.classList.remove("active")
+		recordDetailsModal.setAttribute("aria-hidden", "true")
+		recordDetailsPanel?.replaceChildren()
+		if (recordDetailsOpener?.isConnected) recordDetailsOpener.focus()
+		recordDetailsOpener = null
+	}
+	const closeRecordDetailsOnBackdrop = (event: Event) => {
+		if (event.target === recordDetailsModal) closeRecordDetails()
+	}
+	const closeRecordDetailsOnKey = (event: KeyboardEvent) => {
+		if (!recordDetailsModal?.classList.contains("active")) return
+		if (event.key === "Escape") {
+			event.preventDefault()
+			closeRecordDetails()
+			return
+		}
+		if (event.key !== "Tab" || !recordDetailsDialog) return
+		const focusable = Array.from(recordDetailsDialog.querySelectorAll<HTMLElement>(
+			"button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])",
+		))
+		if (focusable.length === 0) {
+			event.preventDefault()
+			recordDetailsDialog.focus()
+			return
+		}
+		const first = focusable[0]
+		const last = focusable[focusable.length - 1]
+		if (event.shiftKey && document.activeElement === first) {
+			event.preventDefault()
+			last.focus()
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault()
+			first.focus()
+		}
+	}
+	recordDetailsClose?.addEventListener("click", closeRecordDetails)
+	recordDetailsModal?.addEventListener("click", closeRecordDetailsOnBackdrop)
+	document.addEventListener("keydown", closeRecordDetailsOnKey)
+	removeTabHandlers.push(() => {
+		recordDetailsClose?.removeEventListener("click", closeRecordDetails)
+		recordDetailsModal?.removeEventListener("click", closeRecordDetailsOnBackdrop)
+		document.removeEventListener("keydown", closeRecordDetailsOnKey)
+	})
 	const detailHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
 		const button = target.closest<HTMLButtonElement>(".admin-platform-detail")
 		if (!button?.dataset.adminDetail) return
-		const panel = document.getElementById("adminScheduleDetails")
-		if (!panel) return
-		panel.replaceChildren()
-		const heading = document.createElement("h3")
-		heading.textContent = "Record details"
-		panel.append(heading)
+		if (!recordDetailsModal || !recordDetailsPanel || !recordDetailsDialog) return
+		recordDetailsOpener = button
+		recordDetailsPanel.replaceChildren()
 		try {
 			const record = JSON.parse(
 				button.dataset.adminDetail,
@@ -3052,7 +3099,7 @@ export function bindAdminSnapshotAdapter(
 				if (key === "text" || key === "replyText") return
 				const line = document.createElement("p")
 				line.textContent = `${key}: ${formatAdminSnapshotValue(value)}`
-				panel.append(line)
+				recordDetailsPanel.append(line)
 			})
 			if (typeof record.text === "string") {
 				const reviewText = document.createElement("textarea")
@@ -3088,7 +3135,7 @@ export function bindAdminSnapshotAdapter(
 						"Review text could not be saved.",
 					)
 				}
-				panel.append(reviewText, saveReview)
+				recordDetailsPanel.append(reviewText, saveReview)
 			}
 			if (typeof record.replyText === "string" || "replyText" in record) {
 				const reply = document.createElement("textarea")
@@ -3113,7 +3160,7 @@ export function bindAdminSnapshotAdapter(
 						"Review reply could not be saved.",
 					)
 				}
-				panel.append(reply, save)
+				recordDetailsPanel.append(reply, save)
 			}
 			if (typeof record.userId === "string") {
 				const permissions = [
@@ -3122,6 +3169,7 @@ export function bindAdminSnapshotAdapter(
 					"canManageSecurity",
 				]
 				const permissionWrap = document.createElement("div")
+				permissionWrap.className = "admin-record-details-permissions"
 				permissions.forEach((permission) => {
 					const label = document.createElement("label")
 					const input = document.createElement("input")
@@ -3156,13 +3204,16 @@ export function bindAdminSnapshotAdapter(
 						"Team permissions could not be saved.",
 					)
 				}
-				panel.append(permissionWrap, savePermissions)
+				recordDetailsPanel.append(permissionWrap, savePermissions)
 			}
 		} catch {
 			const error = document.createElement("p")
 			error.textContent = "Details could not be displayed."
-			panel.append(error)
+			recordDetailsPanel.append(error)
 		}
+		recordDetailsModal.classList.add("active")
+		recordDetailsModal.setAttribute("aria-hidden", "false")
+		recordDetailsClose?.focus()
 	}
 	document.addEventListener("click", detailHandler)
 	removeTabHandlers.push(() =>
