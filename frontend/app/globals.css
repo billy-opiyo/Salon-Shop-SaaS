@@ -5984,7 +5984,8 @@ html.splash-active .splash-handwriting-letter {
 
 .platform-account-form input:not([type="checkbox"]),
 .platform-account-form select,
-.platform-account-reschedule input {
+.platform-account-reschedule input,
+.platform-account-reschedule select {
 	width: 100%;
 	min-height: 2.85rem;
 	padding: .7rem .8rem;
@@ -5997,7 +5998,8 @@ html.splash-active .splash-handwriting-letter {
 
 .platform-account-form input:focus-visible,
 .platform-account-form select:focus-visible,
-.platform-account-reschedule input:focus-visible {
+.platform-account-reschedule input:focus-visible,
+.platform-account-reschedule select:focus-visible {
 	outline: 2px solid var(--gold);
 	outline-offset: 2px;
 }
@@ -6157,6 +6159,16 @@ html.splash-active .splash-handwriting-letter {
 
 .platform-account-reschedule > small {
 	flex-basis: 100%;
+	color: var(--muted);
+}
+
+.platform-account-reschedule__availability {
+	display: flex;
+	flex-basis: 100%;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .65rem;
+	margin: 0;
 	color: var(--muted);
 }
 

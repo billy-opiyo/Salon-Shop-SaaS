@@ -59,6 +59,10 @@ export function PlatformAccountClient({
 	const [editingBooking, setEditingBooking] = useState<string | null>(null)
 	const [newDate, setNewDate] = useState("")
 	const [newTime, setNewTime] = useState("")
+	const [availableTimes, setAvailableTimes] = useState<string[]>([])
+	const [availabilityLoading, setAvailabilityLoading] = useState(false)
+	const [availabilityError, setAvailabilityError] = useState("")
+	const [availabilityRetry, setAvailabilityRetry] = useState(0)
 
 	const setStatus = (text: string, isError = false) => {
 		setMessage(text)
@@ -98,6 +102,68 @@ export function PlatformAccountClient({
 		document.addEventListener("keydown", handleKeyDown)
 		return () => document.removeEventListener("keydown", handleKeyDown)
 	}, [deleteDialogOpen, busy])
+
+	useEffect(() => {
+		const booking = snapshot.bookings.find((item) => item.id === editingBooking)
+		if (!booking || !newDate) {
+			setAvailableTimes([])
+			setAvailabilityLoading(false)
+			setAvailabilityError("")
+			return
+		}
+
+		const controller = new AbortController()
+		let isCurrentRequest = true
+		setAvailabilityLoading(true)
+		setAvailabilityError("")
+		const timer = window.setTimeout(() => {
+			const query = new URLSearchParams({ tenantSlug: booking.tenantSlug, date: newDate })
+			if (booking.stylistId) query.set("stylistId", booking.stylistId)
+			void fetch(`/api/bookings/availability?${query.toString()}`, {
+				cache: "no-store",
+				signal: controller.signal,
+			})
+				.then(async (response) => {
+					const payload = await response.json().catch(() => ({})) as {
+						error?: string
+						timeSlots?: unknown
+						bookedSlots?: unknown
+					}
+					if (!response.ok) throw new Error(payload.error ?? "Available times could not be loaded.")
+					const times = Array.isArray(payload.timeSlots)
+						? payload.timeSlots.filter((value): value is string => typeof value === "string")
+						: []
+					const bookedTimes = new Set(
+						Array.isArray(payload.bookedSlots)
+							? payload.bookedSlots.flatMap((value) =>
+									typeof value === "object" && value !== null && "timeLabel" in value && typeof value.timeLabel === "string"
+										? [value.timeLabel]
+										: [],
+								)
+							: [],
+					)
+					if (!isCurrentRequest) return
+					const openTimes = times.filter((time) => !bookedTimes.has(time))
+					setAvailableTimes(openTimes)
+					setNewTime((current) => openTimes.includes(current) ? current : "")
+					if (openTimes.length === 0) setAvailabilityError("No appointment times are available on this date. Choose another date.")
+				})
+				.catch((error: unknown) => {
+					if (!isCurrentRequest || controller.signal.aborted) return
+					setAvailableTimes([])
+					setAvailabilityError(error instanceof Error ? error.message : "Available times could not be loaded.")
+				})
+				.finally(() => {
+					if (isCurrentRequest) setAvailabilityLoading(false)
+				})
+		}, 250)
+
+		return () => {
+			isCurrentRequest = false
+			window.clearTimeout(timer)
+			controller.abort()
+		}
+	}, [editingBooking, newDate, snapshot.bookings, availabilityRetry])
 
 	const patchAccount = async (body: Record<string, unknown>): Promise<boolean> => {
 		const response = await fetch("/api/account", {
@@ -363,16 +429,74 @@ export function PlatformAccountClient({
 				</section>
 
 				<section className="platform-account-panel platform-account-panel--wide" aria-labelledby="platform-bookings-title">
-					<p className="eyebrow">Appointments</p><h2 id="platform-bookings-title">Your bookings</h2>
-					{snapshot.bookings.length ? <div className="platform-account-bookings">{snapshot.bookings.map((booking) => {
-						const canManage = ["pending", "confirmed", "waitlisted"].includes(booking.status)
-						const canReschedule = ["pending", "confirmed"].includes(booking.status)
-						return <article className="platform-account-booking" key={booking.id}>
-							<div className="platform-account-booking__details"><p className="eyebrow">{booking.tenantName}</p><h3>{booking.serviceName}</h3><span>{booking.appointmentDate} at {booking.timeLabel} · {booking.stylistName ?? "Any available stylist"}</span>{booking.specialRequests && <small>Note: {booking.specialRequests}</small>}</div>
-							<div className="platform-account-booking__actions"><span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span><Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>{canManage && <button className="button button--primary button--small" type="button" disabled={busy} aria-busy={pendingAction === `cancel:${booking.id}`} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>{pendingAction === `cancel:${booking.id}` ? "Cancelling…" : "Cancel"}</button>}{canReschedule && <button className="button button--primary button--small" type="button" disabled={busy} aria-expanded={editingBooking === booking.id} onClick={() => { setEditingBooking((current) => current === booking.id ? null : booking.id); setNewDate(booking.appointmentDate); setNewTime(booking.timeLabel) }}>{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}</button>}</div>
-							{editingBooking === booking.id && <form className="platform-account-reschedule" onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}><label>New date<input type="date" min={today} value={newDate} onChange={(event) => setNewDate(event.target.value)} required /></label><label>New time<input type="text" value={newTime} onChange={(event) => setNewTime(event.target.value)} placeholder="e.g. 10:30 AM" maxLength={40} required /></label><button className="button button--primary button--small" type="submit" disabled={busy} aria-busy={pendingAction === `reschedule:${booking.id}`}>{pendingAction === `reschedule:${booking.id}` ? "Saving…" : "Save new time"}</button><small>The salon will confirm availability for your requested time.</small></form>}
-						</article>
-					})}</div> : <p className="platform-account-empty">No appointments are linked to your Beauty Sphia account yet. Browse salons to book your next visit.</p>}
+					<p className="eyebrow">Appointments</p>
+					<h2 id="platform-bookings-title">Your bookings</h2>
+					{snapshot.bookings.length ? (
+						<div className="platform-account-bookings">
+							{snapshot.bookings.map((booking) => {
+								const canManage = ["pending", "confirmed", "waitlisted"].includes(booking.status)
+								const canReschedule = ["pending", "confirmed"].includes(booking.status)
+								return (
+									<article className="platform-account-booking" key={booking.id}>
+										<div className="platform-account-booking__details">
+											<p className="eyebrow">{booking.tenantName}</p>
+											<h3>{booking.serviceName}</h3>
+											<span>{booking.appointmentDate} at {booking.timeLabel} · {booking.stylistName ?? "Any available stylist"}</span>
+											{booking.specialRequests && <small>Note: {booking.specialRequests}</small>}
+										</div>
+										<div className="platform-account-booking__actions">
+											<span className={`platform-account-status platform-account-status--${booking.status}`}>{booking.status.replaceAll("_", " ")}</span>
+											<Link className="button button--ghost button--small" href={`/${booking.tenantSlug}`}>Open salon</Link>
+											{canManage && (
+												<button className="button button--primary button--small" type="button" disabled={busy} aria-busy={pendingAction === `cancel:${booking.id}`} onClick={() => void cancelBooking(booking.id, booking.tenantSlug)}>
+													{pendingAction === `cancel:${booking.id}` ? "Cancelling…" : "Cancel"}
+												</button>
+											)}
+											{canReschedule && (
+												<button className="button button--primary button--small" type="button" disabled={busy} aria-expanded={editingBooking === booking.id} onClick={() => {
+													const closing = editingBooking === booking.id
+													setEditingBooking(closing ? null : booking.id)
+													setNewDate(closing ? "" : booking.appointmentDate)
+													setNewTime("")
+												}}>
+													{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}
+												</button>
+											)}
+										</div>
+										{editingBooking === booking.id && (
+											<form className="platform-account-reschedule" aria-busy={availabilityLoading || pendingAction === `reschedule:${booking.id}`} onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}>
+												<label>
+													New date
+													<input type="date" min={today} value={newDate} onChange={(event) => { setNewDate(event.target.value); setNewTime("") }} required />
+												</label>
+												<label>
+													Available time
+													<select value={newTime} onChange={(event) => setNewTime(event.target.value)} disabled={availabilityLoading || availableTimes.length === 0} required>
+														<option value="">{availabilityLoading ? "Checking available times…" : "Choose an available time"}</option>
+														{availableTimes.map((time) => <option key={time} value={time}>{time}</option>)}
+													</select>
+												</label>
+												{availabilityError && (
+													<p className="platform-account-reschedule__availability" role="alert">
+														{availabilityError}
+														{availableTimes.length === 0 && (
+															<button className="button button--outline button--small" type="button" onClick={() => setAvailabilityRetry((value) => value + 1)} disabled={availabilityLoading}>Retry availability</button>
+														)}
+													</p>
+												)}
+												<button className="button button--primary button--small" type="submit" disabled={busy || availabilityLoading || !newTime} aria-busy={pendingAction === `reschedule:${booking.id}`}>
+													{pendingAction === `reschedule:${booking.id}` ? "Saving…" : "Save new time"}
+												</button>
+												<small>The salon will confirm availability for your requested time.</small>
+											</form>
+										)}
+									</article>
+								)
+							})}
+						</div>
+					) : (
+						<p className="platform-account-empty">No appointments are linked to your Beauty Sphia account yet. Browse salons to book your next visit.</p>
+					)}
 				</section>
 
 				<section className="platform-account-panel" aria-labelledby="platform-reviews-title">
