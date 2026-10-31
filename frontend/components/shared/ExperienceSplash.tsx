@@ -7,6 +7,8 @@ import Image from "next/image"
 interface ExperienceSplashProps {
 	readonly brandName: string
 	readonly logoUrl: string
+	readonly loadingText: string
+	readonly backgroundImageUrl: string
 }
 
 const SPLASH_DURATION_MS = 5000
@@ -17,6 +19,8 @@ const SPLASH_SESSION_KEY = "beauty-sphia-platform-splash-complete"
 export function ExperienceSplash({
 	brandName,
 	logoUrl,
+	loadingText,
+	backgroundImageUrl,
 }: ExperienceSplashProps) {
 	const [isExiting, setIsExiting] = useState(false)
 	const progressRef = useRef<HTMLDivElement>(null)
@@ -105,6 +109,7 @@ export function ExperienceSplash({
 		? (writeLastDelayMs - writeStartDelayMs) / (splashLetters.length - 1)
 		: 0
 	const fillDurationMs = Math.min(1250, Math.max(1, SPLASH_DURATION_MS * 0.125))
+	const loadingMessage = loadingText.trim().replace(/\.+$/, "")
 
 	return (
 		<div
@@ -114,10 +119,11 @@ export function ExperienceSplash({
 		>
 			<div className="splash-bg" aria-hidden="true">
 				<Image
-					src="/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg"
+					src={backgroundImageUrl}
 					alt=""
 					fill
 					sizes="100vw"
+					unoptimized={/^https?:\/\//i.test(backgroundImageUrl)}
 					priority
 				/>
 			</div>
@@ -185,8 +191,8 @@ export function ExperienceSplash({
 						/>
 					</div>
 				</div>
-				<p className="splash-loading-text" aria-label="Preparing Your Salon Experience...">
-					<span>Preparing Your Salon Experience</span>
+				<p className="splash-loading-text" aria-label={`${loadingMessage}...`}>
+					<span>{loadingMessage}</span>
 					<span className="splash-loading-dots" aria-hidden="true">
 						<span>.</span><span>.</span><span>.</span>
 					</span>

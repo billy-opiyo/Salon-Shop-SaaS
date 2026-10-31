@@ -24,7 +24,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 		readonly type: "status" | "success" | "error" | "notice"
 	} | null>(null)
 	const [saving, setSaving] = useState(false)
-	const [uploadingKind, setUploadingKind] = useState<"LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | null>(null)
+	const [uploadingKind, setUploadingKind] = useState<"LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | "SPLASH_LOGO" | "SPLASH_BACKGROUND" | null>(null)
 	const isOwner = role === "OWNER"
 	const canEditSite = role === "OWNER" || role === "STORE_EDITOR"
 	const canEditSupport = role === "OWNER" || role === "STORE_SUPPORT"
@@ -160,7 +160,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 			}
 		})
 
-	const upload = async (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE", file: File | undefined) => {
+	const upload = async (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | "SPLASH_LOGO" | "SPLASH_BACKGROUND", file: File | undefined) => {
 		if (!file || saving || uploadingKind) return
 		const error = getImageUploadError(file.size, file.type)
 		if (error) {
@@ -177,10 +177,18 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 			const result = (await response.json()) as { url?: string; error?: string }
 			if (!response.ok || !result.url) throw new Error(result.error ?? "The image could not be uploaded.")
 			const uploadedUrl = result.url
-			setDesign((current) => ({
-				...current,
-				...(kind === "LOGO" ? { logoUrl: uploadedUrl } : kind === "HERO_DESKTOP" ? { heroDesktopUrl: uploadedUrl } : { heroMobileUrl: uploadedUrl }),
-			}))
+			setDesign((current) => {
+				if (kind === "LOGO") return { ...current, logoUrl: uploadedUrl }
+				if (kind === "HERO_DESKTOP") return { ...current, heroDesktopUrl: uploadedUrl }
+				if (kind === "HERO_MOBILE") return { ...current, heroMobileUrl: uploadedUrl }
+				return {
+					...current,
+					splash: {
+						...current.splash,
+						...(kind === "SPLASH_LOGO" ? { logoUrl: uploadedUrl } : { backgroundImageUrl: uploadedUrl }),
+					},
+				}
+			})
 			setFeedback({ message: "Image uploaded. Save the design to publish it.", type: "notice" })
 		} catch (error) {
 			setFeedback({
@@ -192,7 +200,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 		}
 	}
 
-	const selectImage = (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE") =>
+	const selectImage = (kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | "SPLASH_LOGO" | "SPLASH_BACKGROUND") =>
 		(event: ChangeEvent<HTMLInputElement>) => {
 			const file = event.currentTarget.files?.[0]
 			event.currentTarget.value = ""
@@ -274,7 +282,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 			</div>
 			<nav className="platform-cms-section-nav" aria-label="Platform CMS sections">
 				{[
-					...(canEditSite ? [{ target: "cms-branding", label: "Branding" }, { target: "cms-home", label: "Homepage" }, { target: "cms-about", label: "Site pages" }] : []),
+					...(canEditSite ? [{ target: "cms-branding", label: "Branding" }, { target: "cms-splash", label: "Splash screen" }, { target: "cms-home", label: "Homepage" }, { target: "cms-about", label: "Site pages" }] : []),
 					...(isOwner ? [{ target: "cms-plans", label: "Plans & billing" }] : []),
 					...(canEditSupport ? [{ target: "cms-support", label: "Support" }] : []),
 				].map(({ target, label }) => (
@@ -307,6 +315,19 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 						))}
 					</div>
 					{cmsSaveButton("Branding")}
+				</fieldset>
+
+				<fieldset id="cms-splash">
+					<legend>Splash screen</legend>
+					<p>The current title, progress logo, loading message, and background are shown below. Each splash image can be replaced independently of the main platform branding.</p>
+					{ textField("Animated title", design.splash.title, (value) => setDesign((current) => ({ ...current, splash: { ...current.splash, title: value } }))) }
+					{ textField("Loading message", design.splash.loadingText, (value) => setDesign((current) => ({ ...current, splash: { ...current.splash, loadingText: value } }))) }
+					{ textField("Background image URL", design.splash.backgroundImageUrl, (value) => setDesign((current) => ({ ...current, splash: { ...current.splash, backgroundImageUrl: value } }))) }
+					<div className="platform-storefront-images platform-storefront-images--splash">
+						<label>Splash progress logo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("SPLASH_LOGO")} /><small>Current logo is shown below. Upload a replacement, then save the splash settings.</small>{design.splash.logoUrl && <img className="platform-storefront-image-preview" src={design.splash.logoUrl} alt="Current Beauty Sphia splash progress logo" loading="lazy" decoding="async" />}</label>
+						<label>Splash background image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={saving || uploadingKind !== null} onChange={selectImage("SPLASH_BACKGROUND")} /><small>Current background is shown below. Upload a replacement, then save the splash settings.</small>{design.splash.backgroundImageUrl && <img className="platform-storefront-image-preview" src={design.splash.backgroundImageUrl} alt="Current Beauty Sphia splash background" loading="lazy" decoding="async" />}</label>
+					</div>
+					{cmsSaveButton("Splash screen")}
 				</fieldset>
 
 				<fieldset id="cms-home">

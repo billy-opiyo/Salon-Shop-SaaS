@@ -81,8 +81,10 @@ export default async function PlatformHome() {
 	return (
 		<>
 			<ExperienceSplash
-				brandName={design.branding.name}
-				logoUrl={design.logoUrl}
+				brandName={design.splash.title}
+				logoUrl={design.splash.logoUrl}
+				loadingText={design.splash.loadingText}
+				backgroundImageUrl={design.splash.backgroundImageUrl}
 			/>
 			<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 			<main id="home" className="platform-home-shell">
