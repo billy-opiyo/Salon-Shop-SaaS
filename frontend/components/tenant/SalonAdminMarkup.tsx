@@ -283,7 +283,7 @@ export function SalonAdminMarkup({
 								</div>
 								<div className="admin-booking-actions">
 									<button type="button" className="btn btn-primary" id="adminSaveStoreDesignBtn" data-save-store-design>Save Salon Design</button>
-									<a className="btn btn-outline" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
+									<a className="btn btn-outline admin-store-design-preview-link" href={homeHref} target="_blank" rel="noopener">Preview Storefront</a>
 								</div>
 								</section>
 							</form>
