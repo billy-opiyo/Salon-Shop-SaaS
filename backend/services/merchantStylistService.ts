@@ -104,11 +104,17 @@ export async function updateStylistForUser(
 	userId: string,
 	tenantSlug: string,
 	stylistId: string,
-	input: { name: string; title?: string },
+	input: { name: string; title?: string; email?: string; phone?: string },
 ): Promise<void> {
 	const name = input.name.trim()
 	if (name.length < 2 || name.length > 160)
 		throw new MerchantStylistError("Enter a stylist name between 2 and 160 characters.")
+	const email = input.email?.trim().toLowerCase() || null
+	if (email && (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))
+		throw new MerchantStylistError("Enter a valid email address for the stylist.")
+	const phone = input.phone?.trim() || null
+	if (phone && phone.length > 32)
+		throw new MerchantStylistError("The stylist phone number must be 32 characters or fewer.")
 	const tenantId = await getTenantId(userId, tenantSlug)
 	await prisma.$transaction(async (transaction) => {
 		const existing = await transaction.stylist.findFirst({
@@ -119,7 +125,7 @@ export async function updateStylistForUser(
 		const title = input.title?.trim() || null
 		await transaction.stylist.update({
 			where: { id: stylistId },
-			data: { name, title },
+			data: { name, title, email, phone },
 		})
 		await transaction.adminAuditLog.create({
 			data: {
