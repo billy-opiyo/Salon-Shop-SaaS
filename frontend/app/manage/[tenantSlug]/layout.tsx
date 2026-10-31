@@ -4,7 +4,6 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { prisma } from "@backend/db/prisma"
 import { MerchantWorkspaceNavigation } from "@/components/tenant/MerchantWorkspaceNavigation"
-import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { salonThemeStyle } from "@/lib/salonTheme"
 import { DEFAULT_THEME_PRESET, isThemePreset } from "@shared/constants/themePresets"
 
@@ -98,7 +97,7 @@ async function TenantAdminLayoutContent({
 
 	return (
 		<div
-			className="platform-site platform-site--with-mobile-actions merchant-workspace-shell"
+			className="platform-site merchant-workspace-shell"
 			data-theme-preset={themePreset}
 			style={salonThemeStyle(themePreset)}
 		>
@@ -143,7 +142,6 @@ async function TenantAdminLayoutContent({
 				/>
 				{children}
 			</div>
-			<PlatformMobileActions />
 		</div>
 	)
 }
