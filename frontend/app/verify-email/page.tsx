@@ -3,7 +3,6 @@ import { SalonVerifyEmailClient } from "@/components/tenant/SalonVerifyEmailClie
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
-import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
 interface VerifyEmailPageProps {
@@ -53,14 +52,13 @@ export default async function VerifyEmailPage({
 	const design = await getPlatformStorefrontDesign()
 
   return (
-    <div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
+    <div className="platform-site" style={platformThemeStyle(design.theme)}>
       <main className="auth-page">
         <section className="auth-card" aria-label="Email verification">
           <span className="brand-mark">Beauty Sphia</span>
 				  <VerifyEmailClient initialToken={initialToken} callbackUrl={callbackUrl} />
         </section>
       </main>
-      <PlatformMobileActions />
     </div>
   )
 }
