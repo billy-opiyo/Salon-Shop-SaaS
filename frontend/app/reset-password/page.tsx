@@ -1,7 +1,6 @@
 import { ResetPasswordForm } from "./ResetPasswordForm"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
-import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
 interface ResetPasswordPageProps {
@@ -30,7 +29,7 @@ export default async function ResetPasswordPage({
   const design = await getPlatformStorefrontDesign()
 
   return (
-    <div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
+    <div className="platform-site" style={platformThemeStyle(design.theme)}>
       <main className="auth-page">
         <section className="auth-card" aria-label="Password reset">
           <span className="brand-mark">Beauty Sphia</span>
@@ -39,7 +38,6 @@ export default async function ResetPasswordPage({
           <ResetPasswordForm initialToken={initialToken} callbackUrl={callbackUrl} />
         </section>
       </main>
-      <PlatformMobileActions />
     </div>
   )
 }
