@@ -2425,6 +2425,39 @@ export function bindAdminSnapshotAdapter(
 	let confirmedActionButton: HTMLButtonElement | null = null
 	let refreshAdminSnapshot: () => Promise<void> = async () => {}
 	const removeTabHandlers: Array<() => void> = []
+	const blogList = document.getElementById("adminBlogsList")
+	const blogPreviousButton = document.getElementById("adminBlogsPrevBtn")
+	const blogNextButton = document.getElementById("adminBlogsNextBtn")
+	const updateBlogScrollControls = () => {
+		if (!(blogList instanceof HTMLElement)) return
+		const hasOverflow = blogList.scrollHeight > blogList.clientHeight + 1
+		if (blogPreviousButton instanceof HTMLButtonElement)
+			blogPreviousButton.disabled = !hasOverflow || blogList.scrollTop <= 1
+		if (blogNextButton instanceof HTMLButtonElement)
+			blogNextButton.disabled = !hasOverflow || blogList.scrollTop + blogList.clientHeight >= blogList.scrollHeight - 1
+	}
+	const scrollBlogList = (direction: -1 | 1) => {
+		if (!(blogList instanceof HTMLElement)) return
+		blogList.scrollBy({
+			top: direction * Math.max(160, blogList.clientHeight * 0.8),
+			behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+				? "instant"
+				: "smooth",
+		})
+	}
+	const previousBlogPage = () => scrollBlogList(-1)
+	const nextBlogPage = () => scrollBlogList(1)
+	blogList?.addEventListener("scroll", updateBlogScrollControls, { passive: true })
+	window.addEventListener("resize", updateBlogScrollControls)
+	blogPreviousButton?.addEventListener("click", previousBlogPage)
+	blogNextButton?.addEventListener("click", nextBlogPage)
+	removeTabHandlers.push(() => {
+		blogList?.removeEventListener("scroll", updateBlogScrollControls)
+		window.removeEventListener("resize", updateBlogScrollControls)
+		blogPreviousButton?.removeEventListener("click", previousBlogPage)
+		blogNextButton?.removeEventListener("click", nextBlogPage)
+	})
+	updateBlogScrollControls()
 	const logoutButton = document.getElementById("adminLogoutBtn")
 	if (logoutButton instanceof HTMLButtonElement) {
 		const logoutHandler = async () => {
@@ -3240,6 +3273,7 @@ export function bindAdminSnapshotAdapter(
 						if (active)
 							item.scrollIntoView({ behavior: "instant", block: "start" })
 					})
+				window.requestAnimationFrame(updateBlogScrollControls)
 				const nextUrl = new URL(window.location.href)
 				nextUrl.searchParams.set("section", section)
 				window.history.replaceState(window.history.state, "", nextUrl)
@@ -3724,6 +3758,7 @@ export function bindAdminSnapshotAdapter(
 				"No gallery styles found.",
 			)
 			renderAdminSnapshotList("adminBlogsList", blogs, "No blog posts found.")
+			updateBlogScrollControls()
 			renderAdminSnapshotList(
 				"adminServicesList",
 				services,
@@ -4001,6 +4036,7 @@ export function bindAdminSnapshotAdapter(
 						latestBlogs,
 						"No blog posts found.",
 					)
+					updateBlogScrollControls()
 					renderAdminSnapshotList(
 						"adminServicesList",
 						latestServices,
