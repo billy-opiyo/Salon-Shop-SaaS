@@ -69,6 +69,8 @@ export default async function MerchantBillingPage({
 		| undefined
 	const design = await getPlatformStorefrontDesign()
 	const pricing = planTier ? design.plans[planTier] : null
+	const setupInvoice = billing.invoices.find((invoice) => invoice.kind === "setup")
+	const setupFeeWaived = setupInvoice?.amountMinor === 0
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 	const subscriptionStatus = billing.subscription?.status
 	const activationPending = subscriptionStatus === "setup_payment_required" || subscriptionStatus === "setup_paid_pending_activation"
@@ -181,9 +183,9 @@ export default async function MerchantBillingPage({
 			)}
 			{billing.subscription?.status === "setup_paid_pending_activation" && (
 				<section className="manage-card merchant-billing-activation" aria-labelledby="setup-complete-title">
-					<p className="eyebrow">Setup payment confirmed</p>
+					<p className="eyebrow">{setupFeeWaived ? "No setup fee required" : "Setup payment confirmed"}</p>
 					<h2 id="setup-complete-title">Your salon is ready to publish</h2>
-					<p>The setup fee has been received. Publish your storefront to make it visible to clients.</p>
+					<p>{setupFeeWaived ? "Your plan has no one-time setup fee. Publish your storefront to make it visible to clients." : "The setup fee has been received. Publish your storefront to make it visible to clients."}</p>
 					{billing.memberships[0]?.role === "OWNER" || billing.memberships[0]?.canManageContent ? (
 						<PublishSalonForm tenantId={billing.id} />
 					) : (
