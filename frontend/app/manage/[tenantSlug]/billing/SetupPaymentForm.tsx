@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useTransition } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -16,6 +16,7 @@ export function SetupPaymentForm({
 	const [message, setMessage] = useState("")
 	const [messageType, setMessageType] = useState<"success" | "error" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [isRefreshing, startRefresh] = useTransition()
 	const [requestAccepted, setRequestAccepted] = useState(false)
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -86,8 +87,16 @@ export function SetupPaymentForm({
 				</p>
 			)}
 			{requestAccepted && (
-				<button className="button button--outline button--small" type="button" onClick={() => router.refresh()}>
-					I approved the request — refresh payment status
+				<button
+					className="button button--outline button--small"
+					type="button"
+					disabled={isRefreshing}
+					aria-busy={isRefreshing}
+					onClick={() => startRefresh(() => router.refresh())}
+				>
+					{isRefreshing
+						? "Refreshing payment status…"
+						: "I approved the request — refresh payment status"}
 				</button>
 			)}
 		</form>
