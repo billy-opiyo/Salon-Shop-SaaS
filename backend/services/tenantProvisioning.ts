@@ -39,6 +39,7 @@ export async function provisionTenant(
 	const entitlement = PLAN_ENTITLEMENTS[input.planTier]
 	const platformDesign = await getPlatformStorefrontDesign()
 	const pricing = platformDesign.plans[input.planTier]
+	const setupFeeWaived = pricing.setupFeeMinor === 0
 
 	try {
 		return await prisma.$transaction(async (transaction) => {
@@ -100,7 +101,9 @@ export async function provisionTenant(
 					subscription: {
 						create: {
 							planId: plan.id,
-							status: "setup_payment_required",
+							status: setupFeeWaived
+								? "setup_paid_pending_activation"
+								: "setup_payment_required",
 							agreedMonthlyAmountMinor: pricing.monthlyAmountMinor,
 							priceVersion: platformDesign.billing.priceVersion,
 						},
@@ -125,9 +128,13 @@ export async function provisionTenant(
 						create: {
 							invoiceNumber: `BS-${now.getTime()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
 							kind: "setup",
+							status: setupFeeWaived ? "paid" : "pending",
 							amountMinor: pricing.setupFeeMinor,
 							currency: platformDesign.billing.currency,
-							description: "Beauty Sphia salon store setup fee",
+							description: setupFeeWaived
+								? "No setup fee is required for this salon."
+								: "Beauty Sphia salon store setup fee",
+							paidAt: setupFeeWaived ? now : null,
 						},
 					},
 					},
