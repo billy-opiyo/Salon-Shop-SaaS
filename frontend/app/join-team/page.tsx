@@ -6,6 +6,7 @@ import { getPlatformStorefrontDesign } from "@backend/services/platformAdminServ
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { platformThemeStyle } from "@/lib/platformTheme"
 import { PlatformAuthBrand } from "@/components/shared/PlatformAuthBrand"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 
 import { JoinTeamInvitationForm } from "./JoinTeamInvitationForm"
 
@@ -15,7 +16,7 @@ export default async function JoinTeamPage() {
 	const design = await getPlatformStorefrontDesign()
 
 	return (
-		<div className="platform-site" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
 			<main className="auth-page">
 				<section className="auth-card" aria-labelledby="join-team-title">
 					<PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
@@ -30,6 +31,7 @@ export default async function JoinTeamPage() {
 					</p>
 				</section>
 			</main>
+			<PlatformMobileActions />
 		</div>
 	)
 }
