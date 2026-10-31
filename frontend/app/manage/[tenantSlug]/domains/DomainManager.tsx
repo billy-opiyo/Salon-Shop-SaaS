@@ -36,14 +36,18 @@ export function DomainManager({
 		readonly message: string
 		readonly isError: boolean
 	} | null>(null)
-	const [busy, setBusy] = useState(false)
+	const [busyAction, setBusyAction] = useState<string | null>(null)
 
 	async function request(
 		method: "POST" | "DELETE",
 		body?: Record<string, string>,
 		domainId?: string,
 	) {
-		setBusy(true)
+		const actionDomainId = domainId ?? body?.domainId ?? ""
+		const actionKey = method === "DELETE"
+			? `remove:${actionDomainId}`
+			: `${body?.action ?? "update"}:${actionDomainId}`
+		setBusyAction(actionKey)
 		setFeedback(null)
 		try {
 			const response = await fetch(
@@ -99,7 +103,7 @@ export function DomainManager({
 				isError: true,
 			})
 		} finally {
-			setBusy(false)
+			setBusyAction(null)
 		}
 	}
 
@@ -133,7 +137,8 @@ export function DomainManager({
 									<button
 										className="button button--outline button--small"
 										type="button"
-										disabled={busy}
+										disabled={busyAction !== null}
+										aria-busy={busyAction === `verify:${domain.id}`}
 										onClick={() =>
 											void request("POST", {
 												action: "verify",
@@ -141,14 +146,17 @@ export function DomainManager({
 											})
 										}
 									>
-										Verify DNS
+										{busyAction === `verify:${domain.id}`
+											? "Verifying DNS…"
+											: "Verify DNS"}
 									</button>
 								)}
 								{domain.status === "VERIFIED" && (
 									<button
 										className="button button--primary button--small"
 										type="button"
-										disabled={busy}
+										disabled={busyAction !== null}
+										aria-busy={busyAction === `activate:${domain.id}`}
 										onClick={() =>
 											void request("POST", {
 												action: "activate",
@@ -156,17 +164,22 @@ export function DomainManager({
 											})
 										}
 									>
-										Make primary
+										{busyAction === `activate:${domain.id}`
+											? "Setting primary…"
+											: "Make primary"}
 									</button>
 								)}
 								{domain.status !== "REMOVED" && (
 									<button
 										className="button button--outline button--small"
 										type="button"
-										disabled={busy}
+										disabled={busyAction !== null}
+										aria-busy={busyAction === `remove:${domain.id}`}
 										onClick={() => void request("DELETE", undefined, domain.id)}
 									>
-										Remove
+										{busyAction === `remove:${domain.id}`
+											? "Removing…"
+											: "Remove"}
 									</button>
 								)}
 							</div>
@@ -214,14 +227,18 @@ export function DomainManager({
 						onChange={(event) => setHost(event.target.value)}
 						placeholder="www.yoursalon.com"
 						required
+						disabled={busyAction !== null}
 					/>
 				</label>
 				<button
 					className="button button--primary"
 					type="submit"
-					disabled={busy}
+					disabled={busyAction !== null}
+					aria-busy={busyAction === "register:"}
 				>
-					Register domain
+					{busyAction === "register:"
+						? "Registering domain…"
+						: "Register domain"}
 				</button>
 			</form>
 		</>
