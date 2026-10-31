@@ -32,6 +32,20 @@ function timeLabelMinutes(value: string): number {
   return hour * 60 + minute;
 }
 
+function getNairobiDateStart(): Date {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Nairobi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  if (!year || !month || !day) throw new ClientAccountError("The current date could not be determined.");
+  return new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+}
+
 export async function getClientAccountSnapshot(
   userId: string,
   tenantSlug?: string,
@@ -53,7 +67,24 @@ export async function getClientAccountSnapshot(
   });
   if (!user) throw new ClientAccountError("Your account could not be found.");
 
-  const [preferences, bookings, reviews, favorites, loginHistory] = await Promise.all([
+  const bookingWhere = {
+    ...(tenant ? { tenantId: tenant.id } : {}),
+    OR: [{ userId }, { userId: null, email: user.email.toLowerCase() }],
+  };
+  const bookingSelect = {
+    id: true,
+    serviceName: true,
+    appointmentDate: true,
+    timeLabel: true,
+    status: true,
+    specialRequests: true,
+    stylistId: true,
+    stylist: { select: { name: true } },
+    tenant: { select: { businessName: true, slug: true } },
+  };
+  const todayStart = getNairobiDateStart();
+
+  const [preferences, upcomingBookings, recentPastBookings, reviews, favorites, loginHistory] = await Promise.all([
     prisma.userPreferences.findUnique({
       where: { userId },
       select: {
@@ -67,23 +98,16 @@ export async function getClientAccountSnapshot(
       },
     }),
     prisma.booking.findMany({
-      where: {
-        ...(tenant ? { tenantId: tenant.id } : {}),
-        OR: [{ userId }, { userId: null, email: user.email.toLowerCase() }],
-      },
+      where: { ...bookingWhere, appointmentDate: { gte: todayStart } },
       orderBy: { appointmentDate: "asc" },
       take: 50,
-      select: {
-        id: true,
-        serviceName: true,
-        appointmentDate: true,
-        timeLabel: true,
-        status: true,
-        specialRequests: true,
-        stylistId: true,
-        stylist: { select: { name: true } },
-        tenant: { select: { businessName: true, slug: true } },
-      },
+      select: bookingSelect,
+    }),
+    prisma.booking.findMany({
+      where: { ...bookingWhere, appointmentDate: { lt: todayStart } },
+      orderBy: { appointmentDate: "desc" },
+      take: 20,
+      select: bookingSelect,
     }),
     prisma.review.findMany({
       where: { ...(tenant ? { tenantId: tenant.id } : {}), userId },
@@ -141,12 +165,18 @@ export async function getClientAccountSnapshot(
           fontSize: preferences.fontSize === "small" || preferences.fontSize === "large" ? preferences.fontSize : "medium",
         }
       : null,
-    bookings: [...bookings]
-      .sort((left, right) =>
+    bookings: [
+      ...[...upcomingBookings].sort((left, right) =>
         left.appointmentDate.getTime() - right.appointmentDate.getTime() ||
         timeLabelMinutes(left.timeLabel) - timeLabelMinutes(right.timeLabel) ||
         left.timeLabel.localeCompare(right.timeLabel),
-      )
+      ),
+      ...[...recentPastBookings].sort((left, right) =>
+        right.appointmentDate.getTime() - left.appointmentDate.getTime() ||
+        timeLabelMinutes(right.timeLabel) - timeLabelMinutes(left.timeLabel) ||
+        right.timeLabel.localeCompare(left.timeLabel),
+      ),
+    ]
       .map((booking) => ({
         id: booking.id,
         tenantName: booking.tenant.businessName,
