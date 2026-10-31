@@ -20,15 +20,15 @@ interface PlatformHeaderClientProps {
 	readonly canAccessPlatformAdmin: boolean
 }
 
-const platformSearchEntries: readonly SiteSearchEntry[] = [
-	{ label: "Home", description: "Beauty Sphia salon platform", href: "/", keywords: "platform salon management" },
+const getPlatformSearchEntries = (brandName: string): readonly SiteSearchEntry[] => [
+	{ label: "Home", description: `${brandName} salon platform`, href: "/", keywords: "platform salon management" },
 	{ label: "Salons", description: "Explore live salon storefronts", href: "/stores", keywords: "salons directory browse" },
-	{ label: "About Beauty Sphia", description: "Meet the people behind the platform", href: "/about", keywords: "team people" },
+	{ label: `About ${brandName}`, description: "Meet the people behind the platform", href: "/about", keywords: "team people" },
 	{ label: "Salon Owner Support", description: "Setup, bookings, billing, and account help", href: "/support", keywords: "help support" },
 	{ label: "Pricings", description: "Compare salon plans and included features", href: "/#plans", keywords: "plans prices pricing subscription" },
-	{ label: "Top Salons Available", description: "Discover salons on Beauty Sphia", href: "/#top-stores", keywords: "directory salons" },
+	{ label: "Top Salons Available", description: `Discover salons on ${brandName}`, href: "/#top-stores", keywords: "directory salons" },
 	{ label: "How it works", description: "Create, customize, and grow your salon", href: "/#how-it-works", keywords: "create customize grow" },
-	{ label: "Contact", description: "Send a message to the Beauty Sphia team", href: "/#contact", keywords: "email message" },
+	{ label: "Contact", description: `Send a message to the ${brandName} team`, href: "/#contact", keywords: "email message" },
 ]
 
 export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, isSignedIn, userEmail, userImage, canAccessPlatformAdmin }: PlatformHeaderClientProps) {
@@ -48,6 +48,9 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 			<span className="brand-mark__tagline">{brandTagline}</span>
 		</span>
 	</>
+	const searchEntries = canAccessPlatformAdmin
+		? [...getPlatformSearchEntries(brandName), { label: "Platform Admin", description: `Manage ${brandName} platform operations and CMS`, href: "/platform-admin", keywords: "admin dashboard cms operations" }]
+		: getPlatformSearchEntries(brandName)
 
 	useEffect(() => {
 		const updateAccountImage = (event: Event) => {
@@ -86,7 +89,7 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 	}
 
 	return <header className="platform-header">
-		{isHome ? <PlatformBrandMark>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label={`${brandName} homepage`}>{brand}</Link>}
+		{isHome ? <PlatformBrandMark brandName={brandName}>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label={`${brandName} homepage`}>{brand}</Link>}
 		<nav id="platform-navigation" className={"platform-nav" + (menuOpen ? " is-open" : "")} aria-label="Platform navigation">
 			<Link href={homeHref} prefetch={!isHome} onClick={() => setMenuOpen(false)}>Home</Link>
 			<Link href="/stores" prefetch onClick={() => setMenuOpen(false)}>Salons</Link>
@@ -96,9 +99,7 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 		</nav>
 		<div className="platform-header__actions">
 			<SiteSearch
-				entries={canAccessPlatformAdmin
-					? [...platformSearchEntries, { label: "Platform Admin", description: "Manage Beauty Sphia platform operations and CMS", href: "/platform-admin", keywords: "admin dashboard cms operations" }]
-					: platformSearchEntries}
+			entries={searchEntries}
 				label={brandName}
 			/>
 			<div className="platform-account" ref={accountMenuRef}>

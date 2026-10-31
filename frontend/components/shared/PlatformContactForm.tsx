@@ -6,7 +6,7 @@ import { TurnstileWidget } from "@/components/shared/TurnstileWidget"
 
 type FormStatus = "idle" | "sending" | "success" | "error"
 
-export function PlatformContactForm() {
+export function PlatformContactForm({ brandName = "Beauty Sphia" }: { readonly brandName?: string }) {
 	const [status, setStatus] = useState<FormStatus>("idle")
 	const [message, setMessage] = useState("")
 	const [token, setToken] = useState("")
@@ -38,7 +38,7 @@ export function PlatformContactForm() {
 			const result = await response.json() as { error?: string }
 			if (!response.ok) throw new Error(result.error ?? "The message could not be sent.")
 			setStatus("success")
-			setMessage("Thanks, your message has been sent to the Beauty Sphia team.")
+			setMessage(`Thanks, your message has been sent to the ${brandName} team.`)
 			form.reset()
 			setToken("")
 		} catch (error) {

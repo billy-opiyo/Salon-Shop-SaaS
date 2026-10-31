@@ -134,7 +134,7 @@ export default async function PlatformHome() {
 							<h2 id="top-stores-title">{content.topStoresTitle}</h2>
 						</div>
 					</div>
-					<TopStoresGrid />
+					<TopStoresGrid brandName={design.branding.name} />
 					<div className="top-stores-actions">
 						<Link className="button button--outline" href="/stores">
 							{content.topStoresViewAllLabel}
@@ -253,19 +253,19 @@ export default async function PlatformHome() {
 							<p className="eyebrow">{content.contactEyebrow}</p>
 							<h2 id="contact-title">{content.contactTitle}</h2>
 							<p>{content.contactDescription}</p>
-							<div className="platform-contact-details" aria-label="Beauty Sphia contact details">
+							<div className="platform-contact-details" aria-label={`${design.branding.name} contact details`}>
 								<a href={`mailto:${design.contact.supportEmail}`}>{design.contact.supportEmail}</a>
 								{design.contact.phone && <a href={`tel:${design.contact.phone}`}>{design.contact.phone}</a>}
 								{design.contact.whatsappUrl && <a href={design.contact.whatsappUrl} target="_blank" rel="noopener noreferrer">WhatsApp support</a>}
 								{design.contact.address && <p>{design.contact.address}</p>}
 							</div>
 						</div>
-						<PlatformContactForm />
+						<PlatformContactForm brandName={design.branding.name} />
 					</div>
 				</section>
 			</main>
 			<PlatformFooter brandName={design.branding.name} description={content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
-			<PlatformFloatingActions whatsappUrl={design.contact.whatsappUrl} />
+			<PlatformFloatingActions whatsappUrl={design.contact.whatsappUrl} brandName={design.branding.name} />
 			<PlatformMobileActions active="home" />
 			</div>
 		</>
