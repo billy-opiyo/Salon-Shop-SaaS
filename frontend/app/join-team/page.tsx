@@ -26,7 +26,7 @@ export default async function JoinTeamPage() {
 					</p>
 					<JoinTeamInvitationForm />
 					<p className="auth-form__switch">
-						<Link href="/account">Return to your Beauty Sphia account</Link>
+						<Link href="/account">Return to your {design.branding.name} account</Link>
 					</p>
 				</section>
 			</main>

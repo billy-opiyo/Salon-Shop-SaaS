@@ -11,7 +11,13 @@ import { openNativeGoogleSignIn } from "@/lib/mobileGoogleAuth"
 
 import { registerAccount } from "./actions"
 
-export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?: string }) {
+export function SignupForm({
+	callbackUrl = "/account",
+	brandName = "Beauty Sphia",
+}: {
+	readonly callbackUrl?: string
+	readonly brandName?: string
+}) {
 	const [message, setMessage] = useState<string>("")
 	const [messageType, setMessageType] = useState<"success" | "error" | "notice" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
@@ -136,7 +142,7 @@ export function SignupForm({ callbackUrl = "/account" }: { readonly callbackUrl?
 			)}
 			<div className="auth-links">
 				<p className="auth-form__switch">
-					Already have a Beauty Sphia account?{" "}
+					Already have a {brandName} account?{" "}
 					<Link href={`/login?callbackUrl=${encodeURIComponent(getSafeAuthCallbackUrl(callbackUrl))}`} replace>Sign in</Link>
 				</p>
 			</div>
