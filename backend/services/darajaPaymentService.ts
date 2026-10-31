@@ -283,7 +283,6 @@ export async function requestSetupPayment(
 					canManageBookings: true,
 					canManageContent: true,
 					canManageSecurity: true,
-					canManageBilling: true,
 				},
 			},
 		},
@@ -293,13 +292,9 @@ export async function requestSetupPayment(
 		tenant.memberships[0] ?? null,
 		tenant.id,
 	)
-	const canManageBilling = tenant.memberships[0]?.canManageBilling === true
-	if (
-		membership.role !== "OWNER" &&
-		(membership.role !== "ADMIN" || !canManageBilling)
-	)
+	if (membership.role !== "OWNER")
 		throw new Error(
-			"Only the salon owner or an authorized billing administrator can make payments.",
+			"Only the salon owner can make salon subscription payments.",
 		)
 	if (tenant.subscription?.status !== "setup_payment_required")
 		throw new Error("This salon does not have a setup payment due.")

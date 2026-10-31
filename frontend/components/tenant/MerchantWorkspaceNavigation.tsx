@@ -9,7 +9,6 @@ export interface MerchantWorkspaceNavigationAccess {
 	readonly canManageContent: boolean
 	readonly canManageAdmins: boolean
 	readonly canManageSecurity: boolean
-	readonly canManageBilling: boolean
 	readonly isOwner: boolean
 }
 
@@ -59,7 +58,7 @@ export function MerchantWorkspaceNavigation({
 		{ label: "Team", href: `${basePath}/team`, visible: access.canManageAdmins },
 		{ label: "Domains", href: `${basePath}/domains`, visible: access.canManageSecurity },
 		{ label: "Security", href: `${basePath}?section=security`, section: "security", visible: access.canManageSecurity },
-		{ label: "Billing", href: `${basePath}/billing`, visible: access.canManageBilling || access.isOwner },
+		{ label: "Billing", href: `${basePath}/billing`, visible: access.isOwner },
 	]
 	const defaultSection = access.canManageBookings
 		? "bookings"

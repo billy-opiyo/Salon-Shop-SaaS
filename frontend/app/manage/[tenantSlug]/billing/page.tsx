@@ -72,8 +72,7 @@ export default async function MerchantBillingPage({
 	const setupInvoice = billing.invoices.find((invoice) => invoice.kind === "setup")
 	const setupFeeWaived = setupInvoice?.amountMinor === 0
 	const billingMembership = billing.memberships[0]
-	const canInitiatePayment = billingMembership?.role === "OWNER" ||
-		(billingMembership?.role === "ADMIN" && billingMembership.canManageBilling)
+	const canInitiatePayment = billingMembership?.role === "OWNER"
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 	const subscriptionStatus = billing.subscription?.status
 	const activationPending = subscriptionStatus === "setup_payment_required" || subscriptionStatus === "setup_paid_pending_activation"
@@ -170,7 +169,7 @@ export default async function MerchantBillingPage({
 						/>
 					) : (
 						<p className="merchant-billing-owner-note">
-							Ask the salon owner or an authorized billing administrator to complete the setup payment.
+							Only the salon owner can complete the setup payment.
 						</p>
 					)}
 					<div className="merchant-billing-next-step">
@@ -237,7 +236,7 @@ export default async function MerchantBillingPage({
 					/>
 				) : (
 					<p className="merchant-billing-owner-note">
-						Ask the salon owner or an authorized billing administrator to make this payment.
+						Only the salon owner can make this payment.
 					</p>
 				)}
 				</section>

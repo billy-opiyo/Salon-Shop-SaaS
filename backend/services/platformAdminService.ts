@@ -135,6 +135,23 @@ const loadPlatformStorefrontDesign = unstable_cache(async (): Promise<PlatformSt
 
 export const getPlatformStorefrontDesign = cache(loadPlatformStorefrontDesign)
 
+export async function getPlatformStorefrontDesignForAdmin(
+	actorUserId: string,
+	actorEmail: string | null | undefined,
+): Promise<PlatformStorefrontDesign> {
+	const role = await assertPlatformAdminPermission(
+		actorUserId,
+		actorEmail,
+		"site-content:read",
+	)
+	const design = await getPlatformStorefrontDesign()
+	if (role === "OWNER") return design
+	return {
+		...design,
+		billing: DEFAULT_PLATFORM_STOREFRONT.billing,
+	}
+}
+
 export async function updatePlatformStorefrontDesign(
 	actorUserId: string,
 	actorEmail: string | null | undefined,
@@ -245,7 +262,9 @@ export async function updatePlatformStorefrontDesign(
 	// multiple public routes. Invalidate the route tree as well as the data tag so
 	// a previously cached page cannot keep showing the old design after a save.
 	revalidatePath("/", "layout")
-	return design
+	return role === "OWNER"
+		? design
+		: { ...design, billing: DEFAULT_PLATFORM_STOREFRONT.billing }
 }
 
 function platformR2Client(): S3Client {

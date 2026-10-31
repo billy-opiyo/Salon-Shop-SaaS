@@ -29,10 +29,7 @@ export async function GET(
 					some: {
 						userId: session.user.id,
 						status: "ACTIVE",
-						OR: [
-							{ role: "OWNER" },
-							{ role: "ADMIN", canManageBilling: true },
-						],
+						role: "OWNER",
 					},
 				},
 			},

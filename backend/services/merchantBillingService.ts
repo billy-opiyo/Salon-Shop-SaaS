@@ -22,7 +22,7 @@ export async function getBillingSnapshotForUser(
 			currency: true,
 			memberships: {
 				where: { userId, status: "ACTIVE" },
-				select: { role: true, canManageBilling: true, canManageContent: true },
+				select: { role: true, canManageContent: true },
 			},
 			subscription: {
 				select: {
@@ -69,13 +69,9 @@ export async function getBillingSnapshotForUser(
 		throw new MerchantBillingError(
 			"You are not authorized to view this billing account.",
 		)
-	if (
-		tenant.memberships[0].role !== "OWNER" &&
-		(tenant.memberships[0].role !== "ADMIN" ||
-			!tenant.memberships[0].canManageBilling)
-	)
+	if (tenant.memberships[0].role !== "OWNER")
 		throw new MerchantBillingError(
-			"Only the salon owner or an authorized administrator can view billing.",
+			"Only the salon owner can access billing.",
 		)
 	return tenant
 }

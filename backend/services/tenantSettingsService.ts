@@ -17,11 +17,9 @@ export class TenantSettingsError extends Error {
 	readonly code = "TENANT_SETTINGS_ERROR" as const
 }
 
-async function tenantContext(userId: string, tenantSlug: string) {
+async function tenantAccess(userId: string, tenantSlug: string) {
 	try {
-		return (
-			await requireTenantPermission(userId, tenantSlug, "canManageContent")
-		).tenant
+		return await requireTenantPermission(userId, tenantSlug, "canManageContent")
 	} catch (error) {
 		if (error instanceof Error && error.message === "Store not found.") {
 			throw new TenantSettingsError(error.message)
@@ -30,14 +28,19 @@ async function tenantContext(userId: string, tenantSlug: string) {
 	}
 }
 
+async function tenantContext(userId: string, tenantSlug: string) {
+	return (await tenantAccess(userId, tenantSlug)).tenant
+}
+
 export async function getTenantSettingsForUser(
 	userId: string,
 	tenantSlug: string,
 ) {
-	const tenant = await tenantContext(userId, tenantSlug)
+	const { tenant, membership } = await tenantAccess(userId, tenantSlug)
 	return {
 		tenant: { slug: tenant.slug, businessName: tenant.businessName },
 		settings: tenant.settings,
+		isOwner: membership.role === "OWNER",
 	}
 }
 
@@ -46,8 +49,27 @@ export async function updateTenantSettingsForUser(
 	tenantSlug: string,
 	rawInput: unknown,
 ) {
-	const tenant = await tenantContext(userId, tenantSlug)
+	const { tenant, membership } = await tenantAccess(userId, tenantSlug)
+	const isOwner = membership.role === "OWNER"
+	const submitted = rawInput && typeof rawInput === "object"
+		? (rawInput as Record<string, unknown>)
+		: {}
+	const paymentSettingKeys = [
+		"bookingPaymentsEnabled",
+		"bookingPaymentModes",
+		"bookingDepositPercent",
+	] as const
+	const paymentSettingsSubmitted = paymentSettingKeys.some((key) => key in submitted)
+	if (paymentSettingsSubmitted && !isOwner)
+		throw new TenantSettingsError("Only the salon owner can change booking payment settings.")
 	const input = tenantSettingsSchema.parse(rawInput)
+	const paymentSettings = isOwner && paymentSettingsSubmitted
+		? {
+			bookingPaymentsEnabled: input.bookingPaymentsEnabled,
+			bookingPaymentModes: input.bookingPaymentModes,
+			bookingDepositPercent: input.bookingDepositPercent,
+		}
+		: {}
 	return prisma.tenantSettings.upsert({
 		where: { tenantId: tenant.id },
 		create: {
@@ -61,9 +83,7 @@ export async function updateTenantSettingsForUser(
 			whatsappUrl: input.whatsappUrl || null,
 			emailPrimary: input.emailPrimary || null,
 			emailBookings: input.emailBookings || null,
-			bookingPaymentsEnabled: input.bookingPaymentsEnabled,
-			bookingPaymentModes: input.bookingPaymentModes,
-			bookingDepositPercent: input.bookingDepositPercent,
+			...paymentSettings,
 		},
 		update: {
 			themePreset: input.themePreset,
@@ -75,9 +95,7 @@ export async function updateTenantSettingsForUser(
 			whatsappUrl: input.whatsappUrl || null,
 			emailPrimary: input.emailPrimary || null,
 			emailBookings: input.emailBookings || null,
-			bookingPaymentsEnabled: input.bookingPaymentsEnabled,
-			bookingPaymentModes: input.bookingPaymentModes,
-			bookingDepositPercent: input.bookingDepositPercent,
+			...paymentSettings,
 		},
 	})
 }

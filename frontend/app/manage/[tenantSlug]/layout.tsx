@@ -59,7 +59,6 @@ async function TenantAdminLayoutContent({
 					canManageContent: true,
 					canManageAdmins: true,
 					canManageSecurity: true,
-					canManageBilling: true,
 					tenant: {
 						select: {
 							status: true,
@@ -77,17 +76,20 @@ async function TenantAdminLayoutContent({
 				canManageContent: isOwner || membership.canManageContent,
 				canManageAdmins: isOwner || membership.canManageAdmins,
 				canManageSecurity: isOwner || membership.canManageSecurity,
-				canManageBilling: membership.role === "ADMIN" && membership.canManageBilling,
 			}
 		: null
 	const savedThemePreset = membership?.tenant.settings?.themePreset
 	const tenantStatus = membership?.tenant.status
 	const workspaceHomeHref = tenantStatus === "ACTIVE"
 		? `/${tenantSlug.trim().toLowerCase()}#home`
-		: `/manage/${tenantSlug.trim().toLowerCase()}/billing`
+		: isOwner
+			? `/manage/${tenantSlug.trim().toLowerCase()}/billing`
+			: "/account"
 	const workspaceHomeLabel = tenantStatus === "ACTIVE"
 		? "Back to Homepage"
-		: tenantStatus === "DRAFT"
+			: !isOwner
+				? "Back to account"
+			: tenantStatus === "DRAFT"
 			? "Continue salon setup"
 			: "View billing and support"
 	const themePreset =
