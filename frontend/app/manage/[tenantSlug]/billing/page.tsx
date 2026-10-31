@@ -71,6 +71,9 @@ export default async function MerchantBillingPage({
 	const pricing = planTier ? design.plans[planTier] : null
 	const setupInvoice = billing.invoices.find((invoice) => invoice.kind === "setup")
 	const setupFeeWaived = setupInvoice?.amountMinor === 0
+	const billingMembership = billing.memberships[0]
+	const canInitiatePayment = billingMembership?.role === "OWNER" ||
+		(billingMembership?.role === "ADMIN" && billingMembership.canManageBilling)
 	const freeUsageLabel = `${design.billing.freeUsageMonths} ${design.billing.freeUsageMonths === 1 ? "month" : "months"}`
 	const subscriptionStatus = billing.subscription?.status
 	const activationPending = subscriptionStatus === "setup_payment_required" || subscriptionStatus === "setup_paid_pending_activation"
@@ -160,10 +163,16 @@ export default async function MerchantBillingPage({
 					{design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
-					<SetupPaymentForm
-						tenantSlug={tenantSlug}
-						initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
-					/>
+					{canInitiatePayment ? (
+						<SetupPaymentForm
+							tenantSlug={tenantSlug}
+							initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
+						/>
+					) : (
+						<p className="merchant-billing-owner-note">
+							Ask the salon owner or an authorized billing administrator to complete the setup payment.
+						</p>
+					)}
 					<div className="merchant-billing-next-step">
 						<h3>Next: publish your salon</h3>
 						<p>Once the setup payment is confirmed, this page will show the action to publish your storefront.</p>
@@ -220,11 +229,17 @@ export default async function MerchantBillingPage({
 					{design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
-				<SetupPaymentForm
-					tenantSlug={tenantSlug}
-					mode="renewal"
-					initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
-				/>
+				{canInitiatePayment ? (
+					<SetupPaymentForm
+						tenantSlug={tenantSlug}
+						mode="renewal"
+						initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
+					/>
+				) : (
+					<p className="merchant-billing-owner-note">
+						Ask the salon owner or an authorized billing administrator to make this payment.
+					</p>
+				)}
 				</section>
 			)}
 
