@@ -10,7 +10,8 @@ import {
 } from "@backend/services/merchantBillingService"
 
 import { SetupPaymentForm } from "./SetupPaymentForm"
-import { cancelSubscription, changePlan } from "./actions"
+import { cancelSubscription } from "./actions"
+import { ChangePlanForm } from "./ChangePlanForm"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
 import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 
@@ -158,7 +159,10 @@ export default async function MerchantBillingPage({
 					{design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
-					<SetupPaymentForm tenantSlug={tenantSlug} />
+					<SetupPaymentForm
+						tenantSlug={tenantSlug}
+						initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
+					/>
 					<div className="merchant-billing-next-step">
 						<h3>Next: publish your salon</h3>
 						<p>Once the setup payment is confirmed, this page will show the action to publish your storefront.</p>
@@ -215,7 +219,11 @@ export default async function MerchantBillingPage({
 					{design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
-					<SetupPaymentForm tenantSlug={tenantSlug} mode="renewal" />
+				<SetupPaymentForm
+					tenantSlug={tenantSlug}
+					mode="renewal"
+					initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
+				/>
 				</section>
 			)}
 
@@ -293,18 +301,7 @@ export default async function MerchantBillingPage({
 					</p>
 				) : billing.memberships[0]?.role === "OWNER" ? (
 					<>
-						<form className="auth-form" action={changePlan}>
-							<input type="hidden" name="tenantSlug" value={tenantSlug} />
-							<label>
-								Change plan
-								<select name="tier" defaultValue={planTier ?? "starter"}>
-									<option value="starter">Starter</option>
-									<option value="business">Business</option>
-									<option value="enterprise">Enterprise</option>
-								</select>
-							</label>
-							<ManageSubmitButton className="button button--outline" pendingLabel="Saving plan…">Save plan</ManageSubmitButton>
-						</form>
+						<ChangePlanForm tenantSlug={tenantSlug} currentTier={planTier ?? "starter"} />
 						<form className="auth-form" action={cancelSubscription}>
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
 							<label>

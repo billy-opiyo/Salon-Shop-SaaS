@@ -31,6 +31,8 @@ function formatAmount(amountMinor: number, currency: string): string {
 		style: "currency",
 		currency,
 		currencyDisplay: "code",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
 	}).format(amountMinor / 100)
 }
 

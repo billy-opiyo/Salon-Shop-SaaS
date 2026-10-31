@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 
 export interface SalonServiceItem {
 	readonly id?: string
@@ -141,7 +142,7 @@ export function SalonServices({
 							<h3>{service.name}</h3>
 							<p>{service.desc}</p>
 							<div>
-								<span className="service-price">{service.price}</span>
+								<span className="service-price">{formatKesLabel(service.price)}</span>
 								<span className="service-duration">
 									<svg
 										width="14"
@@ -173,7 +174,7 @@ export function SalonServices({
 									className="service-whatsapp-btn"
 									type="button"
 									data-whatsapp-service={service.name}
-									data-whatsapp-price={service.price}
+									data-whatsapp-price={formatKesLabel(service.price)}
 								>
 									<i className="fab fa-whatsapp" aria-hidden="true" /> {service.orderOnly ? "Order via WhatsApp" : "Book via WhatsApp"}
 								</button>
@@ -366,7 +367,7 @@ export function SalonServiceOptions({
 								data-service-id={item.id ?? ""}
 								data-price-minor={String(item.priceMinor ?? "")}
 							>
-								{item.name} ({item.price}){item.orderOnly ? " - Order via WhatsApp" : ""}
+				{item.name} ({formatKesLabel(item.price)}){item.orderOnly ? " - Order via WhatsApp" : ""}
 							</option>
 						))}
 				</optgroup>

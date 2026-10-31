@@ -6,6 +6,7 @@ import { openNativeGoogleSignIn } from "@/lib/mobileGoogleAuth"
 import { initializeMobileAppSwitchLink } from "@/lib/mobile-app-switch"
 
 import { registerAccount } from "@/app/signup/actions"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 import {
 	DEFAULT_STOREFRONT_DESIGN,
 	STOREFRONT_SECTION_KEYS,
@@ -398,7 +399,7 @@ function renderAdminSnapshotList(
 			if (isGallery) {
 				const tags = document.createElement("div")
 				tags.className = "admin-gallery-tags"
-				for (const [key, label] of [["featuredTrending", "Trending"], ["featuredMostBooked", "Most Booked"], ["priceRange", String(record.priceRange ?? "")]] as const) {
+				for (const [key, label] of [["featuredTrending", "Trending"], ["featuredMostBooked", "Most Booked"], ["priceRange", formatKesLabel(String(record.priceRange ?? ""))]] as const) {
 					if (record[key] !== true && (key !== "priceRange" || !label)) continue
 					const tag = document.createElement("span")
 					tag.textContent = label
@@ -676,7 +677,7 @@ function renderAdminSnapshotList(
 				reminder.dataset.adminId = recordId
 				reminder.dataset.name = titleText
 				reminder.dataset.service = String(record.serviceName ?? record.service ?? "[Service name]")
-				reminder.dataset.price = String(record.price ?? record.priceRange ?? "[Price]")
+				reminder.dataset.price = formatKesLabel(String(record.price ?? record.priceRange ?? "[Price]"))
 				reminder.dataset.date = String(record.appointmentDate ?? record.date ?? "[Appointment date]")
 				reminder.dataset.time = String(record.timeLabel ?? record.time ?? "[Appointment time]")
 				const reminderIcon = document.createElement("i")
@@ -828,10 +829,10 @@ function formatAdminSnapshotValue(value: unknown): string {
 		typeof value === "number" ||
 		typeof value === "boolean"
 	)
-		return String(value)
+		return formatKesLabel(String(value))
 	if (Array.isArray(value))
 		return value.map(formatAdminSnapshotValue).join(", ")
-	return JSON.stringify(value)
+	return formatKesLabel(JSON.stringify(value))
 }
 
 function formatAdminSnapshotDate(value: unknown, includeTime = false): string {
@@ -956,7 +957,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 			formField(galleryForm, "galleryServiceCategory") || "braids-services"
 		const length = formField(galleryForm, "galleryLength")
 		const size = formField(galleryForm, "gallerySize")
-		const priceRange = formField(galleryForm, "galleryPriceRange")
+		const priceRange = formatKesLabel(formField(galleryForm, "galleryPriceRange"))
 		const hairServiceType = formField(galleryForm, "galleryHairServiceType")
 		const hairTechnique = formField(galleryForm, "galleryHairTechnique")
 		const stylist = formField(galleryForm, "galleryStylistName")
@@ -1181,7 +1182,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		)
 		setPlaceholder(
 			"galleryPriceRange",
-			isCosmetics ? "e.g. KSh 1,200" : "e.g. KSh 4,000 - 6,000",
+						isCosmetics ? "e.g. KES 1,200" : "e.g. KES 4,000 - 6,000",
 		)
 		const trendingLabel = document.getElementById(
 			"galleryFeaturedTrendingLabel",
@@ -2814,7 +2815,7 @@ export function bindAdminSnapshotAdapter(
 					setFormField(form, "galleryLength", record.length)
 					setFormField(form, "gallerySize", record.size)
 					setFormField(form, "galleryTimeTaken", record.timeTaken)
-					setFormField(form, "galleryPriceRange", record.priceRange)
+					setFormField(form, "galleryPriceRange", formatKesLabel(typeof record.priceRange === "string" ? record.priceRange : ""))
 					setFormField(form, "galleryProductBrand", record.productBrand)
 					setFormField(form, "galleryProductSize", record.productSize)
 					setFormField(
@@ -7584,7 +7585,7 @@ function bindNativeSalonInteractions(
 			lightboxStyleName: gallery.styleName,
 			lightboxStyleType: gallery.styleType ?? "Salon style",
 			lightboxTimeTaken: gallery.timeTaken,
-			lightboxPriceRange: gallery.priceRange,
+			lightboxPriceRange: formatKesLabel(gallery.priceRange),
 			lightboxLength: gallery.length,
 			lightboxSize: gallery.size,
 			lightboxHairType: gallery.hairType,
@@ -7600,7 +7601,7 @@ function bindNativeSalonInteractions(
 		if (whatsapp instanceof HTMLElement) {
 			whatsapp.dataset.whatsappService =
 				gallery.serviceName ?? gallery.styleName
-			whatsapp.dataset.whatsappPrice = gallery.priceRange ?? ""
+			whatsapp.dataset.whatsappPrice = formatKesLabel(gallery.priceRange)
 		}
 		if (gallery.beforeImageUrl && beforeAfter && before && after) {
 			beforeAfter.style.display = "grid"
@@ -7678,7 +7679,7 @@ function bindNativeSalonInteractions(
 		if (gallery)
 			openWhatsApp(
 				gallery.serviceName ?? gallery.styleName,
-				gallery.priceRange ?? "",
+				formatKesLabel(gallery.priceRange),
 			)
 	})
 

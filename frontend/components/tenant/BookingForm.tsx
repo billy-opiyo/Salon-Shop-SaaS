@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 
 import type { TenantService } from "@shared/types/tenant";
+import { formatKesLabel } from "@/components/tenant/formatKesLabel";
 
 import { TurnstileWidget } from "@/components/shared/TurnstileWidget";
 
@@ -84,7 +85,7 @@ export function BookingForm({ tenantSlug, services }: BookingFormProps) {
         <label>Last name<input name="lastName" required maxLength={80} autoComplete="family-name" /></label>
         <label>Email<input name="email" type="email" required maxLength={320} autoComplete="email" /></label>
         <label>Phone<input name="phone" type="tel" required maxLength={32} autoComplete="tel" /></label>
-        <label>Service<select name="serviceKey" required defaultValue=""><option value="" disabled>Select a service</option>{bookableServices.map((service) => <option key={service.id ?? service.name} value={service.id ?? service.name}>{service.name} · {service.priceLabel}</option>)}</select></label>
+        <label>Service<select name="serviceKey" required defaultValue=""><option value="" disabled>Select a service</option>{bookableServices.map((service) => <option key={service.id ?? service.name} value={service.id ?? service.name}>{service.name} · {formatKesLabel(service.priceLabel)}</option>)}</select></label>
         <label>Date<input name="appointmentDate" type="date" required min={minDate} /></label>
         <label>Preferred time<select name="timeLabel" required defaultValue=""><option value="" disabled>Select a time</option>{TIME_OPTIONS.map((time) => <option key={time} value={time}>{time}</option>)}</select></label>
         <label className="booking-form__wide">Special requests<textarea name="specialRequests" rows={3} maxLength={2000} placeholder="Anything your stylist should know?" /></label>

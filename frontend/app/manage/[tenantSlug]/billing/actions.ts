@@ -5,8 +5,14 @@ import { auth } from "@/auth"
 import {
 	cancelSubscriptionForUser,
 	changePlanForUser,
+	MerchantBillingError,
 } from "@backend/services/merchantBillingService"
 import type { PlanTier } from "@shared/types/tenant"
+
+export interface ChangePlanResult {
+	readonly ok: boolean
+	readonly message: string
+}
 
 export async function cancelSubscription(formData: FormData) {
 	const session = await auth()
@@ -16,7 +22,10 @@ export async function cancelSubscription(formData: FormData) {
 	revalidatePath(`/manage/${tenantSlug}/billing`)
 }
 
-export async function changePlan(formData: FormData) {
+export async function changePlan(
+	_previous: ChangePlanResult,
+	formData: FormData,
+): Promise<ChangePlanResult> {
 	const session = await auth()
 	const tenantSlug = String(formData.get("tenantSlug") ?? "")
 	const tier = String(formData.get("tier") ?? "") as PlanTier
@@ -24,7 +33,20 @@ export async function changePlan(formData: FormData) {
 		!session?.user?.id ||
 		!["starter", "business", "enterprise"].includes(tier)
 	)
-		return
-	await changePlanForUser(session.user.id, tenantSlug, tier)
-	revalidatePath(`/manage/${tenantSlug}/billing`)
+		return { ok: false, message: "Choose a valid plan and try again." }
+	try {
+		await changePlanForUser(session.user.id, tenantSlug, tier)
+		revalidatePath(`/manage/${tenantSlug}/billing`)
+		return {
+			ok: true,
+			message: "Plan change saved. Any adjustment invoice is listed above; the selected tier takes effect at renewal.",
+		}
+	} catch (error) {
+		return {
+			ok: false,
+			message: error instanceof MerchantBillingError
+				? error.message
+				: "The plan could not be changed. Please try again.",
+		}
+	}
 }

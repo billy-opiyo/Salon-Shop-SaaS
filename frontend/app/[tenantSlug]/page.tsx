@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 import { hasMerchantAdminPanelAccessForSlug } from "@backend/services/merchantAdminSnapshotService"
 import {
 	SalonStorefrontRuntime,
@@ -72,7 +73,7 @@ function buildReferenceClientConfig(
 	const services = tenant.services.map((service) => ({
 		name: service.name,
 		desc: service.description,
-		price: service.priceLabel,
+		price: formatKesLabel(service.priceLabel),
 		priceMinor: service.priceMinor,
 		duration:
 			service.durationLabel ??
@@ -95,7 +96,7 @@ function buildReferenceClientConfig(
 		hairType: item.hairType,
 		stylistName: item.stylistName,
 		timeTaken: item.timeTaken,
-		priceRange: item.priceRange,
+		priceRange: formatKesLabel(item.priceRange),
 		featuredTrending: item.featuredTrending,
 		featuredMostBooked: item.featuredMostBooked,
 		createdAt: item.createdAt,

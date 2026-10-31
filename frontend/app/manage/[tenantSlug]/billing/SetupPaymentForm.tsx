@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation"
 export function SetupPaymentForm({
 	tenantSlug,
 	mode = "setup",
+	initialPhoneNumber = "",
 }: {
 	readonly tenantSlug: string
 	readonly mode?: "setup" | "renewal"
+	readonly initialPhoneNumber?: string
 }) {
 	const router = useRouter()
-	const [phoneNumber, setPhoneNumber] = useState("")
+	const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber)
 	const [message, setMessage] = useState("")
 	const [messageType, setMessageType] = useState<"success" | "error" | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
