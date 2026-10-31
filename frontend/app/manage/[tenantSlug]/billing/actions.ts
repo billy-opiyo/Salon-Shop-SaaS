@@ -14,12 +14,31 @@ export interface ChangePlanResult {
 	readonly message: string
 }
 
-export async function cancelSubscription(formData: FormData) {
+export async function cancelSubscription(
+	_previous: ChangePlanResult,
+	formData: FormData,
+): Promise<ChangePlanResult> {
 	const session = await auth()
-	const tenantSlug = String(formData.get("tenantSlug") ?? "")
-	if (!session?.user?.id || formData.get("confirmation") !== "confirmed") return
-	await cancelSubscriptionForUser(session.user.id, tenantSlug)
-	revalidatePath(`/manage/${tenantSlug}/billing`)
+	const tenantSlug = String(formData.get("tenantSlug") ?? "").trim()
+	if (!session?.user?.id)
+		return { ok: false, message: "Sign in again before changing billing settings." }
+	if (!tenantSlug || formData.get("confirmation") !== "confirmed")
+		return { ok: false, message: "Confirm the cancellation details and try again." }
+	try {
+		await cancelSubscriptionForUser(session.user.id, tenantSlug)
+		revalidatePath(`/manage/${tenantSlug}/billing`)
+		return {
+			ok: true,
+			message: "Cancellation saved. Your billing summary now shows when it takes effect.",
+		}
+	} catch (error) {
+		return {
+			ok: false,
+			message: error instanceof MerchantBillingError
+				? error.message
+				: "The subscription could not be cancelled. Please try again.",
+		}
+	}
 }
 
 export async function changePlan(
