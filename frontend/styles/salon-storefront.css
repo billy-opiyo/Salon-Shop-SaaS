@@ -13326,26 +13326,26 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     animation-iteration-count: 1 !important;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel {
+.manage-page .merchant-team-invitation-panel {
     gap: 1.1rem;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child {
+.manage-page .merchant-team-invitation-panel > div:first-child {
     display: grid;
     gap: .4rem;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child h2,
-.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child p {
+.manage-page .merchant-team-invitation-panel > div:first-child h2,
+.manage-page .merchant-team-invitation-panel > div:first-child p {
     margin: 0;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child p {
+.manage-page .merchant-team-invitation-panel > div:first-child p {
     max-width: 68ch;
     line-height: 1.55;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-form {
+.manage-page .merchant-team-invitation-form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
@@ -13353,7 +13353,7 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     margin: 0;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-form > label {
+.manage-page .merchant-team-invitation-form > label {
     display: grid;
     gap: .45rem;
     min-width: 0;
@@ -13362,8 +13362,8 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     font-weight: 650;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-form input,
-.merchant-workspace-panel .merchant-team-invitation-form select {
+.manage-page .merchant-team-invitation-form input,
+.manage-page .merchant-team-invitation-form select {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -13371,17 +13371,17 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     margin: 0;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-form > .button {
+.manage-page .merchant-team-invitation-form > .button {
     min-height: 2.85rem;
     margin: 0;
     white-space: nowrap;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel > .manage-store {
+.manage-page .merchant-team-invitation-panel > .manage-store {
     gap: 1rem 1.25rem;
 }
 
-.merchant-workspace-panel .merchant-team-invitation-panel .manage-store__actions {
+.manage-page .merchant-team-invitation-panel .manage-store__actions {
     gap: .65rem;
 }
 
@@ -13450,27 +13450,27 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
 }
 
 @media (max-width: 720px) {
-    .merchant-workspace-panel .merchant-team-invitation-panel {
+    .manage-page .merchant-team-invitation-panel {
         gap: 1.15rem;
     }
 
-    .merchant-workspace-panel .merchant-team-invitation-form {
+    .manage-page .merchant-team-invitation-form {
         grid-template-columns: minmax(0, 1fr);
         gap: .9rem;
     }
 
-    .merchant-workspace-panel .merchant-team-invitation-form > .button {
+    .manage-page .merchant-team-invitation-form > .button {
         width: 100%;
         justify-content: center;
         margin-top: .1rem;
     }
 
-    .merchant-workspace-panel .merchant-team-invitation-panel > .manage-store {
+    .manage-page .merchant-team-invitation-panel > .manage-store {
         gap: 1rem;
         padding: 1.1rem;
     }
 
-    .merchant-workspace-panel .merchant-team-invitation-panel .manage-store__actions {
+    .manage-page .merchant-team-invitation-panel .manage-store__actions {
         gap: .7rem;
     }
 }
