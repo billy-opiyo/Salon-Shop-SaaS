@@ -12,6 +12,7 @@ import {
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
+import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 
 interface BillingPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -302,9 +303,7 @@ export default async function MerchantBillingPage({
 									<option value="enterprise">Enterprise</option>
 								</select>
 							</label>
-							<button className="button button--outline" type="submit">
-								Save plan
-							</button>
+							<ManageSubmitButton className="button button--outline" pendingLabel="Saving plan…">Save plan</ManageSubmitButton>
 						</form>
 						<form className="auth-form" action={cancelSubscription}>
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
@@ -317,9 +316,7 @@ export default async function MerchantBillingPage({
 								/>
 								I understand the cancellation effective date shown above.
 							</label>
-							<button className="button button--outline" type="submit">
-								Confirm cancellation
-							</button>
+							<ManageSubmitButton className="button button--outline" pendingLabel="Cancelling…">Confirm cancellation</ManageSubmitButton>
 						</form>
 					</>
 				) : (
