@@ -12535,6 +12535,31 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     cursor: not-allowed;
 }
 
+/* Destructive actions stay visually distinct across every salon theme. */
+.merchant-workspace-shell .merchant-workspace-panel .button--danger,
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn.danger {
+    border-color: rgba(248, 113, 113, .68);
+    background: rgba(127, 29, 29, .3);
+    color: #fecaca;
+    box-shadow: none;
+}
+
+.merchant-workspace-shell .merchant-workspace-panel .button--danger:hover,
+.merchant-workspace-shell .merchant-workspace-panel .button--danger:focus-visible,
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn.danger:hover,
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn.danger:focus-visible {
+    border-color: #f87171;
+    background: rgba(127, 29, 29, .48);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, .16);
+}
+
+.merchant-workspace-shell .merchant-workspace-panel .button--danger:disabled,
+.merchant-workspace-shell .merchant-workspace-panel .admin-action-btn.danger:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
 .merchant-workspace-panel .manage-store-list {
     gap: .85rem;
     min-width: 0;

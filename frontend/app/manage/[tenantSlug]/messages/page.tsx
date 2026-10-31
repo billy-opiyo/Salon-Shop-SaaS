@@ -109,7 +109,7 @@ export default async function MerchantMessagesPage({
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="messageId" value={message.id} />
 									<button
-										className="button button--outline button--small"
+										className="button button--outline button--small button--danger"
 										type="submit"
 									>
 										Delete

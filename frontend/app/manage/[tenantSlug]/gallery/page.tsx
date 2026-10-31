@@ -142,7 +142,7 @@ export default async function MerchantGalleryPage({
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="galleryStyleId" value={style.id} />
 									<button
-										className="button button--outline button--small"
+										className="button button--outline button--small button--danger"
 										type="submit"
 									>
 										Delete
