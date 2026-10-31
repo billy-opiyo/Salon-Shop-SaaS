@@ -14,6 +14,22 @@ export class MerchantScheduleError extends Error {
 	}
 }
 
+function timeLabelMinutes(value: string): number {
+	const text = value.trim().toUpperCase().replace(/\./g, "").replace(/\s+/g, "")
+	const match = /^(\d{1,2})(?::?(\d{2}))?(AM|PM)?$/.exec(text)
+	if (!match) return Number.MAX_SAFE_INTEGER
+	let hour = Number(match[1])
+	const minute = Number(match[2] ?? 0)
+	if (
+		minute > 59 ||
+		(match[3] ? hour < 1 || hour > 12 : hour > 23)
+	)
+		return Number.MAX_SAFE_INTEGER
+	if (match[3] === "PM" && hour < 12) hour += 12
+	if (match[3] === "AM" && hour === 12) hour = 0
+	return hour * 60 + minute
+}
+
 export async function listScheduleForUser(userId: string, tenantSlug: string) {
 	const tenant = await prisma.tenant.findUnique({
 		where: { slug: tenantSlug.trim().toLowerCase() },
@@ -37,13 +53,13 @@ export async function listScheduleForUser(userId: string, tenantSlug: string) {
 		assertTenantMembership(membership, tenant.id),
 		"canManageBookings",
 	)
-	return prisma.booking.findMany({
+	const bookings = await prisma.booking.findMany({
 		where: {
 			tenantId: tenant.id,
 			appointmentDate: { gte: new Date(new Date().toISOString().slice(0, 10)) },
 			status: { notIn: ["CANCELLED", "COMPLETED"] },
 		},
-		orderBy: [{ appointmentDate: "asc" }, { timeLabel: "asc" }],
+		orderBy: { appointmentDate: "asc" },
 		take: 100,
 		select: {
 			id: true,
@@ -55,4 +71,10 @@ export async function listScheduleForUser(userId: string, tenantSlug: string) {
 			status: true,
 		},
 	})
+	return bookings.sort(
+		(a, b) =>
+			a.appointmentDate.getTime() - b.appointmentDate.getTime() ||
+			timeLabelMinutes(a.timeLabel) - timeLabelMinutes(b.timeLabel) ||
+			a.timeLabel.localeCompare(b.timeLabel),
+	)
 }
