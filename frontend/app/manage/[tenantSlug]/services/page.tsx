@@ -14,7 +14,7 @@ import {
 	updateServicePaymentPrice,
 } from "./actions"
 import { ServiceEditForm } from "./ServiceEditForm"
-import { ServiceSubmitButton } from "./ServiceSubmitButton"
+import { ServiceMutationForm } from "./ServiceMutationForm"
 
 interface ServicesPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -66,7 +66,7 @@ export default async function MerchantServicesPage({
 								active
 							</p>
 						</div>
-						<form action={updateCategoryVisibility}>
+						<ServiceMutationForm action={updateCategoryVisibility} buttonLabel={category.enabled ? "Hide category" : "Show category"} pendingLabel="Saving…">
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
 							<input type="hidden" name="categoryId" value={category.id} />
 							<input
@@ -74,10 +74,7 @@ export default async function MerchantServicesPage({
 								name="enabled"
 								value={String(!category.enabled)}
 							/>
-							<ServiceSubmitButton pendingLabel="Saving…">
-								{category.enabled ? "Hide category" : "Show category"}
-							</ServiceSubmitButton>
-						</form>
+						</ServiceMutationForm>
 					</article>
 				))}
 			</section>
@@ -102,11 +99,10 @@ export default async function MerchantServicesPage({
 									{service.orderOnly ? " · WhatsApp order only" : ""}
 								</p>
 							</div>
-							<form action={deleteService}>
+							<ServiceMutationForm action={deleteService} buttonLabel="Delete" pendingLabel="Deleting…">
 								<input type="hidden" name="tenantSlug" value={tenantSlug} />
 								<input type="hidden" name="serviceId" value={service.id} />
-								<ServiceSubmitButton pendingLabel="Deleting…">Delete</ServiceSubmitButton>
-							</form>
+							</ServiceMutationForm>
 							<details className="service-edit-details">
 								<summary>Edit service details</summary>
 								<ServiceEditForm
@@ -117,7 +113,7 @@ export default async function MerchantServicesPage({
 								/>
 							</details>
 							{!service.orderOnly && (
-								<form className="service-price-form" action={updateServicePaymentPrice}>
+								<ServiceMutationForm className="service-price-form" action={updateServicePaymentPrice} buttonLabel="Save online price" pendingLabel="Saving…">
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="serviceId" value={service.id} />
 									<label>
@@ -131,13 +127,12 @@ export default async function MerchantServicesPage({
 											required
 										/>
 									</label>
-									<ServiceSubmitButton pendingLabel="Saving…">Save online price</ServiceSubmitButton>
-								</form>
+								</ServiceMutationForm>
 							)}
 						</article>
 					)),
 				)}
-				<form className="onboarding-form" action={createService}>
+				<ServiceMutationForm className="onboarding-form" action={createService} buttonLabel="Add service" pendingLabel="Adding service…">
 					<label>
 						Category
 						<select name="categoryId" required>
@@ -178,10 +173,7 @@ export default async function MerchantServicesPage({
 						order only
 					</label>
 					<input type="hidden" name="tenantSlug" value={tenantSlug} />
-					<ServiceSubmitButton className="button button--primary" pendingLabel="Adding service…">
-						Add service
-					</ServiceSubmitButton>
-				</form>
+				</ServiceMutationForm>
 			</section>
 		</main>
 	)

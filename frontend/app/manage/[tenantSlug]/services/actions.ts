@@ -18,9 +18,20 @@ import {
 	servicePriceUpdateSchema,
 } from "@shared/validation/merchant"
 
+export interface ServiceMutationResult {
+	readonly ok: boolean
+	readonly message: string
+}
+
+const invalidResult: ServiceMutationResult = {
+	ok: false,
+	message: "Check the details and try again.",
+}
+
 export async function updateCategoryVisibility(
+	_previousState: ServiceMutationResult,
 	formData: FormData,
-): Promise<void> {
+): Promise<ServiceMutationResult> {
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services?view=catalog`))
 	const tenantSlug = formData.get("tenantSlug")
@@ -31,7 +42,7 @@ export async function updateCategoryVisibility(
 		typeof categoryId !== "string" ||
 		(enabled !== "true" && enabled !== "false")
 	)
-		return
+		return invalidResult
 	try {
 		await updateServiceCategoryVisibility(
 			session.user.id,
@@ -40,8 +51,9 @@ export async function updateCategoryVisibility(
 			enabled === "true",
 		)
 		revalidatePath(`/manage/${tenantSlug}/services`)
+		return { ok: true, message: `Category ${enabled === "true" ? "shown" : "hidden"}.` }
 	} catch (error) {
-		if (error instanceof MerchantServiceCatalogError) return
+		if (error instanceof MerchantServiceCatalogError) return { ok: false, message: error.message }
 		throw error
 	}
 }
@@ -61,24 +73,22 @@ function readServiceInput(formData: FormData) {
 	})
 }
 
-export async function createService(formData: FormData): Promise<void> {
+export async function createService(_previousState: ServiceMutationResult, formData: FormData): Promise<ServiceMutationResult> {
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services?view=catalog`))
 	const parsed = readServiceInput(formData)
-	if (!parsed.success) return
+	if (!parsed.success) return invalidResult
 	try {
 		await createServiceForUser(session.user.id, parsed.data)
 		revalidatePath(`/manage/${parsed.data.tenantSlug}/services`)
+		return { ok: true, message: "Service added." }
 	} catch (error) {
-		if (error instanceof MerchantServiceCatalogError) return
+		if (error instanceof MerchantServiceCatalogError) return { ok: false, message: error.message }
 		throw error
 	}
 }
 
-export interface UpdateServiceResult {
-	readonly ok: boolean
-	readonly message: string
-}
+export type UpdateServiceResult = ServiceMutationResult
 
 export async function updateService(
 	_previousState: UpdateServiceResult,
@@ -103,22 +113,23 @@ export async function updateService(
 	}
 }
 
-export async function deleteService(formData: FormData): Promise<void> {
+export async function deleteService(_previousState: ServiceMutationResult, formData: FormData): Promise<ServiceMutationResult> {
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services?view=catalog`))
 	const tenantSlug = formData.get("tenantSlug")
 	const serviceId = formData.get("serviceId")
-	if (typeof tenantSlug !== "string" || typeof serviceId !== "string") return
+	if (typeof tenantSlug !== "string" || typeof serviceId !== "string") return invalidResult
 	try {
 		await deleteServiceForUser(session.user.id, tenantSlug, serviceId)
 		revalidatePath(`/manage/${tenantSlug}/services`)
+		return { ok: true, message: "Service deleted." }
 	} catch (error) {
-		if (error instanceof MerchantServiceCatalogError) return
+		if (error instanceof MerchantServiceCatalogError) return { ok: false, message: error.message }
 		throw error
 	}
 }
 
-export async function updateServicePaymentPrice(formData: FormData): Promise<void> {
+export async function updateServicePaymentPrice(_previousState: ServiceMutationResult, formData: FormData): Promise<ServiceMutationResult> {
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/services?view=catalog`))
 	const parsed = servicePriceUpdateSchema.safeParse({
@@ -126,13 +137,14 @@ export async function updateServicePaymentPrice(formData: FormData): Promise<voi
 		serviceId: formData.get("serviceId"),
 		priceMinor: formData.get("priceMinor"),
 	})
-	if (!parsed.success) return
+	if (!parsed.success) return invalidResult
 	try {
 		await updateServicePaymentPriceForUser(session.user.id, parsed.data)
 		revalidatePath(`/manage/${parsed.data.tenantSlug}/services`)
 		revalidatePath(`/${parsed.data.tenantSlug}`)
+		return { ok: true, message: "Online payment price saved." }
 	} catch (error) {
-		if (error instanceof MerchantServiceCatalogError) return
+		if (error instanceof MerchantServiceCatalogError) return { ok: false, message: error.message }
 		throw error
 	}
 }
