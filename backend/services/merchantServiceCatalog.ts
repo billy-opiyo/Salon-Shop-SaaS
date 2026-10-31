@@ -64,6 +64,8 @@ export async function listServiceCatalogForUser(
 				select: {
 					id: true,
 					name: true,
+					slug: true,
+					description: true,
 					priceLabel: true,
 					priceMinor: true,
 					durationLabel: true,

@@ -13,6 +13,8 @@ import {
 	updateCategoryVisibility,
 	updateServicePaymentPrice,
 } from "./actions"
+import { ServiceEditForm } from "./ServiceEditForm"
+import { ServiceSubmitButton } from "./ServiceSubmitButton"
 
 interface ServicesPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -72,12 +74,9 @@ export default async function MerchantServicesPage({
 								name="enabled"
 								value={String(!category.enabled)}
 							/>
-							<button
-								className="button button--outline button--small"
-								type="submit"
-							>
+							<ServiceSubmitButton pendingLabel="Saving…">
 								{category.enabled ? "Hide category" : "Show category"}
-							</button>
+							</ServiceSubmitButton>
 						</form>
 					</article>
 				))}
@@ -106,13 +105,17 @@ export default async function MerchantServicesPage({
 							<form action={deleteService}>
 								<input type="hidden" name="tenantSlug" value={tenantSlug} />
 								<input type="hidden" name="serviceId" value={service.id} />
-								<button
-									className="button button--outline button--small"
-									type="submit"
-								>
-									Delete
-								</button>
+								<ServiceSubmitButton pendingLabel="Deleting…">Delete</ServiceSubmitButton>
 							</form>
+							<details className="service-edit-details">
+								<summary>Edit service details</summary>
+								<ServiceEditForm
+									tenantSlug={tenantSlug}
+									categoryId={category.id}
+									categories={categories.map(({ id, label }) => ({ id, label }))}
+									service={service}
+								/>
+							</details>
 							{!service.orderOnly && (
 								<form className="service-price-form" action={updateServicePaymentPrice}>
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
@@ -128,9 +131,7 @@ export default async function MerchantServicesPage({
 											required
 										/>
 									</label>
-									<button className="button button--outline button--small" type="submit">
-										Save online price
-									</button>
+									<ServiceSubmitButton pendingLabel="Saving…">Save online price</ServiceSubmitButton>
 								</form>
 							)}
 						</article>
@@ -177,9 +178,9 @@ export default async function MerchantServicesPage({
 						order only
 					</label>
 					<input type="hidden" name="tenantSlug" value={tenantSlug} />
-					<button className="button button--primary" type="submit">
+					<ServiceSubmitButton className="button button--primary" pendingLabel="Adding service…">
 						Add service
-					</button>
+					</ServiceSubmitButton>
 				</form>
 			</section>
 		</main>
