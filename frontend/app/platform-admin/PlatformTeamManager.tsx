@@ -216,8 +216,8 @@ export function PlatformTeamManager({
 					<button className="button button--primary" type="submit" disabled={busy}>{busy ? "Saving..." : editingId ? "Save changes" : "Add member"}</button>
 					{editingId && <button className="button button--ghost" type="button" onClick={startCreate} disabled={busy}>Cancel edit</button>}
 				</div>
-				{message && <p className="form-message--success" role="status">{message}</p>}
-				{error && <p className="form-message--error" role="alert">{error}</p>}
+				{message && <p className="form-message form-message--success" role="status" aria-live="polite">{message}</p>}
+				{error && <p className="form-message form-message--error" role="alert" aria-live="assertive">{error}</p>}
 			</form>
 			<div className="platform-team-admin__cards">
 				{members.map((member) => (
