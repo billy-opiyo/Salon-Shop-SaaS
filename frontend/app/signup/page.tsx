@@ -23,12 +23,12 @@ export default async function SignupPage({
 					<PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 					<div className="auth-card-head">
 						<p className="section-subtitle">Start your salon journey</p>
-						<h1 id="signup-title">Create your Beauty Sphia account</h1>
+						<h1 id="signup-title">Create your {design.branding.name} account</h1>
 						<p className="auth-card__intro">
 							Set up your account first. You can add your salon details and choose a plan next.
 						</p>
 					</div>
-					<SignupForm callbackUrl={safeCallbackUrl} />
+					<SignupForm callbackUrl={safeCallbackUrl} brandName={design.branding.name} />
 				</section>
 			</main>
 		</div>

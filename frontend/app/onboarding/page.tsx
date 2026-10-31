@@ -25,7 +25,7 @@ export default async function OnboardingPage() {
 						<h1 id="onboarding-title">Start Your Salon</h1>
 						<p className="onboarding-card__lead">Set up your salon’s name, address, and plan. Your account and salon remain private until you complete setup and publish the storefront.</p>
 						<ol className="onboarding-steps">
-							<li><span>01</span><div><strong>Reserve your salon address</strong><p>Choose a short Beauty Sphia link for your business.</p></div></li>
+							<li><span>01</span><div><strong>Reserve your salon address</strong><p>Choose a short {design.branding.name} link for your business.</p></div></li>
 							<li><span>02</span><div><strong>Choose your plan</strong><p>Review the plan and one-time setup fee before continuing.</p></div></li>
 							<li><span>03</span><div><strong>Finish setup securely</strong><p>Complete the setup payment, then publish and customize your salon.</p></div></li>
 						</ol>

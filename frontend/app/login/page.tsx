@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 					<PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 					<div className="auth-card-head">
 						<p className="section-subtitle">Welcome back</p>
-						<h1 id="login-title">Sign in to your Beauty Sphia account</h1>
+						<h1 id="login-title">Sign in to your {design.branding.name} account</h1>
 						<p className="auth-card__intro">
 							Access your appointments, saved styles, profile, and salon workspace from one place.
 						</p>
