@@ -538,15 +538,20 @@ function renderAdminSnapshotList(
 				const severityCell = statusCell(severity, severity.toLowerCase() === "high" ? "admin-status-cancelled" : "admin-status-pending")
 				const state = record.resolvedAt ? "resolved" : "open"
 				const stateCell = statusCell(state, state === "resolved" ? "admin-status-completed" : "admin-status-pending")
+				const stateContent = document.createElement("div")
+				stateContent.className = "admin-security-alert-status"
+				const stateBadge = stateCell.querySelector<HTMLElement>(".admin-status")
+				if (stateBadge) stateContent.append(stateBadge)
 				if (state === "open" && typeof record.id === "string") {
 					const resolve = document.createElement("button")
 					resolve.type = "button"
-					resolve.className = "admin-action-btn admin-platform-action"
+					resolve.className = "admin-action-btn admin-platform-action admin-security-resolve-action"
 					resolve.dataset.adminAction = "security-resolve-alert"
 					resolve.dataset.adminId = record.id
 					resolve.textContent = "Resolve"
-					stateCell.append(resolve)
+					stateContent.append(resolve)
 				}
+				stateCell.append(stateContent)
 				row.append(identityCell, userCell, severityCell, stateCell, textCell(formatAdminSnapshotDate(record.createdAt, true)))
 			} else if (elementId === "adminSessionsList") {
 				const userCount = items.filter((candidate) => typeof candidate === "object" && candidate !== null && String((candidate as AdminSnapshotRecord).userId ?? "") === String(record.userId ?? "")).length
@@ -1606,7 +1611,7 @@ function bindAdminSnapshotFilters(): () => void {
 		)
 		rows.forEach((row) => {
 			const date = row.dataset.createdAt?.slice(0, 10) ?? ""
-			row.hidden = Boolean(
+			const shouldHide = Boolean(
 				(search && !row.dataset.searchText?.includes(search)) ||
 				(provider && provider !== "all" && row.dataset.provider !== provider) ||
 				(risk && risk !== "all" && row.dataset.risk !== risk) ||
@@ -1618,6 +1623,10 @@ function bindAdminSnapshotFilters(): () => void {
 				(to && date > to) ||
 				(exactDate && date !== exactDate),
 			)
+			row.hidden = shouldHide
+			const actionRow = row.nextElementSibling
+			if (actionRow instanceof HTMLElement && actionRow.classList.contains("admin-security-row-actions"))
+				actionRow.hidden = shouldHide
 		})
 		const sortRows = (selector: string, mode: string) => {
 			const container = document.querySelector<HTMLElement>(selector)
@@ -1625,6 +1634,21 @@ function bindAdminSnapshotFilters(): () => void {
 			const rows = Array.from(
 				container.querySelectorAll<HTMLElement>(".admin-snapshot-row"),
 			)
+			const securityActionRows = new Map<HTMLElement, HTMLElement>()
+			if (selector === "#adminSecurityActivityList") {
+				for (const row of rows) {
+					const actionRow = row.nextElementSibling
+					if (actionRow instanceof HTMLElement && actionRow.classList.contains("admin-security-row-actions"))
+						securityActionRows.set(row, actionRow)
+				}
+			}
+			const appendSortedRows = (destination: HTMLElement) => {
+				for (const row of rows) {
+					destination.append(row)
+					const actionRow = securityActionRows.get(row)
+					if (actionRow) destination.append(actionRow)
+				}
+			}
 			if (selector === "#adminWaitlistList") {
 				const statusPriority: Record<string, number> = {
 					waiting: 0,
@@ -1683,7 +1707,7 @@ function bindAdminSnapshotFilters(): () => void {
 				return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
 			})
 				const destination = container.querySelector<HTMLElement>("tbody") ?? container
-				rows.forEach((row) => destination.append(row))
+				appendSortedRows(destination)
 			return
 		}
 			if (selector === "#adminAccountHistoryList") {
@@ -1702,7 +1726,7 @@ function bindAdminSnapshotFilters(): () => void {
 					return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
 				})
 				const destination = container.querySelector<HTMLElement>("tbody") ?? container
-				rows.forEach((row) => destination.append(row))
+				appendSortedRows(destination)
 				return
 			}
 			if (selector === "#adminTimelineList") {
@@ -1721,7 +1745,7 @@ function bindAdminSnapshotFilters(): () => void {
 					return (right.dataset.createdAt ?? "").localeCompare(left.dataset.createdAt ?? "")
 				})
 				const destination = container.querySelector<HTMLElement>("tbody") ?? container
-				rows.forEach((row) => destination.append(row))
+				appendSortedRows(destination)
 				return
 			}
 			rows.sort((left, right) => {
@@ -1759,7 +1783,7 @@ function bindAdminSnapshotFilters(): () => void {
 				)
 			})
 			const destination = container.querySelector<HTMLElement>("tbody") ?? container
-			rows.forEach((row) => destination.append(row))
+			appendSortedRows(destination)
 		}
 		sortRows("#adminSecurityActivityList", getValue("adminSecuritySortSelect"))
 		sortRows("#adminWaitlistList", getValue("adminWaitlistSortSelect"))

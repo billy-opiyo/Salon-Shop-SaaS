@@ -121,7 +121,7 @@ export function TeamInvitationPanel({
 	}
 
 	return (
-		<section className="manage-store-list" aria-label="Team invitations">
+		<section className="manage-store-list merchant-team-invitation-panel" aria-label="Team invitations">
 			<div>
 				<h2>Team invitations</h2>
 				<p className="form-help">
@@ -129,18 +129,24 @@ export function TeamInvitationPanel({
 					accept it on the <Link href="/join-team">team invitation page</Link>.
 				</p>
 			</div>
-			<form onSubmit={invite} className="manage-form">
-				<input
-					name="email"
-					type="email"
-					aria-label="Team member email address"
-					placeholder="team@example.com"
-					required
-				/>
-				<select name="role" defaultValue="STAFF" aria-label="Team member role">
-					<option value="STAFF">Staff</option>
-					<option value="ADMIN">Admin</option>
-				</select>
+			<form onSubmit={invite} className="merchant-team-invitation-form">
+				<label>
+					<span>Team member email</span>
+					<input
+						name="email"
+						type="email"
+						autoComplete="email"
+						placeholder="team@example.com"
+						required
+					/>
+				</label>
+				<label>
+					<span>Salon role</span>
+					<select name="role" defaultValue="STAFF">
+						<option value="STAFF">Staff</option>
+						<option value="ADMIN">Admin</option>
+					</select>
+				</label>
 				<button
 					className="button button--primary"
 					type="submit"
