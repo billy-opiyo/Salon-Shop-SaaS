@@ -28,7 +28,8 @@ const AppUpdater = registerPlugin<AppUpdaterPlugin>("AppUpdater")
 export function AndroidAppUpdatePrompt({
 	channel: websiteChannel,
 	siteOrigin,
-}: { readonly channel: AndroidUpdateChannel | null; readonly siteOrigin: string | null }) {
+	brandName = "Beauty Sphia",
+	}: { readonly channel: AndroidUpdateChannel | null; readonly siteOrigin: string | null; readonly brandName?: string }) {
 	const [update, setUpdate] = useState<AndroidUpdateManifest | null>(null)
 	const [downloadId, setDownloadId] = useState<number | null>(null)
 	const [downloadStatus, setDownloadStatus] = useState<"running" | "paused" | "downloaded" | "failed" | null>(null)
@@ -136,7 +137,7 @@ export function AndroidAppUpdatePrompt({
 		try {
 			await AppUpdater.openDownloadedUpdate({ downloadId })
 		} catch {
-			setMessage("Android could not open the installer. Allow Beauty Sphia to install updates, then retry.")
+			setMessage(`Android could not open the installer. Allow ${brandName} to install updates, then retry.`)
 		} finally {
 			setBusy(false)
 		}
@@ -147,7 +148,7 @@ export function AndroidAppUpdatePrompt({
 		<div className="android-update-backdrop">
 			<section className="android-update-dialog" role="dialog" aria-modal="true" aria-labelledby="android-update-title">
 				<button className="android-update-dialog__close" type="button" aria-label="Close update notice" onClick={() => setUpdate(null)}><X size={18} /></button>
-				<p className="android-update-dialog__eyebrow">{channel === "staging" ? "Staging app update" : "Beauty Sphia update"}</p>
+				<p className="android-update-dialog__eyebrow">{channel === "staging" ? "Staging app update" : `${brandName} update`}</p>
 				<h2 id="android-update-title">Version {update.versionName} is ready</h2>
 				{update.releaseNotes && <p>{update.releaseNotes}</p>}
 				{message && <p role="status">{message}</p>}

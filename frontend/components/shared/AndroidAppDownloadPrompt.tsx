@@ -9,7 +9,7 @@ import { getAndroidAppDownloadPath, type AndroidUpdateChannel } from "@/lib/andr
 const DISMISSED_KEY = "beauty-sphia.android-app-download.dismissed"
 const DONT_SHOW_AGAIN_KEY = "beauty-sphia.android-app-download.dont-show-again"
 
-export function AndroidAppDownloadPrompt({ channel }: { readonly channel: AndroidUpdateChannel | null }) {
+export function AndroidAppDownloadPrompt({ channel, brandName = "Beauty Sphia" }: { readonly channel: AndroidUpdateChannel | null; readonly brandName?: string }) {
 	const [visible, setVisible] = useState(false)
 	const [dontShowAgain, setDontShowAgain] = useState(false)
 	const downloadPath = channel ? getAndroidAppDownloadPath(channel) : null
@@ -32,11 +32,11 @@ export function AndroidAppDownloadPrompt({ channel }: { readonly channel: Androi
 		setVisible(false)
 	}
 	return (
-		<aside className="android-app-download-prompt" aria-label="Beauty Sphia Android app">
+		<aside className="android-app-download-prompt" aria-label={`${brandName} Android app`}>
 			<div className="android-app-download-prompt__icon" aria-hidden="true"><Smartphone size={22} /></div>
 			<div className="android-app-download-prompt__copy">
 				<strong>Your salon, in your pocket</strong>
-				<span>Take Beauty Sphia with you on Android.</span>
+				<span>Take {brandName} with you on Android.</span>
 			</div>
 			<a className="android-app-download-prompt__action" href={downloadPath} download onClick={dismiss}>
 				<Download size={16} aria-hidden="true" />

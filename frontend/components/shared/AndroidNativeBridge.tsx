@@ -84,7 +84,7 @@ function parsePendingAuth(value: string | null): PendingAuth | null {
 	}
 }
 
-export function AndroidNativeBridge() {
+export function AndroidNativeBridge({ brandName = "Beauty Sphia" }: { readonly brandName?: string }) {
 	const router = useRouter()
 	const isAndroid = useSyncExternalStore(subscribeToPlatform, getAndroidPlatform, () => false)
 	const [exitPrompt, setExitPrompt] = useState(false)
@@ -193,7 +193,7 @@ export function AndroidNativeBridge() {
 		<div className="android-native-dialog-backdrop" style={dialogStyle}>
 			<section className="android-native-dialog" role="alertdialog" aria-modal="true" aria-labelledby="android-native-dialog-title">
 				<h2 id="android-native-dialog-title">{authError ? "Sign-in needs another try" : "Do You want to Exit?"}</h2>
-				<p>{authError || "Are you sure you want to close Beauty Sphia?"}</p>
+				<p>{authError || `Are you sure you want to close ${brandName}?`}</p>
 				<div className="android-native-dialog__actions">
 					<button type="button" onClick={() => { setExitPrompt(false); setAuthError("") }}>{authError ? "Close" : "Cancel"}</button>
 					{exitPrompt && <button type="button" onClick={() => void App.exitApp()}>Exit</button>}
