@@ -3191,7 +3191,7 @@ export function bindAdminSnapshotAdapter(
 	}
 	const scheduleCustomerName = (booking: AdminSnapshotRecord): string =>
 		`${String(booking.firstName ?? "")} ${String(booking.lastName ?? "")}`.trim() ||
-		String(booking.name ?? "Unknown Customer")
+		String(booking.name ?? "Unknown Client")
 	const scheduleStatus = (booking: AdminSnapshotRecord): string =>
 		String(booking.status ?? "PENDING")
 			.toLowerCase()
