@@ -4,6 +4,10 @@ import { Prisma } from "@prisma/client"
 
 import { prisma } from "@backend/db/prisma"
 import {
+	assertStaffCapacity,
+	UsageLimitError,
+} from "@backend/services/usageService"
+import {
 	assertTenantMembership,
 	assertTenantPermission,
 } from "@backend/services/authorization"
@@ -67,6 +71,13 @@ export async function createStylistForUser(
 	input: { name: string; title?: string; email?: string; phone?: string },
 ): Promise<void> {
 	const tenantId = await getTenantId(userId, tenantSlug)
+	try {
+		await assertStaffCapacity(tenantId)
+	} catch (error) {
+		if (error instanceof UsageLimitError)
+			throw new MerchantStylistError(error.message)
+		throw error
+	}
 	const stylist = await prisma.stylist.create({
 		data: {
 			tenantId,
