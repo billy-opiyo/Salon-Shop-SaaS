@@ -36,10 +36,6 @@ import {
 	IMAGE_TOO_LARGE_MESSAGE,
 } from "@shared/validation/media"
 import { getHairGalleryFieldRules } from "@shared/validation/galleryRules"
-import {
-	getSalonAccessProfile,
-	SALON_ACCESS_PROFILES,
-} from "@shared/constants/salonAccessProfiles"
 
 export interface SalonClientConfig {
 	readonly client?: { readonly name?: string }
@@ -257,7 +253,9 @@ function renderAdminSnapshotList(
 					? record.styleName ?? record.title ?? "Untitled style"
 					: isBlog
 						? record.title ?? "Untitled post"
-						: record.name ?? record.subject ?? record.serviceName ?? record.email ?? record.changeType ?? record.summary ?? record.value ?? "Record",
+						: elementId === "adminAdminsList"
+							? person.name ?? person.email ?? "Team member"
+							: record.name ?? record.subject ?? record.serviceName ?? record.email ?? record.changeType ?? record.summary ?? record.value ?? "Record",
 		)
 		row.dataset.customerName = titleText
 		const details = document.createElement("p")
@@ -1488,57 +1486,9 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 		}
 		window.location.reload()
 	})
-	bind("adminAdminsForm", async (form) => {
-		const email = formField(form, "adminManageEmail")
-		const selectedProfile = getSalonAccessProfile(formField(form, "adminManageRole"))
-		const response = await fetch(
-			`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
-			{
-				method: "POST",
-				credentials: "same-origin",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					email,
-					role: selectedProfile.role,
-					canManageBookings:
-						document.getElementById("adminPermManageBookings") instanceof
-							HTMLInputElement &&
-						(
-							document.getElementById(
-								"adminPermManageBookings",
-							) as HTMLInputElement
-						).checked || selectedProfile.permissions.canManageBookings,
-					canManageContent:
-						document.getElementById("adminPermManageContent") instanceof
-							HTMLInputElement &&
-						(
-							document.getElementById(
-								"adminPermManageContent",
-							) as HTMLInputElement
-						).checked || selectedProfile.permissions.canManageContent,
-					canManageSecurity:
-						document.getElementById("adminPermManageSecurity") instanceof
-							HTMLInputElement &&
-						(
-							document.getElementById(
-								"adminPermManageSecurity",
-							) as HTMLInputElement
-						).checked || selectedProfile.permissions.canManageSecurity,
-				}),
-			},
-		)
-		if (!response.ok) {
-			const result = (await response.json()) as { readonly error?: string }
-			throw new Error(
-				result.error ?? "The team invitation could not be created.",
-			)
-		}
-		window.location.reload()
-	})
 	const cancelMap: ReadonlyArray<readonly [string, string, string]> = [
 		["adminGalleryCancelEdit", "adminGalleryForm", "adminGalleryFormTitle"],
 		["adminBlogsCancelEdit", "adminBlogsForm", "adminBlogsFormTitle"],
-		["adminAdminsCancelEdit", "adminAdminsForm", "adminAdminsFormTitle"],
 	]
 	cancelMap.forEach(([buttonId, formId, titleId]) => {
 		const button = document.getElementById(buttonId)
@@ -1570,9 +1520,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 				title.textContent =
 					formId === "adminGalleryForm"
 						? "Add New Gallery Style"
-						: formId === "adminBlogsForm"
-							? "Add New Blog"
-							: "Invite Team Member"
+							: "Add New Blog"
 			button.style.display = "none"
 		}
 		button.addEventListener("click", handler)
@@ -2447,34 +2395,6 @@ export function bindAdminSnapshotAdapter(
 	let confirmedActionButton: HTMLButtonElement | null = null
 	let refreshAdminSnapshot: () => Promise<void> = async () => {}
 	const removeTabHandlers: Array<() => void> = []
-	const accessProfileSelect = document.getElementById("adminManageRole")
-	const permissionIds = ["adminPermManageBookings", "adminPermManageContent", "adminPermManageSecurity"] as const
-	const permissionKeys = ["canManageBookings", "canManageContent", "canManageSecurity"] as const
-	if (accessProfileSelect instanceof HTMLSelectElement) {
-		const permissionInputs = permissionIds.map((id) => document.getElementById(id))
-		const applyProfile = () => {
-			const profile = getSalonAccessProfile(accessProfileSelect.value)
-			permissionInputs.forEach((input, index) => {
-				if (input instanceof HTMLInputElement)
-					input.checked = profile.permissions[permissionKeys[index]]
-			})
-		}
-		const updateProfileFromPermissions = () => {
-			const selected = SALON_ACCESS_PROFILES.find((profile) =>
-				permissionInputs.every((input, index) =>
-					input instanceof HTMLInputElement &&
-					input.checked === profile.permissions[permissionKeys[index]],
-				),
-			)
-			accessProfileSelect.value = selected?.key ?? "custom"
-		}
-		accessProfileSelect.addEventListener("change", applyProfile)
-		permissionInputs.forEach((input) => input?.addEventListener("change", updateProfileFromPermissions))
-		removeTabHandlers.push(() => {
-			accessProfileSelect.removeEventListener("change", applyProfile)
-			permissionInputs.forEach((input) => input?.removeEventListener("change", updateProfileFromPermissions))
-		})
-	}
 	const blogList = document.getElementById("adminBlogsList")
 	const blogPreviousButton = document.getElementById("adminBlogsPrevBtn")
 	const blogNextButton = document.getElementById("adminBlogsNextBtn")
@@ -3270,7 +3190,7 @@ export function bindAdminSnapshotAdapter(
 				const savePermissions = document.createElement("button")
 				savePermissions.type = "button"
 				savePermissions.className = "btn btn-primary"
-				savePermissions.textContent = "Save permissions"
+				savePermissions.textContent = "Save section access"
 				savePermissions.onclick = () => {
 					const payload: Record<string, unknown> = {
 						action: "team-member-permissions",
