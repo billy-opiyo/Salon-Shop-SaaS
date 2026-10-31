@@ -60,7 +60,12 @@ async function TenantAdminLayoutContent({
 					canManageAdmins: true,
 					canManageSecurity: true,
 					canManageBilling: true,
-					tenant: { select: { settings: { select: { themePreset: true } } } },
+					tenant: {
+						select: {
+							status: true,
+							settings: { select: { themePreset: true } },
+						},
+					},
 				},
 			})
 		: null
@@ -76,6 +81,15 @@ async function TenantAdminLayoutContent({
 			}
 		: null
 	const savedThemePreset = membership?.tenant.settings?.themePreset
+	const tenantStatus = membership?.tenant.status
+	const workspaceHomeHref = tenantStatus === "ACTIVE"
+		? `/${tenantSlug.trim().toLowerCase()}#home`
+		: `/manage/${tenantSlug.trim().toLowerCase()}/billing`
+	const workspaceHomeLabel = tenantStatus === "ACTIVE"
+		? "Back to Homepage"
+		: tenantStatus === "DRAFT"
+			? "Continue salon setup"
+			: "View billing and support"
 	const themePreset =
 		savedThemePreset && isThemePreset(savedThemePreset)
 			? savedThemePreset
@@ -99,9 +113,9 @@ async function TenantAdminLayoutContent({
 				<p className="merchant-admin-console-home">
 					<Link
 						className="btn btn-outline"
-						href={`/${tenantSlug.trim().toLowerCase()}#home`}
+						href={workspaceHomeHref}
 					>
-						← Back to Homepage
+						← {workspaceHomeLabel}
 					</Link>
 				</p>
 			</header>
