@@ -2423,6 +2423,7 @@ export function bindAdminSnapshotAdapter(
 	const confirmationModal = document.getElementById("adminConfirmModal")
 	let pendingConfirmationButton: HTMLButtonElement | null = null
 	let confirmedActionButton: HTMLButtonElement | null = null
+	let refreshAdminSnapshot: () => Promise<void> = async () => {}
 	const removeTabHandlers: Array<() => void> = []
 	const logoutButton = document.getElementById("adminLogoutBtn")
 	if (logoutButton instanceof HTMLButtonElement) {
@@ -2929,7 +2930,15 @@ export function bindAdminSnapshotAdapter(
 			.then((response) => {
 				if (!response.ok)
 					throw new Error("The admin action could not be completed.")
-				window.location.reload()
+				return refreshAdminSnapshot().then(() => {
+					const message = document.getElementById("adminActionMessage")
+					if (message) {
+						message.textContent = "Changes saved successfully."
+						message.classList.remove("error")
+						message.classList.add("success")
+						message.style.display = "block"
+					}
+				})
 			})
 			.catch((error: unknown) => {
 				button.disabled = false
@@ -3000,7 +3009,15 @@ export function bindAdminSnapshotAdapter(
 		})
 			.then((response) => {
 				if (!response.ok) throw new Error(failureMessage)
-				window.location.reload()
+				return refreshAdminSnapshot().then(() => {
+					const message = document.getElementById("adminActionMessage")
+					if (message) {
+						message.textContent = "Changes saved successfully."
+						message.classList.remove("error")
+						message.classList.add("success")
+						message.style.display = "block"
+					}
+				})
 			})
 			.catch((error: unknown) => {
 				button.disabled = false
@@ -3170,7 +3187,7 @@ export function bindAdminSnapshotAdapter(
 						const active = item.dataset.adminSection === section
 						item.classList.toggle("active", active)
 						if (active)
-							item.scrollIntoView({ behavior: "smooth", block: "start" })
+							item.scrollIntoView({ behavior: "instant", block: "start" })
 					})
 				const nextUrl = new URL(window.location.href)
 				nextUrl.searchParams.set("section", section)
@@ -3827,14 +3844,31 @@ export function bindAdminSnapshotAdapter(
 				if (element) element.textContent = String(count)
 			})
 			let snapshotRefreshInFlight = false
-			const refreshSnapshot = async (): Promise<void> => {
-				if (
-					cancelled ||
-					document.visibilityState !== "visible" ||
-					snapshotRefreshInFlight
-				)
+			let snapshotRefreshQueued = false
+			let queuedRefreshPreservesPosition = false
+			const refreshSnapshot = async (
+				preservePosition = false,
+			): Promise<void> => {
+				if (cancelled || document.visibilityState !== "visible")
 					return
+				if (snapshotRefreshInFlight) {
+					snapshotRefreshQueued = true
+					queuedRefreshPreservesPosition ||= preservePosition
+					return
+				}
 				snapshotRefreshInFlight = true
+				const savedWindowScrollY = preservePosition ? window.scrollY : 0
+				const savedElementScroll = preservePosition
+					? Array.from(
+							document.querySelectorAll<HTMLElement>(
+								"[data-admin-section], #adminScheduleGrid, #adminBookingsList, #adminWaitlistList, #adminReviewsList, #adminContactList, #adminGalleryList, #adminBlogsList, #adminServicesList, #adminAdminsList, #adminSecurityActivityList, #adminSecurityAlertsList, #adminAccountHistoryList, #adminSessionsList, #adminTimelineList",
+							),
+						).map((element) => ({
+							element,
+							top: element.scrollTop,
+							left: element.scrollLeft,
+						}))
+					: []
 				try {
 					const response = await fetch(
 						`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`,
@@ -4087,12 +4121,30 @@ export function bindAdminSnapshotAdapter(
 					})
 					removeSnapshotFilters()
 					removeSnapshotFilters = bindAdminSnapshotFilters()
+					if (preservePosition) {
+						window.requestAnimationFrame(() => {
+							if (cancelled) return
+							window.scrollTo({ top: savedWindowScrollY, behavior: "instant" })
+							savedElementScroll.forEach(({ element, top, left }) => {
+								if (!element.isConnected) return
+								element.scrollTop = top
+								element.scrollLeft = left
+							})
+						})
+					}
 				} catch (error) {
 					console.error("Admin snapshot refresh failed", error)
 				} finally {
 					snapshotRefreshInFlight = false
+					if (snapshotRefreshQueued) {
+						snapshotRefreshQueued = false
+						const preserveQueuedPosition = queuedRefreshPreservesPosition
+						queuedRefreshPreservesPosition = false
+						void refreshSnapshot(preserveQueuedPosition)
+					}
 				}
 			}
+			refreshAdminSnapshot = () => refreshSnapshot(true)
 			const refreshTimer = window.setInterval(
 				() => void refreshSnapshot(),
 				30_000,
