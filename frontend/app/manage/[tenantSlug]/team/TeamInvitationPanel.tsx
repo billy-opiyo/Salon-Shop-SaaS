@@ -27,7 +27,6 @@ export function TeamInvitationPanel({
 	} | null>(null)
 	const [busyAction, setBusyAction] = useState<
 		| { readonly type: "invite" }
-		| { readonly type: "accept" }
 		| {
 				readonly type: "update"
 				readonly action: "cancel" | "resend"
@@ -35,15 +34,12 @@ export function TeamInvitationPanel({
 		  }
 		| null
 	>(null)
-	const [acceptCode, setAcceptCode] = useState("")
-	const [acceptedSlug, setAcceptedSlug] = useState<string | null>(null)
 
 	async function invite(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		const formElement = event.currentTarget
 		setBusyAction({ type: "invite" })
 		setFeedback(null)
-		setAcceptedSlug(null)
 		const form = new FormData(formElement)
 		try {
 			const response = await fetch(
@@ -60,7 +56,7 @@ export function TeamInvitationPanel({
 			const result = await response.json()
 			if (!response.ok) throw new Error(result.error ?? "Invitation failed.")
 			setFeedback({
-				message: `Invitation created for ${String(form.get("email"))}. Code: ${result.invitationCode}`,
+				message: `Invitation created for ${String(form.get("email"))}. Code: ${result.invitationCode}. Ask them to sign in and accept it at /join-team.`,
 				isError: false,
 			})
 			setInvitations((current) => [
@@ -90,7 +86,6 @@ export function TeamInvitationPanel({
 	) {
 		setBusyAction({ type: "update", action, invitationId })
 		setFeedback(null)
-		setAcceptedSlug(null)
 		try {
 			const response = await fetch(
 				`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
@@ -104,7 +99,7 @@ export function TeamInvitationPanel({
 			if (!response.ok) throw new Error(result.error ?? "Invitation update failed.")
 			setFeedback({
 				message: action === "resend"
-					? `Invitation resent. New code: ${result.invitationCode}`
+					? `Invitation resent. New code: ${result.invitationCode}. Ask them to sign in and accept it at /join-team.`
 					: "Invitation cancelled.",
 				isError: false,
 			})
@@ -125,37 +120,15 @@ export function TeamInvitationPanel({
 		}
 	}
 
-	async function acceptInvitation(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault()
-		setBusyAction({ type: "accept" })
-		setFeedback(null)
-		setAcceptedSlug(null)
-		try {
-			const response = await fetch("/api/team/invitations/accept", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ code: acceptCode.trim() }),
-			})
-			const result = await response.json().catch(() => ({}))
-			if (!response.ok) throw new Error(result.error ?? "Invitation could not be accepted.")
-			setAcceptedSlug(result.slug)
-			setFeedback({
-				message: `Invitation accepted. Open /manage/${result.slug}.`,
-				isError: false,
-			})
-		} catch (error) {
-			setFeedback({
-				message: error instanceof Error ? error.message : "Invitation could not be accepted.",
-				isError: true,
-			})
-		} finally {
-			setBusyAction(null)
-		}
-	}
-
 	return (
 		<section className="manage-store-list" aria-label="Team invitations">
-			<h2>Team Invitations</h2>
+			<div>
+				<h2>Team invitations</h2>
+				<p className="form-help">
+					After sharing a code, invitees should sign in with the invited email and
+					accept it on the <Link href="/join-team">team invitation page</Link>.
+				</p>
+			</div>
 			<form onSubmit={invite} className="manage-form">
 				<input
 					name="email"
@@ -208,25 +181,6 @@ export function TeamInvitationPanel({
 					)}
 				</article>
 			))}
-			<form onSubmit={acceptInvitation} className="manage-form">
-				<input
-					value={acceptCode}
-					onChange={(event) => setAcceptCode(event.target.value)}
-					placeholder="Invitation code"
-					aria-label="Invitation code"
-					minLength={64}
-					maxLength={64}
-					disabled={busyAction !== null}
-					required
-				/>
-				<button
-					className="button button--outline"
-					type="submit"
-					disabled={busyAction !== null}
-				>
-					{busyAction?.type === "accept" ? "Accepting…" : "Accept invitation"}
-				</button>
-			</form>
 			{feedback && (
 				<p
 					className={`form-message form-message--${feedback.isError ? "error" : "success"}`}
@@ -235,11 +189,6 @@ export function TeamInvitationPanel({
 				>
 					{feedback.message}
 				</p>
-			)}
-			{acceptedSlug && !feedback?.isError && (
-				<Link className="button button--primary button--small" href={`/manage/${encodeURIComponent(acceptedSlug)}`}>
-					Open salon workspace
-				</Link>
 			)}
 		</section>
 	)
