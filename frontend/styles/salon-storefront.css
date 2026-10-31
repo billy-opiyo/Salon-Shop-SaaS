@@ -3194,7 +3194,8 @@ h6 {
     max-height: calc((var(--admin-gallery-card-height) * var(--admin-gallery-visible-cards)) + (12px * (var(--admin-gallery-visible-cards) - 1)));
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 6px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -3791,7 +3792,8 @@ h6 {
     max-height: calc(var(--admin-security-header-height) + (var(--admin-security-row-height) * var(--admin-security-visible-rows)));
     overflow-y: scroll;
     overflow-x: auto;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 4px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -3900,7 +3902,8 @@ h6 {
     max-height: calc((var(--admin-booking-card-height) * var(--admin-bookings-visible-cards)) + (12px * (var(--admin-bookings-visible-cards) - 1)));
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 8px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -3913,7 +3916,8 @@ h6 {
     max-height: calc((var(--admin-booking-card-height) * var(--admin-bookings-visible-cards)) + (12px * (var(--admin-bookings-visible-cards) - 1)));
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 8px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -4076,7 +4080,8 @@ h6 {
     max-height: calc((var(--admin-blog-card-height) * var(--admin-blogs-visible-cards)) + (12px * (var(--admin-blogs-visible-cards) - 1)));
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 6px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -10127,7 +10132,8 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
     max-height: var(--dashboard-list-max-height);
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-right: 6px;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -10139,7 +10145,8 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
     max-height: calc((var(--dashboard-item-height) * var(--dashboard-security-visible-items)) + (var(--dashboard-list-gap) * (var(--dashboard-security-visible-items) - 1)));
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 2px 8px 2px 0;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
@@ -10153,7 +10160,8 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
     max-height: var(--dashboard-list-max-height);
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 2px 8px 2px 0;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
