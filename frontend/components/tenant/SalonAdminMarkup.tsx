@@ -1881,6 +1881,28 @@ export function SalonAdminMarkup({
 			</div>
 		</div>
 
+		<div className="admin-confirm-modal admin-record-details-modal" id="adminRecordDetailsModal" aria-hidden="true">
+			<section
+				className="admin-confirm-dialog admin-record-details-dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="adminRecordDetailsTitle"
+				aria-describedby="adminRecordDetailsContent"
+				tabIndex={-1}
+			>
+				<button
+					type="button"
+					className="admin-confirm-close"
+					id="adminRecordDetailsClose"
+					aria-label="Close record details"
+				>
+					×
+				</button>
+				<h3 id="adminRecordDetailsTitle">Record details</h3>
+				<div className="admin-record-details-content" id="adminRecordDetailsContent"></div>
+			</section>
+		</div>
+
 		
 		<a
 			href="#admin"
