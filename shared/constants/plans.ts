@@ -111,7 +111,7 @@ export const PLAN_ENTITLEMENTS: Readonly<Record<PlanTier, PlanEntitlements>> = {
 	starter: {
 		tier: "starter",
 		limits: {
-			staffMembers: 1,
+			staffMembers: 2,
 			galleryItems: 50,
 			monthlyBookings: 100,
 			storageMegabytes: 1000,
