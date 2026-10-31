@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { prisma } from "@backend/db/prisma"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 
 export default async function MerchantPreviewPage({
 	params,
@@ -33,6 +34,7 @@ export default async function MerchantPreviewPage({
 	)
 		redirect(`/manage/${tenantSlug}`)
 	if (tenant.status !== "ACTIVE") {
+		const design = await getPlatformStorefrontDesign()
 		const isDraft = tenant.status === "DRAFT"
 		return (
 			<main className="manage-page">
@@ -44,7 +46,7 @@ export default async function MerchantPreviewPage({
 					<p>
 						{isDraft
 							? "Your storefront stays private until setup is complete and an authorized team member publishes it. You can continue editing the salon design in the meantime."
-							: "This storefront is not publicly available right now. Review its billing status or contact Beauty Sphia support for help."}
+							: `This storefront is not publicly available right now. Review its billing status or contact ${design.branding.name} support for help.`}
 					</p>
 					<div className="manage-header__actions">
 						<Link className="button button--primary" href={`/manage/${tenant.slug}/billing`}>

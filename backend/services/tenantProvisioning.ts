@@ -133,7 +133,7 @@ export async function provisionTenant(
 							currency: platformDesign.billing.currency,
 							description: setupFeeWaived
 								? "No setup fee is required for this salon."
-								: "Beauty Sphia salon store setup fee",
+								: `${platformDesign.branding.name} salon store setup fee`,
 							paidAt: setupFeeWaived ? now : null,
 						},
 					},
