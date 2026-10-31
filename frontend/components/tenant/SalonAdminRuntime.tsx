@@ -34,6 +34,7 @@ export function SalonAdminRuntime({
 			<SalonAdminMarkup
 				homeHref={`/${tenantSlug}`}
 				settingsHref={`/manage/${tenantSlug}/settings`}
+				teamHref={`/manage/${tenantSlug}/team`}
 				servicesHref={`/manage/${tenantSlug}/services?view=catalog`}
 				userEmail={userEmail}
 				initialSection={initialSection}

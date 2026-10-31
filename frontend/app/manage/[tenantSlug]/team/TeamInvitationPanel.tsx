@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react"
 import Link from "next/link"
-import { getSalonAccessProfile, inferSalonAccessProfileLabel, SALON_ACCESS_PROFILES, type SalonSectionPermissions } from "@shared/constants/salonAccessProfiles"
+import { inferSalonAccessProfileLabel, type SalonSectionPermissions } from "@shared/constants/salonAccessProfiles"
 
 type Invitation = {
 	readonly id: string
@@ -23,8 +23,6 @@ export function TeamInvitationPanel({
 	initialInvitations,
 }: TeamInvitationPanelProps) {
 	const [invitations, setInvitations] = useState([...initialInvitations])
-	const [profileKey, setProfileKey] = useState("staff")
-	const [permissions, setPermissions] = useState<SalonSectionPermissions>(getSalonAccessProfile("staff").permissions)
 	const [feedback, setFeedback] = useState<{
 		readonly message: string
 		readonly isError: boolean
@@ -45,18 +43,13 @@ export function TeamInvitationPanel({
 		setBusyAction({ type: "invite" })
 		setFeedback(null)
 		const form = new FormData(formElement)
-		const profile = getSalonAccessProfile(profileKey)
 		try {
 			const response = await fetch(
 				`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
 				{
 					method: "POST",
 					headers: { "content-type": "application/json" },
-					body: JSON.stringify({
-						email: form.get("email"),
-						role: profile.role,
-						...permissions,
-					}),
+					body: JSON.stringify({ email: form.get("email") }),
 				},
 			)
 			const result = await response.json()
@@ -69,8 +62,12 @@ export function TeamInvitationPanel({
 				{
 					id: result.invitationId,
 					inviteeEmail: String(form.get("email")),
-					role: profile.role,
-					permissions,
+					role: "STAFF",
+					permissions: {
+						canManageBookings: false,
+						canManageContent: false,
+						canManageSecurity: false,
+					},
 					status: "PENDING",
 					expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
 				},
@@ -127,23 +124,13 @@ export function TeamInvitationPanel({
 		}
 	}
 
-	function updatePermission(key: keyof SalonSectionPermissions, checked: boolean) {
-		const next = { ...permissions, [key]: checked }
-		setPermissions(next)
-		setProfileKey(SALON_ACCESS_PROFILES.find((profile) =>
-			profile.permissions.canManageBookings === next.canManageBookings &&
-			profile.permissions.canManageContent === next.canManageContent &&
-			profile.permissions.canManageSecurity === next.canManageSecurity,
-		)?.key ?? "custom")
-	}
-
 	return (
 		<section className="manage-store-list merchant-team-invitation-panel" aria-label="Team invitations">
 			<div>
 				<h2>Team invitations</h2>
 				<p className="form-help">
-					After sharing a code, invitees should sign in with the invited email and
-					accept it on the <Link href="/join-team">team invitation page</Link>.
+					Invite members and manage pending invitations here. New members join without
+					Salon Admin section access. After they accept, assign access from the <Link href={`/manage/${encodeURIComponent(tenantSlug)}?section=admins`}>Admins tab</Link>.
 				</p>
 			</div>
 			<form onSubmit={invite} className="merchant-team-invitation-form">
@@ -157,22 +144,6 @@ export function TeamInvitationPanel({
 						required
 					/>
 				</label>
-				<label>
-					<span>Access profile</span>
-					<select name="role" value={profileKey} onChange={(event) => {
-						const nextKey = event.currentTarget.value
-						setProfileKey(nextKey)
-						setPermissions(getSalonAccessProfile(nextKey).permissions)
-					}}>
-						{SALON_ACCESS_PROFILES.map((profile) => <option key={profile.key} value={profile.key}>{profile.label}</option>)}
-					</select>
-					<small>{getSalonAccessProfile(profileKey).description}</small>
-				</label>
-				<div className="merchant-team-permissions" aria-label="Delegated Salon Admin sections">
-					<label><input type="checkbox" checked={permissions.canManageBookings} onChange={(event) => updatePermission("canManageBookings", event.currentTarget.checked)} /> Bookings and schedules</label>
-					<label><input type="checkbox" checked={permissions.canManageContent} onChange={(event) => updatePermission("canManageContent", event.currentTarget.checked)} /> Storefront content</label>
-					<label><input type="checkbox" checked={permissions.canManageSecurity} onChange={(event) => updatePermission("canManageSecurity", event.currentTarget.checked)} /> Security and domains</label>
-				</div>
 				<button
 					className="button button--primary"
 					type="submit"

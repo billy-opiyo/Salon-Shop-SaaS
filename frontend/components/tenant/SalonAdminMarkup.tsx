@@ -4,11 +4,11 @@ import type { ReactNode } from "react"
 import type React from "react"
 
 import { DEFAULT_THEME_PRESET, THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
-import { SALON_ACCESS_PROFILES } from "@shared/constants/salonAccessProfiles"
 
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
 	readonly settingsHref: string
+	readonly teamHref: string
 	readonly servicesHref: string
 	readonly userEmail: string
 	readonly initialSection: SalonAdminSection
@@ -32,6 +32,7 @@ export type SalonAdminSection =
 export function SalonAdminMarkup({
 	homeHref,
 	settingsHref,
+	teamHref,
 	servicesHref,
 	userEmail,
 	initialSection,
@@ -1327,89 +1328,23 @@ export function SalonAdminMarkup({
 							</div>
 						</div>
 
-						<div
-							className="form-message"
-							id="adminAdminsMessage"
-						 style={{display: "none"}}
-						></div>
-
 						<div className="admin-gallery-wrap admin-admins-wrap">
-							<form className="admin-gallery-form" id="adminAdminsForm">
-								<input type="hidden" id="adminAdminEditUid" />
+							<section className="admin-gallery-form admin-admins-access-guide" aria-labelledby="admin-access-guide-title">
 								<div className="admin-gallery-form-head">
-									<h3 id="adminAdminsFormTitle">Invite Team Member</h3>
-									<button
-										type="button"
-										className="btn btn-outline"
-										id="adminAdminsCancelEdit"
-									 style={{display: "none"}}
-									>
-										Cancel Edit
-									</button>
+									<h3 id="admin-access-guide-title">Assign Salon Admin access</h3>
 								</div>
-
-								<div className="admin-gallery-grid">
-									<div className="form-group full">
-										<label htmlFor="adminManageEmail">Team member email *</label>
-										<input
-											type="email"
-											id="adminManageEmail"
-											placeholder="admin@company.com"
-											required
-										/>
-										<small className="admin-field-help"
-							>They will accept the invitation after signing in with this email.</small
-										>
-									</div>
-									<div className="form-group">
-										<label htmlFor="adminManageRole">Access profile *</label>
-										<select id="adminManageRole" required defaultValue="staff">
-											{SALON_ACCESS_PROFILES.map((profile) => (
-												<option value={profile.key} key={profile.key}>{profile.label}</option>
-											))}
-										</select>
-									</div>
-									<div className="form-group full">
-										<label>Permissions</label>
-										<div className="admin-checkbox-group">
-											<label>
-												<input
-													type="checkbox"
-													id="adminPermManageBookings"
-												/>
-												<span>Bookings and schedules</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													id="adminPermManageContent"
-												/>
-												<span>Storefront content</span>
-											</label>
-											<label>
-												<input type="checkbox" id="adminPermManageSecurity" />
-												<span>Security and domains</span>
-											</label>
-										</div>
-									</div>
-								</div>
-
-								<button
-									type="submit"
-									className="btn btn-primary"
-									id="adminAdminsSaveBtn"
-								>
-									Invite Team Member
-								</button>
-							</form>
-
+								<p>Use the Team tab to invite people and manage their invitation status. New members join without Salon Admin section access.</p>
+								<p>After a member accepts, use <strong>Details</strong> beside their name in the directory to grant bookings, storefront content, or security access.</p>
+								<p>The salon owner keeps full access and is the only person who can change these assignments.</p>
+								<a className="btn btn-outline" href={teamHref}>Open Team</a>
+							</section>
 							<div className="admin-gallery-list-wrap">
 								<div className="admin-gallery-list-head">
-									<h3>Existing Admin Access Records</h3>
+									<h3>Team members and access</h3>
 								</div>
 								<div className="admin-admins-toolbar" id="adminAdminsToolbar">
 									<div className="form-group">
-										<label htmlFor="adminAdminsSearchInput">Search Admins</label>
+										<label htmlFor="adminAdminsSearchInput">Search team members</label>
 										<input
 											type="search"
 											id="adminAdminsSearchInput"
@@ -1417,7 +1352,7 @@ export function SalonAdminMarkup({
 										/>
 									</div>
 									<div className="form-group">
-										<label htmlFor="adminAdminsRoleFilter">Role Filter</label>
+										<label htmlFor="adminAdminsRoleFilter">Access filter</label>
 										<select id="adminAdminsRoleFilter">
 											<option value="all">All Roles</option>
 									<option value="owner">Salon Owner</option>

@@ -87,19 +87,12 @@ export async function POST(
 				{ error: "Invitee email is required" },
 				{ status: 400 },
 			)
-		if (body.role !== "ADMIN" && body.role !== "STAFF")
-			return NextResponse.json({ error: "Choose a valid delegated salon role." }, { status: 400 })
-		const role = body.role
 		const result = await inviteTeamMember(
 			session.user.id,
 			tenantId,
 			body.email,
-			role as MembershipRole,
-			{
-				canManageBookings: body.canManageBookings === true,
-				canManageContent: body.canManageContent === true,
-				canManageSecurity: body.canManageSecurity === true,
-			},
+			MembershipRole.STAFF,
+			{},
 		)
 		return NextResponse.json({ ok: true, ...result }, { status: 201 })
 	} catch (error) {
