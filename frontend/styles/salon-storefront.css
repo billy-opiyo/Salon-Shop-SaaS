@@ -13176,6 +13176,30 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
     }
 }
 
+/* Keep the Salon Design jump links centered and evenly sized on touch layouts. */
+@media (max-width: 1024px) {
+    .merchant-workspace-shell .admin-design-section-nav > a.btn {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+/* Avoid stretching the tablet save action across the full design card. */
+@media (min-width: 761px) and (max-width: 1024px) {
+    .merchant-workspace-shell .admin-store-design-card .admin-design-save-row {
+        justify-content: center;
+    }
+
+    .merchant-workspace-shell .admin-store-design-card .admin-design-save-row > .btn {
+        flex: 0 0 14rem;
+        width: 14rem;
+        max-width: 100%;
+    }
+}
+
 /* The bright progress shimmer reads as a white streak across the splash image.
    The gold fill still tracks progress without that overlay. */
 .salon-storefront-root .splash-progress-fill::after {
