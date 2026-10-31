@@ -2982,6 +2982,40 @@ export function bindAdminSnapshotAdapter(
 			?.removeEventListener("click", confirmActionHandler)
 		confirmationModal?.removeEventListener("click", confirmationBackdropHandler)
 	})
+	const submitDetailAction = (
+		button: HTMLButtonElement,
+		payload: Record<string, unknown>,
+		pendingLabel: string,
+		failureMessage: string,
+	): void => {
+		const originalLabel = button.textContent ?? "Save"
+		button.disabled = true
+		button.setAttribute("aria-busy", "true")
+		button.textContent = pendingLabel
+		void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
+			method: "POST",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+		})
+			.then((response) => {
+				if (!response.ok) throw new Error(failureMessage)
+				window.location.reload()
+			})
+			.catch((error: unknown) => {
+				button.disabled = false
+				button.removeAttribute("aria-busy")
+				button.textContent = originalLabel
+				const message = document.getElementById("adminActionMessage")
+				if (message) {
+					message.textContent =
+						error instanceof Error ? error.message : failureMessage
+					message.classList.remove("success")
+					message.classList.add("error")
+					message.style.display = "block"
+				}
+			})
+	}
 	const detailHandler = (event: Event) => {
 		const target = event.target
 		if (!(target instanceof HTMLElement)) return
@@ -3025,34 +3059,17 @@ export function bindAdminSnapshotAdapter(
 						return
 					}
 					if (typeof record.id !== "string") return
-					saveReview.disabled = true
-					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
-						method: "POST",
-						credentials: "same-origin",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify({
+					submitDetailAction(
+						saveReview,
+						{
 							action: "review-update",
 							id: record.id,
 							status: "PENDING",
 							text,
-						}),
-					})
-						.then((response) => {
-							if (!response.ok)
-								throw new Error("Review text could not be saved.")
-							window.location.reload()
-						})
-						.catch((error: unknown) => {
-							saveReview.disabled = false
-							const message = document.getElementById("adminActionMessage")
-							if (message) {
-								message.textContent =
-									error instanceof Error
-										? error.message
-										: "Review text could not be saved."
-								message.style.display = "block"
-							}
-						})
+						},
+						"Saving review…",
+						"Review text could not be saved.",
+					)
 				}
 				panel.append(reviewText, saveReview)
 			}
@@ -3068,20 +3085,16 @@ export function bindAdminSnapshotAdapter(
 				save.textContent = "Save review reply"
 				save.onclick = () => {
 					if (typeof record.id !== "string") return
-					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
-						method: "POST",
-						credentials: "same-origin",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify({
+					submitDetailAction(
+						save,
+						{
 							action: "review-update",
 							id: record.id,
 							replyText: reply.value,
-						}),
-					}).then((response) => {
-						if (!response.ok)
-							throw new Error("Review reply could not be saved.")
-						window.location.reload()
-					})
+						},
+						"Saving reply…",
+						"Review reply could not be saved.",
+					)
 				}
 				panel.append(reply, save)
 			}
@@ -3119,16 +3132,12 @@ export function bindAdminSnapshotAdapter(
 							if (input.dataset.permission)
 								payload[input.dataset.permission] = input.checked
 						})
-					void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/actions`, {
-						method: "POST",
-						credentials: "same-origin",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify(payload),
-					}).then((response) => {
-						if (!response.ok)
-							throw new Error("Team permissions could not be saved.")
-						window.location.reload()
-					})
+					submitDetailAction(
+						savePermissions,
+						payload,
+						"Saving permissions…",
+						"Team permissions could not be saved.",
+					)
 				}
 				panel.append(permissionWrap, savePermissions)
 			}
