@@ -41,7 +41,7 @@ export async function listScheduleForUser(userId: string, tenantSlug: string) {
 		where: {
 			tenantId: tenant.id,
 			appointmentDate: { gte: new Date(new Date().toISOString().slice(0, 10)) },
-			status: { not: "CANCELLED" },
+			status: { notIn: ["CANCELLED", "COMPLETED"] },
 		},
 		orderBy: [{ appointmentDate: "asc" }, { timeLabel: "asc" }],
 		take: 100,
