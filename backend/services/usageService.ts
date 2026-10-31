@@ -26,6 +26,17 @@ export async function assertGalleryCapacity(tenantId: string) {
 		throw new UsageLimitError("Your plan gallery limit has been reached.")
 }
 
+export async function assertStaffCapacity(tenantId: string) {
+	const [plan, count] = await Promise.all([
+		getTenantPlan(tenantId),
+		prisma.stylist.count({ where: { tenantId } }),
+	])
+	if (count >= plan.limits.staffMembers)
+		throw new UsageLimitError(
+			`Your plan allows up to ${plan.limits.staffMembers} staff members.`,
+		)
+}
+
 export async function assertStorageCapacity(
 	tenantId: string,
 	additionalBytes: number,
