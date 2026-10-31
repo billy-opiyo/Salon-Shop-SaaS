@@ -13099,6 +13099,9 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
     }
 
     .merchant-workspace-shell .admin-design-section-nav .btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
         box-sizing: border-box;
         min-width: 0;
         min-height: 2.55rem;
@@ -13106,9 +13109,21 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
         padding: .5rem .65rem;
         font-size: .82rem;
         line-height: 1.2;
+        text-align: center;
         white-space: normal;
         overflow-wrap: anywhere;
     }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+	.merchant-workspace-shell .admin-design-section-nav {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.merchant-workspace-shell .admin-store-design-card .admin-design-save-row > .btn {
+		flex: 0 1 14rem;
+		max-width: 14rem;
+	}
 }
 
 @media (max-width: 760px) {
