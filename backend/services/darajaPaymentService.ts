@@ -193,6 +193,7 @@ export async function requestInvoicePayment(
 	if (existingAttempt)
 		return {
 			status: "pending" as const,
+			alreadyPending: true as const,
 			attemptId: existingAttempt.id,
 			phoneNumber: existingAttempt.phoneNumber,
 		}
@@ -310,10 +311,15 @@ export async function requestSetupPayment(
 	if (!invoice) throw new Error("No setup invoice is available for this salon.")
 	const existingAttempt = await prisma.paymentAttempt.findFirst({
 		where: { invoiceId: invoice.id, status: "pending" },
-		select: { id: true, checkoutRequestId: true },
+		select: { id: true, phoneNumber: true },
 	})
 	if (existingAttempt)
-		return { status: "pending", attemptId: existingAttempt.id }
+		return {
+			status: "pending",
+			alreadyPending: true,
+			attemptId: existingAttempt.id,
+			phoneNumber: existingAttempt.phoneNumber,
+		}
 	const paymentSettings = await platformPaymentSettings()
 
 	const attempt = await prisma.paymentAttempt.create({
