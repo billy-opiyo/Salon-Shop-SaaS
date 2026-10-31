@@ -74,7 +74,11 @@ export default async function TenantAdminPage({
 		if (section === "security") return isOwner || membership.canManageSecurity
 		return canManageContent
 	})
-	if (allowedSections.length === 0) redirect("/account")
+	if (allowedSections.length === 0) {
+		if (navigationAccess.canManageBilling)
+			redirect(`/manage/${encodeURIComponent(normalizedSlug)}/billing`)
+		redirect("/account")
+	}
 
 	const query = await searchParams
 	const requestedSection = Array.isArray(query.section)
