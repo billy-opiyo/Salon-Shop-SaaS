@@ -10,10 +10,9 @@ import {
 } from "@backend/services/merchantBillingService"
 
 import { SetupPaymentForm } from "./SetupPaymentForm"
-import { cancelSubscription } from "./actions"
 import { ChangePlanForm } from "./ChangePlanForm"
+import { CancelSubscriptionForm } from "./CancelSubscriptionForm"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
-import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 
 interface BillingPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -302,19 +301,7 @@ export default async function MerchantBillingPage({
 				) : billing.memberships[0]?.role === "OWNER" ? (
 					<>
 						<ChangePlanForm tenantSlug={tenantSlug} currentTier={planTier ?? "starter"} />
-						<form className="auth-form" action={cancelSubscription}>
-							<input type="hidden" name="tenantSlug" value={tenantSlug} />
-							<label>
-								<input
-									name="confirmation"
-									value="confirmed"
-									type="checkbox"
-									required
-								/>
-								I understand the cancellation effective date shown above.
-							</label>
-							<ManageSubmitButton className="button button--outline" pendingLabel="Cancelling…">Confirm cancellation</ManageSubmitButton>
-						</form>
+						<CancelSubscriptionForm tenantSlug={tenantSlug} />
 					</>
 				) : (
 					<p className="merchant-billing-owner-note">
