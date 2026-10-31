@@ -8,6 +8,7 @@ import {
 	inviteTeamMember,
 	listTeamInvitationsForUser,
 	resendTeamInvitation,
+	updatePendingInvitationPermissionsForUser,
 	TeamInvitationError,
 } from "@backend/services/teamInvitationService"
 
@@ -64,7 +65,10 @@ export async function POST(
 		const tenantId = await resolveTenantId(tenantSlug)
 		if (!tenantId)
 			return NextResponse.json({ error: "Salon not found" }, { status: 404 })
-		if (body.action === "cancel" || body.action === "resend") {
+		if (
+			body.action === "cancel" || body.action === "resend" ||
+			body.action === "permissions"
+		) {
 			if (typeof body.invitationId !== "string")
 				return NextResponse.json(
 					{ error: "Invitation id is required" },
@@ -72,6 +76,19 @@ export async function POST(
 				)
 			if (body.action === "cancel") {
 				await cancelTeamInvitation(session.user.id, tenantId, body.invitationId)
+				return NextResponse.json({ ok: true })
+			}
+			if (body.action === "permissions") {
+				await updatePendingInvitationPermissionsForUser(
+					session.user.id,
+					tenantId,
+					body.invitationId,
+					{
+						canManageBookings: body.canManageBookings === true,
+						canManageContent: body.canManageContent === true,
+						canManageSecurity: body.canManageSecurity === true,
+					},
+				)
 				return NextResponse.json({ ok: true })
 			}
 			return NextResponse.json(

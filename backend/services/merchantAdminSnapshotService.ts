@@ -15,6 +15,7 @@ import { listServiceCatalogForUser } from "@backend/services/merchantServiceCata
 import { getSecuritySnapshot } from "@backend/services/merchantSecurityService"
 import { listStylistsForUser } from "@backend/services/merchantStylistService"
 import { listTeamForUser } from "@backend/services/merchantTeamService"
+import { listTeamInvitationsForUser } from "@backend/services/teamInvitationService"
 
 type TenantAdminMembership = Pick<
 	TenantMembershipContext,
@@ -142,6 +143,7 @@ export async function getMerchantAdminSnapshot(
 		services?: Awaited<ReturnType<typeof listServiceCatalogForUser>>
 		stylists?: Awaited<ReturnType<typeof listStylistsForUser>>
 		team?: Awaited<ReturnType<typeof listTeamForUser>>
+		teamInvitations?: Awaited<ReturnType<typeof listTeamInvitationsForUser>>
 		security?: Awaited<ReturnType<typeof getSecuritySnapshot>>
 		settings?: {
 			themePreset: string
@@ -223,6 +225,9 @@ export async function getMerchantAdminSnapshot(
 		tasks.push(
 			listTeamForUser(userId, tenantSlug).then((value) => {
 				result.team = value
+			}),
+			listTeamInvitationsForUser(userId, tenantId).then((value) => {
+				result.teamInvitations = value.filter((invitation) => invitation.status === "PENDING")
 			}),
 		)
 	}

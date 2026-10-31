@@ -3264,9 +3264,20 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .top-store__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
   margin-top: .4rem;
+  padding: .55rem .85rem;
+  border-radius: .7rem;
   color: var(--gold-soft);
   font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
 }
 
 /* ---- Contact section ---- */

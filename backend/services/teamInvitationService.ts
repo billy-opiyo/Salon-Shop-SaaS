@@ -159,6 +159,46 @@ export async function listTeamInvitationsForUser(
 	})
 }
 
+export async function updatePendingInvitationPermissionsForUser(
+	userId: string,
+	tenantId: string,
+	invitationId: string,
+	permissions: {
+		canManageBookings: boolean
+		canManageContent: boolean
+		canManageSecurity: boolean
+	},
+): Promise<void> {
+	await getAdminMembership(userId, tenantId)
+	const role = Object.values(permissions).some(Boolean)
+		? MembershipRole.ADMIN
+		: MembershipRole.STAFF
+	const result = await prisma.teamInvitation.updateMany({
+		where: {
+			id: invitationId,
+			tenantId,
+			status: InvitationStatus.PENDING,
+			expiresAt: { gt: new Date() },
+		},
+		data: {
+			role,
+			permissions: permissions as Prisma.InputJsonValue,
+		},
+	})
+	if (result.count !== 1)
+		throw new TeamInvitationError("Pending invitation not found or expired.")
+	await prisma.adminAuditLog.create({
+		data: {
+			tenantId,
+			actorUserId: userId,
+			action: "team.invitation.permissions-updated",
+			resourceType: "team-invitation",
+			resourceId: invitationId,
+			metadata: { role, ...permissions } as Prisma.InputJsonValue,
+		},
+	})
+}
+
 export async function acceptTeamInvitation(
 	userId: string,
 	invitationCode: string,
