@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { prisma } from "@backend/db/prisma"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { NextResponse } from "next/server"
 
 function escapeHtml(value: string): string {
@@ -39,13 +40,15 @@ export async function GET(
 		include: { tenant: { select: { businessName: true, currency: true } } },
 	})
 	if (!invoice) return new NextResponse("Invoice not found", { status: 404 })
+	const design = await getPlatformStorefrontDesign()
 	const amount = new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency: invoice.currency,
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0,
 	}).format(invoice.amountMinor / 100)
-	const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoice.invoiceNumber)} - Beauty Sphia</title></head><body><h1>Beauty Sphia</h1><h2>${escapeHtml(invoice.tenant.businessName)}</h2><p>Invoice: ${escapeHtml(invoice.invoiceNumber)}</p><p>${escapeHtml(invoice.description)}</p><p>Amount: ${escapeHtml(amount)}</p><p>Status: ${escapeHtml(invoice.status)}</p><p>Receipt: ${escapeHtml(invoice.receiptNumber ?? "Pending")}</p><p>Created: ${escapeHtml(invoice.createdAt.toISOString())}</p></body></html>`
+	const brandName = escapeHtml(design.branding.name)
+	const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoice.invoiceNumber)} - ${brandName}</title></head><body><h1>${brandName}</h1><h2>${escapeHtml(invoice.tenant.businessName)}</h2><p>Invoice: ${escapeHtml(invoice.invoiceNumber)}</p><p>${escapeHtml(invoice.description)}</p><p>Amount: ${escapeHtml(amount)}</p><p>Status: ${escapeHtml(invoice.status)}</p><p>Receipt: ${escapeHtml(invoice.receiptNumber ?? "Pending")}</p><p>Created: ${escapeHtml(invoice.createdAt.toISOString())}</p></body></html>`
 	return new NextResponse(html, {
 		headers: {
 			"content-type": "text/html; charset=utf-8",

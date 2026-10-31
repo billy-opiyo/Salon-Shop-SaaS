@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
+import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import {
 	listDomainsForUser,
 	TenantDomainError,
@@ -17,6 +18,7 @@ export default async function MerchantDomainsPage({
 	const { tenantSlug } = await params
 	const session = await auth()
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${tenantSlug}/domains`))
+	const design = await getPlatformStorefrontDesign()
 	let domains: Awaited<ReturnType<typeof listDomainsForUser>> = []
 	let domainMessage: string | null = null
 	try {
@@ -35,7 +37,7 @@ export default async function MerchantDomainsPage({
 		<main className="manage-page">
 			<header className="manage-header">
 				<div>
-					<p className="eyebrow">Beauty Sphia domains</p>
+					<p className="eyebrow">{design.branding.name} domains</p>
 					<h1>Custom domain</h1>
 					<p className="auth-card__intro">
 						Connect a verified hostname to this salon storefront.
