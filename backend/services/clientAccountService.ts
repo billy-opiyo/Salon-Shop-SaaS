@@ -19,6 +19,19 @@ function normalizeTenantSlug(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function timeLabelMinutes(value: string): number {
+  const text = value.trim().toUpperCase().replace(/\./g, "").replace(/\s+/g, "");
+  const match = /^(\d{1,2})(?::?(\d{2}))?(AM|PM)?$/.exec(text);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+  let hour = Number(match[1]);
+  const minute = Number(match[2] ?? 0);
+  if (minute > 59 || (match[3] ? hour < 1 || hour > 12 : hour > 23))
+    return Number.MAX_SAFE_INTEGER;
+  if (match[3] === "PM" && hour < 12) hour += 12;
+  if (match[3] === "AM" && hour === 12) hour = 0;
+  return hour * 60 + minute;
+}
+
 export async function getClientAccountSnapshot(
   userId: string,
   tenantSlug?: string,
@@ -58,7 +71,7 @@ export async function getClientAccountSnapshot(
         ...(tenant ? { tenantId: tenant.id } : {}),
         OR: [{ userId }, { userId: null, email: user.email.toLowerCase() }],
       },
-      orderBy: [{ appointmentDate: "asc" }, { timeLabel: "asc" }],
+      orderBy: { appointmentDate: "asc" },
       take: 50,
       select: {
         id: true,
@@ -128,18 +141,24 @@ export async function getClientAccountSnapshot(
           fontSize: preferences.fontSize === "small" || preferences.fontSize === "large" ? preferences.fontSize : "medium",
         }
       : null,
-    bookings: bookings.map((booking) => ({
-      id: booking.id,
-      tenantName: booking.tenant.businessName,
-      tenantSlug: booking.tenant.slug,
-      serviceName: booking.serviceName,
-      appointmentDate: booking.appointmentDate.toISOString().slice(0, 10),
-      timeLabel: booking.timeLabel,
-      status: booking.status.toLowerCase(),
-      stylistName: booking.stylist?.name ?? null,
-      stylistId: booking.stylistId,
-      specialRequests: booking.specialRequests,
-    })),
+    bookings: [...bookings]
+      .sort((left, right) =>
+        left.appointmentDate.getTime() - right.appointmentDate.getTime() ||
+        timeLabelMinutes(left.timeLabel) - timeLabelMinutes(right.timeLabel) ||
+        left.timeLabel.localeCompare(right.timeLabel),
+      )
+      .map((booking) => ({
+        id: booking.id,
+        tenantName: booking.tenant.businessName,
+        tenantSlug: booking.tenant.slug,
+        serviceName: booking.serviceName,
+        appointmentDate: booking.appointmentDate.toISOString().slice(0, 10),
+        timeLabel: booking.timeLabel,
+        status: booking.status.toLowerCase(),
+        stylistName: booking.stylist?.name ?? null,
+        stylistId: booking.stylistId,
+        specialRequests: booking.specialRequests,
+      })),
     reviews: reviews.map((review) => ({
       id: review.id,
       tenantName: review.tenant.businessName,
