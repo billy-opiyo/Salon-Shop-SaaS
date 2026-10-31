@@ -36,10 +36,19 @@ export function SetupPaymentForm({
 			const data = (await response.json()) as {
 				error?: string
 				status?: string
+				alreadyPending?: boolean
+				phoneNumber?: string
 			}
-			setMessage(response.ok
-				? "Payment request sent. Approve it on your M-Pesa phone, then refresh the status here."
-				: (data.error ?? "Payment could not be started."))
+			if (response.ok && data.alreadyPending) {
+				if (data.phoneNumber) setPhoneNumber(data.phoneNumber)
+				setMessage(
+					`A payment request is already pending for ${data.phoneNumber ?? "the saved billing number"}. Approve that request on the same phone, then refresh the status here.`,
+				)
+			} else {
+				setMessage(response.ok
+					? "Payment request sent. Approve it on your M-Pesa phone, then refresh the status here."
+					: (data.error ?? "Payment could not be started."))
+			}
 			setMessageType(response.ok ? "success" : "error")
 			setRequestAccepted(response.ok)
 		} catch {
