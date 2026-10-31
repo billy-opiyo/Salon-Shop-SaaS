@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useTransition } from "react"
 
 import { createStore } from "./actions"
 import type { PlatformPlanDisplay } from "@shared/constants/platformStorefront"
@@ -20,6 +20,7 @@ export function StoreSetupForm({
 	const router = useRouter()
 	const [message, setMessage] = useState("")
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [isOpeningBilling, startBillingNavigation] = useTransition()
 	const formatAmount = (amountMinor: number) => new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency,
@@ -38,7 +39,9 @@ export function StoreSetupForm({
 				setMessage(result.message)
 				return
 			}
-			router.push(`/manage/${encodeURIComponent(result.slug)}/billing?setup=required`)
+			const billingPath =
+				`/manage/${encodeURIComponent(result.slug)}/billing?setup=required`
+			startBillingNavigation(() => router.push(billingPath))
 		} catch {
 			setMessage("We could not finish creating your salon. Please check your details and try again.")
 		} finally {
@@ -153,9 +156,14 @@ export function StoreSetupForm({
 			<button
 				className="button button--primary"
 				type="submit"
-				disabled={isSubmitting}
+				disabled={isSubmitting || isOpeningBilling}
+				aria-busy={isSubmitting || isOpeningBilling}
 			>
-				{isSubmitting ? "Creating salon…" : "Create my salon"}
+				{isSubmitting
+					? "Creating salon…"
+					: isOpeningBilling
+						? "Opening billing…"
+						: "Create my salon"}
 			</button>
 			{message && (
 				<p className="form-message" role="alert">
