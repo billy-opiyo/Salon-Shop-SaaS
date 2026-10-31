@@ -93,11 +93,17 @@ export default async function MerchantServicesPage({
 								</p>
 								<h3>{service.name}</h3>
 								<p>
-									{formatKesLabel(service.priceLabel)} · {service.durationLabel}
-									{service.priceMinor !== null && service.priceMinor !== undefined
-										? ` · KES ${Math.round(service.priceMinor / 100).toLocaleString("en-KE")}`
-										: " · Online price not configured"}
-									{service.orderOnly ? " · WhatsApp order only" : ""}
+									<strong>Storefront price:</strong> {formatKesLabel(service.priceLabel)}
+									 · <strong>Duration:</strong> {service.durationLabel}
+								</p>
+								<p>
+									<strong>Online payment price:</strong>{" "}
+									{service.orderOnly
+										? "WhatsApp orders only"
+										: service.priceMinor !== null &&
+											service.priceMinor !== undefined
+											? `KES ${Math.round(service.priceMinor / 100).toLocaleString("en-KE")}`
+											: "Not configured"}
 								</p>
 							</div>
 							<ServiceMutationForm
