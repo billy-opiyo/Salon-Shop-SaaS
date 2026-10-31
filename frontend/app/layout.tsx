@@ -33,6 +33,7 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
+	const design = await getPlatformStorefrontDesign()
 	const requestHeaders = await headers()
 	const host = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "")
 		.split(",", 1)[0]
@@ -55,10 +56,10 @@ export default async function RootLayout({
 			</head>
 			<body data-android-channel={androidChannel ?? undefined}>
 				{children}
-				<OfflineNotice />
-				<AndroidNativeBridge />
-				<AndroidAppUpdatePrompt channel={androidChannel} siteOrigin={androidChannel ? websiteOrigin : null} />
-				<AndroidAppDownloadPrompt channel={androidChannel} />
+				<OfflineNotice brandName={design.branding.name} />
+				<AndroidNativeBridge brandName={design.branding.name} />
+				<AndroidAppUpdatePrompt channel={androidChannel} siteOrigin={androidChannel ? websiteOrigin : null} brandName={design.branding.name} />
+				<AndroidAppDownloadPrompt channel={androidChannel} brandName={design.branding.name} />
 			</body>
 		</html>
 	)

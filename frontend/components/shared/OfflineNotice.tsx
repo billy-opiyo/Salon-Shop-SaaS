@@ -21,7 +21,7 @@ async function canReachPlatform(): Promise<boolean> {
 	}
 }
 
-export function OfflineNotice() {
+export function OfflineNotice({ brandName = "Beauty Sphia" }: { readonly brandName?: string }) {
 	const [isOffline, setIsOffline] = useState(false)
 	const [isChecking, setIsChecking] = useState(false)
 	const retryButtonRef = useRef<HTMLButtonElement>(null)
@@ -83,7 +83,7 @@ export function OfflineNotice() {
 				<p className="offline-notice__eyebrow">Connection interrupted</p>
 				<h2 id="offline-notice-title">Internet unavailable</h2>
 				<p id="offline-notice-description">
-					Beauty Sphia needs an internet connection to keep your salon experience
+					{brandName} needs an internet connection to keep your salon experience
 					up to date. Check your Wi-Fi or mobile data, then try again.
 				</p>
 				<button
