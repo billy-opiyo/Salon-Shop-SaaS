@@ -12,7 +12,6 @@ import {
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
-import { platformThemeStyle } from "@/lib/platformTheme"
 
 interface BillingPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -106,8 +105,7 @@ export default async function MerchantBillingPage({
 	}
 
 	return (
-		<div className="platform-site merchant-billing-page" style={platformThemeStyle(design.theme)}>
-		<main className="manage-page">
+		<main className="manage-page merchant-billing-page">
 			<header className="manage-header">
 				<div>
 					<p className="eyebrow">Beauty Sphia billing</p>
@@ -331,6 +329,5 @@ export default async function MerchantBillingPage({
 				)}
 			</section>
 		</main>
-		</div>
 	)
 }
