@@ -84,7 +84,11 @@ export function VerifyEmailClient({ initialToken, callbackUrl = "/account" }: { 
 				<button
 					className="button button--primary"
 					type="button"
-					onClick={() => setState("idle")}
+					onClick={() => {
+						setToken("")
+						setMessage("")
+						setState("idle")
+					}}
 				>
 					Try another link
 				</button>
