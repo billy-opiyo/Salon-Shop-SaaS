@@ -61,8 +61,8 @@ export function ServiceEditForm({
 				<input name="priceLabel" defaultValue={service.priceLabel} required maxLength={120} />
 			</label>
 			<label>
-				Online payment price (KES cents)
-				<input name="priceMinor" type="number" min="0" max="10000000" step="1" defaultValue={service.priceMinor ?? ""} />
+				Online payment price (KES)
+				<input name="priceMinor" type="number" min="0" max="100000" step="0.01" defaultValue={service.priceMinor === null ? "" : (service.priceMinor / 100).toFixed(2)} />
 				<small>Leave blank if online payment is not offered.</small>
 			</label>
 			<label>
