@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { platformThemeStyle } from "@/lib/platformTheme"
+import { PlatformAuthBrand } from "@/components/shared/PlatformAuthBrand"
 
 import { JoinTeamInvitationForm } from "./JoinTeamInvitationForm"
 
@@ -17,9 +18,7 @@ export default async function JoinTeamPage() {
 		<div className="platform-site" style={platformThemeStyle(design.theme)}>
 			<main className="auth-page">
 				<section className="auth-card" aria-labelledby="join-team-title">
-					<Link className="brand-mark" href="/">
-						{design.branding.name}
-					</Link>
+					<PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 					<p className="eyebrow">Salon team invitation</p>
 					<h1 id="join-team-title">Join a salon team</h1>
 					<p className="auth-card__intro">
