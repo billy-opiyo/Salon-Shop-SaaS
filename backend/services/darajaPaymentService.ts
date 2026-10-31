@@ -30,6 +30,13 @@ function env(name: string): string {
 	return (process.env[name] ?? "").trim()
 }
 
+function formatInvoiceAmount(amountMinor: number): string {
+	return `KES ${new Intl.NumberFormat("en-KE", {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	}).format(amountMinor / 100)}`
+}
+
 export { normalizeKenyanMpesaPhone }
 
 function darajaBaseUrl(): string {
@@ -181,10 +188,14 @@ export async function requestInvoicePayment(
 	if (invoice.status === "paid") return { status: "paid" as const }
 	const existingAttempt = await prisma.paymentAttempt.findFirst({
 		where: { invoiceId, status: "pending" },
-		select: { id: true },
+		select: { id: true, phoneNumber: true },
 	})
 	if (existingAttempt)
-		return { status: "pending" as const, attemptId: existingAttempt.id }
+		return {
+			status: "pending" as const,
+			attemptId: existingAttempt.id,
+			phoneNumber: existingAttempt.phoneNumber,
+		}
 	const paymentSettings = await platformPaymentSettings()
 	const attempt = await prisma.paymentAttempt.create({
 		data: { invoiceId, phoneNumber },
@@ -235,7 +246,7 @@ export async function requestInvoicePayment(
 				data: { lastAttemptAt: new Date() },
 			}),
 		])
-		return { status: "pending" as const, attemptId: attempt.id }
+		return { status: "pending" as const, attemptId: attempt.id, phoneNumber }
 	} catch (error) {
 		await prisma.paymentAttempt.update({
 			where: { id: attempt.id },
@@ -502,7 +513,7 @@ export async function handleDarajaCallback(payload: unknown) {
 			destination: attempt.invoice.tenant.owner.email,
 			subject: {
 				businessName: attempt.invoice.tenant.businessName,
-				amount: `KES ${(attempt.invoice.amountMinor / 100).toFixed(2)}`,
+				amount: formatInvoiceAmount(attempt.invoice.amountMinor),
 				receiptNumber: receipt ? String(receipt) : "pending",
 				customerName: attempt.invoice.tenant.owner.email,
 			},
@@ -518,7 +529,7 @@ export async function handleDarajaCallback(payload: unknown) {
 		destination: attempt.invoice.tenant.ownerUserId,
 		subject: {
 			businessName: attempt.invoice.tenant.businessName,
-			amount: `KES ${(attempt.invoice.amountMinor / 100).toFixed(2)}`,
+			amount: formatInvoiceAmount(attempt.invoice.amountMinor),
 			receiptNumber: receipt ? String(receipt) : "pending",
 			customerName: attempt.invoice.tenant.owner.email,
 		},
@@ -548,7 +559,7 @@ export async function handleDarajaCallback(payload: unknown) {
 			destination: attempt.invoice.tenant.owner.phone,
 			subject: {
 				businessName: attempt.invoice.tenant.businessName,
-				amount: `KES ${(attempt.invoice.amountMinor / 100).toFixed(2)}`,
+				amount: formatInvoiceAmount(attempt.invoice.amountMinor),
 				receiptNumber: receipt ? String(receipt) : "pending",
 				customerName: attempt.invoice.tenant.owner.email,
 			},

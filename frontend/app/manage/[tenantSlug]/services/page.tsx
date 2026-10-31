@@ -15,6 +15,7 @@ import {
 } from "./actions"
 import { ServiceEditForm } from "./ServiceEditForm"
 import { ServiceMutationForm } from "./ServiceMutationForm"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 
 interface ServicesPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -92,7 +93,7 @@ export default async function MerchantServicesPage({
 								</p>
 								<h3>{service.name}</h3>
 								<p>
-									{service.priceLabel} · {service.durationLabel}
+									{formatKesLabel(service.priceLabel)} · {service.durationLabel}
 									{service.priceMinor !== null && service.priceMinor !== undefined
 										? ` · KES ${Math.round(service.priceMinor / 100).toLocaleString("en-KE")}`
 										: " · Online price not configured"}
@@ -163,7 +164,7 @@ export default async function MerchantServicesPage({
 					<label>
 						Online payment price (KES)
 						<input name="priceMinor" type="number" min="0" max="100000" step="1" />
-						<small>Set a price to enable online payment for this service.</small>
+						<small>Enter whole KES only (for example, 1300). Set a price to enable online payment for this service.</small>
 					</label>
 					<label>
 						Duration label

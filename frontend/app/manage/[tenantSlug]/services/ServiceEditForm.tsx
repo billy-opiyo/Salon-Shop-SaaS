@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 
 import { updateService, type UpdateServiceResult } from "./actions"
 import { ServiceSubmitButton } from "./ServiceSubmitButton"
@@ -58,12 +59,12 @@ export function ServiceEditForm({
 			</label>
 			<label>
 				Price label
-				<input name="priceLabel" defaultValue={service.priceLabel} required maxLength={120} />
+				<input name="priceLabel" defaultValue={formatKesLabel(service.priceLabel)} required maxLength={120} />
 			</label>
 			<label>
 				Online payment price (KES)
 				<input name="priceMinor" type="number" min="0" max="100000" step="1" defaultValue={service.priceMinor === null || service.priceMinor === undefined ? "" : Math.round(service.priceMinor / 100)} />
-				<small>Leave blank if online payment is not offered.</small>
+				<small>Enter whole KES only (for example, 1300). Leave blank if online payment is not offered.</small>
 			</label>
 			<label>
 				Duration label

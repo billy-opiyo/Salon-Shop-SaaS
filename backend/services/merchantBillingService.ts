@@ -95,11 +95,18 @@ export async function requestRenewalPaymentForUser(
 	const phone = phoneInput?.trim() || tenant.subscription?.billingPhoneNumber
 	if (!phone)
 		throw new MerchantBillingError("A billing phone number is required.")
-	return requestInvoicePayment(
+	const result = await requestInvoicePayment(
 		invoice.id,
 		phone,
 		"Beauty Sphia monthly subscription",
 	)
+	if (result.status === "pending") {
+		await prisma.subscription.updateMany({
+			where: { tenantId: tenant.id },
+			data: { billingPhoneNumber: result.phoneNumber },
+		})
+	}
+	return result
 }
 
 async function ownerBillingContext(userId: string, tenantSlug: string) {

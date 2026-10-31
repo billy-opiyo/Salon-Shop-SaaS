@@ -39,6 +39,8 @@ export async function GET(
 	const amount = new Intl.NumberFormat("en-KE", {
 		style: "currency",
 		currency: invoice.currency,
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
 	}).format(invoice.amountMinor / 100)
 	const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(invoice.invoiceNumber)} - Beauty Sphia</title></head><body><h1>Beauty Sphia</h1><h2>${escapeHtml(invoice.tenant.businessName)}</h2><p>Invoice: ${escapeHtml(invoice.invoiceNumber)}</p><p>${escapeHtml(invoice.description)}</p><p>Amount: ${escapeHtml(amount)}</p><p>Status: ${escapeHtml(invoice.status)}</p><p>Receipt: ${escapeHtml(invoice.receiptNumber ?? "Pending")}</p><p>Created: ${escapeHtml(invoice.createdAt.toISOString())}</p></body></html>`
 	return new NextResponse(html, {

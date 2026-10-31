@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
+import { formatKesLabel } from "@/components/tenant/formatKesLabel"
 import {
 	MerchantServiceCatalogError,
 	createServiceForUser,
@@ -74,7 +75,7 @@ function readServiceInput(formData: FormData) {
 		name: formData.get("name"),
 		slug: formData.get("slug"),
 		description: formData.get("description"),
-		priceLabel: formData.get("priceLabel"),
+		priceLabel: formatKesLabel(String(formData.get("priceLabel") ?? "")),
 		priceMinor: readKesMinor(formData.get("priceMinor")),
 		durationLabel: formData.get("durationLabel"),
 		orderOnly: formData.get("orderOnly") === "true",

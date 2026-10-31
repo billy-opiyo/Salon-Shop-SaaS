@@ -766,7 +766,7 @@ export function SalonAdminMarkup({
 										<input
 											type="text"
 											id="galleryPriceRange"
-											placeholder="e.g. KSh 4,000 - 6,000"
+											placeholder="e.g. KES 4,000 - 6,000"
 										/>
 									</div>
 									<div className="form-group admin-cosmetics-field" data-cosmetics-only="true" style={{display: "none"}}><label htmlFor="galleryProductBrand">Brand / Collection</label><input type="text" id="galleryProductBrand" placeholder="e.g. Royal Roots" /></div>
