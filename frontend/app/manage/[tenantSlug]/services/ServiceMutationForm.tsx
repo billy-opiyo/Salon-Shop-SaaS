@@ -16,6 +16,7 @@ export function ServiceMutationForm({
 	action,
 	children,
 	className,
+	buttonClassName,
 	buttonLabel,
 	pendingLabel,
 	confirmMessage,
@@ -23,6 +24,7 @@ export function ServiceMutationForm({
 	readonly action: ServiceMutationAction
 	readonly children: ReactNode
 	readonly className?: string
+	readonly buttonClassName?: string
 	readonly buttonLabel: string
 	readonly pendingLabel: string
 	readonly confirmMessage?: string
@@ -35,7 +37,7 @@ export function ServiceMutationForm({
 		<form className={className} action={formAction} onSubmit={handleSubmit}>
 			{children}
 			<ServiceSubmitButton
-				className={className === "onboarding-form" ? "button button--primary" : undefined}
+				className={buttonClassName ?? (className === "onboarding-form" ? "button button--primary" : undefined)}
 				pendingLabel={pendingLabel}
 			>
 				{buttonLabel}

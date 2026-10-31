@@ -109,6 +109,7 @@ export default async function MerchantServicesPage({
 							<ServiceMutationForm
 								action={deleteService}
 								buttonLabel="Delete"
+								buttonClassName="button button--outline button--small button--danger"
 								pendingLabel="Deleting…"
 								confirmMessage={`Delete ${service.name}? This cannot be undone.`}
 							>
