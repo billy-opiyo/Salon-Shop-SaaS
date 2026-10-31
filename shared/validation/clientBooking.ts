@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 
 export const clientBookingActionSchema = z.object({
 	tenantSlug: z.string().trim().min(3).max(48),
@@ -9,7 +10,7 @@ export type ClientBookingActionInput = z.infer<typeof clientBookingActionSchema>
 
 export const clientRescheduleSchema = clientBookingActionSchema.extend({
 	appointmentDate: z.string().date(),
-	timeLabel: z.string().trim().min(1).max(40),
+	timeLabel: z.string().trim().refine((value) => BOOKING_TIME_SLOTS.includes(value), "Choose an available appointment time."),
 	stylistId: z.string().trim().cuid().optional(),
 })
 
