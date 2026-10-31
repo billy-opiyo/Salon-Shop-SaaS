@@ -15,9 +15,12 @@ import { platformThemeStyle } from "@/lib/platformTheme"
 import { PlatformAccountClient } from "./PlatformAccountClient"
 import { PublishSalonForm } from "./PublishSalonForm"
 
-export const metadata = {
-	title: "My account | Beauty Sphia",
-	description: "Manage your Beauty Sphia profile, bookings, and salon accounts.",
+export async function generateMetadata() {
+	const design = await getPlatformStorefrontDesign()
+	return {
+		title: `My account | ${design.branding.name}`,
+		description: `Manage your ${design.branding.name} profile, bookings, and salon accounts.`,
+	}
 }
 
 function formatSalonStatus(status: string): string {
