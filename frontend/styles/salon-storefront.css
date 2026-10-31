@@ -2901,6 +2901,7 @@ h6 {
 
 .admin-admins-wrap {
     align-items: start;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-gallery-form,
@@ -13345,12 +13346,18 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     line-height: 1.55;
 }
 
+.manage-page .merchant-team-invitation-panel {
+    display: grid;
+    gap: 1.35rem;
+}
+
 .manage-page .merchant-team-invitation-form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
-    gap: .9rem;
-    margin: 0;
+    gap: 1rem;
+    margin: .35rem 0 .5rem;
+    padding-bottom: .35rem;
 }
 
 .manage-page .merchant-team-invitation-form > label {
@@ -13379,6 +13386,8 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
 
 .manage-page .merchant-team-invitation-panel > .manage-store {
     gap: 1rem 1.25rem;
+    margin-top: .35rem;
+    padding: 1.25rem;
 }
 
 .manage-page .merchant-team-invitation-panel .manage-store__actions {
@@ -13424,7 +13433,56 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
 }
 
 .salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap.is-vertical-scroll-active:has(.admin-security-row-actions) {
-    --admin-security-row-height: 88px;
+    max-height: calc(var(--admin-security-header-height) + ((var(--admin-security-row-height) + 88px) * var(--admin-security-visible-rows)));
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar {
+    width: 100%;
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar .form-group,
+.salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar input,
+.salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar select {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-review-item {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-review-item > strong,
+.salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-review-item > p {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-platform-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    min-width: 0;
+    overflow: visible;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-platform-actions > button {
+    flex: 1 1 8rem;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap.is-vertical-scroll-active.has-security-action-records {
+    max-height: calc(var(--admin-security-header-height) + ((var(--admin-security-row-height) + 88px) * var(--admin-security-visible-rows)));
 }
 
 .salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-row-actions td {
@@ -13472,5 +13530,17 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
 
     .manage-page .merchant-team-invitation-panel .manage-store__actions {
         gap: .7rem;
+    }
+
+    .manage-page .merchant-team-invitation-panel > .manage-store {
+        margin-top: .5rem;
+    }
+
+    .salon-admin-root .admin-management-section[data-admin-section="admins"] .admin-admins-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-platform-actions > button {
+        flex-basis: 100%;
     }
 }

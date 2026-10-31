@@ -126,6 +126,10 @@ function renderAdminSnapshotList(
 	if (!element) return
 	element.replaceChildren()
 	if (!items?.length) {
+		if (elementId.startsWith("adminSecurity") || ["adminAccountHistoryList", "adminSessionsList", "adminTimelineList"].includes(elementId)) {
+			element.classList.remove("is-vertical-scroll-active", "has-security-action-records")
+			element.setAttribute("data-scroll-active", "false")
+		}
 		const empty = document.createElement("p")
 		empty.className = "admin-empty-state"
 		empty.textContent = emptyMessage
@@ -138,6 +142,10 @@ function renderAdminSnapshotList(
 		elementId === "adminTimelineList"
 	if (isSecurityCollection) {
 		element.classList.toggle("is-vertical-scroll-active", items.length > 4)
+		element.classList.toggle(
+			"has-security-action-records",
+			elementId === "adminSecurityActivityList",
+		)
 		element.setAttribute("data-scroll-active", items.length > 4 ? "true" : "false")
 	}
 	let securityRows: HTMLTableSectionElement | null = null
@@ -259,10 +267,27 @@ function renderAdminSnapshotList(
 		)
 		row.dataset.customerName = titleText
 		const details = document.createElement("p")
-		details.textContent = Object.entries(record)
-			.filter(([key]) => !["serviceName", "styleName", "title", "subject", "name", "email", "value", "user", "linkedBooking"].includes(key))
-			.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
-			.join(" · ")
+		if (elementId === "adminAdminsList") {
+			const role = String(record.role ?? "STAFF").toLowerCase()
+			const roleLabel = role === "owner"
+				? "Salon owner"
+				: role === "admin" ? "Delegated admin" : "Staff"
+			const access = [
+				record.canManageBookings === true && "Bookings",
+				record.canManageContent === true && "Storefront content",
+				record.canManageSecurity === true && "Security",
+			].filter(Boolean)
+			details.textContent = [
+				roleLabel,
+				String(record.status ?? "").toLowerCase(),
+				access.length ? `Access: ${access.join(", ")}` : "No delegated section access",
+			].filter(Boolean).join(" · ")
+		} else {
+			details.textContent = Object.entries(record)
+				.filter(([key]) => !["serviceName", "styleName", "title", "subject", "name", "email", "value", "user", "linkedBooking"].includes(key))
+				.map(([key, value]) => `${key}: ${formatAdminSnapshotValue(value)}`)
+				.join(" · ")
+		}
 
 		if (isBooking || isWaitlist) {
 			const header = document.createElement("div")
