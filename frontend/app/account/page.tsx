@@ -44,7 +44,7 @@ export default async function AccountPage() {
 			<PlatformHeader page="account" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 			<main className="platform-account-shell">
 				<header className="platform-account-hero">
-					<p className="platform-hero__eyebrow">Your Beauty Sphia</p>
+					<p className="platform-hero__eyebrow">Your {design.branding.name}</p>
 					<h1>My account</h1>
 					<p>Keep your personal details, appointments, and saved salon styles together. Salon setup and management stay in their own dedicated areas.</p>
 				</header>
@@ -85,7 +85,7 @@ export default async function AccountPage() {
 					})}</div> : <p className="platform-account-empty">No salon workspaces are connected to this account yet. You can still explore salons and manage your bookings here.</p>}
 				</section>
 
-				<PlatformAccountClient initialSnapshot={account} canDeleteAccount={ownedSalonCount === 0} />
+				<PlatformAccountClient initialSnapshot={account} canDeleteAccount={ownedSalonCount === 0} brandName={design.branding.name} />
 			</main>
 			<PlatformFooter brandName={design.branding.name} description={design.content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
 			<PlatformMobileActions />

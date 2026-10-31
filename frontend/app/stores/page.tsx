@@ -43,7 +43,7 @@ export default async function StoresDirectoryPage() {
 					<h2 id="top-stores-title">{directory.listTitle}</h2>
 					<p>{directory.listDescription}</p>
 				</div>
-				<TopStoresGrid showAll />
+				<TopStoresGrid showAll brandName={design.branding.name} />
 			</section>
 
 			<section className="platform-section platform-section--directory-cta">

@@ -37,7 +37,7 @@ export default async function AboutPage() {
 						<h2 id="team-title">{design.about.teamTitle}</h2>
 						<p>{design.about.teamDescription}</p>
 					</div>
-					{members.length ? <PlatformTeamCards members={members} /> : <div className="platform-team-empty"><p>Team profiles are unavailable right now. You can still reach our team for help.</p><Link className="button button--outline" href="/support">Contact Beauty Sphia support</Link></div>}
+					{members.length ? <PlatformTeamCards members={members} /> : <div className="platform-team-empty"><p>Team profiles are unavailable right now. You can still reach our team for help.</p><Link className="button button--outline" href="/support">Contact {design.branding.name} support</Link></div>}
 				</section>
 				<section className="platform-section platform-about-cta" aria-label="Get started">
 					<h2>{design.about.ctaTitle}</h2>

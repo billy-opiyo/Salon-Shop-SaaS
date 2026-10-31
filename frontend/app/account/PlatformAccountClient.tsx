@@ -32,9 +32,11 @@ function toLocalDateInputValue(date: Date): string {
 export function PlatformAccountClient({
 	initialSnapshot,
 	canDeleteAccount,
+	brandName,
 }: {
 	readonly initialSnapshot: ClientAccountSnapshot
 	readonly canDeleteAccount: boolean
+	readonly brandName: string
 }) {
 	const router = useRouter()
 	const [snapshot, setSnapshot] = useState(initialSnapshot)
@@ -495,13 +497,13 @@ export function PlatformAccountClient({
 							})}
 						</div>
 					) : (
-						<p className="platform-account-empty">No appointments are linked to your Beauty Sphia account yet. Browse salons to book your next visit.</p>
+						<p className="platform-account-empty">No appointments are linked to your {brandName} account yet. Browse salons to book your next visit.</p>
 					)}
 				</section>
 
 				<section className="platform-account-panel" aria-labelledby="platform-reviews-title">
 					<p className="eyebrow">Your feedback</p><h2 id="platform-reviews-title">Reviews</h2>
-					{snapshot.reviews.length ? <ul className="platform-account-review-list">{snapshot.reviews.map((review) => <li key={review.id}><div><strong>{review.serviceName ?? review.tenantName}</strong><span>{"★".repeat(review.rating)} · {review.status}</span></div><p>{review.text}</p><Link href={`/${review.tenantSlug}`}>Visit {review.tenantName}</Link></li>)}</ul> : <p className="platform-account-empty">Reviews you submit at Beauty Sphia salons will appear here.</p>}
+					{snapshot.reviews.length ? <ul className="platform-account-review-list">{snapshot.reviews.map((review) => <li key={review.id}><div><strong>{review.serviceName ?? review.tenantName}</strong><span>{"★".repeat(review.rating)} · {review.status}</span></div><p>{review.text}</p><Link href={`/${review.tenantSlug}`}>Visit {review.tenantName}</Link></li>)}</ul> : <p className="platform-account-empty">Reviews you submit at {brandName} salons will appear here.</p>}
 				</section>
 
 				<section className="platform-account-panel" aria-labelledby="platform-favorites-title">
@@ -511,7 +513,7 @@ export function PlatformAccountClient({
 
 				<section className="platform-account-panel platform-account-panel--wide platform-account-danger" aria-labelledby="platform-delete-title">
 					<p className="eyebrow">Privacy controls</p><h2 id="platform-delete-title">Delete your account</h2>
-					<p id="platform-delete-help">{canDeleteAccount ? "Deleting your account permanently removes your Beauty Sphia sign-in and personal profile." : "This account owns one or more salon workspaces. Transfer ownership or remove those workspaces before deleting the account."}</p>
+					<p id="platform-delete-help">{canDeleteAccount ? `Deleting your account permanently removes your ${brandName} sign-in and personal profile.` : "This account owns one or more salon workspaces. Transfer ownership or remove those workspaces before deleting the account."}</p>
 					<button ref={deleteTriggerRef} className="button button--outline platform-account-delete-button" type="button" onClick={openDeleteDialog} disabled={busy} aria-haspopup="dialog" aria-describedby="platform-delete-help">Delete account permanently</button>
 					{!canDeleteAccount && <small className="platform-account-delete-help">Your salon workspaces are connected to this sign-in, so account deletion is blocked until ownership is transferred or the workspaces are removed.</small>}
 				</section>
@@ -520,7 +522,7 @@ export function PlatformAccountClient({
 				<section className="platform-account-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="platform-account-delete-dialog-title" aria-describedby="platform-account-delete-dialog-description" tabIndex={-1}>
 					<p className="eyebrow">Privacy controls</p>
 					<h2 id="platform-account-delete-dialog-title">Delete your account?</h2>
-					<p id="platform-account-delete-dialog-description">{canDeleteAccount ? "This permanently removes your Beauty Sphia sign-in and personal profile. This action cannot be undone." : "This account still owns one or more salon workspaces. Transfer ownership or remove those workspaces before you can delete this account."}</p>
+					<p id="platform-account-delete-dialog-description">{canDeleteAccount ? `This permanently removes your ${brandName} sign-in and personal profile. This action cannot be undone.` : "This account still owns one or more salon workspaces. Transfer ownership or remove those workspaces before you can delete this account."}</p>
 					{deleteError && <p className="platform-account-delete-dialog__error" role="alert">{deleteError}</p>}
 					{!canDeleteAccount && <p><Link className="button button--outline button--small" href="/account#account-salons-title" onClick={closeDeleteDialog}>View your salons</Link></p>}
 					<div className="platform-account-delete-dialog__actions">

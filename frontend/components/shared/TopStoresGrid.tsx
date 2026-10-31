@@ -6,12 +6,14 @@ import Link from "next/link"
 function RatingStars({
 	rating,
 	reviewCount,
+	brandName,
 }: {
 	readonly rating: number | null
 	readonly reviewCount: number
+	readonly brandName: string
 }) {
 	if (rating === null || reviewCount === 0) {
-		return <span className="top-store__rating">New on Beauty Sphia</span>
+		return <span className="top-store__rating">New on {brandName}</span>
 	}
 	return (
 		<span
@@ -47,9 +49,10 @@ function RatingStars({
 interface TopStoresGridProps {
 	readonly limit?: number
 	readonly showAll?: boolean
+	readonly brandName?: string
 }
 
-export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGridProps) {
+export async function TopStoresGrid({ limit = 3, showAll = false, brandName = "Beauty Sphia" }: TopStoresGridProps) {
 	const stores = showAll ? await getAllPublicStores() : await getTopStores(limit)
 
 	if (stores.length === 0) {
@@ -88,7 +91,7 @@ export async function TopStoresGrid({ limit = 3, showAll = false }: TopStoresGri
 							<span className="top-store__soon-label">Coming soon</span>
 						) : (
 							<>
-								<RatingStars rating={store.rating} reviewCount={store.reviewCount} />
+								<RatingStars rating={store.rating} reviewCount={store.reviewCount} brandName={brandName} />
 								<StoreTransitionLink className="top-store__link" href={store.href} prefetch={!showAll}>
 									Open {store.name} Salon →
 								</StoreTransitionLink>
