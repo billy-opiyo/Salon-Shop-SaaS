@@ -1,4 +1,5 @@
 import { VerifyEmailClient } from "./VerifyEmailClient"
+import { PlatformAuthBrand } from "@/components/shared/PlatformAuthBrand"
 import { SalonVerifyEmailClient } from "@/components/tenant/SalonVerifyEmailClient"
 import { getTenantStorefront } from "@backend/services/tenantDirectory"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
@@ -55,7 +56,7 @@ export default async function VerifyEmailPage({
     <div className="platform-site" style={platformThemeStyle(design.theme)}>
       <main className="auth-page">
         <section className="auth-card" aria-label="Email verification">
-          <span className="brand-mark">Beauty Sphia</span>
+          <PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 				  <VerifyEmailClient initialToken={initialToken} callbackUrl={callbackUrl} />
         </section>
       </main>
