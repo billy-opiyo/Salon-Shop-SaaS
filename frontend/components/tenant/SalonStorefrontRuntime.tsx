@@ -121,6 +121,7 @@ function renderAdminSnapshotList(
 	elementId: string,
 	items: readonly unknown[] | undefined,
 	emptyMessage: string,
+	canManageAdmins = false,
 ): void {
 	const element = document.getElementById(elementId)
 	if (!element) return
@@ -854,7 +855,11 @@ function renderAdminSnapshotList(
 			)
 			addAction("blog-delete", "Delete")
 		}
-		if (elementId === "adminAdminsList")
+		if (
+			elementId === "adminAdminsList" &&
+			canManageAdmins &&
+			String(record.role ?? "").toUpperCase() !== "OWNER"
+		)
 			addAction("team-member-remove", "Remove")
 		if (isPendingInvitation)
 			addAction("team-invitation-permissions", "Save section access")
@@ -3736,6 +3741,8 @@ export function bindAdminSnapshotAdapter(
 		})
 		.then((snapshot) => {
 			if (cancelled) return
+			const currentPermissions = recordValue(snapshot.permissions)
+			const canManageAdmins = currentPermissions.role === "OWNER"
 			const bookings = Array.isArray(snapshot.bookings) ? snapshot.bookings : []
 			const waitlist = Array.isArray(snapshot.waitlist) ? snapshot.waitlist : []
 			const reviews = Array.isArray(snapshot.reviews) ? snapshot.reviews : []
@@ -3804,7 +3811,12 @@ export function bindAdminSnapshotAdapter(
 				services,
 				"No services found.",
 			)
-			renderAdminSnapshotList("adminAdminsList", team, "No team members found.")
+			renderAdminSnapshotList(
+				"adminAdminsList",
+				team,
+				"No team members found.",
+				canManageAdmins,
+			)
 			renderAdminSnapshotList(
 				"adminPendingInvitationsList",
 				teamInvitations,
@@ -4091,6 +4103,7 @@ export function bindAdminSnapshotAdapter(
 						"adminAdminsList",
 						latestTeam,
 						"No team members found.",
+							recordValue(latest.permissions).role === "OWNER",
 					)
 					renderAdminSnapshotList(
 						"adminSecurityActivityList",
