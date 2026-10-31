@@ -2,7 +2,7 @@ import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
-	getPlatformStorefrontDesign,
+	getPlatformStorefrontDesignForAdmin,
 	PlatformAdminActionError,
 	uploadPlatformStorefrontImage,
 	updatePlatformStorefrontDesign,
@@ -27,10 +27,10 @@ async function requirePlatformAdmin(permission: "site-content:read" | "site-cont
 
 export async function GET() {
 	try {
-		await requirePlatformAdmin("site-content:read")
-		return NextResponse.json(await getPlatformStorefrontDesign())
+		const session = await requirePlatformAdmin("site-content:read")
+		return NextResponse.json(await getPlatformStorefrontDesignForAdmin(session.user.id, session.user.email))
 	} catch (error) {
-		if (error instanceof PlatformAdminActionError)
+		if (error instanceof PlatformAdminActionError || error instanceof PlatformAuthorizationError)
 			return NextResponse.json({ error: error.message }, { status: 403 })
 		console.error("Platform storefront design read failed:", error)
 		return NextResponse.json({ error: "Platform storefront design could not be loaded." }, { status: 500 })

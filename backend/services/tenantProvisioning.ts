@@ -94,7 +94,6 @@ export async function provisionTenant(
 							canManageBookings: true,
 							canManageContent: true,
 							canManageSecurity: true,
-							canManageBilling: true,
 							joinedAt: new Date(),
 						},
 					},
@@ -190,7 +189,7 @@ export async function listTenantsForUser(userId: string) {
 			status: true,
 			memberships: {
 				where: { userId, status: "ACTIVE" },
-				select: { role: true, canManageBilling: true, canManageContent: true },
+				select: { role: true, canManageContent: true },
 			},
 			subscription: {
 				select: {

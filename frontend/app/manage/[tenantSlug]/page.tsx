@@ -48,7 +48,6 @@ export default async function TenantAdminPage({
 					canManageContent: true,
 					canManageAdmins: true,
 					canManageSecurity: true,
-					canManageBilling: true,
 				},
 			},
 		},
@@ -65,7 +64,6 @@ export default async function TenantAdminPage({
 		canManageContent,
 		canManageAdmins: isOwner || membership.canManageAdmins,
 		canManageSecurity: isOwner || membership.canManageSecurity,
-		canManageBilling: membership.role === "ADMIN" && membership.canManageBilling,
 	}
 	const allowedSections = sectionOrder.filter((section) => {
 		if (section === "bookings" || section === "waitlist" || section === "schedule")
@@ -75,7 +73,7 @@ export default async function TenantAdminPage({
 		return canManageContent
 	})
 	if (allowedSections.length === 0) {
-		if (navigationAccess.canManageBilling)
+		if (isOwner)
 			redirect(`/manage/${encodeURIComponent(normalizedSlug)}/billing`)
 		redirect("/account")
 	}

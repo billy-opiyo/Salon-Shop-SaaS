@@ -46,13 +46,13 @@ export default async function MerchantSettingsPage({
 					<p className="eyebrow">Storefront management</p>
 					<h1>{data.tenant.businessName} settings</h1>
 					<p className="auth-card__intro">
-						Control the public identity and contact details for this salon.
+						Control the public identity and contact details for this salon{data.isOwner ? ", including online booking payment options." : "."}
 					</p>
 				</div>
 			</header>
 			<section className="manage-card merchant-settings-card" aria-labelledby="merchant-settings-title">
 				<h2 id="merchant-settings-title">Storefront and booking settings</h2>
-				<p>Shape the salon’s public identity, contact details, and optional online payment settings.</p>
+				<p>Shape the salon’s public identity and contact details{data.isOwner ? ", and manage optional online payment settings." : "."}</p>
 			<form className="onboarding-form merchant-settings-form" action={saveTenantSettings}>
 				<input type="hidden" name="tenantSlug" value={tenantSlug} />
 				<label>
@@ -136,7 +136,8 @@ export default async function MerchantSettingsPage({
 						maxLength={500}
 					/>
 			</label>
-			<fieldset className="legal-consent">
+			{data.isOwner && <fieldset className="legal-consent">
+				<input type="hidden" name="ownerPaymentSettings" value="true" />
 				<legend>Online booking payments</legend>
 				<label>
 					<input
@@ -186,7 +187,7 @@ export default async function MerchantSettingsPage({
 						defaultValue={settings?.bookingDepositPercent ?? 50}
 					/>
 				</label>
-			</fieldset>
+			</fieldset>}
 				<ManageSubmitButton pendingLabel="Saving settings…">Save settings</ManageSubmitButton>
 			</form>
 			</section>

@@ -9,7 +9,7 @@ import {
 } from "@backend/services/platformAuthorization"
 import {
 	getPlatformAdminSnapshot,
-	getPlatformStorefrontDesign,
+	getPlatformStorefrontDesignForAdmin,
 } from "@backend/services/platformAdminService"
 import { listPlatformTeamForAdmin } from "@backend/services/platformTeamService"
 import { listPlatformRoleAssignments } from "@backend/services/platformRoleService"
@@ -57,7 +57,7 @@ export default async function PlatformAdminPage() {
 	const [snapshot, teamMembers, storefrontDesign, roleAssignments] = await Promise.all([
 		role === "OWNER" ? getPlatformAdminSnapshot() : Promise.resolve(null),
 		role !== "STORE_SUPPORT" ? listPlatformTeamForAdmin(session.user.id, session.user.email) : Promise.resolve([]),
-		getPlatformStorefrontDesign(),
+		getPlatformStorefrontDesignForAdmin(session.user.id, session.user.email),
 		role === "OWNER" ? listPlatformRoleAssignments(session.user.id, session.user.email) : Promise.resolve([]),
 	])
 	const counts = snapshot?.counts

@@ -11,10 +11,13 @@ export async function saveTenantSettings(formData: FormData) {
 	if (!session?.user?.id) redirect(getLoginUrlForPath(`/manage/${encodeURIComponent(String(formData.get("tenantSlug") ?? "").trim())}/settings`))
 	const tenantSlug = String(formData.get("tenantSlug") ?? "")
 	const raw: Record<string, unknown> = Object.fromEntries(formData.entries())
-	raw.bookingPaymentsEnabled = formData.get("bookingPaymentsEnabled") === "on"
-	raw.bookingPaymentModes = formData
-		.getAll("bookingPaymentModes")
-		.filter((value): value is string => typeof value === "string")
+	if (formData.get("ownerPaymentSettings") === "true") {
+		raw.bookingPaymentsEnabled = formData.get("bookingPaymentsEnabled") === "on"
+		raw.bookingPaymentModes = formData
+			.getAll("bookingPaymentModes")
+			.filter((value): value is string => typeof value === "string")
+		raw.bookingDepositPercent = formData.get("bookingDepositPercent")
+	}
 	await updateTenantSettingsForUser(
 		session.user.id,
 		tenantSlug,
