@@ -35,7 +35,7 @@ export function MerchantWorkspaceNavigation({
 			const page = document.querySelector<HTMLElement>(
 				".merchant-workspace-panel main.manage-page",
 			)
-			page?.scrollIntoView({ behavior: "smooth", block: "start" })
+			page?.scrollIntoView({ behavior: "instant", block: "start" })
 		})
 		return () => window.cancelAnimationFrame(frame)
 	}, [currentRoute])
