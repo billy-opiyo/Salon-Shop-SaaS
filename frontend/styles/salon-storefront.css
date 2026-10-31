@@ -13306,3 +13306,152 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
 }
+
+.merchant-workspace-panel .merchant-team-invitation-panel {
+    gap: 1.1rem;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child {
+    display: grid;
+    gap: .4rem;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child h2,
+.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child p {
+    margin: 0;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-panel > div:first-child p {
+    max-width: 68ch;
+    line-height: 1.55;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(9rem, .55fr) auto;
+    align-items: end;
+    gap: .9rem;
+    margin: 0;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-form > label {
+    display: grid;
+    gap: .45rem;
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: .84rem;
+    font-weight: 650;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-form input,
+.merchant-workspace-panel .merchant-team-invitation-form select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 2.85rem;
+    margin: 0;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-form > .button {
+    min-height: 2.85rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-panel > .manage-store {
+    gap: 1rem 1.25rem;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-panel .manage-store__actions {
+    gap: .65rem;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap {
+    box-sizing: border-box;
+    max-width: 100%;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap::-webkit-scrollbar-track {
+    border-radius: var(--radius-full);
+    background: var(--scrollbar-track);
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap::-webkit-scrollbar-thumb {
+    border: 2px solid var(--scrollbar-track);
+    border-radius: var(--radius-full);
+    background: var(--scrollbar-thumb);
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table {
+    width: max-content;
+    min-width: 1220px;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap.is-vertical-scroll-active {
+    --admin-security-row-height: 52px;
+    max-height: calc(var(--admin-security-header-height) + (var(--admin-security-row-height) * var(--admin-security-visible-rows)));
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap.is-vertical-scroll-active:has(.admin-security-row-actions) {
+    --admin-security-row-height: 88px;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-row-actions td {
+    padding: .7rem .75rem .85rem;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-row-actions .admin-security-inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    overflow: visible;
+    padding: 0;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-alert-status {
+    display: grid;
+    justify-items: start;
+    gap: .6rem;
+}
+
+.salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-resolve-action {
+    margin: 0;
+}
+
+@media (max-width: 720px) {
+    .merchant-workspace-panel .merchant-team-invitation-panel {
+        gap: 1.15rem;
+    }
+
+    .merchant-workspace-panel .merchant-team-invitation-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .9rem;
+    }
+
+    .merchant-workspace-panel .merchant-team-invitation-form > .button {
+        width: 100%;
+        justify-content: center;
+        margin-top: .1rem;
+    }
+
+    .merchant-workspace-panel .merchant-team-invitation-panel > .manage-store {
+        gap: 1rem;
+        padding: 1.1rem;
+    }
+
+    .merchant-workspace-panel .merchant-team-invitation-panel .manage-store__actions {
+        gap: .7rem;
+    }
+}
