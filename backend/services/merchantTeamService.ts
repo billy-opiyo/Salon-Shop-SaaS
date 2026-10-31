@@ -2,14 +2,11 @@ import "server-only"
 
 import { Prisma } from "@prisma/client"
 import { prisma } from "@backend/db/prisma"
-import {
-	assertTenantMembership,
-	assertTenantPermission,
-} from "@backend/services/authorization"
+import { assertTenantMembership } from "@backend/services/authorization"
 
 export class MerchantTeamError extends Error {
 	readonly code = "MERCHANT_TEAM_FAILED" as const
-	constructor(message: string) {
+	constructor(message: string, readonly status = 400) {
 		super(message)
 		this.name = "MerchantTeamError"
 	}
@@ -34,10 +31,8 @@ export async function listTeamForUser(userId: string, tenantSlug: string) {
 			canManageSecurity: true,
 		},
 	})
-	assertTenantPermission(
-		assertTenantMembership(membership, tenant.id),
-		"canManageAdmins",
-	)
+	if (assertTenantMembership(membership, tenant.id).role !== "OWNER")
+		throw new MerchantTeamError("Only the salon owner can view or manage team access.", 403)
 	return prisma.membership.findMany({
 		where: { tenantId: tenant.id },
 		orderBy: { createdAt: "asc" },
@@ -77,7 +72,8 @@ async function getTeamAdminMembership(userId: string, tenantSlug: string) {
 		},
 	})
 	const activeMembership = assertTenantMembership(membership, tenant.id)
-	assertTenantPermission(activeMembership, "canManageAdmins")
+	if (activeMembership.role !== "OWNER")
+		throw new MerchantTeamError("Only the salon owner can manage team access.", 403)
 	return activeMembership
 }
 
@@ -130,14 +126,30 @@ export async function updateTeamMemberPermissionsForUser(
 		where: {
 			tenantId_userId: { tenantId: membership.tenantId, userId: memberUserId },
 		},
-		select: { id: true, role: true },
+		select: {
+			id: true,
+			role: true,
+			canManageBookings: true,
+			canManageContent: true,
+			canManageSecurity: true,
+		},
 	})
 	if (!member || member.role === "OWNER")
 		throw new MerchantTeamError("Team member cannot be updated.")
+	const nextPermissions = {
+		canManageBookings: permissions.canManageBookings ?? member.canManageBookings,
+		canManageContent: permissions.canManageContent ?? member.canManageContent,
+		canManageSecurity: permissions.canManageSecurity ?? member.canManageSecurity,
+	}
+	const hasSectionAccess = Object.values(nextPermissions).some(Boolean)
 	await prisma.$transaction(async (transaction) => {
 		await transaction.membership.update({
 			where: { id: member.id },
-			data: permissions,
+			data: {
+				...nextPermissions,
+				role: hasSectionAccess ? "ADMIN" : "STAFF",
+				canManageAdmins: false,
+			},
 		})
 		await transaction.adminAuditLog.create({
 			data: {
@@ -146,7 +158,7 @@ export async function updateTeamMemberPermissionsForUser(
 				action: "team.member.permissions-updated",
 				resourceType: "membership",
 				resourceId: memberUserId,
-				metadata: permissions as Prisma.InputJsonValue,
+				metadata: nextPermissions as Prisma.InputJsonValue,
 			},
 		})
 	})

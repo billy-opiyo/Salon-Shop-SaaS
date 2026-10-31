@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type React from "react"
 
 import { DEFAULT_THEME_PRESET, THEME_PRESET_OPTIONS } from "@shared/constants/themePresets"
+import { SALON_ACCESS_PROFILES } from "@shared/constants/salonAccessProfiles"
 
 export interface SalonAdminMarkupProps {
 	readonly homeHref: string
@@ -1309,7 +1310,7 @@ export function SalonAdminMarkup({
 					>
 						<div className="admin-stats">
 							<div className="admin-stat-card">
-								<div className="label">Total Admins</div>
+								<div className="label">Team Members</div>
 								<strong id="adminAdminsTotalCount">0</strong>
 							</div>
 							<div className="admin-stat-card">
@@ -1317,11 +1318,11 @@ export function SalonAdminMarkup({
 								<strong id="adminAdminsActiveCount">0</strong>
 							</div>
 							<div className="admin-stat-card">
-								<div className="label">Super Admin</div>
+								<div className="label">Salon Owner</div>
 								<strong id="adminAdminsSuperCount">0</strong>
 							</div>
 							<div className="admin-stat-card">
-								<div className="label">Standard Admin</div>
+								<div className="label">Delegated Admins</div>
 								<strong id="adminAdminsStandardCount">0</strong>
 							</div>
 						</div>
@@ -1336,7 +1337,7 @@ export function SalonAdminMarkup({
 							<form className="admin-gallery-form" id="adminAdminsForm">
 								<input type="hidden" id="adminAdminEditUid" />
 								<div className="admin-gallery-form-head">
-									<h3 id="adminAdminsFormTitle">Create Admin Access</h3>
+									<h3 id="adminAdminsFormTitle">Invite Team Member</h3>
 									<button
 										type="button"
 										className="btn btn-outline"
@@ -1349,7 +1350,7 @@ export function SalonAdminMarkup({
 
 								<div className="admin-gallery-grid">
 									<div className="form-group full">
-										<label htmlFor="adminManageEmail">Admin Email *</label>
+										<label htmlFor="adminManageEmail">Team member email *</label>
 										<input
 											type="email"
 											id="adminManageEmail"
@@ -1357,57 +1358,37 @@ export function SalonAdminMarkup({
 											required
 										/>
 										<small className="admin-field-help"
-							>Account must already exist in the Beauty Sphia
-							platform.</small
+							>They will accept the invitation after signing in with this email.</small
 										>
 									</div>
 									<div className="form-group">
-										<label htmlFor="adminManageDisplayName">Display Name</label>
-										<input
-											type="text"
-											id="adminManageDisplayName"
-											placeholder="e.g. Front Desk Manager"
-										/>
-									</div>
-									<div className="form-group">
-										<label htmlFor="adminManageRole">Role *</label>
-										<select id="adminManageRole" required>
-											<option value="admin">Admin</option>
-											<option value="super_admin">Super Admin</option>
+										<label htmlFor="adminManageRole">Access profile *</label>
+										<select id="adminManageRole" required defaultValue="staff">
+											{SALON_ACCESS_PROFILES.map((profile) => (
+												<option value={profile.key} key={profile.key}>{profile.label}</option>
+											))}
 										</select>
-									</div>
-									<div className="form-group full admin-checkbox-group">
-										<label>
-											<input type="checkbox" id="adminManageActive" defaultChecked />
-											<span>Account Active</span>
-										</label>
 									</div>
 									<div className="form-group full">
 										<label>Permissions</label>
 										<div className="admin-checkbox-group">
 											<label>
-												<input type="checkbox" id="adminPermManageAdmins" />
-												<span>Manage Admins</span>
-											</label>
-											<label>
 												<input
 													type="checkbox"
 													id="adminPermManageBookings"
-													defaultChecked
 												/>
-												<span>Manage Bookings</span>
+												<span>Bookings and schedules</span>
 											</label>
 											<label>
 												<input
 													type="checkbox"
 													id="adminPermManageContent"
-													defaultChecked
 												/>
-												<span>Manage Content</span>
+												<span>Storefront content</span>
 											</label>
 											<label>
 												<input type="checkbox" id="adminPermManageSecurity" />
-												<span>Manage Security</span>
+												<span>Security and domains</span>
 											</label>
 										</div>
 									</div>
@@ -1418,7 +1399,7 @@ export function SalonAdminMarkup({
 									className="btn btn-primary"
 									id="adminAdminsSaveBtn"
 								>
-									Create Admin
+									Invite Team Member
 								</button>
 							</form>
 
@@ -1439,8 +1420,9 @@ export function SalonAdminMarkup({
 										<label htmlFor="adminAdminsRoleFilter">Role Filter</label>
 										<select id="adminAdminsRoleFilter">
 											<option value="all">All Roles</option>
-											<option value="super_admin">Super Admin</option>
-											<option value="admin">Admin</option>
+									<option value="owner">Salon Owner</option>
+									<option value="delegated">Delegated Admin</option>
+									<option value="staff">Staff</option>
 										</select>
 									</div>
 									<div className="form-group">

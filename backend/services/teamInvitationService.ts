@@ -6,20 +6,18 @@ import { InvitationStatus, MembershipRole, Prisma } from "@prisma/client"
 import { prisma } from "@backend/db/prisma"
 import {
 	assertTenantMembership,
-	assertTenantPermission,
 	type TenantMembershipContext,
 } from "@backend/services/authorization"
 
 export class TeamInvitationError extends Error {
 	readonly code = "TEAM_INVITATION_FAILED" as const
-	constructor(message: string) {
+	constructor(message: string, readonly status = 400) {
 		super(message)
 		this.name = "TeamInvitationError"
 	}
 }
 
 type InvitationPermissions = {
-	canManageAdmins?: boolean
 	canManageBookings?: boolean
 	canManageContent?: boolean
 	canManageSecurity?: boolean
@@ -43,7 +41,8 @@ async function getAdminMembership(
 		},
 	})
 	const active = assertTenantMembership(membership, tenantId)
-	assertTenantPermission(active, "canManageAdmins")
+	if (active.role !== "OWNER")
+		throw new TeamInvitationError("Only the salon owner can invite team members or assign section access.", 403)
 	return active
 }
 
@@ -59,7 +58,6 @@ function getPermissions(value: Prisma.JsonValue | null): InvitationPermissions {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return {}
 	const permissions = value as Record<string, unknown>
 	return {
-		canManageAdmins: permissions.canManageAdmins === true,
 		canManageBookings: permissions.canManageBookings === true,
 		canManageContent: permissions.canManageContent === true,
 		canManageSecurity: permissions.canManageSecurity === true,
@@ -74,6 +72,8 @@ export async function inviteTeamMember(
 	permissions: InvitationPermissions = {},
 ): Promise<{ readonly invitationId: string; readonly invitationCode: string }> {
 	const inviter = await getAdminMembership(userId, tenantId)
+	if (role === MembershipRole.OWNER)
+		throw new TeamInvitationError("The salon owner role cannot be assigned through an invitation.")
 	const email = normalizeEmail(inviteeEmail)
 	const existingUser = await prisma.user.findUnique({
 		where: { email },
@@ -189,6 +189,9 @@ export async function acceptTeamInvitation(
 		) {
 			throw new TeamInvitationError("Invitation is invalid or expired.")
 		}
+		if (invitation.role === MembershipRole.OWNER) {
+			throw new TeamInvitationError("Owner access can only be assigned by salon ownership.")
+		}
 		if (normalizeEmail(user.email) !== invitation.inviteeEmail) {
 			throw new TeamInvitationError(
 				"Invitation email does not match this account.",
@@ -203,12 +206,14 @@ export async function acceptTeamInvitation(
 				role: invitation.role,
 				status: "ACTIVE",
 				joinedAt: new Date(),
+				canManageAdmins: false,
 				...permissions,
 			},
 			update: {
 				role: invitation.role,
 				status: "ACTIVE",
 				joinedAt: new Date(),
+				canManageAdmins: false,
 				...permissions,
 			},
 		})

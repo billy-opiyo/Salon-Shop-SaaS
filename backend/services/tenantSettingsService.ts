@@ -37,10 +37,23 @@ export async function getTenantSettingsForUser(
 	tenantSlug: string,
 ) {
 	const { tenant, membership } = await tenantAccess(userId, tenantSlug)
+	const isOwner = membership.role === "OWNER"
+	const settings = tenant.settings
+	const ownerSettings = isOwner || !settings
+		? settings
+		: Object.fromEntries(
+			Object.entries(settings).filter(([key]) =>
+				![
+					"bookingPaymentsEnabled",
+					"bookingPaymentModes",
+					"bookingDepositPercent",
+				].includes(key),
+			),
+		) as typeof settings
 	return {
 		tenant: { slug: tenant.slug, businessName: tenant.businessName },
-		settings: tenant.settings,
-		isOwner: membership.role === "OWNER",
+		settings: ownerSettings,
+		isOwner,
 	}
 }
 

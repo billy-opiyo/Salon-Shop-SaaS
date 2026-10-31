@@ -8,11 +8,13 @@ import {
 import { listTeamInvitationsForUser } from "@backend/services/teamInvitationService"
 import { prisma } from "@backend/db/prisma"
 import { TeamInvitationPanel } from "./TeamInvitationPanel"
+import { inferSalonAccessProfileLabel } from "@shared/constants/salonAccessProfiles"
 
 interface TeamInvitationSummary {
 	readonly id: string
 	readonly inviteeEmail: string
 	readonly role: string
+	readonly permissions: unknown
 	readonly status: string
 	readonly expiresAt: Date
 }
@@ -58,17 +60,29 @@ export default async function MerchantTeamPage({ params }: TeamPageProps) {
 			</header>
 			<TeamInvitationPanel
 				tenantSlug={tenantSlug}
-				initialInvitations={invitations.map((invitation) => ({
-					...invitation,
-					expiresAt: invitation.expiresAt.toISOString(),
-				}))}
+				initialInvitations={invitations.map((invitation) => {
+					const storedPermissions = invitation.permissions &&
+						typeof invitation.permissions === "object" &&
+						!Array.isArray(invitation.permissions)
+						? invitation.permissions as unknown as Record<string, unknown>
+						: {}
+					return {
+						...invitation,
+						expiresAt: invitation.expiresAt.toISOString(),
+						permissions: {
+							canManageBookings: storedPermissions.canManageBookings === true,
+							canManageContent: storedPermissions.canManageContent === true,
+							canManageSecurity: storedPermissions.canManageSecurity === true,
+						},
+					}
+				})}
 			/>
 			<section className="manage-store-list" aria-label="Team members">
 				{members.map((member) => (
 					<article className="manage-store" key={member.id}>
 						<div>
 							<p className="eyebrow">
-								{member.status.toLowerCase()} · {member.role.toLowerCase()}
+								{member.status.toLowerCase()} · {inferSalonAccessProfileLabel(member.role, member)}
 							</p>
 							<h2>{member.user.name ?? member.user.email}</h2>
 							<p>{member.user.email}</p>
@@ -76,7 +90,6 @@ export default async function MerchantTeamPage({ params }: TeamPageProps) {
 								{[
 									member.canManageBookings && "Bookings",
 									member.canManageContent && "Content",
-									member.canManageAdmins && "Admins",
 									member.canManageSecurity && "Security",
 								]
 									.filter(Boolean)

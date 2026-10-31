@@ -2,11 +2,13 @@
 
 import { FormEvent, useState } from "react"
 import Link from "next/link"
+import { getSalonAccessProfile, inferSalonAccessProfileLabel, SALON_ACCESS_PROFILES, type SalonSectionPermissions } from "@shared/constants/salonAccessProfiles"
 
 type Invitation = {
 	readonly id: string
 	readonly inviteeEmail: string
 	readonly role: string
+	readonly permissions?: SalonSectionPermissions
 	readonly status: string
 	readonly expiresAt: string
 }
@@ -21,6 +23,8 @@ export function TeamInvitationPanel({
 	initialInvitations,
 }: TeamInvitationPanelProps) {
 	const [invitations, setInvitations] = useState([...initialInvitations])
+	const [profileKey, setProfileKey] = useState("staff")
+	const [permissions, setPermissions] = useState<SalonSectionPermissions>(getSalonAccessProfile("staff").permissions)
 	const [feedback, setFeedback] = useState<{
 		readonly message: string
 		readonly isError: boolean
@@ -41,6 +45,7 @@ export function TeamInvitationPanel({
 		setBusyAction({ type: "invite" })
 		setFeedback(null)
 		const form = new FormData(formElement)
+		const profile = getSalonAccessProfile(profileKey)
 		try {
 			const response = await fetch(
 				`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
@@ -49,7 +54,8 @@ export function TeamInvitationPanel({
 					headers: { "content-type": "application/json" },
 					body: JSON.stringify({
 						email: form.get("email"),
-						role: form.get("role"),
+						role: profile.role,
+						...permissions,
 					}),
 				},
 			)
@@ -63,7 +69,8 @@ export function TeamInvitationPanel({
 				{
 					id: result.invitationId,
 					inviteeEmail: String(form.get("email")),
-					role: String(form.get("role")),
+					role: profile.role,
+					permissions,
 					status: "PENDING",
 					expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
 				},
@@ -120,6 +127,16 @@ export function TeamInvitationPanel({
 		}
 	}
 
+	function updatePermission(key: keyof SalonSectionPermissions, checked: boolean) {
+		const next = { ...permissions, [key]: checked }
+		setPermissions(next)
+		setProfileKey(SALON_ACCESS_PROFILES.find((profile) =>
+			profile.permissions.canManageBookings === next.canManageBookings &&
+			profile.permissions.canManageContent === next.canManageContent &&
+			profile.permissions.canManageSecurity === next.canManageSecurity,
+		)?.key ?? "custom")
+	}
+
 	return (
 		<section className="manage-store-list merchant-team-invitation-panel" aria-label="Team invitations">
 			<div>
@@ -141,12 +158,21 @@ export function TeamInvitationPanel({
 					/>
 				</label>
 				<label>
-					<span>Salon role</span>
-					<select name="role" defaultValue="STAFF">
-						<option value="STAFF">Staff</option>
-						<option value="ADMIN">Admin</option>
+					<span>Access profile</span>
+					<select name="role" value={profileKey} onChange={(event) => {
+						const nextKey = event.currentTarget.value
+						setProfileKey(nextKey)
+						setPermissions(getSalonAccessProfile(nextKey).permissions)
+					}}>
+						{SALON_ACCESS_PROFILES.map((profile) => <option key={profile.key} value={profile.key}>{profile.label}</option>)}
 					</select>
+					<small>{getSalonAccessProfile(profileKey).description}</small>
 				</label>
+				<div className="merchant-team-permissions" aria-label="Delegated Salon Admin sections">
+					<label><input type="checkbox" checked={permissions.canManageBookings} onChange={(event) => updatePermission("canManageBookings", event.currentTarget.checked)} /> Bookings and schedules</label>
+					<label><input type="checkbox" checked={permissions.canManageContent} onChange={(event) => updatePermission("canManageContent", event.currentTarget.checked)} /> Storefront content</label>
+					<label><input type="checkbox" checked={permissions.canManageSecurity} onChange={(event) => updatePermission("canManageSecurity", event.currentTarget.checked)} /> Security and domains</label>
+				</div>
 				<button
 					className="button button--primary"
 					type="submit"
@@ -159,8 +185,7 @@ export function TeamInvitationPanel({
 				<article className="manage-store" key={invitation.id}>
 					<div>
 						<p className="eyebrow">
-							{invitation.status.toLowerCase()} ·{" "}
-							{invitation.role.toLowerCase()}
+							{invitation.status.toLowerCase()} · {inferSalonAccessProfileLabel(invitation.role, invitation.permissions)}
 						</p>
 						<h3>{invitation.inviteeEmail}</h3>
 						<p>Expires {new Date(invitation.expiresAt).toLocaleDateString()}</p>

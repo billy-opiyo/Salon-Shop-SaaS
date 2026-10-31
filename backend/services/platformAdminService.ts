@@ -148,6 +148,7 @@ export async function getPlatformStorefrontDesignForAdmin(
 	if (role === "OWNER") return design
 	return {
 		...design,
+		plans: DEFAULT_PLATFORM_STOREFRONT.plans,
 		billing: DEFAULT_PLATFORM_STOREFRONT.billing,
 	}
 }
@@ -264,7 +265,11 @@ export async function updatePlatformStorefrontDesign(
 	revalidatePath("/", "layout")
 	return role === "OWNER"
 		? design
-		: { ...design, billing: DEFAULT_PLATFORM_STOREFRONT.billing }
+		: {
+			...design,
+			plans: DEFAULT_PLATFORM_STOREFRONT.plans,
+			billing: DEFAULT_PLATFORM_STOREFRONT.billing,
+		}
 }
 
 function platformR2Client(): S3Client {
