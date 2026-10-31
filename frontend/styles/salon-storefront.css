@@ -13292,3 +13292,9 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
 }
+
+@media (max-width: 1199px) {
+	.merchant-workspace-shell.platform-site--with-mobile-actions {
+		padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+	}
+}
