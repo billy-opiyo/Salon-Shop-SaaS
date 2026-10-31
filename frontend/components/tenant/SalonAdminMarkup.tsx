@@ -578,6 +578,8 @@ export function SalonAdminMarkup({
 										type="button"
 										className="admin-action-btn"
 										id="adminBlogsPrevBtn"
+										aria-label="Scroll to earlier blog posts"
+										disabled
 									>
 										<i className="fa-solid fa-arrow-left"></i> Prev
 									</button>
@@ -585,6 +587,8 @@ export function SalonAdminMarkup({
 										type="button"
 										className="admin-action-btn"
 										id="adminBlogsNextBtn"
+										aria-label="Scroll to later blog posts"
+										disabled
 									>
 										Next <i className="fa-solid fa-arrow-right"></i>
 									</button>
