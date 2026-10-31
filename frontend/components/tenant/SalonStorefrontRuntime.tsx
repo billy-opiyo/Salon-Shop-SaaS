@@ -7913,6 +7913,10 @@ export function SalonStorefrontRuntime({
 				))}
 				bookingPaymentContent={bookingPaymentContent}
 				mpesaPaymentAvailable={mpesaPaymentAvailable}
+				mapEmbedUrl={safeMapEmbedUrl(
+					clientConfig.contact?.mapEmbedUrl ?? clientConfig.storefront?.mapEmbedUrl,
+					DEFAULT_STOREFRONT_DESIGN.mapEmbedUrl,
+				)}
 				searchEntries={searchEntries}
 				reviewServiceOptions={services.map((service) => (
 					<option value={service.name} key={service.name}>
