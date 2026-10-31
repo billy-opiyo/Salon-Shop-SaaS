@@ -87,7 +87,7 @@ export default async function MerchantBookingsPage({
 			<section className="admin-bookings-list" aria-label="Bookings">
 				{bookings.length === 0 ? (
 					<div className="manage-empty-state">
-						<p className="manage-empty">No bookings have been received for this salon yet. New customer appointments will appear here.</p>
+						<p className="manage-empty">No bookings have been received for this salon yet. New client appointments will appear here.</p>
 						<Link className="button button--outline button--small" href={`/${tenantSlug}#booking`} target="_blank" rel="noreferrer">Open booking page</Link>
 					</div>
 				) : (

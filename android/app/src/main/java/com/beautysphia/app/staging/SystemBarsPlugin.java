@@ -48,7 +48,9 @@ public class SystemBarsPlugin extends Plugin {
 
         getActivity().runOnUiThread(() -> {
             if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).applyLaunchTheme(background, Color.parseColor(surfaceValue));
+                ((MainActivity) getActivity()).applyLaunchTheme(
+                    background, Color.parseColor(surfaceValue), Color.parseColor(primaryValue)
+                );
             }
             Window window = getActivity().getWindow();
             View decor = window.getDecorView();

@@ -151,9 +151,9 @@ export function AndroidAppUpdatePrompt({
 				<h2 id="android-update-title">Version {update.versionName} is ready</h2>
 				{update.releaseNotes && <p>{update.releaseNotes}</p>}
 				{message && <p role="status">{message}</p>}
-				<button className="android-update-dialog__action" type="button" onClick={downloadStatus === "downloaded" ? openInstaller : downloadUpdate} disabled={busy || (downloadStatus !== null && downloadStatus !== "downloaded")}>
+				<button className="android-update-dialog__action" type="button" onClick={downloadStatus === "downloaded" ? openInstaller : downloadUpdate} disabled={busy || (downloadStatus !== null && downloadStatus !== "downloaded" && downloadStatus !== "failed")}>
 					{busy ? <LoaderCircle size={17} className="animate-spin" /> : <Download size={17} />}
-					{busy ? "Working…" : downloadStatus === "downloaded" ? "Open installer" : downloadStatus === "running" || downloadStatus === "paused" ? "Download in progress" : "Download update"}
+					{busy ? "Working…" : downloadStatus === "downloaded" ? "Install update" : downloadStatus === "running" || downloadStatus === "paused" ? "Download in progress" : downloadStatus === "failed" ? "Retry update" : "Update app"}
 				</button>
 				<p className="android-update-dialog__note">Android will ask you to confirm installation.</p>
 			</section>

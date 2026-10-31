@@ -64,7 +64,7 @@ export default async function MerchantWaitlistPage({
 			<section className="admin-bookings-list" aria-label="Waitlist entries">
 				{entries.length === 0 ? (
 					<div className="manage-empty-state">
-						<p className="manage-empty">No clients are waiting right now. When a booking time is full, customers who join your waitlist will appear here.</p>
+						<p className="manage-empty">No clients are waiting right now. When a booking time is full, clients who join your waitlist will appear here.</p>
 						<Link className="button button--outline button--small" href={`/manage/${encodeURIComponent(tenantSlug)}/bookings`}>Review bookings</Link>
 					</div>
 				) : (

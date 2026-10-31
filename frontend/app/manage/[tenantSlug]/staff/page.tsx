@@ -19,13 +19,13 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 				<div>
 					<p className="eyebrow">Team management</p>
 					<h1>Staff</h1>
-					<p className="auth-card__intro">Manage the stylists available to customers during booking.</p>
+					<p className="auth-card__intro">Manage the stylists available to clients during booking.</p>
 				</div>
 			</header>
 			<section className="manage-store-list" aria-label="Stylists">
 				{stylists.length === 0 ? (
 					<div className="manage-empty-state">
-						<p className="manage-empty">No stylists have been added. Add your team so customers can choose who they would like to book with.</p>
+						<p className="manage-empty">No stylists have been added. Add your team so clients can choose who they would like to book with.</p>
 						<Link className="button button--outline button--small" href="#add-stylist">Add your first stylist</Link>
 					</div>
 				) : stylists.map((stylist) => (

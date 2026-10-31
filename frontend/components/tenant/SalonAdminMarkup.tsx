@@ -143,7 +143,7 @@ export function SalonAdminMarkup({
 							<p><a className="admin-inline-link" href={settingsHref}>Open booking and payment settings</a></p>
 							<p>
 								Customize the public storefront without changing your existing
-								services, gallery, bookings, or customer records. Current values are
+								services, gallery, bookings, or client records. Current values are
 								loaded before you save.
 							</p>
 							<nav className="admin-design-section-nav" aria-label="Salon design sections">
@@ -1534,7 +1534,7 @@ export function SalonAdminMarkup({
 								className="admin-stat-card"
 								data-security-widget="returning-customers"
 							>
-								<div className="label">Returning Customers</div>
+								<div className="label">Returning Clients</div>
 								<strong id="adminSecurityWidgetReturningCustomers">0</strong>
 							</div>
 							<div
