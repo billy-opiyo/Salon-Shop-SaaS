@@ -54,6 +54,7 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 	const currentDirectory = asRecord(current.directory)
 	const currentBranding = asRecord(current.branding)
 	const currentTheme = asRecord(current.theme)
+	const currentSplash = asRecord(current.splash)
 	const currentContact = asRecord(current.contact)
 	const currentBilling = asRecord(current.billing)
 	const currentPlans = asRecord(current.plans)
@@ -70,6 +71,22 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 		heroAlt: (typeof record.heroAlt === "string" ? record.heroAlt : current.heroAlt as string | undefined) ?? DEFAULT_PLATFORM_STOREFRONT.heroAlt,
 		branding: { ...DEFAULT_PLATFORM_STOREFRONT.branding, ...currentBranding },
 		theme: { ...DEFAULT_PLATFORM_STOREFRONT.theme, ...currentTheme },
+		splash: {
+			...DEFAULT_PLATFORM_STOREFRONT.splash,
+			title: typeof currentSplash.title === "string"
+				? currentSplash.title
+				: typeof currentBranding.name === "string"
+					? currentBranding.name
+					: DEFAULT_PLATFORM_STOREFRONT.splash.title,
+			logoUrl: typeof currentSplash.logoUrl === "string"
+				? currentSplash.logoUrl
+				: typeof record.logoUrl === "string"
+					? record.logoUrl
+					: typeof current.logoUrl === "string"
+						? current.logoUrl
+						: DEFAULT_PLATFORM_STOREFRONT.splash.logoUrl,
+			...currentSplash,
+		},
 		homeHero: {
 			...DEFAULT_PLATFORM_STOREFRONT.homeHero,
 			...currentHero,
@@ -157,7 +174,7 @@ export async function updatePlatformStorefrontDesign(
 			: {
 				...current,
 				...Object.fromEntries(
-					["branding", "theme", "homeHero", "about", "directory", "content", "privacyPolicy", "termsPolicy", "cookiePolicy", "logoUrl", "heroDesktopUrl", "heroMobileUrl", "heroAlt"]
+					["branding", "theme", "splash", "homeHero", "about", "directory", "content", "privacyPolicy", "termsPolicy", "cookiePolicy", "logoUrl", "heroDesktopUrl", "heroMobileUrl", "heroAlt"]
 						.filter((key) => key in submitted)
 						.map((key) => [key, submitted[key]]),
 				),
@@ -182,6 +199,7 @@ export async function updatePlatformStorefrontDesign(
 	const storedDesign = {
 		branding: design.branding,
 		theme: design.theme,
+		splash: design.splash,
 		homeHero: design.homeHero,
 		about: design.about,
 		support: design.support,
@@ -249,7 +267,7 @@ export async function uploadPlatformStorefrontImage(
 	file: Buffer,
 	mimeType: string,
 	fileName: string,
-	kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE",
+	kind: "LOGO" | "HERO_DESKTOP" | "HERO_MOBILE" | "SPLASH_LOGO" | "SPLASH_BACKGROUND",
 ): Promise<string> {
 	await assertPlatformAdminPermission(actorUserId, actorEmail, "site-content:write")
 	const validationError = getImageUploadError(file.length, mimeType)

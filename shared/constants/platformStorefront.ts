@@ -23,6 +23,13 @@ export interface PlatformTheme {
 	readonly line: string
 }
 
+export interface PlatformSplashContent {
+	readonly title: string
+	readonly logoUrl: string
+	readonly loadingText: string
+	readonly backgroundImageUrl: string
+}
+
 export interface PlatformHeroContent {
 	readonly eyebrow: string
 	readonly audience: string
@@ -140,6 +147,7 @@ export interface PlatformStorefrontDesign {
 	readonly heroAlt: string
 	readonly branding: PlatformBranding
 	readonly theme: PlatformTheme
+	readonly splash: PlatformSplashContent
 	readonly homeHero: PlatformHeroContent
 	readonly about: PlatformAboutContent
 	readonly support: PlatformSupportContent
@@ -172,6 +180,12 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		foreground: "#fff8e8",
 		muted: "#c8bda8",
 		line: "#5b4728",
+	},
+	splash: {
+		title: "Beauty Sphia",
+		logoUrl: "/platform/Beauty Sphia logo.webp",
+		loadingText: "Preparing Your Salon Experience...",
+		backgroundImageUrl: "/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
 	},
 	homeHero: {
 		eyebrow: "The salon platform for owners and clients",
@@ -395,6 +409,12 @@ export const platformStorefrontDesignSchema = z.object({
 		foreground: color,
 		muted: color,
 		line: color,
+	}),
+	splash: z.object({
+		title: text(100),
+		logoUrl: imageUrl,
+		loadingText: text(120),
+		backgroundImageUrl: imageUrl,
 	}),
 	homeHero: z.object({
 		eyebrow: text(160),

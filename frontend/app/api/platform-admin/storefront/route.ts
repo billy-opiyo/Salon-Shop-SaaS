@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 		const kind = formData.get("kind")
 		if (!(file instanceof File) || file.size === 0)
 			return NextResponse.json({ error: "No image file provided." }, { status: 400 })
-		if (kind !== "LOGO" && kind !== "HERO_DESKTOP" && kind !== "HERO_MOBILE")
+		if (kind !== "LOGO" && kind !== "HERO_DESKTOP" && kind !== "HERO_MOBILE" && kind !== "SPLASH_LOGO" && kind !== "SPLASH_BACKGROUND")
 			return NextResponse.json({ error: "A valid platform image kind is required." }, { status: 400 })
 		const url = await uploadPlatformStorefrontImage(
 			session.user.id,
