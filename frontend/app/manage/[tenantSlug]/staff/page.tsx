@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { listStylistsForUser, MerchantStylistError } from "@backend/services/merchantStylistService"
+import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 import { addStylist, setStylistActive, updateStylist } from "./actions"
 
 interface StaffPageProps { readonly params: Promise<{ tenantSlug: string }> }
@@ -40,13 +41,13 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 							<input type="hidden" name="stylistId" value={stylist.id} />
 							<label>Name<input name="name" defaultValue={stylist.name} required minLength={2} maxLength={160} /></label>
 							<label>Title<input name="title" defaultValue={stylist.title ?? ""} maxLength={160} /></label>
-							<button className="button button--primary button--small" type="submit">Save changes</button>
+							<ManageSubmitButton className="button button--primary button--small" pendingLabel="Saving…">Save changes</ManageSubmitButton>
 						</form>
 						<form action={setStylistActive}>
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
 							<input type="hidden" name="stylistId" value={stylist.id} />
 							<input type="hidden" name="active" value={String(!stylist.active)} />
-							<button className="button button--outline button--small" type="submit">{stylist.active ? "Deactivate" : "Activate"}</button>
+							<ManageSubmitButton className="button button--outline button--small" pendingLabel={stylist.active ? "Deactivating…" : "Activating…"}>{stylist.active ? "Deactivate" : "Activate"}</ManageSubmitButton>
 						</form>
 					</article>
 				))}
@@ -58,7 +59,7 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 				<label>Title<input name="title" maxLength={160} /></label>
 				<label>Email<input name="email" type="email" /></label>
 				<label>Phone<input name="phone" maxLength={32} /></label>
-				<button className="button button--primary" type="submit">Add stylist</button>
+				<ManageSubmitButton pendingLabel="Adding stylist…">Add stylist</ManageSubmitButton>
 			</form>
 		</main>
 	)

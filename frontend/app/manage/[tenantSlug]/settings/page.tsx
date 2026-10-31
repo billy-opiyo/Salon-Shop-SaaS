@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
+import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import {
 	getTenantSettingsForUser,
@@ -186,9 +187,7 @@ export default async function MerchantSettingsPage({
 					/>
 				</label>
 			</fieldset>
-				<button className="button button--primary" type="submit">
-					Save settings
-				</button>
+				<ManageSubmitButton pendingLabel="Saving settings…">Save settings</ManageSubmitButton>
 			</form>
 			</section>
 		</main>
