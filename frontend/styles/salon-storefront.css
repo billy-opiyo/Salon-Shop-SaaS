@@ -13196,6 +13196,20 @@ body.light-mode .salon-storefront-root .saas-tenant-mobile-actions svg {
         min-height: 0;
         padding: 1.1rem;
     }
+
+    .merchant-workspace-shell .admin-store-design-card .admin-store-design-preview-link {
+        align-self: center;
+        justify-self: center;
+        box-sizing: border-box;
+        width: fit-content;
+        min-width: 0;
+        max-width: 100%;
+        padding: .6rem 1rem;
+        text-align: center;
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: normal;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
