@@ -60,7 +60,7 @@ export function PlatformContactForm() {
 			<label><span>Subject <span className="platform-contact__required" aria-hidden="true">*</span></span><input name="subject" required minLength={2} maxLength={160} placeholder="How can we help?" /></label>
 			<label><span>Message <span className="platform-contact__required" aria-hidden="true">*</span></span><textarea name="message" required minLength={2} maxLength={5000} rows={5} placeholder="Tell us about your salon or your question…" /></label>
 			<TurnstileWidget key={turnstileAttempt} onToken={setToken} />
-			{message && <p className={status === "error" ? "form-message--error" : "form-message--success"} role={status === "error" ? "alert" : "status"}>{message}</p>}
+			{message && <p className={`form-message ${status === "error" ? "form-message--error" : "form-message--success"}`} role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"}>{message}</p>}
 			<button className="button button--primary" type="submit" disabled={status === "sending"}>{status === "sending" ? "Sending…" : "Send message"}</button>
 			<p className="turnstile-note">Submissions are protected by a security check and rate limiting.</p>
 		</form>
