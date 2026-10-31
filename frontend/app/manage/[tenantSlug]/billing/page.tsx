@@ -114,7 +114,7 @@ export default async function MerchantBillingPage({
 		<main className="manage-page merchant-billing-page">
 			<header className="manage-header">
 				<div>
-					<p className="eyebrow">Beauty Sphia billing</p>
+					<p className="eyebrow">{design.branding.name} billing</p>
 					<h1>{billing.businessName}</h1>
 					<p className="auth-card__intro">
 						Manage your subscription, setup payment, and billing records.
@@ -183,7 +183,7 @@ export default async function MerchantBillingPage({
 				<section className="manage-card merchant-billing-setup-unavailable" aria-labelledby="setup-unavailable-title">
 					<p className="eyebrow">Salon setup</p>
 					<h2 id="setup-unavailable-title">Setup payment is temporarily unavailable</h2>
-					<p>Your salon details are saved, but the selected plan’s current pricing is unavailable. Contact Beauty Sphia support for help continuing setup.</p>
+					<p>Your salon details are saved, but the selected plan’s current pricing is unavailable. Contact {design.branding.name} support for help continuing setup.</p>
 					<div className="manage-header__actions">
 						<Link className="button button--outline" href={`/manage/${encodeURIComponent(tenantSlug)}`}>Salon admin</Link>
 						<a className="button button--ghost" href={`mailto:${design.contact.supportEmail}?subject=${encodeURIComponent(`Help with ${billing.businessName} setup`)}`}>Contact support</a>
@@ -222,7 +222,7 @@ export default async function MerchantBillingPage({
 					<p className="eyebrow">Monthly subscription</p>
 					<h2 id="renewal-payment-title">Your monthly payment is due</h2>
 					<p>
-						Approve the M-Pesa STK Push to keep or restore your Beauty Sphia
+						Approve the M-Pesa STK Push to keep or restore your {design.branding.name}
 						salon.
 					</p>
 					<p>{design.billing.paymentInstructions}</p>
@@ -309,8 +309,8 @@ export default async function MerchantBillingPage({
 				{subscriptionCancelled || cancellationScheduled ? (
 					<p className="merchant-billing-owner-note">
 						{subscriptionCancelled
-							? "This subscription has ended. Contact Beauty Sphia support if you need help restoring the salon."
-							: "Cancellation is already scheduled. Contact Beauty Sphia support if you need to change that schedule."}{" "}
+							? `This subscription has ended. Contact ${design.branding.name} support if you need help restoring the salon.`
+							: `Cancellation is already scheduled. Contact ${design.branding.name} support if you need to change that schedule.`}{" "}
 						<a href={`mailto:${design.contact.supportEmail}?subject=${encodeURIComponent(`Subscription help for ${billing.businessName}`)}`}>
 							Contact support
 						</a>
