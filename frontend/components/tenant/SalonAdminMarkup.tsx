@@ -46,14 +46,11 @@ export function SalonAdminMarkup({
 				<div className="admin-bookings-header">
 					<div className="admin-console-heading">
 						<div className="section-subtitle">Admin Console</div>
-						<h1 className="section-title">
-							Content, Bookings & Security Management
-						</h1>
+						<h1 className="section-title">Salon admin workspace</h1>
 					</div>
 					<p className="section-desc">
-						Log in with your admin account to manage Bookings, Schedules,
-						Gallery, Blogs, Reviews, Messages, Waitlist, Services and Security
-						Alerts from one categorized control panel.
+						Manage salon operations, storefront content, and settings. Available
+						sections are tailored to your role.
 					</p>
 					<br />
 					<p style={{marginTop: "12px"}}>
