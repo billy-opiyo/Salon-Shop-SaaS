@@ -3,8 +3,8 @@ import Link from "next/link"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { listStylistsForUser, MerchantStylistError } from "@backend/services/merchantStylistService"
-import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
 import { addStylist, setStylistActive, updateStylist } from "./actions"
+import { StylistMutationForm } from "./StylistMutationForm"
 
 interface StaffPageProps { readonly params: Promise<{ tenantSlug: string }> }
 
@@ -36,31 +36,30 @@ export default async function MerchantStaffPage({ params }: StaffPageProps) {
 							<h2>{stylist.name}</h2>
 							<p>{stylist.title ?? "Stylist"}{stylist.email ? ` · ${stylist.email}` : ""}{stylist.phone ? ` · ${stylist.phone}` : ""}</p>
 						</div>
-						<form className="onboarding-form staff-stylist-edit" action={updateStylist}>
+						<StylistMutationForm className="onboarding-form staff-stylist-edit" action={updateStylist} buttonLabel="Save changes" pendingLabel="Saving…" buttonClassName="button button--primary button--small">
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
 							<input type="hidden" name="stylistId" value={stylist.id} />
 							<label>Name<input name="name" defaultValue={stylist.name} required minLength={2} maxLength={160} /></label>
 							<label>Title<input name="title" defaultValue={stylist.title ?? ""} maxLength={160} /></label>
-							<ManageSubmitButton className="button button--primary button--small" pendingLabel="Saving…">Save changes</ManageSubmitButton>
-						</form>
-						<form action={setStylistActive}>
+							<label>Email<input name="email" type="email" defaultValue={stylist.email ?? ""} maxLength={320} autoComplete="email" /></label>
+							<label>Phone<input name="phone" type="tel" defaultValue={stylist.phone ?? ""} maxLength={32} autoComplete="tel" /></label>
+						</StylistMutationForm>
+						<StylistMutationForm action={setStylistActive} buttonLabel={stylist.active ? "Deactivate" : "Activate"} pendingLabel={stylist.active ? "Deactivating…" : "Activating…"} buttonClassName="button button--outline button--small">
 							<input type="hidden" name="tenantSlug" value={tenantSlug} />
 							<input type="hidden" name="stylistId" value={stylist.id} />
 							<input type="hidden" name="active" value={String(!stylist.active)} />
-							<ManageSubmitButton className="button button--outline button--small" pendingLabel={stylist.active ? "Deactivating…" : "Activating…"}>{stylist.active ? "Deactivate" : "Activate"}</ManageSubmitButton>
-						</form>
+						</StylistMutationForm>
 					</article>
 				))}
 			</section>
-			<form id="add-stylist" className="onboarding-form" action={addStylist} aria-label="Add stylist">
+			<StylistMutationForm id="add-stylist" className="onboarding-form" action={addStylist} buttonLabel="Add stylist" pendingLabel="Adding stylist…" ariaLabel="Add stylist">
 				<h2>Add stylist</h2>
 				<input type="hidden" name="tenantSlug" value={tenantSlug} />
 				<label>Name<input name="name" required minLength={2} maxLength={160} /></label>
 				<label>Title<input name="title" maxLength={160} /></label>
 				<label>Email<input name="email" type="email" /></label>
 				<label>Phone<input name="phone" maxLength={32} /></label>
-				<ManageSubmitButton pendingLabel="Adding stylist…">Add stylist</ManageSubmitButton>
-			</form>
+			</StylistMutationForm>
 		</main>
 	)
 }
