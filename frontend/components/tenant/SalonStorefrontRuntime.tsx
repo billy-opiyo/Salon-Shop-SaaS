@@ -2900,6 +2900,17 @@ export function bindAdminSnapshotAdapter(
 			return
 		}
 		button.disabled = true
+		button.setAttribute("aria-busy", "true")
+		const originalLabel = button.textContent ?? ""
+		const pendingLabel =
+			action.endsWith("-delete")
+				? "Deleting…"
+				: action === "team-member-remove"
+					? "Removing…"
+					: action.startsWith("security-")
+						? "Processing…"
+						: "Updating…"
+		button.textContent = pendingLabel
 		const payload: Record<string, unknown> = { action, id }
 		if (button.dataset.status) payload.status = button.dataset.status
 		if (button.dataset.featured)
@@ -2921,6 +2932,8 @@ export function bindAdminSnapshotAdapter(
 			})
 			.catch((error: unknown) => {
 				button.disabled = false
+				button.removeAttribute("aria-busy")
+				button.textContent = originalLabel
 				const message = document.getElementById("adminActionMessage")
 				if (message) {
 					message.textContent =
