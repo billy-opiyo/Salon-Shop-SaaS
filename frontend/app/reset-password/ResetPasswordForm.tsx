@@ -137,6 +137,11 @@ export function ResetPasswordForm({
         </p>
       )}
       <p className="auth-form__switch">
+        {mode === "reset" && message && (
+          <>
+            <Link href={resetRequestHref}>Request a fresh reset link</Link> ·{" "}
+          </>
+        )}
         <Link href={loginHref}>Back to sign in</Link>
       </p>
     </form>
