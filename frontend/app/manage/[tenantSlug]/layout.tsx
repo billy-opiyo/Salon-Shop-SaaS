@@ -90,13 +90,11 @@ async function TenantAdminLayoutContent({
 			<header className="admin-bookings-header merchant-admin-console-banner">
 				<div className="admin-console-heading">
 					<div className="section-subtitle">Admin Console</div>
-					<h1 className="section-title">
-						Content, Bookings &amp; Security Management
-					</h1>
+					<h1 className="section-title">Salon admin workspace</h1>
 				</div>
 				<p className="section-desc">
-					Manage Bookings, Schedules, Gallery, Blogs, Reviews, Messages, Waitlist,
-					Services, and Security from one categorized control panel.
+					Manage salon operations, storefront content, and settings. Available
+					sections are tailored to your role.
 				</p>
 				<p className="merchant-admin-console-home">
 					<Link
