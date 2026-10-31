@@ -5563,14 +5563,33 @@ h6 {
 
 .admin-record-details-permissions {
     display: grid;
-    gap: .55rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: .65rem;
 }
 
 .admin-record-details-permissions > label {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    width: 100%;
     gap: .55rem;
+    min-width: 0;
+    padding: .7rem .8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
     color: var(--text-primary);
+}
+
+.admin-record-details-permissions > label input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.admin-record-details-permissions > label span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .admin-record-details-content > .btn {
@@ -13341,6 +13360,37 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     color: var(--text-secondary);
     font-size: .84rem;
     font-weight: 650;
+}
+
+.merchant-workspace-panel .merchant-team-invitation-form > label small {
+    color: var(--text-secondary);
+    font-size: .76rem;
+    line-height: 1.4;
+}
+
+.merchant-workspace-panel .merchant-team-permissions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: .55rem;
+}
+
+.merchant-workspace-panel .merchant-team-permissions > label {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-width: 0;
+    padding: .7rem .8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: .85rem;
+}
+
+.merchant-workspace-panel .merchant-team-permissions input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: auto;
 }
 
 .merchant-workspace-panel .merchant-team-invitation-form input,

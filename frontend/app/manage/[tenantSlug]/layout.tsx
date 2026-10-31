@@ -74,7 +74,7 @@ async function TenantAdminLayoutContent({
 				isOwner,
 				canManageBookings: isOwner || membership.canManageBookings,
 				canManageContent: isOwner || membership.canManageContent,
-				canManageAdmins: isOwner || membership.canManageAdmins,
+				canManageAdmins: isOwner,
 				canManageSecurity: isOwner || membership.canManageSecurity,
 			}
 		: null

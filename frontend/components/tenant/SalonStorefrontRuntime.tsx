@@ -36,6 +36,10 @@ import {
 	IMAGE_TOO_LARGE_MESSAGE,
 } from "@shared/validation/media"
 import { getHairGalleryFieldRules } from "@shared/validation/galleryRules"
+import {
+	getSalonAccessProfile,
+	SALON_ACCESS_PROFILES,
+} from "@shared/constants/salonAccessProfiles"
 
 export interface SalonClientConfig {
 	readonly client?: { readonly name?: string }
@@ -201,6 +205,11 @@ function renderAdminSnapshotList(
 			.map(formatAdminSnapshotValue)
 			.join(" ")
 			.toLowerCase()
+		row.dataset.role = record.role === "OWNER"
+			? "owner"
+			: record.role === "STAFF"
+				? "staff"
+				: "delegated"
 		row.dataset.provider = String(record.provider ?? "").toLowerCase()
 		const userAgent = String(record.userAgent ?? "").toLowerCase()
 		row.dataset.device = /ipad|tablet|kindle|silk|android(?!.*mobile)/.test(userAgent)
@@ -1481,8 +1490,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 	})
 	bind("adminAdminsForm", async (form) => {
 		const email = formField(form, "adminManageEmail")
-		const role =
-			formField(form, "adminManageRole") === "super_admin" ? "ADMIN" : "STAFF"
+		const selectedProfile = getSalonAccessProfile(formField(form, "adminManageRole"))
 		const response = await fetch(
 			`/api/manage/${encodeURIComponent(tenantSlug)}/invitations`,
 			{
@@ -1491,15 +1499,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({
 					email,
-					role,
-					canManageAdmins:
-						document.getElementById("adminPermManageAdmins") instanceof
-							HTMLInputElement &&
-						(
-							document.getElementById(
-								"adminPermManageAdmins",
-							) as HTMLInputElement
-						).checked,
+					role: selectedProfile.role,
 					canManageBookings:
 						document.getElementById("adminPermManageBookings") instanceof
 							HTMLInputElement &&
@@ -1507,7 +1507,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 							document.getElementById(
 								"adminPermManageBookings",
 							) as HTMLInputElement
-						).checked,
+						).checked || selectedProfile.permissions.canManageBookings,
 					canManageContent:
 						document.getElementById("adminPermManageContent") instanceof
 							HTMLInputElement &&
@@ -1515,7 +1515,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 							document.getElementById(
 								"adminPermManageContent",
 							) as HTMLInputElement
-						).checked,
+						).checked || selectedProfile.permissions.canManageContent,
 					canManageSecurity:
 						document.getElementById("adminPermManageSecurity") instanceof
 							HTMLInputElement &&
@@ -1523,7 +1523,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 							document.getElementById(
 								"adminPermManageSecurity",
 							) as HTMLInputElement
-						).checked,
+						).checked || selectedProfile.permissions.canManageSecurity,
 				}),
 			},
 		)
@@ -1572,7 +1572,7 @@ function bindLegacyContentForms(tenantSlug: string): () => void {
 						? "Add New Gallery Style"
 						: formId === "adminBlogsForm"
 							? "Add New Blog"
-							: "Create Admin Access"
+							: "Invite Team Member"
 			button.style.display = "none"
 		}
 		button.addEventListener("click", handler)
@@ -1805,9 +1805,7 @@ function bindAdminSnapshotFilters(): () => void {
 			.forEach((row) => {
 				row.hidden = Boolean(
 					(teamSearch && !row.dataset.searchText?.includes(teamSearch)) ||
-					(teamRole &&
-						teamRole !== "all" &&
-						!row.dataset.searchText?.includes(teamRole)) ||
+					(teamRole && teamRole !== "all" && row.dataset.role !== teamRole) ||
 					(teamStatus &&
 						teamStatus !== "all" &&
 						row.dataset.status !== teamStatus),
@@ -2449,6 +2447,34 @@ export function bindAdminSnapshotAdapter(
 	let confirmedActionButton: HTMLButtonElement | null = null
 	let refreshAdminSnapshot: () => Promise<void> = async () => {}
 	const removeTabHandlers: Array<() => void> = []
+	const accessProfileSelect = document.getElementById("adminManageRole")
+	const permissionIds = ["adminPermManageBookings", "adminPermManageContent", "adminPermManageSecurity"] as const
+	const permissionKeys = ["canManageBookings", "canManageContent", "canManageSecurity"] as const
+	if (accessProfileSelect instanceof HTMLSelectElement) {
+		const permissionInputs = permissionIds.map((id) => document.getElementById(id))
+		const applyProfile = () => {
+			const profile = getSalonAccessProfile(accessProfileSelect.value)
+			permissionInputs.forEach((input, index) => {
+				if (input instanceof HTMLInputElement)
+					input.checked = profile.permissions[permissionKeys[index]]
+			})
+		}
+		const updateProfileFromPermissions = () => {
+			const selected = SALON_ACCESS_PROFILES.find((profile) =>
+				permissionInputs.every((input, index) =>
+					input instanceof HTMLInputElement &&
+					input.checked === profile.permissions[permissionKeys[index]],
+				),
+			)
+			accessProfileSelect.value = selected?.key ?? "custom"
+		}
+		accessProfileSelect.addEventListener("change", applyProfile)
+		permissionInputs.forEach((input) => input?.addEventListener("change", updateProfileFromPermissions))
+		removeTabHandlers.push(() => {
+			accessProfileSelect.removeEventListener("change", applyProfile)
+			permissionInputs.forEach((input) => input?.removeEventListener("change", updateProfileFromPermissions))
+		})
+	}
 	const blogList = document.getElementById("adminBlogsList")
 	const blogPreviousButton = document.getElementById("adminBlogsPrevBtn")
 	const blogNextButton = document.getElementById("adminBlogsNextBtn")
@@ -3219,24 +3245,26 @@ export function bindAdminSnapshotAdapter(
 				}
 				recordDetailsPanel.append(reply, save)
 			}
-			if (typeof record.userId === "string") {
+			if (
+				typeof record.userId === "string" &&
+				(record.role === "ADMIN" || record.role === "STAFF")
+			) {
 				const permissions = [
-					"canManageBookings",
-					"canManageContent",
-					"canManageSecurity",
+					["canManageBookings", "Bookings and schedules"],
+					["canManageContent", "Storefront content"],
+					["canManageSecurity", "Security and domains"],
 				]
 				const permissionWrap = document.createElement("div")
 				permissionWrap.className = "admin-record-details-permissions"
-				permissions.forEach((permission) => {
+				permissions.forEach(([permission, permissionLabel]) => {
 					const label = document.createElement("label")
 					const input = document.createElement("input")
 					input.type = "checkbox"
 					input.checked = record[permission] === true
 					input.dataset.permission = permission
-					label.append(
-						input,
-						document.createTextNode(` ${permission.replace("canManage", "")}`),
-					)
+					const text = document.createElement("span")
+					text.textContent = permissionLabel
+					label.append(input, text)
 					permissionWrap.append(label)
 				})
 				const savePermissions = document.createElement("button")
@@ -3880,11 +3908,10 @@ export function bindAdminSnapshotAdapter(
 				).length,
 				adminAdminsSuperCount: team.filter(
 					(item) =>
-						(item as AdminSnapshotRecord).role === "OWNER" ||
-						(item as AdminSnapshotRecord).role === "ADMIN",
+				(item as AdminSnapshotRecord).role === "OWNER",
 				).length,
 				adminAdminsStandardCount: team.filter(
-					(item) => (item as AdminSnapshotRecord).role === "STAFF",
+					(item) => (item as AdminSnapshotRecord).role === "ADMIN",
 				).length,
 				adminSecurityTotalCount: Number(
 					securityStats.totalLogins ?? securityLogins.length,
@@ -4152,12 +4179,10 @@ export function bindAdminSnapshotAdapter(
 							(item) => recordValue(item).status === "ACTIVE",
 						).length,
 						adminAdminsSuperCount: latestTeam.filter(
-							(item) =>
-								recordValue(item).role === "OWNER" ||
-								recordValue(item).role === "ADMIN",
+								(item) => recordValue(item).role === "OWNER",
 						).length,
 						adminAdminsStandardCount: latestTeam.filter(
-							(item) => recordValue(item).role === "STAFF",
+							(item) => recordValue(item).role === "ADMIN",
 						).length,
 						adminSecurityTotalCount: Number(
 							latestStats.totalLogins ?? latestLogins.length,

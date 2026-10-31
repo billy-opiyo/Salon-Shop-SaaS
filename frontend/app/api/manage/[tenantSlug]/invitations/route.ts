@@ -87,17 +87,15 @@ export async function POST(
 				{ error: "Invitee email is required" },
 				{ status: 400 },
 			)
-		const role =
-			body.role === "OWNER" || body.role === "ADMIN" || body.role === "STAFF"
-				? body.role
-				: "STAFF"
+		if (body.role !== "ADMIN" && body.role !== "STAFF")
+			return NextResponse.json({ error: "Choose a valid delegated salon role." }, { status: 400 })
+		const role = body.role
 		const result = await inviteTeamMember(
 			session.user.id,
 			tenantId,
 			body.email,
 			role as MembershipRole,
 			{
-				canManageAdmins: body.canManageAdmins === true,
 				canManageBookings: body.canManageBookings === true,
 				canManageContent: body.canManageContent === true,
 				canManageSecurity: body.canManageSecurity === true,
@@ -109,7 +107,10 @@ export async function POST(
 			error instanceof TeamInvitationError ||
 			(error instanceof Error && error.name === "AuthorizationError")
 		) {
-			return NextResponse.json({ error: error.message }, { status: 400 })
+			const status = error instanceof TeamInvitationError
+				? error.status
+				: 403
+			return NextResponse.json({ error: error.message }, { status })
 		}
 		return NextResponse.json(
 			{ error: "Invitation action failed." },

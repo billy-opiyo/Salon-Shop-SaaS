@@ -3,7 +3,6 @@ import "server-only"
 import { prisma } from "@backend/db/prisma"
 import {
 	assertTenantMembership,
-	assertTenantPermission,
 	type TenantMembershipContext,
 } from "@backend/services/authorization"
 import { listBookingsForUser } from "@backend/services/merchantBookingService"
@@ -20,14 +19,13 @@ import { listTeamForUser } from "@backend/services/merchantTeamService"
 type TenantAdminMembership = Pick<
 	TenantMembershipContext,
 	| "role"
-	| "canManageAdmins"
 	| "canManageBookings"
 	| "canManageContent"
 	| "canManageSecurity"
 >
 
 function hasTenantAdminPermission(membership: TenantAdminMembership): boolean {
-	return membership.role === "OWNER" || membership.canManageAdmins ||
+	return membership.role === "OWNER" ||
 		membership.canManageBookings || membership.canManageContent ||
 		membership.canManageSecurity
 }
@@ -43,7 +41,6 @@ export async function hasMerchantAdminPanelAccess(
 			select: {
 				role: true,
 				status: true,
-				canManageAdmins: true,
 				canManageBookings: true,
 				canManageContent: true,
 				canManageSecurity: true,
@@ -71,7 +68,6 @@ export async function hasMerchantAdminPanelAccessForSlug(
 			},
 			select: {
 				role: true,
-				canManageAdmins: true,
 				canManageBookings: true,
 				canManageContent: true,
 				canManageSecurity: true,
@@ -223,7 +219,7 @@ export async function getMerchantAdminSnapshot(
 			}),
 		)
 	}
-	if (membership.canManageAdmins || membership.role === "OWNER") {
+	if (membership.role === "OWNER") {
 		tasks.push(
 			listTeamForUser(userId, tenantSlug).then((value) => {
 				result.team = value

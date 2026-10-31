@@ -62,13 +62,13 @@ export default async function TenantAdminPage({
 		isOwner,
 		canManageBookings,
 		canManageContent,
-		canManageAdmins: isOwner || membership.canManageAdmins,
+		canManageAdmins: isOwner,
 		canManageSecurity: isOwner || membership.canManageSecurity,
 	}
 	const allowedSections = sectionOrder.filter((section) => {
 		if (section === "bookings" || section === "waitlist" || section === "schedule")
 			return canManageBookings
-		if (section === "admins") return isOwner || membership.canManageAdmins
+		if (section === "admins") return isOwner
 		if (section === "security") return isOwner || membership.canManageSecurity
 		return canManageContent
 	})
