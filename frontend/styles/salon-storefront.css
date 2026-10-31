@@ -12741,6 +12741,48 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     width: 100%;
 }
 
+.merchant-workspace-panel .manage-store .service-edit-details {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.merchant-workspace-panel .service-edit-details > summary {
+    width: fit-content;
+    cursor: pointer;
+    color: var(--primary-light, var(--primary));
+    font-weight: 700;
+}
+
+.merchant-workspace-panel .service-edit-details > summary:focus-visible {
+    border-radius: .25rem;
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+
+.merchant-workspace-panel .service-edit-details > .onboarding-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.merchant-workspace-panel .service-edit-details > .onboarding-form > label:has(textarea),
+.merchant-workspace-panel .service-edit-details > .onboarding-form > label:has(input[type="checkbox"]),
+.merchant-workspace-panel .service-edit-details > .onboarding-form > button {
+    grid-column: 1 / -1;
+}
+
+.merchant-workspace-panel .service-edit-details > .onboarding-form > label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+.merchant-workspace-panel .service-edit-details input[type="checkbox"] {
+    width: 1.1rem;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    accent-color: var(--primary);
+}
+
 .merchant-workspace-panel .service-price-form > label {
 	display: grid;
 	gap: .4rem;
@@ -12767,6 +12809,16 @@ body.light-mode .salon-storefront-root .auth-modal .auth-links button {
     .merchant-workspace-panel .manage-store .service-price-form {
 		grid-template-columns: minmax(0, 1fr);
 	}
+
+    .merchant-workspace-panel .service-edit-details > .onboarding-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .merchant-workspace-panel .service-edit-details > .onboarding-form > label:has(textarea),
+    .merchant-workspace-panel .service-edit-details > .onboarding-form > label:has(input[type="checkbox"]),
+    .merchant-workspace-panel .service-edit-details > .onboarding-form > button {
+        grid-column: auto;
+    }
 
     .merchant-workspace-panel .manage-store:has(.manage-store__media) > div:nth-child(2),
     .merchant-workspace-panel .manage-store:has(.manage-store__media) .manage-store__actions {
