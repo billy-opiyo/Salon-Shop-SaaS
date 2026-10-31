@@ -28,6 +28,15 @@ const invalidResult: ServiceMutationResult = {
 	message: "Check the details and try again.",
 }
 
+function readKesMinor(value: FormDataEntryValue | null): number | undefined {
+	if (value === null || value === "") return undefined
+	if (typeof value !== "string") return Number.NaN
+	const amount = value.trim()
+	if (!/^\d+(?:\.\d{1,2})?$/.test(amount)) return Number.NaN
+	const [whole, fraction = ""] = amount.split(".")
+	return Number(whole) * 100 + Number(fraction.padEnd(2, "0"))
+}
+
 export async function updateCategoryVisibility(
 	_previousState: ServiceMutationResult,
 	formData: FormData,
@@ -67,7 +76,7 @@ function readServiceInput(formData: FormData) {
 		slug: formData.get("slug"),
 		description: formData.get("description"),
 		priceLabel: formData.get("priceLabel"),
-		priceMinor: formData.get("priceMinor") || undefined,
+		priceMinor: readKesMinor(formData.get("priceMinor")),
 		durationLabel: formData.get("durationLabel"),
 		orderOnly: formData.get("orderOnly") === "true",
 	})
@@ -135,7 +144,7 @@ export async function updateServicePaymentPrice(_previousState: ServiceMutationR
 	const parsed = servicePriceUpdateSchema.safeParse({
 		tenantSlug: formData.get("tenantSlug"),
 		serviceId: formData.get("serviceId"),
-		priceMinor: formData.get("priceMinor"),
+		priceMinor: readKesMinor(formData.get("priceMinor")),
 	})
 	if (!parsed.success) return invalidResult
 	try {

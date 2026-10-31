@@ -117,13 +117,14 @@ export default async function MerchantServicesPage({
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="serviceId" value={service.id} />
 									<label>
-										Online payment price (KES cents)
+										Online payment price (KES)
 										<input
 											name="priceMinor"
 											type="number"
 											min="0"
-											step="1"
-											defaultValue={service.priceMinor ?? ""}
+											max="100000"
+											step="0.01"
+											defaultValue={service.priceMinor === null || service.priceMinor === undefined ? "" : (service.priceMinor / 100).toFixed(2)}
 											required
 										/>
 									</label>
@@ -160,9 +161,9 @@ export default async function MerchantServicesPage({
 						<input name="priceLabel" required maxLength={120} />
 					</label>
 					<label>
-						Online payment price (KES cents)
-						<input name="priceMinor" type="number" min="0" step="1" />
-						<small>Required before Full or Partial M-Pesa payment can be offered.</small>
+						Online payment price (KES)
+						<input name="priceMinor" type="number" min="0" max="100000" step="0.01" />
+						<small>Set a price to enable online payment for this service.</small>
 					</label>
 					<label>
 						Duration label
