@@ -100,7 +100,12 @@ export default async function MerchantServicesPage({
 									{service.orderOnly ? " · WhatsApp order only" : ""}
 								</p>
 							</div>
-							<ServiceMutationForm action={deleteService} buttonLabel="Delete" pendingLabel="Deleting…">
+							<ServiceMutationForm
+								action={deleteService}
+								buttonLabel="Delete"
+								pendingLabel="Deleting…"
+								confirmMessage={`Delete ${service.name}? This cannot be undone.`}
+							>
 								<input type="hidden" name="tenantSlug" value={tenantSlug} />
 								<input type="hidden" name="serviceId" value={service.id} />
 							</ServiceMutationForm>

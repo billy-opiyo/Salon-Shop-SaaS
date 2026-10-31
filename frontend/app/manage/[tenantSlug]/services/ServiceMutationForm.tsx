@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, type ReactNode } from "react"
+import { useActionState, type FormEvent, type ReactNode } from "react"
 
 import type { ServiceMutationResult } from "./actions"
 import { ServiceSubmitButton } from "./ServiceSubmitButton"
@@ -18,16 +18,21 @@ export function ServiceMutationForm({
 	className,
 	buttonLabel,
 	pendingLabel,
+	confirmMessage,
 }: {
 	readonly action: ServiceMutationAction
 	readonly children: ReactNode
 	readonly className?: string
 	readonly buttonLabel: string
 	readonly pendingLabel: string
+	readonly confirmMessage?: string
 }) {
 	const [state, formAction] = useActionState(action, initialState)
+	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+		if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault()
+	}
 	return (
-		<form className={className} action={formAction}>
+		<form className={className} action={formAction} onSubmit={handleSubmit}>
 			{children}
 			<ServiceSubmitButton
 				className={className === "onboarding-form" ? "button button--primary" : undefined}
