@@ -32,9 +32,8 @@ function readKesMinor(value: FormDataEntryValue | null): number | undefined {
 	if (value === null || value === "") return undefined
 	if (typeof value !== "string") return Number.NaN
 	const amount = value.trim()
-	if (!/^\d+(?:\.\d{1,2})?$/.test(amount)) return Number.NaN
-	const [whole, fraction = ""] = amount.split(".")
-	return Number(whole) * 100 + Number(fraction.padEnd(2, "0"))
+	if (!/^\d+$/.test(amount)) return Number.NaN
+	return Number(amount) * 100
 }
 
 export async function updateCategoryVisibility(

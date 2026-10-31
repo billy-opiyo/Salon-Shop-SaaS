@@ -62,7 +62,7 @@ export function ServiceEditForm({
 			</label>
 			<label>
 				Online payment price (KES)
-				<input name="priceMinor" type="number" min="0" max="100000" step="0.01" defaultValue={service.priceMinor === null ? "" : (service.priceMinor / 100).toFixed(2)} />
+				<input name="priceMinor" type="number" min="0" max="100000" step="1" defaultValue={service.priceMinor === null || service.priceMinor === undefined ? "" : Math.round(service.priceMinor / 100)} />
 				<small>Leave blank if online payment is not offered.</small>
 			</label>
 			<label>

@@ -94,7 +94,7 @@ export default async function MerchantServicesPage({
 								<p>
 									{service.priceLabel} · {service.durationLabel}
 									{service.priceMinor !== null && service.priceMinor !== undefined
-										? ` · KES ${(service.priceMinor / 100).toLocaleString("en-KE")}`
+										? ` · KES ${Math.round(service.priceMinor / 100).toLocaleString("en-KE")}`
 										: " · Online price not configured"}
 									{service.orderOnly ? " · WhatsApp order only" : ""}
 								</p>
@@ -123,8 +123,8 @@ export default async function MerchantServicesPage({
 											type="number"
 											min="0"
 											max="100000"
-											step="0.01"
-											defaultValue={service.priceMinor === null || service.priceMinor === undefined ? "" : (service.priceMinor / 100).toFixed(2)}
+											step="1"
+											defaultValue={service.priceMinor === null || service.priceMinor === undefined ? "" : Math.round(service.priceMinor / 100)}
 											required
 										/>
 									</label>
@@ -162,7 +162,7 @@ export default async function MerchantServicesPage({
 					</label>
 					<label>
 						Online payment price (KES)
-						<input name="priceMinor" type="number" min="0" max="100000" step="0.01" />
+						<input name="priceMinor" type="number" min="0" max="100000" step="1" />
 						<small>Set a price to enable online payment for this service.</small>
 					</label>
 					<label>
