@@ -42,7 +42,7 @@ export default async function MerchantMessagesPage({
 					<p className="eyebrow">Storefront management</p>
 					<h1>Messages</h1>
 					<p className="auth-card__intro">
-						Review customer questions and keep the contact inbox moving toward
+						Review client questions and keep the contact inbox moving toward
 						resolution.
 					</p>
 				</div>

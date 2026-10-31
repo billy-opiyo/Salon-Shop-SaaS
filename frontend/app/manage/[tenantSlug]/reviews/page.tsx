@@ -34,7 +34,7 @@ export default async function MerchantReviewsPage({
 					<p className="eyebrow">Storefront management</p>
 					<h1>Reviews</h1>
 					<p className="auth-card__intro">
-						Moderate customer feedback before it appears on the public salon
+						Moderate client feedback before it appears on the public salon
 						storefront.
 					</p>
 				</div>

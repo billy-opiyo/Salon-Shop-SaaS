@@ -39,6 +39,7 @@ public class MainActivity extends BridgeActivity {
     private boolean swipeRefreshRejected;
     private boolean swipeRefreshTracking;
     private boolean swipeRefreshRunning;
+    private boolean webViewLongClickableBeforeSwipe;
     private PullRefreshIndicator pullRefreshIndicator;
     private long launchStartedAtMs;
     private boolean launchPageLoaded;
@@ -57,7 +58,8 @@ public class MainActivity extends BridgeActivity {
         int surface = parseThemeColor(theme.getString("surface", null), Color.rgb(37, 27, 16));
         getWindow().getDecorView().setBackgroundColor(background);
         showNativeLaunchOverlay();
-        applyLaunchTheme(background, surface);
+        int primary = parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79));
+        applyLaunchTheme(background, surface, primary);
     }
 
     @Override
@@ -256,7 +258,7 @@ public class MainActivity extends BridgeActivity {
         launchLogo = logo;
     }
 
-    public void applyLaunchTheme(int backgroundColor, int surfaceColor) {
+    public void applyLaunchTheme(int backgroundColor, int surfaceColor, int primaryColor) {
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
         if (nativeLaunchOverlay != null) {
             GradientDrawable launchBackground = new GradientDrawable();
@@ -264,6 +266,7 @@ public class MainActivity extends BridgeActivity {
             nativeLaunchOverlay.setBackground(launchBackground);
         }
         if (launchLogo != null) launchLogo.setBackground(createLaunchLogoShape(backgroundColor));
+        if (pullRefreshIndicator != null) pullRefreshIndicator.setAccentColor(primaryColor);
     }
 
     private GradientDrawable createLaunchLogoShape(int surfaceColor) {
@@ -282,7 +285,7 @@ public class MainActivity extends BridgeActivity {
             int accent = parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79));
             pullRefreshIndicator = new PullRefreshIndicator(accent);
             FrameLayout.LayoutParams indicatorLayout = new FrameLayout.LayoutParams(
-                dp(44), dp(44), Gravity.TOP | Gravity.CENTER_HORIZONTAL
+                dp(64), dp(56), Gravity.TOP | Gravity.CENTER_HORIZONTAL
             );
             indicatorLayout.topMargin = dp(2);
             content.addView(pullRefreshIndicator, indicatorLayout);
@@ -296,13 +299,22 @@ public class MainActivity extends BridgeActivity {
                     swipeStartedAtTop = !webView.canScrollVertically(-1);
                     swipeRefreshRejected = false;
                     swipeRefreshTracking = false;
+                    webViewLongClickableBeforeSwipe = webView.isLongClickable();
+                    if (swipeStartedAtTop) {
+                        webView.setLongClickable(false);
+                        webView.cancelLongPress();
+                        setPullSelectionSuppressed(webView, true);
+                    }
                     break;
                 case MotionEvent.ACTION_MOVE:
                     float horizontal = Math.abs(event.getX() - swipeStartX);
                     float vertical = event.getY() - swipeStartY;
+                    if (swipeStartedAtTop && vertical > 0f) webView.cancelLongPress();
                     if (swipeStartedAtTop && !swipeRefreshRejected && !swipeRefreshRunning) {
                         if (horizontal > touchSlop && horizontal > Math.abs(vertical)) {
                             swipeRefreshRejected = true;
+                            setPullSelectionSuppressed(webView, false);
+                            webView.setLongClickable(webViewLongClickableBeforeSwipe);
                             break;
                         }
                         if (vertical > touchSlop && vertical > horizontal && !webView.canScrollVertically(-1)) {
@@ -319,13 +331,12 @@ public class MainActivity extends BridgeActivity {
                     break;
                 case MotionEvent.ACTION_POINTER_DOWN:
                 case MotionEvent.ACTION_CANCEL:
-                    if (swipeRefreshTracking) {
-                        setPullSelectionSuppressed(webView, false);
-                        hideSwipeRefreshIndicator();
-                    }
+                    setPullSelectionSuppressed(webView, false);
+                    if (swipeRefreshTracking) hideSwipeRefreshIndicator();
                     swipeRefreshRejected = true;
                     swipeStartedAtTop = false;
                     swipeRefreshTracking = false;
+                    webView.setLongClickable(webViewLongClickableBeforeSwipe);
                     break;
                 case MotionEvent.ACTION_UP:
                     float distanceY = event.getY() - swipeStartY;
@@ -340,6 +351,7 @@ public class MainActivity extends BridgeActivity {
                     swipeStartedAtTop = false;
                     swipeRefreshRejected = false;
                     swipeRefreshTracking = false;
+                    webView.setLongClickable(webViewLongClickableBeforeSwipe);
                     if (shouldReload) {
                         swipeRefreshRunning = true;
                         if (pullRefreshIndicator != null) {
@@ -358,6 +370,7 @@ public class MainActivity extends BridgeActivity {
                         setPullSelectionSuppressed(webView, false);
                         hideSwipeRefreshIndicator();
                     }
+                    setPullSelectionSuppressed(webView, false);
                     return wasTracking;
                 default:
                     break;
@@ -449,7 +462,7 @@ public class MainActivity extends BridgeActivity {
         private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF arcBounds = new RectF();
-        private final int accentColor;
+        private int accentColor;
         private float pullProgress;
         private float rotationDegrees;
         private ValueAnimator rotationAnimator;
@@ -461,7 +474,7 @@ public class MainActivity extends BridgeActivity {
             setClickable(false);
             setFocusable(false);
             setVisibility(View.INVISIBLE);
-            float stroke = dp(3);
+            float stroke = dp(2);
             trackPaint.setStyle(Paint.Style.STROKE);
             trackPaint.setStrokeWidth(stroke);
             trackPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -470,6 +483,13 @@ public class MainActivity extends BridgeActivity {
             progressPaint.setStrokeWidth(stroke);
             progressPaint.setStrokeCap(Paint.Cap.ROUND);
             progressPaint.setColor(accentColor);
+        }
+
+        void setAccentColor(int color) {
+            accentColor = color;
+            trackPaint.setColor(Color.argb(64, Color.red(color), Color.green(color), Color.blue(color)));
+            progressPaint.setColor(color);
+            invalidate();
         }
 
         void setPullProgress(float progress) {
@@ -500,12 +520,19 @@ public class MainActivity extends BridgeActivity {
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            float inset = dp(6);
-            arcBounds.set(inset, inset, getWidth() - inset, getHeight() - inset);
+            float radius = dp(10);
+            float centerX = getWidth() / 2f;
+            float centerY = dp(16);
+            arcBounds.set(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
             canvas.drawArc(arcBounds, -90f, 360f, false, trackPaint);
             float start = refreshing ? rotationDegrees - 90f : -90f;
             float sweep = refreshing ? 270f : 360f * pullProgress;
             if (sweep > 0f) canvas.drawArc(arcBounds, start, sweep, false, progressPaint);
+            Paint label = new Paint(Paint.ANTI_ALIAS_FLAG);
+            label.setColor(accentColor);
+            label.setTextAlign(Paint.Align.CENTER);
+            label.setTextSize(dp(10));
+            canvas.drawText("Reload", centerX, dp(50), label);
         }
     }
 }

@@ -12,7 +12,6 @@ import {
 import { SetupPaymentForm } from "./SetupPaymentForm"
 import { cancelSubscription, changePlan } from "./actions"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
-import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
 interface BillingPageProps {
@@ -107,7 +106,7 @@ export default async function MerchantBillingPage({
 	}
 
 	return (
-		<div className="platform-site platform-site--with-mobile-actions merchant-billing-page" style={platformThemeStyle(design.theme)}>
+		<div className="platform-site merchant-billing-page" style={platformThemeStyle(design.theme)}>
 		<main className="manage-page">
 			<header className="manage-header">
 				<div>
@@ -182,7 +181,7 @@ export default async function MerchantBillingPage({
 				<section className="manage-card merchant-billing-activation" aria-labelledby="setup-complete-title">
 					<p className="eyebrow">Setup payment confirmed</p>
 					<h2 id="setup-complete-title">Your salon is ready to publish</h2>
-					<p>The setup fee has been received. Publish your storefront to make it visible to customers.</p>
+					<p>The setup fee has been received. Publish your storefront to make it visible to clients.</p>
 					{billing.memberships[0]?.role === "OWNER" || billing.memberships[0]?.canManageContent ? (
 						<PublishSalonForm tenantId={billing.id} />
 					) : (
@@ -194,7 +193,7 @@ export default async function MerchantBillingPage({
 				<section className="manage-card merchant-billing-activation" aria-labelledby="salon-live-title">
 					<p className="eyebrow">Salon published</p>
 					<h2 id="salon-live-title">Your storefront is live</h2>
-					<p>Customers can now discover and visit your salon online.</p>
+					<p>Clients can now discover and visit your salon online.</p>
 					<div className="manage-header__actions">
 						<Link className="button button--primary" href={`/${encodeURIComponent(tenantSlug)}`}>View storefront</Link>
 						<Link className="button button--outline" href={`/manage/${encodeURIComponent(tenantSlug)}`}>Manage salon</Link>
@@ -332,7 +331,6 @@ export default async function MerchantBillingPage({
 				)}
 			</section>
 		</main>
-		<PlatformMobileActions />
 		</div>
 	)
 }
