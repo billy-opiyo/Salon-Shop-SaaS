@@ -90,7 +90,7 @@ export function VerifyEmailClient({ initialToken, callbackUrl = "/account" }: { 
 						setState("idle")
 					}}
 				>
-					Try another link
+					Enter a different verification token
 				</button>
 				<p className="auth-form__switch">
 					<Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Back to sign in</Link>
