@@ -117,6 +117,44 @@ declare global {
 
 type AdminSnapshotRecord = Record<string, unknown>
 
+function addAdminConsoleAccessToggle(
+	permissionWrap: HTMLElement,
+	permissionSelector: string,
+): void {
+	const sectionPermissions = Array.from(
+		permissionWrap.querySelectorAll<HTMLInputElement>(permissionSelector),
+	)
+	if (sectionPermissions.length === 0) return
+	const label = document.createElement("label")
+	label.className = "admin-record-details-console-access"
+	const input = document.createElement("input")
+	input.type = "checkbox"
+	input.checked = sectionPermissions.some((permission) => permission.checked)
+	input.dataset.adminConsoleAccess = "true"
+	const text = document.createElement("span")
+	text.textContent = "Salon Admin console access"
+	label.append(input, text)
+	permissionWrap.prepend(label)
+	const syncToggle = () => {
+		input.checked = sectionPermissions.some((permission) => permission.checked)
+	}
+	sectionPermissions.forEach((permission) =>
+		permission.addEventListener("change", syncToggle),
+	)
+	input.addEventListener("change", () => {
+		if (!input.checked) {
+			sectionPermissions.forEach((permission) => { permission.checked = false })
+		} else if (!sectionPermissions.some((permission) => permission.checked)) {
+			// Turning console access back on grants only the bookings section by default.
+			const bookingsPermission = sectionPermissions.find(
+				(permission) => permission.dataset.pendingPermission === "canManageBookings" || permission.dataset.permission === "canManageBookings",
+			)
+			if (bookingsPermission) bookingsPermission.checked = true
+		}
+		syncToggle()
+	})
+}
+
 function renderAdminSnapshotList(
 	elementId: string,
 	items: readonly unknown[] | undefined,
@@ -207,13 +245,21 @@ function renderAdminSnapshotList(
 				: "",
 			isSecurity ? "admin-security-row-main" : "",
 		].filter(Boolean).join(" ")
-		row.dataset.searchText = Object.values(record)
-			.map(formatAdminSnapshotValue)
+		const person = record.user && typeof record.user === "object"
+			? (record.user as AdminSnapshotRecord)
+			: {}
+		row.dataset.searchText = [
+			...Object.values(record).map(formatAdminSnapshotValue),
+			person.name,
+			person.email,
+			record.userId,
+		].filter((value) => typeof value === "string")
 			.join(" ")
 			.toLowerCase()
-		row.dataset.role = record.role === "OWNER"
+		const normalizedRole = String(record.role ?? "").trim().toLowerCase()
+		row.dataset.role = normalizedRole === "owner"
 			? "owner"
-			: record.role === "STAFF"
+			: normalizedRole === "staff"
 				? "staff"
 				: "delegated"
 		row.dataset.provider = String(record.provider ?? "").toLowerCase()
@@ -238,6 +284,10 @@ function renderAdminSnapshotList(
 			: record.resolvedAt === null
 				? "open"
 				: String(record.status ?? "").toLowerCase()
+		if (elementId === "adminAdminsList")
+			row.dataset.status = String(record.status ?? "").toLowerCase() === "active"
+				? "active"
+				: "inactive"
 		if (elementId === "adminSessionsList") row.dataset.status = "active"
 		row.dataset.severity = String(record.severity ?? "").toLowerCase()
 		row.dataset.eventType = String(record.eventType ?? "").toLowerCase()
@@ -250,9 +300,6 @@ function renderAdminSnapshotList(
 		}
 		row.dataset.preferredDate = String(record.preferredDate ?? "")
 		row.dataset.preferredTime = String(record.preferredTime ?? "")
-		const person = record.user && typeof record.user === "object"
-			? (record.user as AdminSnapshotRecord)
-			: {}
 		const customerName = [record.firstName, record.lastName]
 			.filter((part): part is string => typeof part === "string" && Boolean(part.trim()))
 			.join(" ") || String(record.customerName ?? record.name ?? person.name ?? record.email ?? "Record")
@@ -293,6 +340,7 @@ function renderAdminSnapshotList(
 				label.append(input, text)
 				permissionWrap.append(label)
 			}
+			addAdminConsoleAccessToggle(permissionWrap, "[data-pending-permission]")
 			row.append(permissionWrap)
 		} else if (elementId === "adminAdminsList") {
 			const role = String(record.role ?? "STAFF").toLowerCase()
@@ -398,6 +446,20 @@ function renderAdminSnapshotList(
 				meta.append(field)
 			}
 			row.append(meta)
+			if (!isWaitlist && Array.isArray(record.payments)) {
+				const payment = record.payments.find((item): item is AdminSnapshotRecord =>
+					typeof item === "object" && item !== null,
+				)
+				if (payment) {
+					const receipt = typeof payment.mpesaReceiptNumber === "string" ? payment.mpesaReceiptNumber : ""
+					const paymentLine = document.createElement("p")
+					paymentLine.className = "admin-booking-payment-review"
+					paymentLine.textContent = receipt
+						? `Manual M-Pesa receipt: ${receipt} · ${String(payment.collectionMethod ?? "").replace(/-/g, " ")} · awaiting owner review`
+						: `Payment: ${String(payment.status ?? "not required").replace(/_/g, " ")}`
+					row.append(paymentLine)
+				}
+			}
 			const notes = String(record.specialRequests ?? record.notes ?? "").trim()
 			const request = document.createElement("div")
 			request.className = "admin-booking-special-request"
@@ -705,7 +767,8 @@ function renderAdminSnapshotList(
 			: isSecurity
 				? "admin-booking-actions admin-security-inline-actions admin-platform-actions"
 				: "admin-booking-actions admin-platform-actions"
-		if (recordId && !isSecurity && !isPendingInvitation) {
+		if (recordId && !isSecurity && !isPendingInvitation &&
+			(elementId !== "adminAdminsList" || canManageAdmins)) {
 			const detailButton = document.createElement("button")
 			detailButton.type = "button"
 			detailButton.className = "admin-action-btn admin-platform-detail"
@@ -733,6 +796,20 @@ function renderAdminSnapshotList(
 			actionGroup.append(button)
 		}
 		if (elementId === "adminBookingsList") {
+			const bookingPayments = Array.isArray(record.payments) ? record.payments : []
+			const manualReviewPayment = bookingPayments.find((item): item is AdminSnapshotRecord =>
+				typeof item === "object" && item !== null &&
+				typeof (item as AdminSnapshotRecord).mpesaReceiptNumber === "string" &&
+				(item as AdminSnapshotRecord).status === "pending" &&
+				(item as AdminSnapshotRecord).collectionMethod !== "platform-stk",
+			)
+			if (manualReviewPayment && canManageAdmins) {
+				const paymentId = typeof manualReviewPayment.id === "string" ? manualReviewPayment.id : ""
+				if (paymentId) {
+					addAction("booking-payment-review", "Approve receipt", { paymentId, decision: "approve" })
+					addAction("booking-payment-review", "Decline receipt", { paymentId, decision: "reject" })
+				}
+			}
 			if (status !== "WAITLISTED") {
 				const reminder = document.createElement("button")
 				reminder.type = "button"
@@ -858,9 +935,15 @@ function renderAdminSnapshotList(
 		if (
 			elementId === "adminAdminsList" &&
 			canManageAdmins &&
-			String(record.role ?? "").toUpperCase() !== "OWNER"
-		)
-			addAction("team-member-remove", "Remove")
+			String(record.role ?? "").toUpperCase() !== "OWNER" &&
+			String(record.status ?? "").toUpperCase() === "ACTIVE"
+		) addAction("team-member-remove", "Remove")
+		if (elementId === "adminAdminsList" && String(record.role ?? "").toUpperCase() === "OWNER") {
+			const protectedNote = document.createElement("span")
+			protectedNote.className = "admin-owner-protected-note"
+			protectedNote.textContent = "Owner account · protected"
+			actionGroup.append(protectedNote)
+		}
 		if (isPendingInvitation)
 			addAction("team-invitation-permissions", "Save section access")
 		if (isSecurityCollection) {
@@ -1803,9 +1886,9 @@ function bindAdminSnapshotFilters(): () => void {
 		)
 		sortRows("#adminTimelineList", getValue("adminTimelineSortSelect"))
 		sortRows("#adminSessionsList", getValue("adminSessionsSortSelect"))
-		const teamSearch = getValue("adminAdminsSearchInput")
-		const teamRole = getValue("adminAdminsRoleFilter")
-		const teamStatus = getValue("adminAdminsStatusFilter")
+		const teamSearch = getValue("adminAdminsSearchInput").toLowerCase()
+		const teamRole = getValue("adminAdminsRoleFilter").toLowerCase()
+		const teamStatus = getValue("adminAdminsStatusFilter").toLowerCase()
 		document
 			.querySelectorAll<HTMLElement>("#adminAdminsList .admin-snapshot-row")
 			.forEach((row) => {
@@ -2834,6 +2917,7 @@ export function bindAdminSnapshotAdapter(
 		const requiresConfirmation =
 			action.endsWith("-delete") ||
 			action === "team-member-remove" ||
+			action === "booking-payment-review" ||
 			cancellingBooking ||
 			cancellingWaitlist ||
 			action in securityConfirmText
@@ -2841,21 +2925,29 @@ export function bindAdminSnapshotAdapter(
 			pendingConfirmationButton = button
 			const title = document.getElementById("adminConfirmTitle")
 			const message = document.getElementById("adminConfirmMessage")
-			if (title) title.textContent = securityConfirmText[action]
-				? "Confirm security action"
-				: action.endsWith("-delete") || action === "team-member-remove"
-					? "Confirm removal"
-					: "Confirm cancellation"
-			if (message)
-				message.textContent = securityConfirmText[action] ?? (
-					action === "team-member-remove"
-						? "Remove this team member’s access to the salon?"
-						: cancellingBooking
-							? "Cancel this appointment and release its time slot? The client may need to book again."
-							: cancellingWaitlist
-								? "Cancel this request and remove it from the active waitlist?"
-						: "Delete this item? This action cannot be undone."
-				)
+			if (title) title.textContent = action === "booking-payment-review"
+				? "Confirm payment review"
+				: securityConfirmText[action]
+					? "Confirm security action"
+					: action.endsWith("-delete") || action === "team-member-remove"
+						? "Confirm removal"
+						: "Confirm cancellation"
+			if (message) {
+				if (action === "booking-payment-review")
+					message.textContent = button.dataset.decision === "approve"
+						? "Approve this M-Pesa receipt and confirm the booking payment?"
+						: "Decline this M-Pesa receipt? The client can submit a corrected receipt."
+				else
+					message.textContent = securityConfirmText[action] ?? (
+						action === "team-member-remove"
+							? "Remove this team member’s access to the salon?"
+							: cancellingBooking
+								? "Cancel this appointment and release its time slot? The client may need to book again."
+								: cancellingWaitlist
+									? "Cancel this request and remove it from the active waitlist?"
+									: "Delete this item? This action cannot be undone."
+					)
+			}
 			confirmationModal?.classList.add("active")
 			confirmationModal?.setAttribute("aria-hidden", "false")
 			return
@@ -3006,6 +3098,8 @@ export function bindAdminSnapshotAdapter(
 			payload.published = button.dataset.published === "true"
 		if (button.dataset.durationMinutes)
 			payload.durationMinutes = Number(button.dataset.durationMinutes)
+		if (button.dataset.paymentId) payload.paymentId = button.dataset.paymentId
+		if (button.dataset.decision) payload.decision = button.dataset.decision
 		void fetch(endpoint, {
 			method: "POST",
 			credentials: "same-origin",
@@ -3271,6 +3365,7 @@ export function bindAdminSnapshotAdapter(
 					label.append(input, text)
 					permissionWrap.append(label)
 				})
+			addAdminConsoleAccessToggle(permissionWrap, "[data-permission]")
 				const savePermissions = document.createElement("button")
 				savePermissions.type = "button"
 				savePermissions.className = "btn btn-primary"
@@ -6355,6 +6450,55 @@ function bindBookingAdapter(
 ): () => void {
 	const form = document.getElementById("bookingForm")
 	if (!(form instanceof HTMLFormElement)) return () => undefined
+	const manualReceiptForm = document.getElementById("manualBookingReceiptForm")
+	const manualReceiptSubmit = async (event: Event): Promise<void> => {
+		event.preventDefault()
+		if (!(manualReceiptForm instanceof HTMLFormElement)) return
+		const button = document.getElementById("manualBookingReceiptSubmit")
+		const message = document.getElementById("manualBookingReceiptMessage")
+		if (!(button instanceof HTMLButtonElement)) return
+		const formData = new FormData(manualReceiptForm)
+		button.disabled = true
+		button.setAttribute("aria-busy", "true")
+		const originalText = button.textContent
+		button.textContent = "Submitting receipt…"
+		if (message) message.textContent = ""
+		try {
+			const response = await fetch("/api/bookings/manual-payment", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					tenantSlug,
+					paymentId: formData.get("paymentId"),
+					phone: formData.get("phone"),
+					receiptNumber: formData.get("receiptNumber"),
+				}),
+			})
+			const result: unknown = await response.json().catch(() => ({}))
+			if (!response.ok) {
+				const error = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
+					? result.error
+					: "The receipt could not be submitted. Please try again."
+				throw new Error(error)
+			}
+			if (message) {
+				message.textContent = "Receipt submitted. Your appointment payment is waiting for salon owner review."
+				message.classList.remove("error")
+				message.classList.add("success")
+			}
+			button.textContent = "Receipt submitted"
+		} catch (error) {
+			if (message) {
+				message.textContent = error instanceof Error ? error.message : "The receipt could not be submitted."
+				message.classList.remove("success")
+				message.classList.add("error")
+			}
+			button.disabled = false
+			button.removeAttribute("aria-busy")
+			button.textContent = originalText
+		}
+	}
+	manualReceiptForm?.addEventListener("submit", manualReceiptSubmit)
 
 	ensureTurnstile(form, turnstileSiteKey)
 	const timeInput = document.getElementById("timeSelect")
@@ -6720,9 +6864,55 @@ function bindBookingAdapter(
 				"payment" in payload &&
 				typeof payload.payment === "object" &&
 				payload.payment !== null
-					? (payload.payment as { status?: string })
+					? (payload.payment as {
+							status?: string
+							collectionMethod?: string
+							collectionNumber?: string | null
+							amountMinor?: number
+							paymentId?: string
+							currency?: string
+							mode?: string
+						})
 					: undefined
 			const paymentPending = paymentRecord?.status === "pending"
+			const manualPayment = Boolean(
+				paymentRecord &&
+				paymentRecord.status === "manual" &&
+				paymentRecord.collectionMethod &&
+				paymentRecord.collectionMethod !== "platform-stk" &&
+				paymentRecord.mode !== "after_service",
+			)
+			const manualPaymentPanel = document.getElementById("manualBookingPaymentPanel")
+			manualPaymentPanel?.classList.toggle("hidden", !manualPayment)
+			if (manualPayment && paymentRecord) {
+				const methodLabels: Record<string, string> = {
+					paybill: `Paybill ${paymentRecord.collectionNumber ?? ""}`.trim(),
+					till: `Buy Goods Till ${paymentRecord.collectionNumber ?? ""}`.trim(),
+					"registered-phone": `M-Pesa phone ${paymentRecord.collectionNumber ?? ""}`.trim(),
+				}
+				const instructions = document.getElementById("manualBookingPaymentInstructions")
+				const amount = document.getElementById("manualBookingPaymentAmount")
+				const reference = document.getElementById("manualBookingPaymentReference")
+				if (instructions) instructions.textContent = `Transfer using ${methodLabels[paymentRecord.collectionMethod!] ?? "the salon payment details"}${paymentRecord.collectionMethod === "paybill" ? " and enter the payment reference below as the account number" : ""}. The salon owner will verify your receipt before confirming payment.`
+				if (amount) amount.textContent = `${paymentRecord.currency ?? "KES"} ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(Math.ceil((paymentRecord.amountMinor ?? 0) / 100))}`
+				if (reference) reference.textContent = `BOOKING-${String(paymentRecord.paymentId ?? "").slice(-8).toUpperCase()}`
+				if (manualReceiptForm instanceof HTMLFormElement) {
+					const paymentIdInput = manualReceiptForm.elements.namedItem("paymentId")
+					const phoneInput = manualReceiptForm.elements.namedItem("phone")
+					if (paymentIdInput instanceof HTMLInputElement) paymentIdInput.value = paymentRecord.paymentId ?? ""
+					if (phoneInput instanceof HTMLInputElement) phoneInput.value = phone
+					const receiptInput = manualReceiptForm.elements.namedItem("receiptNumber")
+					if (receiptInput instanceof HTMLInputElement) receiptInput.value = ""
+					const submitButton = document.getElementById("manualBookingReceiptSubmit")
+					if (submitButton instanceof HTMLButtonElement) {
+						submitButton.disabled = false
+						submitButton.removeAttribute("aria-busy")
+						submitButton.textContent = "Submit receipt for review"
+					}
+					const receiptMessage = document.getElementById("manualBookingReceiptMessage")
+					if (receiptMessage) receiptMessage.textContent = ""
+				}
+			}
 			const bookingStatus =
 				typeof payload === "object" && payload !== null && "status" in payload
 					? payload.status
@@ -6732,6 +6922,8 @@ function bindBookingAdapter(
 			setBookingMessage(
 				isWaitlisted
 					? "Your waitlisted booking is saved. The salon will contact you when they can confirm a slot."
+					: manualPayment
+						? "Booking received. Complete the salon transfer and submit your receipt for owner review."
 					: paymentPending
 						? "Booking received. Approve the M-Pesa prompt to confirm your appointment."
 						: "Booking request received. We will confirm your appointment shortly.",
@@ -6741,6 +6933,8 @@ function bindBookingAdapter(
 			if (successMessage)
 				successMessage.textContent = isWaitlisted
 					? "The salon will contact you if this appointment slot becomes available."
+					: manualPayment
+						? "Complete the M-Pesa transfer to the salon, then submit your receipt below. The salon owner will review it before confirming payment."
 					: paymentPending
 						? "Approve the M-Pesa prompt to complete payment. The salon will confirm your appointment shortly."
 						: isConfirmed
@@ -6751,6 +6945,8 @@ function bindBookingAdapter(
 			if (successHeading)
 				successHeading.textContent = isWaitlisted
 					? "You’re on the Waitlist"
+					: manualPayment
+						? "Receipt Review Pending"
 					: paymentPending
 						? "Payment Pending"
 						: isConfirmed
@@ -6916,6 +7112,7 @@ function bindBookingAdapter(
 		timeInput?.removeEventListener("focus", openPicker)
 		document.removeEventListener("click", closePickerOnOutside)
 		form.removeEventListener("submit", submit, true)
+		manualReceiptForm?.removeEventListener("submit", manualReceiptSubmit)
 		waitlistButton?.removeEventListener("click", joinWaitlist, true)
 	}
 }

@@ -6,8 +6,8 @@ import {
 	verifyDarajaPayment,
 } from "@backend/services/darajaPaymentService"
 import { notifyBookingCustomer } from "@backend/services/notificationService"
+import { consumeRateLimit, hashRateLimitSubject } from "@backend/services/rateLimit"
 import {
-	resolveBookingPaymentPlan,
 	type ResolvedBookingPaymentPlan,
 } from "@shared/constants/bookingPayments"
 import { normalizeKenyanMpesaPhone } from "@shared/validation/mpesa"
@@ -24,6 +24,102 @@ export class BookingPaymentError extends Error {
 }
 
 export type BookingPaymentPlan = ResolvedBookingPaymentPlan
+
+export class ManualBookingReceiptError extends Error {
+	readonly code = "MANUAL_BOOKING_RECEIPT_ERROR" as const
+
+	constructor(message: string) {
+		super(message)
+		this.name = "ManualBookingReceiptError"
+	}
+}
+
+export async function submitManualBookingPaymentReceipt({
+	tenantSlug,
+	paymentId,
+	phoneInput,
+	receiptInput,
+	remoteAddress,
+}: {
+	readonly tenantSlug: string
+	readonly paymentId: string
+	readonly phoneInput: string
+	readonly receiptInput: string
+	readonly remoteAddress: string
+}) {
+	const receipt = receiptInput.trim().toUpperCase()
+	if (!/^[A-Z0-9]{6,16}$/.test(receipt))
+		throw new ManualBookingReceiptError("Enter the M-Pesa receipt code shown on your confirmation message.")
+	let phoneNumber: string
+	try {
+		phoneNumber = normalizeKenyanMpesaPhone(phoneInput)
+	} catch {
+		throw new ManualBookingReceiptError("Enter the same valid Kenyan phone number used for the booking.")
+	}
+	const payment = await prisma.bookingPayment.findFirst({
+		where: { id: paymentId, tenant: { slug: tenantSlug.trim().toLowerCase() } },
+		select: {
+			id: true,
+			tenantId: true,
+			bookingId: true,
+			status: true,
+			paymentMode: true,
+			collectionMethod: true,
+			collectionNumber: true,
+			mpesaReceiptNumber: true,
+		expiresAt: true,
+			booking: { select: { phone: true, status: true } },
+		},
+	})
+	if (!payment) throw new ManualBookingReceiptError("Booking payment not found.")
+	if (payment.collectionMethod === "platform-stk")
+		throw new ManualBookingReceiptError("This booking uses the secure M-Pesa prompt. A manual receipt is not expected.")
+	if (payment.paymentMode === "after_service")
+		throw new ManualBookingReceiptError("This booking is set to pay after the service.")
+	if (payment.booking.status === "CANCELLED" || payment.booking.status === "EXPIRED")
+		throw new ManualBookingReceiptError("This booking is no longer active.")
+	if (payment.expiresAt && payment.expiresAt <= new Date()) {
+		await expireBookingPayment(payment.id)
+		throw new ManualBookingReceiptError("This booking payment window has expired. Please create a new booking request.")
+	}
+	if (payment.status !== "pending" || payment.mpesaReceiptNumber)
+		throw new ManualBookingReceiptError("A receipt has already been submitted or this payment is no longer active.")
+	if (normalizeKenyanMpesaPhone(payment.booking.phone) !== phoneNumber)
+		throw new ManualBookingReceiptError("Use the same phone number entered for this booking.")
+	await consumeRateLimit({
+		tenantId: payment.tenantId,
+		subjectKey: hashRateLimitSubject(`${remoteAddress}:${paymentId}`),
+		kind: "manual-booking-receipt",
+		intervalMs: 10_000,
+	})
+	try {
+		await prisma.$transaction(async (transaction) => {
+			const duplicate = await transaction.bookingPayment.findFirst({
+				where: {
+					tenantId: payment.tenantId,
+					id: { not: payment.id },
+					mpesaReceiptNumber: { equals: receipt, mode: "insensitive" },
+				},
+				select: { id: true },
+			})
+			if (duplicate) throw new ManualBookingReceiptError("That receipt code has already been submitted.")
+			const updated = await transaction.bookingPayment.updateMany({
+				where: { id: payment.id, status: "pending", mpesaReceiptNumber: null },
+				data: {
+					phoneNumber,
+					mpesaReceiptNumber: receipt,
+					resultDescription: "Manual M-Pesa receipt awaiting salon owner review.",
+				},
+			})
+			if (updated.count !== 1)
+				throw new ManualBookingReceiptError("The payment changed before the receipt was saved. Refresh and try again.")
+		}, { isolationLevel: "Serializable" })
+	} catch (error) {
+		if (error instanceof ManualBookingReceiptError) throw error
+		throw new ManualBookingReceiptError("The receipt could not be saved safely. Refresh and try again.")
+	}
+	return { status: "awaiting-owner-review" as const }
+}
 
 export async function requestBookingPayment(
 	tenantSlug: string,
@@ -46,6 +142,8 @@ export async function requestBookingPayment(
 			serviceTotalMinor: true,
 			currency: true,
 			phoneNumber: true,
+			collectionMethod: true,
+			collectionNumber: true,
 			expiresAt: true,
 			checkoutRequestId: true,
 			booking: { select: { status: true, phone: true } },
@@ -54,6 +152,13 @@ export async function requestBookingPayment(
 	if (!payment) throw new BookingPaymentError("Booking payment not found.")
 	if (payment.paymentMode === "after_service")
 		return { status: "deferred" as const, paymentId: payment.id }
+	if (payment.collectionMethod !== "platform-stk")
+		return {
+			status: "manual" as const,
+			paymentId: payment.id,
+			collectionMethod: payment.collectionMethod,
+			collectionNumber: payment.collectionNumber,
+		}
 	if (payment.booking.status === "CANCELLED" || payment.booking.status === "EXPIRED")
 		throw new BookingPaymentError("This booking is no longer payable.")
 	if (payment.expiresAt && payment.expiresAt <= new Date()) {
@@ -77,6 +182,8 @@ export async function requestBookingPayment(
 					amountMinor: payment.amountMinor,
 					serviceTotalMinor: payment.serviceTotalMinor,
 					currency: payment.currency,
+					collectionMethod: payment.collectionMethod,
+					collectionNumber: payment.collectionNumber,
 					status: "pending",
 					expiresAt: new Date(Date.now() + PAYMENT_EXPIRY_MS),
 				},

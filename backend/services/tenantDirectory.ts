@@ -302,6 +302,8 @@ export const getTenantStorefront = cache(async (
 				bookingPaymentsEnabled: true,
 				bookingPaymentModes: true,
 				bookingDepositPercent: true,
+				bookingCollectionMethod: true,
+				bookingCollectionNumber: true,
 					},
 				},
 				services: {
@@ -419,6 +421,9 @@ export const getTenantStorefront = cache(async (
 						)
 					: ["partial", "full", "after_service"],
 				depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
+				collectionMethod: ( ["platform-stk", "paybill", "till", "registered-phone"] as const )
+					.find((method) => method === tenant.settings?.bookingCollectionMethod) ?? "platform-stk",
+				collectionNumber: tenant.settings?.bookingCollectionNumber ?? null,
 				currency: tenant.currency,
 			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,

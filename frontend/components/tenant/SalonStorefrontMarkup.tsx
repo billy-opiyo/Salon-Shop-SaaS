@@ -894,6 +894,20 @@ export function SalonStorefrontMarkup({
 							<p id="bookingSuccessMessage" style={{color: "var(--text-secondary)"}}>
 								Your request is with the salon. They&apos;ll contact you to confirm your appointment.
 							</p>
+							<div className="manual-booking-payment-panel hidden" id="manualBookingPaymentPanel">
+								<h4>Pay the salon directly</h4>
+								<p id="manualBookingPaymentInstructions"></p>
+								<p><strong>Amount:</strong> <span id="manualBookingPaymentAmount"></span></p>
+								<p><strong>Payment reference:</strong> <span id="manualBookingPaymentReference"></span></p>
+								<form id="manualBookingReceiptForm">
+									<input type="hidden" name="paymentId" />
+									<input type="hidden" name="phone" />
+									<label htmlFor="manualBookingReceiptNumber">M-Pesa receipt code</label>
+									<input id="manualBookingReceiptNumber" name="receiptNumber" autoComplete="off" maxLength={16} required />
+									<button className="btn btn-primary" type="submit" id="manualBookingReceiptSubmit">Submit receipt for review</button>
+									<p className="manual-booking-payment-message" id="manualBookingReceiptMessage" aria-live="polite"></p>
+								</form>
+							</div>
 							<div
 								className="post-booking-auth-prompt hidden"
 								id="postBookingAuthPrompt"

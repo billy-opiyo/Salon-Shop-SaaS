@@ -148,6 +148,7 @@ export async function updateTeamMemberPermissionsForUser(
 			data: {
 				...nextPermissions,
 				role: hasSectionAccess ? "ADMIN" : "STAFF",
+				status: hasSectionAccess ? "ACTIVE" : "REMOVED",
 				canManageAdmins: false,
 			},
 		})

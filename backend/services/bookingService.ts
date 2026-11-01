@@ -17,6 +17,8 @@ import {
 } from "@backend/services/mediaService"
 import type { BookingRequestInput } from "@shared/validation/booking"
 
+const MANUAL_BOOKING_PAYMENT_EXPIRY_MS = 24 * 60 * 60 * 1000
+
 export class BookingRequestError extends Error {
 	readonly code = "BOOKING_REQUEST_FAILED" as const
 
@@ -55,6 +57,8 @@ export async function createPublicBooking(
 		readonly mode: string
 		readonly amountMinor: number
 		readonly currency: string
+		readonly collectionMethod: string
+		readonly collectionNumber: string | null
 	}
 }> {
 	if (!(await verifyTurnstileToken(input.turnstileToken, remoteAddress))) {
@@ -77,6 +81,8 @@ export async function createPublicBooking(
 					bookingPaymentsEnabled: true,
 					bookingPaymentModes: true,
 					bookingDepositPercent: true,
+					bookingCollectionMethod: true,
+					bookingCollectionNumber: true,
 				},
 			},
 			services: {
@@ -168,6 +174,8 @@ export async function createPublicBooking(
 			readonly mode: string
 			readonly amountMinor: number
 			readonly currency: string
+			readonly collectionMethod: string
+			readonly collectionNumber: string | null
 		}
 	}
 	try {
@@ -350,7 +358,13 @@ export async function createPublicBooking(
 								serviceTotalMinor: paymentPlan.serviceTotalMinor,
 								currency: tenant.currency,
 								status: paymentPlan.status,
-								expiresAt: paymentPlan.expiresAt,
+								expiresAt:
+									paymentPlan.mode !== "after_service" &&
+									tenant.settings?.bookingCollectionMethod !== "platform-stk"
+										? new Date(Date.now() + MANUAL_BOOKING_PAYMENT_EXPIRY_MS)
+										: paymentPlan.expiresAt,
+								collectionMethod: tenant.settings?.bookingCollectionMethod ?? "platform-stk",
+								collectionNumber: tenant.settings?.bookingCollectionNumber ?? null,
 							},
 							select: {
 								id: true,
@@ -358,6 +372,8 @@ export async function createPublicBooking(
 								paymentMode: true,
 								amountMinor: true,
 								currency: true,
+								collectionMethod: true,
+								collectionNumber: true,
 							},
 						})
 					: null
@@ -395,6 +411,8 @@ export async function createPublicBooking(
 								mode: payment.paymentMode,
 								amountMinor: payment.amountMinor,
 								currency: payment.currency,
+								collectionMethod: payment.collectionMethod,
+								collectionNumber: payment.collectionNumber,
 							}
 						: undefined,
 				}

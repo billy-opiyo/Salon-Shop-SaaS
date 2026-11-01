@@ -2734,6 +2734,44 @@ h6 {
     margin-bottom: 10px;
 }
 
+.manual-booking-payment-panel {
+    max-width: 42rem;
+    margin: 1.5rem auto;
+    padding: 1.25rem;
+    text-align: left;
+    color: var(--text-primary);
+    background: var(--surface, rgba(0, 0, 0, .16));
+    border: 1px solid var(--border-color, rgba(200, 150, 62, .42));
+    border-radius: var(--radius-md, 14px);
+}
+
+.manual-booking-payment-panel h4,
+.manual-booking-payment-panel p {
+    margin: 0 0 .75rem;
+}
+
+.manual-booking-payment-panel form {
+    display: grid;
+    gap: .7rem;
+    margin-top: 1rem;
+}
+
+.manual-booking-payment-panel form input:not([type="hidden"]) {
+    width: 100%;
+}
+
+.manual-booking-payment-message {
+    min-height: 1.25rem;
+}
+
+.admin-booking-payment-review {
+    padding: .7rem .85rem;
+    color: var(--text-primary);
+    background: var(--surface, rgba(200, 150, 62, .1));
+    border: 1px solid var(--border-color, rgba(200, 150, 62, .35));
+    border-radius: var(--radius-sm, 8px);
+}
+
 @media (max-width: 900px) {
     .booking-inner {
         grid-template-columns: 1fr;
@@ -5601,6 +5639,13 @@ h6 {
 .admin-record-details-permissions > label span {
     min-width: 0;
     overflow-wrap: anywhere;
+}
+
+.admin-record-details-permissions > .admin-record-details-console-access {
+    grid-column: 1 / -1;
+    border-color: color-mix(in srgb, var(--primary) 52%, var(--border));
+    background: color-mix(in srgb, var(--primary) 9%, var(--bg-primary));
+    font-weight: 700;
 }
 
 .admin-record-details-content > .btn {
@@ -13525,12 +13570,20 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
 }
 
 .salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-platform-actions > button {
-    flex: 1 1 8rem;
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: 100%;
+    width: auto;
+    max-width: min(100%, 10rem);
+    padding-inline: .8rem;
     justify-content: center;
     white-space: normal;
     overflow-wrap: anywhere;
+}
+
+.salon-admin-root .admin-owner-protected-note {
+    align-self: center;
+    color: var(--text-secondary);
+    font-size: .82rem;
 }
 
 .salon-admin-root .admin-management-section[data-admin-section="security"] .admin-security-table-wrap.is-vertical-scroll-active.has-security-action-records {
@@ -13593,6 +13646,6 @@ html[data-client-reduced-motion="true"] .salon-storefront-root *::after {
     }
 
     .salon-admin-root .admin-management-section[data-admin-section="admins"] #adminAdminsList .admin-platform-actions > button {
-        flex-basis: 100%;
+        flex-basis: auto;
     }
 }
