@@ -28,21 +28,34 @@ export function OfflineNotice({ brandName = "Beauty Sphia" }: { readonly brandNa
 
 	useEffect(() => {
 		let active = true
+		let checking = false
+		const checkConnection = async () => {
+			if (checking) return
+			checking = true
+			const canReach = await canReachPlatform()
+			if (active) setIsOffline(!canReach)
+			checking = false
+		}
 		const probeConnection = () => {
-			void canReachPlatform().then((canReach) => {
-				if (active) setIsOffline(!canReach)
-			})
+			void checkConnection()
 		}
 		const markOffline = () => setIsOffline(true)
 		probeConnection()
 		window.addEventListener("online", probeConnection)
 		window.addEventListener("offline", markOffline)
+		// Some mobile WebViews fire `online` before DNS or the connection is
+		// usable. Keep checking while online is reported so the dialog dismisses
+		// automatically as soon as the platform can be reached again.
+		const recoveryPoll = window.setInterval(() => {
+			if (isOffline && navigator.onLine) probeConnection()
+		}, 2500)
 		return () => {
 			active = false
+			window.clearInterval(recoveryPoll)
 			window.removeEventListener("online", probeConnection)
 			window.removeEventListener("offline", markOffline)
 		}
-	}, [])
+	}, [isOffline])
 
 	useEffect(() => {
 		if (!isOffline) return
