@@ -10087,18 +10087,52 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
 }
 
 .manage-account-card {
+    box-sizing: border-box;
     width: min(100%, 760px);
-    max-height: min(88vh, 860px);
+    height: min(calc(88vh - 36px), 860px);
+    height: min(calc(88dvh - 36px), 860px);
+    max-height: min(calc(88vh - 36px), 860px);
+    max-height: min(calc(88dvh - 36px), 860px);
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
 .manage-account-body {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
     overflow-y: auto;
-    padding-right: 6px;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    padding-right: 8px;
     display: grid;
     gap: 14px;
+}
+
+.manage-account-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.manage-account-body::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: var(--radius-full);
+}
+
+.manage-account-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--primary-light), var(--scrollbar-thumb));
+    border: 2px solid var(--scrollbar-track);
+    border-radius: var(--radius-full);
+}
+
+.manage-account-body::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
 }
 
 .manage-account-section {
@@ -10303,6 +10337,21 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
 }
 
 @media (max-width: 700px) {
+    #manageAccountModal {
+        padding: 10px;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    #manageAccountModal .manage-account-card {
+        width: min(100%, 760px);
+        height: min(calc(90vh - 20px), 860px);
+        height: min(calc(90dvh - 20px), 860px);
+        max-height: min(calc(90vh - 20px), 860px);
+        max-height: min(calc(90dvh - 20px), 860px);
+        padding: 18px;
+    }
+
     #deleteAccountConfirmModal {
         --delete-modal-duration: 0.2s;
     }
