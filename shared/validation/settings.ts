@@ -79,6 +79,10 @@ const sectionVisibilitySchema = z
 
 export const storefrontDesignConfigSchema = z.object({
 	heroDescription: z.string().trim().max(600).optional(),
+	heroCardImageUrl: imageUrlSchema.optional(),
+	heroExperience: z.string().trim().max(40).optional(),
+	heroRating: z.string().trim().max(40).optional(),
+	heroReviewCount: z.string().trim().max(60).optional(),
 	sectionCopy: sectionCopySchema.optional(),
 	sectionVisibility: sectionVisibilitySchema.optional(),
 	mapEmbedUrl: mapEmbedUrlSchema.optional(),

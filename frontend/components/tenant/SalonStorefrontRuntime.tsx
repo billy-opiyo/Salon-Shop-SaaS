@@ -13,7 +13,11 @@ import {
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
 import { safeMapEmbedUrl } from "@shared/safeMapEmbedUrl"
-import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
+import {
+	DEFAULT_THEME_PRESET,
+	SALON_THEME_PALETTES,
+	isThemePreset,
+} from "@shared/constants/themePresets"
 import type { BookingPaymentMode } from "@shared/constants/bookingPayments"
 import { BOOKING_TIME_SLOTS } from "@shared/constants/bookingAvailability"
 import { SalonStorefrontMarkup } from "@/components/tenant/SalonStorefrontMarkup"
@@ -46,6 +50,7 @@ export interface SalonClientConfig {
 		readonly logoAlt?: string
 		readonly heroImage?: string
 		readonly heroImageAlt?: string
+		readonly heroCardImage?: string
 		readonly heroSubtitle?: string
 		readonly heroTitleHtml?: string
 		readonly heroDescription?: string
@@ -2216,6 +2221,8 @@ function setDesignControl(id: string, value: unknown): void {
 			? "adminDesignLogoPreview"
 			: id === "adminDesignHeroUrl"
 				? "adminDesignHeroPreview"
+				: id === "adminDesignHeroCardUrl"
+					? "adminDesignHeroCardPreview"
 				: null
 	if (previewId) {
 		const preview = document.getElementById(previewId)
@@ -2291,6 +2298,7 @@ function bindStorefrontDesignEditor(
 		settings.heroImageUrl ??
 			"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
 	)
+	setDesignControl("adminDesignHeroCardUrl", design.heroCardImageUrl)
 	setDesignControl(
 		"adminDesignHeroTitle",
 		settings.heroTitle ??
@@ -2301,6 +2309,9 @@ function bindStorefrontDesignEditor(
 		settings.heroSubtitle ?? "Premium African Hair Braiding & Beauty",
 	)
 	setDesignControl("adminDesignHeroDescription", design.heroDescription)
+	setDesignControl("adminDesignHeroExperience", design.heroExperience)
+	setDesignControl("adminDesignHeroRating", design.heroRating)
+	setDesignControl("adminDesignHeroReviewCount", design.heroReviewCount)
 	for (const key of [
 		"phonePrimary",
 		"phoneSecondary",
@@ -2440,6 +2451,7 @@ function bindStorefrontDesignEditor(
 	}
 	bindUpload("adminDesignLogoFile", "adminDesignLogoUrl", "LOGO")
 	bindUpload("adminDesignHeroFile", "adminDesignHeroUrl", "HERO")
+	bindUpload("adminDesignHeroCardFile", "adminDesignHeroCardUrl", "HERO")
 	const saveButtons = Array.from(
 		document.querySelectorAll<HTMLButtonElement>("[data-save-store-design]"),
 	)
@@ -2483,6 +2495,10 @@ function bindStorefrontDesignEditor(
 			whatsappUrl: getDesignControl("adminDesignWhatsappUrl"),
 			storefrontConfig: {
 				heroDescription: getDesignControl("adminDesignHeroDescription"),
+				heroCardImageUrl: getDesignControl("adminDesignHeroCardUrl"),
+				heroExperience: getDesignControl("adminDesignHeroExperience"),
+				heroRating: getDesignControl("adminDesignHeroRating"),
+				heroReviewCount: getDesignControl("adminDesignHeroReviewCount"),
 				sectionCopy,
 				sectionVisibility,
 				mapEmbedUrl: getDesignControl("adminDesignMapEmbedUrl"),
@@ -7161,6 +7177,7 @@ function sanitizeInlineMarkup(value: unknown): string {
 function applyStorefrontColorMode(mode: "dark" | "light", persist = true): void {
 	const root = document.documentElement
 	const body = document.body
+	const storefrontRoot = document.querySelector<HTMLElement>(".salon-storefront-root")
 	const isLight = mode === "light"
 	root.classList.add("theme-switching")
 	body.classList.add("theme-switching")
@@ -7168,6 +7185,7 @@ function applyStorefrontColorMode(mode: "dark" | "light", persist = true): void 
 	body.classList.toggle("light-mode", isLight)
 	root.dataset.colorMode = mode
 	body.dataset.colorMode = mode
+	if (storefrontRoot) storefrontRoot.dataset.colorMode = mode
 	root.style.colorScheme = mode
 	body.style.colorScheme = mode
 	const darkModeToggle = document.getElementById("darkModeToggle")
@@ -8299,6 +8317,12 @@ export function SalonStorefrontRuntime({
 	const gallery = clientConfig.catalog?.gallery ?? []
 	const testimonials = clientConfig.catalog?.testimonials ?? []
 	const blogs = clientConfig.catalog?.blogs ?? []
+	const requestedPreset = clientConfig.appearance?.preset
+	const initialPreset = requestedPreset && isThemePreset(requestedPreset)
+		? requestedPreset
+		: DEFAULT_THEME_PRESET
+	const initialMode = clientConfig.appearance?.mode === "light" ? "light" : "dark"
+	const initialDarkPageBackground = SALON_THEME_PALETTES[initialPreset].background
 	const bookingPayment = clientConfig.bookingPayment
 	const mpesaPaymentAvailable = Boolean(
 		bookingPayment?.enabled &&
@@ -8355,7 +8379,22 @@ export function SalonStorefrontRuntime({
 			: []),
 	]
 	return (
-		<div className="salon-storefront-root">
+		<div
+			className="salon-storefront-root"
+			data-theme-preset={initialPreset}
+			data-color-mode={initialMode}
+		>
+			<style>{`
+				html:has(.salon-storefront-root) { scroll-behavior: auto; }
+				body:has(.salon-storefront-root[data-color-mode="dark"]) {
+					background: ${initialDarkPageBackground} !important;
+					background-image: none !important;
+				}
+				body:has(.salon-storefront-root[data-color-mode="light"]) {
+					background: #f7f2ea !important;
+					background-image: none !important;
+				}
+			`}</style>
 			<link rel="preconnect" href="https://fonts.googleapis.com" />
 			<link
 				href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
