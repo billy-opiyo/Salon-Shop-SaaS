@@ -5,6 +5,7 @@ import { getTenantStorefront } from "@backend/services/tenantDirectory"
 import { getSafeAuthCallbackUrl } from "@shared/authCallback"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
+import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 
 interface VerifyEmailPageProps {
 	searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
@@ -53,13 +54,14 @@ export default async function VerifyEmailPage({
 	const design = await getPlatformStorefrontDesign()
 
   return (
-    <div className="platform-site" style={platformThemeStyle(design.theme)}>
+    <div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
       <main className="auth-page">
         <section className="auth-card" aria-label="Email verification">
           <PlatformAuthBrand logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 				  <VerifyEmailClient initialToken={initialToken} callbackUrl={callbackUrl} />
         </section>
       </main>
+      <PlatformMobileActions />
     </div>
   )
 }
