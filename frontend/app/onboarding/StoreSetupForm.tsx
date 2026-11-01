@@ -97,8 +97,10 @@ export function StoreSetupForm({
 				</select>
 			</label>
 			<p className="form-help">
-				A one-time setup fee activates your salon. The selected plan then
-				includes {freeUsageMonths} {freeUsageMonths === 1 ? "month" : "months"} of free usage before monthly billing begins.
+				After any required setup fee is confirmed, publish your salon to make
+				the storefront available. Your selected plan includes {freeUsageMonths}{" "}
+				{freeUsageMonths === 1 ? "month" : "months"} of free usage before monthly
+				billing begins.
 			</p>
 			<div className="onboarding-form__row">
 				<label>
