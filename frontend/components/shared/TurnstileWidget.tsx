@@ -77,7 +77,7 @@ export function TurnstileWidget({ onToken }: TurnstileWidgetProps) {
 	}, [onToken])
 
 	return (
-		<div ref={containerRef} aria-live="polite">
+		<div ref={containerRef} className="turnstile-widget" aria-live="polite">
 			{!isConfigured && (
 				<small className="turnstile-note">
 					Security verification is required before submitting.

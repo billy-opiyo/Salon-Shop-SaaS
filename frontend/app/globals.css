@@ -2943,6 +2943,26 @@ html.splash-active .splash-handwriting-letter {
   font-size: .75rem;
 }
 
+.turnstile-widget {
+  display: block;
+  width: 100%;
+  min-height: 65px;
+  margin: .35rem 0 .85rem;
+}
+
+.turnstile-widget .turnstile-note {
+  display: block;
+  margin: 0;
+}
+
+.platform-contact__form > .turnstile-widget {
+  margin: 0;
+}
+
+.auth-card > .turnstile-widget {
+  margin-block: .25rem .75rem;
+}
+
 .form-message--success {
   color: #a6d8aa;
 }

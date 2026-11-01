@@ -5199,13 +5199,17 @@ function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
 
 	const container = document.createElement("div")
 	container.dataset.saasTurnstile = "true"
-	container.className = "form-group full"
+	container.className = "form-group full turnstile-widget"
 	container.setAttribute("aria-live", "polite")
 	const input = document.createElement("input")
 	input.type = "hidden"
 	input.name = "turnstileToken"
 	container.appendChild(input)
-	form.appendChild(container)
+	const submitControl = form.querySelector<HTMLElement>(
+		'button[type="submit"], input[type="submit"]',
+	)
+	if (submitControl) form.insertBefore(container, submitControl)
+	else form.appendChild(container)
 
 	const render = () => {
 		if (!window.turnstile || container.dataset.saasTurnstileRendered === "true")
@@ -8238,24 +8242,35 @@ function bindNativeSalonInteractions(
 			handleResetBooking()
 	})
 
+	const revealOnScroll = (element: Element): void => {
+		if (element.matches(".gallery-item, .blog-card")) {
+			element.classList.add("is-revealed")
+		} else {
+			element.classList.add("visible")
+		}
+	}
 	const observer =
 		"IntersectionObserver" in window
 			? new IntersectionObserver(
-					(entries) =>
+					(entries, activeObserver) =>
 						entries.forEach(
-							(entry) =>
-								entry.isIntersecting && entry.target.classList.add("visible"),
+							(entry) => {
+								if (!entry.isIntersecting) return
+								revealOnScroll(entry.target)
+								activeObserver.unobserve(entry.target)
+							},
 						),
 					{ threshold: 0.1, rootMargin: "0px 0px -50px 0px" },
 				)
 			: null
-	root?.querySelectorAll<HTMLElement>(".animate-on-scroll").forEach((element) => {
+	root?.querySelectorAll<HTMLElement>(
+		".animate-on-scroll, .gallery-item, .blog-card",
+	).forEach((element) => {
 		if (observer) {
 			observer.observe(element)
 		} else {
-			// Keep content visible in browsers without IntersectionObserver rather
-			// than leaving the scroll-reveal elements at opacity: 0.
-			element.classList.add("visible")
+			// Keep content visible in browsers without IntersectionObserver.
+			revealOnScroll(element)
 		}
 	})
 	if (observer) cleanup.push(() => observer.disconnect())
