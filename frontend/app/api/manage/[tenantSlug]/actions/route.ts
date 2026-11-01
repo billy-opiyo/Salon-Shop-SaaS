@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 import {
 	MessageStatus,
 	ReviewStatus,
@@ -79,6 +80,7 @@ export async function POST(
 			switch (action) {
 			case "storefront-design":
 				await updateTenantDesignForUser(session.user.id, tenantSlug, input)
+				revalidateTag("public-tenant-cards", { expire: 0 })
 				break
 			case "booking-status": {
 				const parsed = bookingStatusUpdateSchema.safeParse({

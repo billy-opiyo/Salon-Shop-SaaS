@@ -4807,7 +4807,7 @@ html.splash-active .splash-handwriting-letter {
 .site-search__input-wrap > button { flex: 0 0 auto; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: rgba(215,168,79,.14); color: #ffe7ad; font-size: 1.2rem; cursor: pointer; }
 .site-search__results { display: grid; gap: .3rem; padding: .6rem; }
 .site-search__result { display: grid; gap: .2rem; padding: .8rem .9rem; border-radius: .75rem; color: #fff8e8; }
-.site-search__result:hover, .site-search__result:focus-visible { background: rgba(215,168,79,.13); }
+.site-search__result:hover, .site-search__result:focus-visible, .site-search__result[aria-selected="true"] { background: rgba(215,168,79,.13); }
 .site-search__result strong { color: #f1d59b; font-size: .95rem; }
 .site-search__result span, .site-search__empty { color: #d4c6ad; font-size: .82rem; line-height: 1.5; }
 .site-search__empty { margin: 0; padding: 1rem; }

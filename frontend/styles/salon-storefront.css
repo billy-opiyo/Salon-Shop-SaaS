@@ -8934,7 +8934,8 @@ body.light-mode .salon-storefront-root .service-whatsapp-btn:focus-visible {
 }
 .salon-storefront-root .site-search__result { color: var(--text-primary); }
 .salon-storefront-root .site-search__result:hover,
-.salon-storefront-root .site-search__result:focus-visible { background: var(--primary-soft); }
+.salon-storefront-root .site-search__result:focus-visible,
+.salon-storefront-root .site-search__result[aria-selected="true"] { background: var(--primary-soft); }
 .salon-storefront-root .site-search__result strong { color: var(--primary-dark); }
 .salon-storefront-root .site-search__result span,
 .salon-storefront-root .site-search__empty { color: var(--text-secondary); }
@@ -8970,7 +8971,8 @@ body.light-mode .salon-storefront-root .site-search__input-wrap > button {
     background: color-mix(in srgb, var(--primary) 10%, #ffffff);
 }
 body.light-mode .salon-storefront-root .site-search__result:hover,
-body.light-mode .salon-storefront-root .site-search__result:focus-visible {
+body.light-mode .salon-storefront-root .site-search__result:focus-visible,
+body.light-mode .salon-storefront-root .site-search__result[aria-selected="true"] {
     background: color-mix(in srgb, var(--primary) 9%, #ffffff);
 }
 body.light-mode .salon-storefront-root .site-search__result strong {
