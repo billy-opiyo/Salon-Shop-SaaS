@@ -6,6 +6,7 @@ import { OfflineNotice } from "@/components/shared/OfflineNotice"
 import { AndroidNativeBridge } from "@/components/shared/AndroidNativeBridge"
 import { AndroidAppUpdatePrompt } from "@/components/shared/AndroidAppUpdatePrompt"
 import { AndroidAppDownloadPrompt } from "@/components/shared/AndroidAppDownloadPrompt"
+import { ActionNotificationViewport } from "@/components/shared/ActionNotificationViewport"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { resolveAndroidWebsiteChannel } from "@/lib/android-update-channel"
 
@@ -56,6 +57,7 @@ export default async function RootLayout({
 			</head>
 			<body data-android-channel={androidChannel ?? undefined}>
 				{children}
+				<ActionNotificationViewport />
 				<OfflineNotice brandName={design.branding.name} />
 				<AndroidNativeBridge brandName={design.branding.name} />
 				<AndroidAppUpdatePrompt channel={androidChannel} siteOrigin={androidChannel ? websiteOrigin : null} brandName={design.branding.name} />

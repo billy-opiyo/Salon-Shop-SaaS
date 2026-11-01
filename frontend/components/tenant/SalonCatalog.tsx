@@ -261,7 +261,8 @@ export function SalonGallery({
 
 export function SalonTestimonials({
 	items,
-}: Readonly<{ items: readonly SalonReviewItem[] }>): ReactNode {
+	tenantSlug,
+}: Readonly<{ items: readonly SalonReviewItem[]; tenantSlug: string }>): ReactNode {
 	return items.map((review, index) => (
 		<div
 			className="testimonial-card"
@@ -302,6 +303,13 @@ export function SalonTestimonials({
 					<path d="M20 6 9 17l-5-5" />
 				</svg>
 			</div>
+			{review.id ? (
+				<div className="testimonial-review-actions">
+					<button type="button" className="admin-action-btn review-report-btn" data-review-report-id={review.id} data-review-report-tenant={tenantSlug}>
+						🚩 Report Abuse
+					</button>
+				</div>
+			) : null}
 		</div>
 	))
 }

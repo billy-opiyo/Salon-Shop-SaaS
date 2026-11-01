@@ -38,7 +38,7 @@ export function PublishSalonForm({ tenantId }: { readonly tenantId: string }) {
 				</button>
 			</form>
 			{feedback && (
-				<p className={feedback.ok ? "platform-account-publish__message" : "platform-account-publish__message is-error"} role={feedback.ok ? "status" : "alert"}>
+				<p className={`form-message ${feedback.ok ? "form-message--success" : "form-message--error"} platform-account-publish__message`} role={feedback.ok ? "status" : "alert"}>
 					{feedback.message}
 				</p>
 			)}

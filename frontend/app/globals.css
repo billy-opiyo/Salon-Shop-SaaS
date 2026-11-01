@@ -7821,3 +7821,62 @@ html.splash-active .splash-handwriting-letter {
 @media (prefers-reduced-motion: reduce) {
 	.top-store--revealed { animation: none; }
 }
+
+.action-notification {
+	position: fixed;
+	top: max(16px, env(safe-area-inset-top));
+	right: max(16px, env(safe-area-inset-right));
+	z-index: 10000;
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	width: min(440px, calc(100vw - 32px));
+	max-height: min(30vh, 220px);
+	overflow: auto;
+	padding: 14px 16px;
+	border: 1px solid var(--line, var(--border, #80612e));
+	border-left: 4px solid var(--primary, #c8963e);
+	border-radius: 14px;
+	background: var(--bg-card, #21190f);
+	color: var(--text-primary, #f7eddb);
+	box-shadow: 0 14px 38px rgb(0 0 0 / 32%);
+	font: 500 0.94rem/1.5 var(--font-sans, Inter, sans-serif);
+	animation: action-notification-enter 180ms ease-out both;
+	word-break: break-word;
+}
+
+.action-notification--error { border-left-color: #d95f68; }
+.action-notification__icon {
+	flex: 0 0 22px;
+	display: grid;
+	width: 22px;
+	height: 22px;
+	place-items: center;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--primary, #c8963e) 18%, transparent);
+	color: var(--primary, #c8963e);
+	font-weight: 800;
+}
+.action-notification--error .action-notification__icon {
+	background: rgb(217 95 104 / 16%);
+	color: #f18b92;
+}
+
+@keyframes action-notification-enter {
+	from { opacity: 0; transform: translateY(-8px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+	.action-notification {
+		top: max(10px, env(safe-area-inset-top));
+		right: max(10px, env(safe-area-inset-right));
+		width: calc(100vw - 20px - env(safe-area-inset-left));
+		max-height: 24vh;
+		font-size: 0.88rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.action-notification { animation: none; }
+}
