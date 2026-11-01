@@ -3,6 +3,7 @@ import Link from "next/link"
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
 import { PlatformTeamCards } from "@/components/shared/PlatformTeamCards"
+import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { getPublishedPlatformTeam } from "@backend/services/platformTeamService"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
@@ -44,6 +45,7 @@ export default async function AboutPage() {
 					<div className="platform-hero__actions"><Link className="button button--primary" href="/onboarding">Start Your Salon</Link><Link className="button button--ghost" href="/support">Salon Owner Support</Link></div>
 				</section>
 			</main>
+			<PlatformFooter brandName={design.branding.name} description={design.content.footerDescription} supportEmail={design.contact.supportEmail} phone={design.contact.phone} whatsappUrl={design.contact.whatsappUrl} facebookUrl={design.contact.facebookUrl} instagramUrl={design.contact.instagramUrl} tiktokUrl={design.contact.tiktokUrl} />
 			<PlatformMobileActions />
 		</div>
 	)

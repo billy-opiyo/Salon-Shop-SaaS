@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { PlatformHeader } from "@/components/shared/PlatformHeader"
 import { PlatformMobileActions } from "@/components/shared/PlatformActionIcon"
+import { PlatformFooter } from "@/components/shared/PlatformFooter"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import { platformThemeStyle } from "@/lib/platformTheme"
 
@@ -47,6 +48,7 @@ export default async function SupportPage() {
 					</div>
 				</section>
 			</main>
+			<PlatformFooter brandName={design.branding.name} description={design.content.footerDescription} supportEmail={contact.supportEmail} phone={contact.phone} whatsappUrl={contact.whatsappUrl} facebookUrl={contact.facebookUrl} instagramUrl={contact.instagramUrl} tiktokUrl={contact.tiktokUrl} />
 			<PlatformMobileActions />
 		</div>
 	)

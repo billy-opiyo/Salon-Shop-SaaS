@@ -4916,6 +4916,16 @@ h6 {
     background: rgba(245, 101, 101, 0.12);
 }
 
+.testimonial-review-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+.testimonial-review-actions .review-report-btn {
+    min-height: 38px;
+}
+
 .admin-action-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
@@ -10550,9 +10560,9 @@ body.light-mode #serviceSelect option[data-custom-category-header="true"] {
     max-height: var(--popup-max-block-size);
     padding: 11px 14px;
     border-radius: 12px;
-    background: rgba(10, 10, 10, 0.9);
-    border: 1px solid rgba(200, 150, 62, 0.45);
-    color: #fff;
+	background: color-mix(in srgb, var(--bg-card, #21190f) 92%, transparent);
+	border: 1px solid color-mix(in srgb, var(--primary, #c8963e) 55%, transparent);
+	color: var(--text-primary, #fff);
     font-size: 0.86rem;
     font-weight: 600;
     opacity: 0;

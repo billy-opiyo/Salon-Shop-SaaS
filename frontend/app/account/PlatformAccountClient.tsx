@@ -371,7 +371,7 @@ export function PlatformAccountClient({
 
 	return (
 		<div className="platform-account-content" data-account-theme={preferences.theme} data-account-size={preferences.fontSize} data-account-contrast={preferences.highContrast ? "high" : "normal"} data-account-motion={preferences.reducedMotion ? "reduced" : "normal"}>
-			{message && <p className={`platform-account-message${error ? " is-error" : ""}`} role={error ? "alert" : "status"}>{message}</p>}
+			{message && <p className={`form-message platform-account-message${error ? " form-message--error is-error" : " form-message--success"}`} role={error ? "alert" : "status"}>{message}</p>}
 			<div className="platform-account-grid">
 				<section className="platform-account-panel" aria-labelledby="platform-profile-title">
 					<p className="eyebrow">Profile</p><h2 id="platform-profile-title">Personal details</h2>
@@ -479,7 +479,7 @@ export function PlatformAccountClient({
 													</select>
 												</label>
 												{availabilityError && (
-													<p className="platform-account-reschedule__availability" role="alert">
+									<p className="form-message form-message--error platform-account-reschedule__availability" role="alert">
 														{availabilityError}
 														{availableTimes.length === 0 && (
 															<button className="button button--outline button--small" type="button" onClick={() => setAvailabilityRetry((value) => value + 1)} disabled={availabilityLoading}>Retry availability</button>
@@ -523,7 +523,7 @@ export function PlatformAccountClient({
 					<p className="eyebrow">Privacy controls</p>
 					<h2 id="platform-account-delete-dialog-title">Delete your account?</h2>
 					<p id="platform-account-delete-dialog-description">{canDeleteAccount ? `This permanently removes your ${brandName} sign-in and personal profile. This action cannot be undone.` : "This account still owns one or more salon workspaces. Transfer ownership or remove those workspaces before you can delete this account."}</p>
-					{deleteError && <p className="platform-account-delete-dialog__error" role="alert">{deleteError}</p>}
+					{deleteError && <p className="form-message form-message--error platform-account-delete-dialog__error" role="alert">{deleteError}</p>}
 					{!canDeleteAccount && <p><Link className="button button--outline button--small" href="/account#account-salons-title" onClick={closeDeleteDialog}>View your salons</Link></p>}
 					<div className="platform-account-delete-dialog__actions">
 						<button ref={deleteCancelRef} className="button button--outline" type="button" onClick={closeDeleteDialog} disabled={busy}>Cancel</button>

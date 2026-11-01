@@ -3035,6 +3035,8 @@ export function bindAdminSnapshotAdapter(
 						error instanceof Error
 							? error.message
 							: "The admin action could not be completed."
+					message.classList.remove("success")
+					message.classList.add("error")
 					message.style.display = "block"
 				}
 			})
@@ -4736,7 +4738,7 @@ function bindPublicParityAdapters(
 					? "Thank you! Your review was submitted and is pending approval."
 					: (result.error ?? "The review could not be submitted."),
 				response.ok ? "success" : "error",
-				response.ok ? 3500 : 4000,
+				4000,
 			)
 			if (response.ok) {
 				reviewForm.reset()
@@ -4759,6 +4761,54 @@ function bindPublicParityAdapters(
 					"Submit Review",
 				)
 			}
+		}
+	}
+	const reportReview = async (event: Event): Promise<void> => {
+		const target = event.target
+		if (!(target instanceof Element)) return
+		const button = target.closest<HTMLButtonElement>("[data-review-report-id]")
+		if (!button) return
+		event.preventDefault()
+		if (!reviewForm || !(reviewForm instanceof HTMLFormElement)) return
+		const reviewSubmitWrap = document.getElementById("reviewSubmitWrap")
+		if (reviewSubmitWrap?.classList.contains("hidden")) {
+			openSignInModal("Please log in to report an abusive review.")
+			return
+		}
+		const turnstileToken = getTurnstileToken(reviewForm)
+		if (!turnstileToken) {
+			setReferenceFormMessage("reviewMessage", "Please complete the security check before reporting a review.", "error", 4000)
+			document.querySelector("#reviewForm [data-saas-turnstile]")?.scrollIntoView({ behavior: "smooth", block: "center" })
+			return
+		}
+		const originalLabel = button.textContent ?? "🚩 Report Abuse"
+		button.disabled = true
+		button.setAttribute("aria-busy", "true")
+		button.textContent = "Reporting…"
+		try {
+			const response = await fetch("/api/reviews", {
+				method: "PUT",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					tenantSlug: button.dataset.reviewReportTenant ?? tenantSlug,
+					id: button.dataset.reviewReportId,
+					reason: "Abusive, misleading, or otherwise inappropriate review.",
+					turnstileToken,
+				}),
+			})
+			const result = await readReferenceJson(response)
+			if (response.status === 401) {
+				openSignInModal("Please log in to report an abusive review.")
+				return
+			}
+			setReferenceFormMessage("reviewMessage", response.ok ? "Thank you. The review was reported for moderation." : (result.error ?? "The review could not be reported."), response.ok ? "success" : "error", 4000)
+		} catch {
+			setReferenceFormMessage("reviewMessage", "The review could not be reported. Please try again.", "error", 4000)
+		} finally {
+			resetTurnstile(reviewForm)
+			button.disabled = false
+			button.removeAttribute("aria-busy")
+			button.textContent = originalLabel
 		}
 	}
 	const clearFormFeedback = (elementId: string): void =>
@@ -4947,6 +4997,7 @@ function bindPublicParityAdapters(
 	termsAcceptButton?.addEventListener("click", acceptTerms)
 	contactSuccessClose?.addEventListener("click", closeContactSuccess)
 	document.addEventListener("click", toggleFavorite, true)
+	document.addEventListener("click", reportReview, true)
 	document.addEventListener("click", cancelBooking, true)
 	document.addEventListener("click", rescheduleBooking, true)
 	document
@@ -4976,6 +5027,7 @@ function bindPublicParityAdapters(
 		termsAcceptButton?.removeEventListener("click", acceptTerms)
 		contactSuccessClose?.removeEventListener("click", closeContactSuccess)
 		document.removeEventListener("click", toggleFavorite, true)
+		document.removeEventListener("click", reportReview, true)
 		document.removeEventListener("click", cancelBooking, true)
 		document.removeEventListener("click", rescheduleBooking, true)
 		document
@@ -5364,7 +5416,7 @@ function showFavoritesToast(message: string): void {
 	if (!toast) return
 	toast.textContent = message
 	toast.classList.add("show")
-	window.setTimeout(() => toast.classList.remove("show"), 1800)
+	window.setTimeout(() => toast.classList.remove("show"), 4000)
 }
 
 function renderReferenceDashboard(
@@ -6129,7 +6181,7 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 		if (toast) {
 			toast.textContent = "You're now continuing as guest"
 			toast.classList.add("show")
-			window.setTimeout(() => toast.classList.remove("show"), 1800)
+			window.setTimeout(() => toast.classList.remove("show"), 4000)
 		}
 	}
 
@@ -8108,7 +8160,7 @@ export function SalonStorefrontRuntime({
 				verifyEmailHref={`/verify-email?tenant=${encodeURIComponent(tenantSlug ?? "royal-braids")}`}
 				galleryContent={<SalonGallery items={gallery} />}
 				servicesContent={<SalonServices items={services} />}
-				testimonialsContent={<SalonTestimonials items={testimonials} />}
+				testimonialsContent={<SalonTestimonials items={testimonials} tenantSlug={tenantSlug ?? "royal-braids"} />}
 				blogContent={<SalonBlogs items={blogs} />}
 				serviceOptions={<SalonServiceOptions items={services} />}
 				stylistOptions={stylists.map((stylist) => (

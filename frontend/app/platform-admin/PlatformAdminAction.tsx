@@ -19,11 +19,11 @@ export function PlatformAdminAction({
 }: PlatformAdminActionProps) {
 	const router = useRouter()
 	const [busy, setBusy] = useState(false)
-	const [error, setError] = useState("")
+	const [feedback, setFeedback] = useState<{ readonly message: string; readonly error: boolean } | null>(null)
 
 	async function runAction() {
 		setBusy(true)
-		setError("")
+		setFeedback(null)
 		try {
 			const response = await fetch("/api/platform-admin/actions", {
 				method: "POST",
@@ -35,11 +35,10 @@ export function PlatformAdminAction({
 				error?: string
 			}
 			if (!response.ok) throw new Error(result.error ?? "Action failed.")
+			setFeedback({ message: `${label} completed successfully.`, error: false })
 			router.refresh()
 		} catch (actionError) {
-			setError(
-				actionError instanceof Error ? actionError.message : "Action failed.",
-			)
+			setFeedback({ message: actionError instanceof Error ? actionError.message : "Action failed.", error: true })
 		} finally {
 			setBusy(false)
 		}
@@ -56,9 +55,9 @@ export function PlatformAdminAction({
 				disabled={busy}
 				onConfirm={runAction}
 			/>
-			{error && (
-				<span className="platform-admin-action-error" role="alert">
-					{error}
+			{feedback && (
+				<span className={`form-message ${feedback.error ? "form-message--error" : "form-message--success"} platform-admin-action-error`} role={feedback.error ? "alert" : "status"}>
+					{feedback.message}
 				</span>
 			)}
 		</span>
