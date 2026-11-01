@@ -7638,7 +7638,11 @@ function bindNativeGalleryControls(
 				([group, value]) => value === "all" || valueFor(card, group) === value,
 			),
 		)
-		matches.sort(compare).forEach((card) => grid.appendChild(card))
+		// Keep React's child order intact. Moving hydrated React nodes with
+		// appendChild can make React fail later when it reconciles the gallery.
+		matches.sort(compare).forEach((card, index) => {
+			card.style.order = String(index)
+		})
 		cards.forEach((card) => {
 			const visible =
 				matches.includes(card) && (showAll || matches.indexOf(card) < 8)
@@ -7728,7 +7732,11 @@ function bindNativeContentControls(): () => void {
 				}
 				return featuredFirst(a, b) || recencyDiff
 			})
-			sorted.forEach((card) => reviewGrid.appendChild(card))
+			// CSS order preserves the React-managed DOM tree while still sorting
+			// review cards for the active filter.
+			sorted.forEach((card, index) => {
+				card.style.order = String(index)
+			})
 			reviewCards.forEach((card, index) => {
 				card.style.display = showAllReviews || index < 6 ? "" : "none"
 			})
@@ -8288,42 +8296,80 @@ export function SalonStorefrontRuntime({
 	clientConfig,
 }: SalonStorefrontRuntimeProps) {
 	useEffect(() => {
-		window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
-		applyNativeClientConfig(clientConfig)
-		// Storefronts open directly into their homepage. The platform owns the
-		// Beauty Sphia splash, so tenant stores never flash a second splash.
-		const removeSplash = initializeNativeSplash(true)
-		const removeImageSizeGuard = bindImageSizeGuard()
-		const gallery = clientConfig.catalog?.gallery ?? []
-		const removeInteractions = bindNativeSalonInteractions(gallery)
-		const removeGalleryControls = bindNativeGalleryControls(gallery)
-		const removeContentControls = bindNativeContentControls()
-		const removeBooking = bindBookingAdapter(
-			tenantSlug ?? "",
-			turnstileSiteKey ?? "",
-		)
-		const removeAuth = bindAuthAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
-		const removePublic = bindPublicParityAdapters(
-			tenantSlug ?? "",
-			turnstileSiteKey ?? "",
-			gallery,
-		)
-		const removeAccount = bindAccountMutationAdapter(tenantSlug ?? "")
-		const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
-		const removeAppSwitchLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-mobile-app-switch-link]"))
-			.map((anchor) => initializeMobileAppSwitchLink(anchor))
+		let cancelled = false
+		let initialized = false
+		let firstFrame = 0
+		let secondFrame = 0
+		let startupTimer = 0
+		let waitingForLoad = false
+		let cleanup: Array<() => void> = []
+
+		// Legacy storefront adapters update server-rendered markup. Starting them
+		// during selective hydration can make React reconcile nodes that an
+		// adapter has already reordered. Let the document load, then let hydration
+		// settle before attaching the adapters.
+		const scheduleInitialization = (): void => {
+			startupTimer = window.setTimeout(() => {
+				firstFrame = window.requestAnimationFrame(() => {
+					secondFrame = window.requestAnimationFrame(() => {
+						if (cancelled) return
+						window.CLIENT_CONFIG = { ...clientConfig } as Record<string, unknown>
+						applyNativeClientConfig(clientConfig)
+						// Storefronts open directly into their homepage. The platform owns the
+						// Beauty Sphia splash, so tenant stores never flash a second splash.
+						const removeSplash = initializeNativeSplash(true)
+						const removeImageSizeGuard = bindImageSizeGuard()
+						const gallery = clientConfig.catalog?.gallery ?? []
+						const removeInteractions = bindNativeSalonInteractions(gallery)
+						const removeGalleryControls = bindNativeGalleryControls(gallery)
+						const removeContentControls = bindNativeContentControls()
+						const removeBooking = bindBookingAdapter(
+							tenantSlug ?? "",
+							turnstileSiteKey ?? "",
+						)
+						const removeAuth = bindAuthAdapter(tenantSlug ?? "", turnstileSiteKey ?? "")
+						const removePublic = bindPublicParityAdapters(
+							tenantSlug ?? "",
+							turnstileSiteKey ?? "",
+							gallery,
+						)
+						const removeAccount = bindAccountMutationAdapter(tenantSlug ?? "")
+						const removeNavigation = addTenantNavigationLinks(tenantSlug ?? "")
+						const removeAppSwitchLinks = Array.from(
+							document.querySelectorAll<HTMLAnchorElement>("[data-mobile-app-switch-link]"),
+						).map((anchor) => initializeMobileAppSwitchLink(anchor))
+						cleanup = [
+							removeSplash,
+							removeImageSizeGuard,
+							removeInteractions,
+							removeGalleryControls,
+							removeContentControls,
+							removeBooking,
+							removeAuth,
+							removePublic,
+							removeAccount,
+							removeNavigation,
+							...removeAppSwitchLinks,
+						]
+						initialized = true
+					})
+				})
+			})
+		}
+		if (document.readyState === "complete") {
+			scheduleInitialization()
+		} else {
+			waitingForLoad = true
+			window.addEventListener("load", scheduleInitialization, { once: true })
+		}
 		return () => {
-			removeSplash()
-			removeImageSizeGuard()
-			removeInteractions()
-			removeGalleryControls()
-			removeContentControls()
-			removeBooking()
-			removeAuth()
-			removePublic()
-			removeAccount()
-			removeNavigation()
-			removeAppSwitchLinks.forEach((remove) => remove())
+			cancelled = true
+			if (waitingForLoad)
+				window.removeEventListener("load", scheduleInitialization)
+			window.clearTimeout(startupTimer)
+			window.cancelAnimationFrame(firstFrame)
+			window.cancelAnimationFrame(secondFrame)
+			if (initialized) cleanup.forEach((remove) => remove())
 		}
 	}, [clientConfig, tenantSlug, turnstileSiteKey])
 
