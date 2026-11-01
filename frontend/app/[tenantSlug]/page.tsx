@@ -204,12 +204,19 @@ export async function generateMetadata({
 }
 
 export async function renderTenantStorefront(tenantSlug: string) {
-	const sessionPromise = auth()
-	const showAdminSearchPromise = sessionPromise.then((session) =>
-		session?.user?.id
-			? hasMerchantAdminPanelAccessForSlug(session.user.id, tenantSlug)
-			: false,
-	)
+	// Public storefront rendering must not depend on the optional admin shortcut
+	// being able to resolve an auth session. If auth is unavailable, render the
+	// storefront normally and omit the admin-only search entry.
+	const showAdminSearchPromise = (async () => {
+		try {
+			const session = await auth()
+			return session?.user?.id
+				? await hasMerchantAdminPanelAccessForSlug(session.user.id, tenantSlug)
+				: false
+		} catch {
+			return false
+		}
+	})()
 	const [tenant, showAdminSearch] = await Promise.all([
 		getTenantStorefront(tenantSlug),
 		showAdminSearchPromise,
