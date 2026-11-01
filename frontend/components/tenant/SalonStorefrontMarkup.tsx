@@ -17,6 +17,7 @@ export interface SalonStorefrontMarkupProps {
 	readonly stylistOptions?: ReactNode
 	readonly bookingPaymentContent?: ReactNode
 	readonly mpesaPaymentAvailable?: boolean
+	readonly hasTurnstile?: boolean
 	readonly mapEmbedUrl: string
 	readonly reviewServiceOptions?: ReactNode
 	readonly searchEntries?: readonly SiteSearchEntry[]
@@ -33,10 +34,16 @@ export function SalonStorefrontMarkup({
 	stylistOptions,
 	bookingPaymentContent,
 	mpesaPaymentAvailable = false,
+	hasTurnstile = false,
 	mapEmbedUrl,
 	reviewServiceOptions,
 	searchEntries = [],
 }: SalonStorefrontMarkupProps): ReactNode {
+	const turnstileSlot = () => hasTurnstile ? (
+		<div className="form-group full turnstile-widget" data-saas-turnstile="true" aria-live="polite">
+			<input type="hidden" name="turnstileToken" />
+		</div>
+	) : null
 	return (
 		<>
 
@@ -857,6 +864,7 @@ export function SalonStorefrontMarkup({
 									></textarea>
 								</div>
 							</div>
+			{turnstileSlot()}
 							<button type="submit" className="submit-booking" id="submitBtn">
 								<svg
 									width="20"
@@ -1242,6 +1250,7 @@ export function SalonStorefrontMarkup({
 								></textarea>
 							</div>
 						</div>
+						{turnstileSlot()}
 						<div className="admin-booking-actions" style={{marginTop: "4px"}}>
 							<button
 								type="submit"
@@ -1538,6 +1547,7 @@ export function SalonStorefrontMarkup({
 								></textarea>
 							</div>
 						</div>
+						{turnstileSlot()}
 						<button type="submit" className="btn btn-primary">Send Message</button>
 					</form>
 					<div
@@ -1865,6 +1875,7 @@ export function SalonStorefrontMarkup({
 							</button>
 						</div>
 					</div>
+					{turnstileSlot()}
 					<button
 						type="submit"
 						className="btn btn-primary auth-submit-btn"
