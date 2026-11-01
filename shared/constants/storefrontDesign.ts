@@ -48,6 +48,10 @@ export interface StorefrontVisibility {
 
 export interface StorefrontDesignConfig {
 	readonly heroDescription: string
+	readonly heroCardImageUrl: string
+	readonly heroExperience: string
+	readonly heroRating: string
+	readonly heroReviewCount: string
 	readonly sectionCopy: StorefrontSectionCopy
 	readonly sectionVisibility: StorefrontVisibility
 	readonly mapEmbedUrl: string
@@ -55,6 +59,10 @@ export interface StorefrontDesignConfig {
 
 export const DEFAULT_STOREFRONT_DESIGN: StorefrontDesignConfig = {
 	heroDescription: "From signature braids, hair services and flawless twists to glowing beauty spa rituals, precision nails, radiant makeup, barber grooming, eyebrows & lash enhancements, and bridal-ready glam—step into a full beauty experience crafted to make you shine.",
+	heroCardImageUrl: "/assets/salon/4-african-knotless-braids-with-beads.webp",
+	heroExperience: "10+",
+	heroRating: "4.9/5",
+	heroReviewCount: "500+ Reviews",
 	sectionCopy: {
 		gallerySubtitle: "Our Work",
 		galleryTitle: "Services Gallery",

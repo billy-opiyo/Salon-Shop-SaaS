@@ -138,6 +138,7 @@ function buildReferenceClientConfig(
 			logoAlt: tenant.businessName + " logo",
 			heroImage,
 			heroImageAlt: tenant.businessName + " salon",
+			heroCardImage: design.heroCardImageUrl || DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
 			heroSubtitle:
 				tenant.heroSubtitle ?? "Hair, beauty, and self-care made personal",
 			heroTitleHtml:

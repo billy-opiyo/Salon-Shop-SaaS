@@ -328,15 +328,16 @@ export function SalonStorefrontMarkup({
 								loading="eager"
 								decoding="async"
 								fetchPriority="high"
+								data-client-attr="src:brand.heroCardImage"
 							/>
 						</div>
 						<div className="hero-badge">
-							<div className="number">10+</div>
+							<div className="number" data-client-text="storefront.heroExperience">10+</div>
 							<div className="text">Years Experience</div>
 						</div>
 						<div className="hero-float">
-							<span>⭐ 4.9/5</span>
-							<p>500+ Reviews</p>
+							<span>⭐ <span data-client-text="storefront.heroRating">4.9/5</span></span>
+							<p data-client-text="storefront.heroReviewCount">500+ Reviews</p>
 						</div>
 					</div>
 				</div>

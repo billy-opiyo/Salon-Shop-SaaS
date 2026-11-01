@@ -191,6 +191,13 @@ export function SalonAdminMarkup({
 										<img id="adminDesignHeroPreview" className="admin-design-image-preview" alt="Current salon hero image" hidden />
 									</div>
 									<div className="form-group full">
+										<label htmlFor="adminDesignHeroCardFile">Hero feature card image</label>
+										<input id="adminDesignHeroCardFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+										<small className="admin-field-help">This is the image displayed beside the years-of-experience and rating cards. Maximum 1 MB.</small>
+										<input id="adminDesignHeroCardUrl" type="hidden" />
+										<img id="adminDesignHeroCardPreview" className="admin-design-image-preview" alt="Current hero feature card image" hidden />
+									</div>
+									<div className="form-group full">
 										<label htmlFor="adminDesignHeroTitle">Hero title</label>
 										<input id="adminDesignHeroTitle" defaultValue="Celebrate Your Crown with Beautiful Braids" maxLength={140} />
 									</div>
@@ -201,6 +208,18 @@ export function SalonAdminMarkup({
 									<div className="form-group full">
 										<label htmlFor="adminDesignHeroDescription">Hero description</label>
 										<textarea id="adminDesignHeroDescription" rows={3} maxLength={600} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignHeroExperience">Years of experience badge</label>
+										<input id="adminDesignHeroExperience" defaultValue="10+" maxLength={40} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignHeroRating">Hero rating</label>
+										<input id="adminDesignHeroRating" defaultValue="4.9/5" maxLength={40} />
+									</div>
+									<div className="form-group">
+										<label htmlFor="adminDesignHeroReviewCount">Hero review count</label>
+										<input id="adminDesignHeroReviewCount" defaultValue="500+ Reviews" maxLength={60} />
 									</div>
 									</div>
 									<div className="admin-booking-actions admin-design-save-row">
