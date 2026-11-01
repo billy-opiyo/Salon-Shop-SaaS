@@ -25,6 +25,8 @@ export interface TenantBookingPaymentPolicy {
 	readonly enabled: boolean
 	readonly modes: readonly import("@shared/constants/bookingPayments").BookingPaymentMode[]
 	readonly depositPercent: number
+	readonly collectionMethod?: "platform-stk" | "paybill" | "till" | "registered-phone"
+	readonly collectionNumber?: string | null
 	readonly currency: string
 }
 

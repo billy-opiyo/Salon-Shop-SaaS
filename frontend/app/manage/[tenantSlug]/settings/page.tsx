@@ -8,6 +8,7 @@ import {
 	TenantSettingsError,
 } from "@backend/services/tenantSettingsService"
 import { saveTenantSettings } from "./actions"
+import { BookingPaymentCollectionFields } from "./BookingPaymentCollectionFields"
 import {
 	DEFAULT_THEME_PRESET,
 	THEME_PRESET_OPTIONS,
@@ -39,6 +40,10 @@ export default async function MerchantSettingsPage({
 	const selectedThemePreset = isThemePreset(savedThemePreset)
 		? savedThemePreset
 		: DEFAULT_THEME_PRESET
+	const collectionMethods = ["platform-stk", "paybill", "till", "registered-phone"] as const
+	const bookingCollectionMethod = collectionMethods.includes(settings?.bookingCollectionMethod as typeof collectionMethods[number])
+		? settings?.bookingCollectionMethod as typeof collectionMethods[number]
+		: "platform-stk"
 	return (
 		<main className="manage-page">
 			<header className="manage-header">
@@ -150,6 +155,10 @@ export default async function MerchantSettingsPage({
 				<p className="form-help">
 					WhatsApp orders and WhatsApp bookings are never charged here.
 				</p>
+				<BookingPaymentCollectionFields
+					initialMethod={bookingCollectionMethod}
+					initialNumber={settings?.bookingCollectionNumber ?? ""}
+				/>
 				<label>
 					<input
 						name="bookingPaymentModes"

@@ -130,6 +130,20 @@ export const tenantSettingsSchema = z.object({
 		"after_service",
 	]),
 	bookingDepositPercent: z.coerce.number().int().min(1).max(100).default(50),
+	bookingCollectionMethod: z.enum(["platform-stk", "paybill", "till", "registered-phone"]).default("platform-stk"),
+	bookingCollectionNumber: z.string().trim().max(40).regex(/^[0-9+() -]*$/).default(""),
+}).refine((value) => {
+	if (value.bookingCollectionMethod === "platform-stk") return true
+	const digits = value.bookingCollectionNumber.replace(/\D/g, "")
+	if (value.bookingCollectionMethod === "registered-phone") {
+		return (digits.startsWith("254") && digits.length === 12 && /^[17]/.test(digits.slice(3))) ||
+			(digits.startsWith("0") && digits.length === 10 && /^[17]/.test(digits.slice(1))) ||
+			((digits.startsWith("1") || digits.startsWith("7")) && digits.length === 9)
+	}
+	return digits.length >= 5 && digits.length <= 8
+}, {
+	path: ["bookingCollectionNumber"],
+	message: "Enter a valid Paybill, Till, or Kenyan M-Pesa phone number for the selected collection method.",
 })
 
 export type TenantSettingsInput = z.infer<typeof tenantSettingsSchema>

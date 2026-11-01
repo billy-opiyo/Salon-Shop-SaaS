@@ -6,7 +6,7 @@ import {
 	WaitlistStatus,
 } from "@prisma/client"
 
-import { updateBookingStatusForUser } from "@backend/services/merchantBookingService"
+import { reviewManualBookingPaymentForUser, updateBookingStatusForUser } from "@backend/services/merchantBookingService"
 import { updateWaitlistStatusForUser } from "@backend/services/merchantWaitlistService"
 import { convertWaitlistEntryToBooking } from "@backend/services/merchantWaitlistConversionService"
 import {
@@ -92,6 +92,18 @@ export async function POST(
 						{ status: 400 },
 					)
 				await updateBookingStatusForUser(session.user.id, parsed.data)
+				break
+			}
+			case "booking-payment-review": {
+				const paymentId = typeof input.paymentId === "string" ? input.paymentId : ""
+				if (!paymentId || (input.decision !== "approve" && input.decision !== "reject"))
+					return NextResponse.json({ error: "Choose a valid payment review action." }, { status: 400 })
+				await reviewManualBookingPaymentForUser(
+					session.user.id,
+					tenantSlug,
+					paymentId,
+					input.decision,
+				)
 				break
 			}
 			case "waitlist-status":

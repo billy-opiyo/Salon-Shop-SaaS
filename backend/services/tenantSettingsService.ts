@@ -47,6 +47,8 @@ export async function getTenantSettingsForUser(
 					"bookingPaymentsEnabled",
 					"bookingPaymentModes",
 					"bookingDepositPercent",
+					"bookingCollectionMethod",
+					"bookingCollectionNumber",
 				].includes(key),
 			),
 		) as typeof settings
@@ -71,6 +73,8 @@ export async function updateTenantSettingsForUser(
 		"bookingPaymentsEnabled",
 		"bookingPaymentModes",
 		"bookingDepositPercent",
+		"bookingCollectionMethod",
+		"bookingCollectionNumber",
 	] as const
 	const paymentSettingsSubmitted = paymentSettingKeys.some((key) => key in submitted)
 	if (paymentSettingsSubmitted && !isOwner)
@@ -81,6 +85,8 @@ export async function updateTenantSettingsForUser(
 			bookingPaymentsEnabled: input.bookingPaymentsEnabled,
 			bookingPaymentModes: input.bookingPaymentModes,
 			bookingDepositPercent: input.bookingDepositPercent,
+			bookingCollectionMethod: input.bookingCollectionMethod,
+			bookingCollectionNumber: input.bookingCollectionNumber || null,
 		}
 		: {}
 	return prisma.tenantSettings.upsert({

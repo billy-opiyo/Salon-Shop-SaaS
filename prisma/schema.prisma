@@ -349,6 +349,8 @@ model TenantSettings {
   bookingPaymentsEnabled Boolean @default(false)
   bookingPaymentModes Json?
   bookingDepositPercent Int @default(50)
+  bookingCollectionMethod String @default("platform-stk")
+  bookingCollectionNumber String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -687,6 +689,8 @@ model BookingPayment {
   currency             String   @default("KES")
   status               String   @default("pending")
   phoneNumber          String?
+  collectionMethod     String   @default("platform-stk")
+  collectionNumber     String?
   merchantRequestId    String?
   checkoutRequestId    String?  @unique
   mpesaReceiptNumber   String?

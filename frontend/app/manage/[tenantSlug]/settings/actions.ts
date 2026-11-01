@@ -17,6 +17,8 @@ export async function saveTenantSettings(formData: FormData) {
 			.getAll("bookingPaymentModes")
 			.filter((value): value is string => typeof value === "string")
 		raw.bookingDepositPercent = formData.get("bookingDepositPercent")
+		raw.bookingCollectionMethod = formData.get("bookingCollectionMethod")
+		raw.bookingCollectionNumber = formData.get("bookingCollectionNumber") ?? ""
 	}
 	await updateTenantSettingsForUser(
 		session.user.id,

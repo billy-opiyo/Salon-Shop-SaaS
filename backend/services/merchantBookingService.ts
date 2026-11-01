@@ -8,6 +8,7 @@ import {
 	notifyNextWaitlistedCustomer,
 } from "@backend/services/notificationService";
 import { assertTenantMembership, assertTenantPermission, type TenantMembershipContext } from "@backend/services/authorization";
+import { expireBookingPayment } from "@backend/services/bookingPaymentService";
 import type { BookingStatusUpdateInput } from "@shared/validation/merchant";
 
 const ALLOWED_TRANSITIONS: Readonly<Record<BookingStatus, readonly BookingStatus[]>> = {
@@ -61,9 +62,140 @@ export async function listBookingsForUser(userId: string, tenantSlug: string) {
       specialRequests: true,
       inspirationImageUrl: true,
       waitlistEntry: { select: { id: true } },
+			payments: {
+				orderBy: { createdAt: "desc" },
+				take: 1,
+				select: {
+					id: true,
+					status: true,
+					paymentMode: true,
+					amountMinor: true,
+					currency: true,
+					collectionMethod: true,
+					collectionNumber: true,
+					mpesaReceiptNumber: true,
+					resultDescription: true,
+				},
+			},
       createdAt: true,
     },
   });
+}
+
+export async function reviewManualBookingPaymentForUser(
+	userId: string,
+	tenantSlug: string,
+	paymentId: string,
+	decision: "approve" | "reject",
+): Promise<void> {
+	const membership = await getBookingMembership(userId, tenantSlug)
+	if (membership.role !== "OWNER")
+		throw new MerchantBookingError("Only the salon owner can review manual booking payments.")
+	const payment = await prisma.bookingPayment.findFirst({
+		where: { id: paymentId, tenantId: membership.tenantId },
+		select: {
+			id: true,
+			status: true,
+			paymentMode: true,
+			amountMinor: true,
+			serviceTotalMinor: true,
+			currency: true,
+			collectionMethod: true,
+			collectionNumber: true,
+			mpesaReceiptNumber: true,
+			expiresAt: true,
+			bookingId: true,
+			booking: {
+				select: {
+					status: true,
+					email: true,
+					phone: true,
+					firstName: true,
+					lastName: true,
+					serviceName: true,
+					appointmentDate: true,
+					timeLabel: true,
+					tenant: { select: { businessName: true } },
+				},
+			},
+		},
+	})
+	if (!payment || payment.collectionMethod === "platform-stk" || !payment.mpesaReceiptNumber)
+		throw new MerchantBookingError("There is no manual receipt awaiting review for this payment.")
+	if (payment.status !== "pending")
+		throw new MerchantBookingError("This booking payment has already been reviewed or is no longer active.")
+	if (payment.expiresAt && payment.expiresAt <= new Date()) {
+		await expireBookingPayment(payment.id, "Manual payment review window expired.")
+		throw new MerchantBookingError("This manual payment window has expired; the receipt cannot be approved.")
+	}
+	if (payment.booking.status !== "PENDING")
+		throw new MerchantBookingError("This booking is no longer awaiting confirmation.")
+	await prisma.$transaction(async (transaction) => {
+		const updated = await transaction.bookingPayment.updateMany({
+			where: {
+				id: payment.id,
+				tenantId: membership.tenantId,
+				status: "pending",
+				mpesaReceiptNumber: payment.mpesaReceiptNumber,
+			},
+			data: decision === "approve"
+				? { status: "succeeded", resultDescription: "Manual M-Pesa receipt approved by salon owner.", completedAt: new Date() }
+				: { status: "pending", mpesaReceiptNumber: null, resultDescription: "Receipt declined by salon owner. Client may submit a corrected receipt." },
+		})
+		if (updated.count !== 1)
+			throw new MerchantBookingError("This receipt changed before the review completed.")
+		if (decision === "approve") {
+			const bookingUpdate = await transaction.booking.updateMany({
+				where: { id: payment.bookingId, tenantId: membership.tenantId, status: "PENDING" },
+				data: { status: "CONFIRMED" },
+			})
+			if (bookingUpdate.count !== 1)
+				throw new MerchantBookingError("The booking changed before the payment review completed.")
+			const balanceMinor = payment.serviceTotalMinor - payment.amountMinor
+			if (balanceMinor > 0) {
+				await transaction.bookingPayment.create({
+					data: {
+						tenantId: membership.tenantId,
+						bookingId: payment.bookingId,
+						paymentMode: "after_service",
+						amountMinor: balanceMinor,
+						serviceTotalMinor: payment.serviceTotalMinor,
+						currency: payment.currency,
+						status: "deferred",
+						collectionMethod: payment.collectionMethod,
+						collectionNumber: payment.collectionNumber,
+					},
+				})
+			}
+		}
+		await transaction.adminAuditLog.create({
+			data: {
+				tenantId: membership.tenantId,
+				actorUserId: userId,
+				action: `booking.payment.manual.${decision}`,
+				resourceType: "booking_payment",
+				resourceId: payment.id,
+				metadata: { bookingId: payment.bookingId, receipt: payment.mpesaReceiptNumber } as Prisma.InputJsonValue,
+			},
+		})
+	})
+	if (decision === "approve" && payment.booking.email) {
+		await notifyBookingCustomer({
+			tenantId: membership.tenantId,
+			bookingId: payment.bookingId,
+			businessName: payment.booking.tenant.businessName,
+			templateKey: "booking.payment_confirmed",
+			customer: {
+				firstName: payment.booking.firstName,
+				lastName: payment.booking.lastName,
+				email: payment.booking.email,
+				phone: payment.booking.phone,
+			},
+			serviceName: payment.booking.serviceName,
+			appointmentDate: payment.booking.appointmentDate,
+			timeLabel: payment.booking.timeLabel,
+		})
+	}
 }
 
 export async function updateBookingStatusForUser(userId: string, input: BookingStatusUpdateInput): Promise<void> {
