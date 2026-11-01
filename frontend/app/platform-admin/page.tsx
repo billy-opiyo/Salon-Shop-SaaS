@@ -194,15 +194,22 @@ export default async function PlatformAdminPage() {
 									</span>
 								</div>
 								<div>
-									<span>
-										{attempt.resultDescription ?? "Manual review requested"}
-									</span>
-									<PlatformAdminAction
-										action="resolve-payment"
-										id={attempt.id}
-										label="Resolve"
-										confirmation="Mark this payment attempt as resolved?"
-									/>
+									{attempt.resolutionType === "manual_transfer" ? (
+										<>
+											<span>Manual transfer · {attempt.invoice.kind} invoice · {formatAmount(attempt.invoice.amountMinor, attempt.invoice.currency)}</span>
+											<span>M-Pesa receipt: {attempt.mpesaReceiptNumber ?? "Not supplied"}</span>
+											<span>{attempt.resultDescription ?? "Awaiting platform-owner review"}</span>
+											<div className="platform-admin-payment-review-actions">
+												<PlatformAdminAction action="approve-manual-transfer" id={attempt.id} label="Approve payment" confirmation={`Verify receipt ${attempt.mpesaReceiptNumber ?? "provided"} and mark invoice ${attempt.invoice.invoiceNumber} paid?`} />
+												<PlatformAdminAction action="reject-manual-transfer" id={attempt.id} label="Reject receipt" confirmation={`Reject the submitted receipt for invoice ${attempt.invoice.invoiceNumber}? The invoice will remain unpaid.`} />
+											</div>
+										</>
+									) : (
+										<>
+											<span>{attempt.resultDescription ?? "Manual review requested"}</span>
+											<PlatformAdminAction action="resolve-payment" id={attempt.id} label="Resolve" confirmation="Mark this payment attempt as resolved?" />
+										</>
+									)}
 								</div>
 							</article>
 						))}

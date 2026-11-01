@@ -1,7 +1,7 @@
 import "server-only"
 
 import { prisma } from "@backend/db/prisma"
-import { requestInvoicePayment } from "@backend/services/darajaPaymentService"
+import { normalizeKenyanMpesaPhone, requestInvoicePayment } from "@backend/services/darajaPaymentService"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
 import type { PlanTier } from "@shared/types/tenant"
 
@@ -53,7 +53,7 @@ export async function getBillingSnapshotForUser(
 					paymentAttempts: {
 						orderBy: { requestedAt: "desc" },
 						take: 1,
-						select: { status: true, phoneNumber: true, requestedAt: true },
+						select: { status: true, phoneNumber: true, requestedAt: true, mpesaReceiptNumber: true, resolutionType: true, resultDescription: true },
 					},
 				},
 			},
@@ -103,6 +103,67 @@ export async function requestRenewalPaymentForUser(
 		})
 	}
 	return result
+}
+
+export async function submitManualTransferForReview(
+	userId: string,
+	tenantSlug: string,
+	invoiceId: string,
+	senderPhoneInput: string,
+	receiptInput: string,
+) {
+	const design = await getPlatformStorefrontDesign()
+	if (design.billing.paymentMode !== "registered-phone")
+		throw new MerchantBillingError("Manual M-Pesa transfers are not enabled.")
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: tenantSlug.trim().toLowerCase() },
+		select: {
+			id: true,
+			memberships: { where: { userId, status: "ACTIVE" }, select: { role: true } },
+			subscription: { select: { status: true } },
+		},
+	})
+	if (!tenant || tenant.memberships[0]?.role !== "OWNER")
+		throw new MerchantBillingError("Only the salon owner can submit invoice payments.")
+	const invoice = await prisma.billingInvoice.findFirst({
+		where: { id: invoiceId, tenantId: tenant.id, status: "pending" },
+		select: { id: true, kind: true, invoiceNumber: true },
+	})
+	if (!invoice) throw new MerchantBillingError("This invoice is no longer awaiting payment.")
+	if (invoice.kind === "setup" && tenant.subscription?.status !== "setup_payment_required")
+		throw new MerchantBillingError("The setup invoice is not available for payment review.")
+	if (invoice.kind === "monthly" && !["payment_due", "suspended"].includes(tenant.subscription?.status ?? ""))
+		throw new MerchantBillingError("The monthly invoice is not available for payment review.")
+	const phoneNumber = normalizeKenyanMpesaPhone(senderPhoneInput)
+	const receiptNumber = receiptInput.trim().toUpperCase()
+	if (!/^[A-Z0-9]{6,16}$/.test(receiptNumber))
+		throw new MerchantBillingError("Enter a valid M-Pesa receipt reference (6–16 letters or numbers).")
+	const existingReview = await prisma.paymentAttempt.findFirst({
+		where: { invoiceId: invoice.id, status: "manual_review", resolutionType: "manual_transfer" },
+		select: { id: true, mpesaReceiptNumber: true },
+	})
+	if (existingReview) {
+		if (existingReview.mpesaReceiptNumber === receiptNumber)
+			return { status: "manual_review" as const, alreadySubmitted: true as const }
+		throw new MerchantBillingError("A receipt for this invoice is already awaiting platform-owner review.")
+	}
+	const duplicateReceipt = await prisma.paymentAttempt.findFirst({
+		where: { mpesaReceiptNumber: receiptNumber },
+		select: { id: true },
+	})
+	if (duplicateReceipt)
+		throw new MerchantBillingError("That M-Pesa receipt reference has already been submitted.")
+	await prisma.paymentAttempt.create({
+		data: {
+			invoiceId: invoice.id,
+			phoneNumber,
+			mpesaReceiptNumber: receiptNumber,
+			status: "manual_review",
+			resolutionType: "manual_transfer",
+			resultDescription: `Receipt submitted for ${invoice.invoiceNumber}; awaiting Beauty Sphia platform-owner verification.`,
+		},
+	})
+	return { status: "manual_review" as const, alreadySubmitted: false as const }
 }
 
 async function ownerBillingContext(userId: string, tenantSlug: string) {

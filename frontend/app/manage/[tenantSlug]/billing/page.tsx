@@ -10,6 +10,7 @@ import {
 } from "@backend/services/merchantBillingService"
 
 import { SetupPaymentForm } from "./SetupPaymentForm"
+import { ManualTransferForm } from "./ManualTransferForm"
 import { ChangePlanForm } from "./ChangePlanForm"
 import { CancelSubscriptionForm } from "./CancelSubscriptionForm"
 import { PublishSalonForm } from "@/app/account/PublishSalonForm"
@@ -70,6 +71,8 @@ export default async function MerchantBillingPage({
 	const design = await getPlatformStorefrontDesign()
 	const pricing = planTier ? design.plans[planTier] : null
 	const setupInvoice = billing.invoices.find((invoice) => invoice.kind === "setup")
+	const monthlyInvoice = billing.invoices.find((invoice) => invoice.kind === "monthly" && invoice.status === "pending")
+	const manualTransfersEnabled = design.billing.paymentMode === "registered-phone"
 	const setupFeeWaived = setupInvoice?.amountMinor === 0
 	const billingMembership = billing.memberships[0]
 	const canInitiatePayment = billingMembership?.role === "OWNER"
@@ -158,12 +161,25 @@ export default async function MerchantBillingPage({
 						usage are free after the one-time setup fee; recurring billing starts
 						after that period.
 					</p>
-					<p>{design.billing.paymentInstructions}</p>
-					{design.billing.businessShortCode && (
+					<p>{manualTransfersEnabled ? "Send the exact invoice amount to the registered M-Pesa phone number, then submit the receipt below for platform-owner review." : design.billing.paymentInstructions}</p>
+					<p>{design.billing.receiptInstructions}</p>
+					{manualTransfersEnabled && design.billing.registeredPhoneNumber && (
+						<p>Registered M-Pesa phone number: <strong>{design.billing.registeredPhoneNumber}</strong></p>
+					)}
+					{!manualTransfersEnabled && design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
 					{canInitiatePayment ? (
-						<SetupPaymentForm
+						manualTransfersEnabled ? setupInvoice && design.billing.registeredPhoneNumber ? <ManualTransferForm
+							tenantSlug={tenantSlug}
+							invoiceId={setupInvoice.id}
+							invoiceNumber={setupInvoice.invoiceNumber}
+							amountMinor={setupInvoice.amountMinor}
+							currency={setupInvoice.currency}
+							registeredPhoneNumber={design.billing.registeredPhoneNumber}
+							priorStatus={setupInvoice.paymentAttempts[0]?.status === "manual_review" && setupInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer" ? "manual_review" : setupInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer_rejected" ? "failed" : undefined}
+							priorResultMessage={setupInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer_rejected" ? setupInvoice.paymentAttempts[0]?.resultDescription : undefined}
+						/> : <p className="merchant-billing-owner-note">Manual payment details are being configured. Please contact platform support.</p> : <SetupPaymentForm
 							tenantSlug={tenantSlug}
 							initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}
 						/>
@@ -224,12 +240,25 @@ export default async function MerchantBillingPage({
 						Approve the M-Pesa STK Push to keep or restore your {design.branding.name}
 						salon.
 					</p>
-					<p>{design.billing.paymentInstructions}</p>
-					{design.billing.businessShortCode && (
+					<p>{manualTransfersEnabled ? "Send the exact monthly invoice amount to the registered M-Pesa phone number, then submit the receipt below for platform-owner review." : design.billing.paymentInstructions}</p>
+					<p>{design.billing.receiptInstructions}</p>
+					{manualTransfersEnabled && design.billing.registeredPhoneNumber && (
+						<p>Registered M-Pesa phone number: <strong>{design.billing.registeredPhoneNumber}</strong></p>
+					)}
+					{!manualTransfersEnabled && design.billing.businessShortCode && (
 						<p>{design.billing.paymentMode === "till-stk" ? "M-Pesa Till" : "M-Pesa Paybill"}: {design.billing.businessShortCode}</p>
 					)}
 				{canInitiatePayment ? (
-					<SetupPaymentForm
+					manualTransfersEnabled ? monthlyInvoice && design.billing.registeredPhoneNumber ? <ManualTransferForm
+						tenantSlug={tenantSlug}
+						invoiceId={monthlyInvoice.id}
+						invoiceNumber={monthlyInvoice.invoiceNumber}
+						amountMinor={monthlyInvoice.amountMinor}
+						currency={monthlyInvoice.currency}
+						registeredPhoneNumber={design.billing.registeredPhoneNumber}
+						priorStatus={monthlyInvoice.paymentAttempts[0]?.status === "manual_review" && monthlyInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer" ? "manual_review" : monthlyInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer_rejected" ? "failed" : undefined}
+						priorResultMessage={monthlyInvoice.paymentAttempts[0]?.resolutionType === "manual_transfer_rejected" ? monthlyInvoice.paymentAttempts[0]?.resultDescription : undefined}
+					/> : <p className="merchant-billing-owner-note">Manual payment details are being configured. Please contact platform support.</p> : <SetupPaymentForm
 						tenantSlug={tenantSlug}
 						mode="renewal"
 						initialPhoneNumber={billing.subscription?.billingPhoneNumber ?? ""}

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server"
 
 import {
 	PlatformAdminActionError,
+	approveManualTransferPayment,
+	rejectManualTransferPayment,
 	resolvePaymentAttempt,
 	resolvePlatformSecurityAlert,
 	setTenantSuspension,
@@ -25,28 +27,30 @@ export async function POST(request: NextRequest) {
 			{ error: "Invalid request origin." },
 			{ status: 403 },
 		)
+	let role: Awaited<ReturnType<typeof assertPlatformAdminPermission>>
 	try {
-		await assertPlatformAdminPermission(session.user.id, session.user.email, "operations:write")
+		role = await assertPlatformAdminPermission(session.user.id, session.user.email, "operations:write")
 	} catch (error) {
 		if (error instanceof PlatformAuthorizationError)
 			return NextResponse.json({ error: error.message }, { status: 403 })
 		throw error
 	}
-
+	const body = (await request.json()) as {
+		action?: unknown
+		id?: unknown
+		resolutionType?: unknown
+		resolutionReference?: unknown
+	}
+	const action = typeof body.action === "string" ? body.action : ""
+	const id = typeof body.id === "string" ? body.id.trim() : ""
+	if (!id)
+		return NextResponse.json(
+			{ error: "Action target is required." },
+			{ status: 400 },
+		)
+	if ((action === "approve-manual-transfer" || action === "reject-manual-transfer") && role !== "OWNER")
+		return NextResponse.json({ error: "Only the Beauty Sphia platform owner can review manual transfers." }, { status: 403 })
 	try {
-		const body = (await request.json()) as {
-			action?: unknown
-			id?: unknown
-			resolutionType?: unknown
-			resolutionReference?: unknown
-		}
-		const action = typeof body.action === "string" ? body.action : ""
-		const id = typeof body.id === "string" ? body.id.trim() : ""
-		if (!id)
-			return NextResponse.json(
-				{ error: "Action target is required." },
-				{ status: 400 },
-			)
 		switch (action) {
 			case "suspend-tenant":
 				await setTenantSuspension(session.user.id, id, true)
@@ -68,6 +72,12 @@ export async function POST(request: NextRequest) {
 						: undefined,
 				)
 				break
+			case "approve-manual-transfer":
+				await approveManualTransferPayment(session.user.id, id)
+				break
+			case "reject-manual-transfer":
+				await rejectManualTransferPayment(session.user.id, id)
+				break
 			case "resolve-security-alert":
 				await resolvePlatformSecurityAlert(session.user.id, id)
 				break
@@ -82,9 +92,6 @@ export async function POST(request: NextRequest) {
 		if (error instanceof PlatformAdminActionError)
 			return NextResponse.json({ error: error.message }, { status: 400 })
 		console.error("Platform admin action failed:", error)
-		return NextResponse.json(
-			{ error: "Platform admin action failed." },
-			{ status: 500 },
-		)
+		return NextResponse.json({ error: "Platform admin action failed." }, { status: 500 })
 	}
 }

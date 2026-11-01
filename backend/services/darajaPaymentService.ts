@@ -3,7 +3,6 @@ import "server-only"
 import { prisma } from "@backend/db/prisma"
 import {
 	assertTenantMembership,
-	assertTenantPermission,
 } from "@backend/services/authorization"
 import { dispatchNotification } from "@backend/services/notificationService"
 import { getPlatformStorefrontDesign } from "@backend/services/platformAdminService"
@@ -186,6 +185,8 @@ export async function requestInvoicePayment(
 	})
 	if (!invoice) throw new Error("Billing invoice not found.")
 	if (invoice.status === "paid") return { status: "paid" as const }
+	if ((await getPlatformStorefrontDesign()).billing.paymentMode === "registered-phone")
+		throw new Error("Manual M-Pesa transfers are enabled. Submit the invoice receipt for owner review instead of requesting an STK Push.")
 	const existingAttempt = await prisma.paymentAttempt.findFirst({
 		where: { invoiceId, status: "pending" },
 		select: { id: true, phoneNumber: true },
@@ -298,6 +299,8 @@ export async function requestSetupPayment(
 		)
 	if (tenant.subscription?.status !== "setup_payment_required")
 		throw new Error("This salon does not have a setup payment due.")
+	if ((await getPlatformStorefrontDesign()).billing.paymentMode === "registered-phone")
+		throw new Error("Manual M-Pesa transfers are enabled. Submit the setup invoice receipt for owner review instead of requesting an STK Push.")
 
 	const invoice = await prisma.billingInvoice.findFirst({
 		where: { tenantId: tenant.id, kind: "setup", status: "pending" },
