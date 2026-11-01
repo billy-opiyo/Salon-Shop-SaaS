@@ -1469,6 +1469,7 @@ export function SalonStorefrontMarkup({
 						<iframe
 							src={mapEmbedUrl}
 							data-client-attr="src:contact.mapEmbedUrl"
+							title="Salon location map"
 							allowFullScreen
 							loading="lazy"
 						></iframe>
