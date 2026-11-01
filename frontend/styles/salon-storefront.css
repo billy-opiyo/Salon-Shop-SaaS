@@ -58,7 +58,10 @@
    appearance: { mode: "dark", preset: "rose-gold" }
 
    Available presets: gold, champagne, rose-gold, emerald, plum-gold,
-   terracotta, teal, blush, lavender, and Storefront Default (the current gold UI).
+   terracotta, teal, blush, lavender, Sapphire Satin, Copper Glow, Pearl Veil,
+   Sage Botanica, Coral Bloom, Berry Velvet, Mocha Luxe, Ocean Silk, Ruby Atelier,
+   Mint Ritual, Sunset Muse, Onyx & Ivory, Lilac Reverie, Cobalt Crown, Apricot Rose,
+   and Storefront Default (the current gold UI).
 */
 :root[data-theme-preset] {
     --focus-gold: var(--primary);
@@ -324,6 +327,119 @@
     --scrollbar-track: #1b1228;
     --gradient-gold: linear-gradient(135deg, #7C5FD6, #D8CCFF, #E8A8D8);
     --gradient-dark: linear-gradient(180deg, #0F0B18, #171124);
+}
+
+/* Shared derived tokens for the expanded salon palette collection. */
+:root[data-theme-preset="sapphire"],
+:root[data-theme-preset="copper-glow"],
+:root[data-theme-preset="pearl-veil"],
+:root[data-theme-preset="sage-botanica"],
+:root[data-theme-preset="coral-bloom"],
+:root[data-theme-preset="berry-velvet"],
+:root[data-theme-preset="mocha-luxe"],
+:root[data-theme-preset="ocean-silk"],
+:root[data-theme-preset="ruby-atelier"],
+:root[data-theme-preset="mint-ritual"],
+:root[data-theme-preset="sunset-muse"],
+:root[data-theme-preset="onyx-ivory"],
+:root[data-theme-preset="lilac-reverie"],
+:root[data-theme-preset="cobalt-crown"],
+:root[data-theme-preset="apricot-rose"] {
+    --focus-gold: var(--primary);
+    --focus-gold-soft: color-mix(in srgb, var(--primary) 30%, transparent);
+    --accent-purple: var(--primary-dark);
+    --accent-pink: var(--primary-light);
+    --accent-brown: var(--primary-dark);
+    --bg-secondary: color-mix(in srgb, var(--bg-primary) 58%, var(--bg-card));
+    --bg-card-hover: color-mix(in srgb, var(--bg-card) 82%, var(--text-primary));
+    --text-muted: color-mix(in srgb, var(--text-secondary) 64%, var(--bg-primary));
+    --shadow: color-mix(in srgb, var(--primary) 18%, transparent);
+    --overlay: color-mix(in srgb, var(--bg-primary) 72%, transparent);
+    --primary-contrast: #0a0a0a;
+    --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);
+    --primary-soft-strong: color-mix(in srgb, var(--primary) 22%, transparent);
+    --primary-border: color-mix(in srgb, var(--primary) 34%, transparent);
+    --primary-border-strong: color-mix(in srgb, var(--primary) 58%, transparent);
+    --scrollbar-thumb: var(--primary-light);
+    --scrollbar-track: color-mix(in srgb, var(--bg-primary) 82%, var(--primary));
+    --gradient-gold: linear-gradient(135deg, var(--primary-dark), var(--primary-light), var(--primary));
+    --gradient-dark: linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
+}
+
+:root[data-theme-preset="sapphire"] {
+    --primary: #68a9e8; --primary-dark: #3379b7; --primary-light: #c3e2ff;
+    --bg-primary: #07111f; --bg-card: #101f33; --text-primary: #f2f7ff;
+    --text-secondary: #a8bcd4; --border: #263d58;
+}
+:root[data-theme-preset="copper-glow"] {
+    --primary: #c97a56; --primary-dark: #91492f; --primary-light: #f0b08f;
+    --bg-primary: #170d09; --bg-card: #2a1811; --text-primary: #fff4ed;
+    --text-secondary: #c7a392; --border: #4b3024;
+}
+:root[data-theme-preset="pearl-veil"] {
+    --primary: #e7d9c4; --primary-dark: #b99b73; --primary-light: #fff3df;
+    --bg-primary: #17120e; --bg-card: #2a2119; --text-primary: #fff9f0;
+    --text-secondary: #cbbda9; --border: #493b2b;
+}
+:root[data-theme-preset="sage-botanica"] {
+    --primary: #91a88e; --primary-dark: #5d765a; --primary-light: #d3e2c7;
+    --bg-primary: #0b120d; --bg-card: #19251b; --text-primary: #f4f8ed;
+    --text-secondary: #b3c2ad; --border: #314735;
+}
+:root[data-theme-preset="coral-bloom"] {
+    --primary: #e77c70; --primary-dark: #b94e48; --primary-light: #ffc0b1;
+    --bg-primary: #190c0d; --bg-card: #2b1719; --text-primary: #fff5f1;
+    --text-secondary: #d4aaa1; --border: #4b292b;
+}
+:root[data-theme-preset="berry-velvet"] {
+    --primary: #c24c76; --primary-dark: #8d3154; --primary-light: #f0a6bf;
+    --bg-primary: #160912; --bg-card: #291322; --text-primary: #fff4f8;
+    --text-secondary: #d2a8b9; --border: #48253a;
+}
+:root[data-theme-preset="mocha-luxe"] {
+    --primary: #b78b68; --primary-dark: #805b40; --primary-light: #e3c1a0;
+    --bg-primary: #130e0a; --bg-card: #251a13; --text-primary: #fff6ec;
+    --text-secondary: #c7b19d; --border: #433124;
+}
+:root[data-theme-preset="ocean-silk"] {
+    --primary: #51bcc8; --primary-dark: #287f8b; --primary-light: #a8edf0;
+    --bg-primary: #061216; --bg-card: #10262b; --text-primary: #effbfc;
+    --text-secondary: #a4c7cb; --border: #24434a;
+}
+:root[data-theme-preset="ruby-atelier"] {
+    --primary: #c74754; --primary-dark: #8e2938; --primary-light: #f2a0a4;
+    --bg-primary: #16090c; --bg-card: #291317; --text-primary: #fff4f3;
+    --text-secondary: #d1a6a7; --border: #48252b;
+}
+:root[data-theme-preset="mint-ritual"] {
+    --primary: #58bda4; --primary-dark: #2d806d; --primary-light: #a7e8d4;
+    --bg-primary: #07130f; --bg-card: #132720; --text-primary: #f1fbf6;
+    --text-secondary: #a9c9bb; --border: #27483c;
+}
+:root[data-theme-preset="sunset-muse"] {
+    --primary: #e88d53; --primary-dark: #ad592c; --primary-light: #ffd0a3;
+    --bg-primary: #190d08; --bg-card: #2d1a11; --text-primary: #fff5ea;
+    --text-secondary: #d0ad91; --border: #4d3020;
+}
+:root[data-theme-preset="onyx-ivory"] {
+    --primary: #ceb887; --primary-dark: #93805a; --primary-light: #f3e6c4;
+    --bg-primary: #090909; --bg-card: #1c1b18; --text-primary: #fbf8ef;
+    --text-secondary: #b7b1a2; --border: #39352c;
+}
+:root[data-theme-preset="lilac-reverie"] {
+    --primary: #bc9be8; --primary-dark: #8767b4; --primary-light: #e5d2ff;
+    --bg-primary: #100c18; --bg-card: #21182d; --text-primary: #faf6ff;
+    --text-secondary: #c1b3d2; --border: #3c2d50;
+}
+:root[data-theme-preset="cobalt-crown"] {
+    --primary: #5678dd; --primary-dark: #354da0; --primary-light: #b1c5ff;
+    --bg-primary: #080d1b; --bg-card: #151d34; --text-primary: #f3f5ff;
+    --text-secondary: #acb8d8; --border: #2b385f;
+}
+:root[data-theme-preset="apricot-rose"] {
+    --primary: #f0a875; --primary-dark: #b66c42; --primary-light: #ffdbba;
+    --bg-primary: #190e0a; --bg-card: #2d1b14; --text-primary: #fff7f0;
+    --text-secondary: #d2b19d; --border: #4b3025;
 }
 
 @supports (height: 100dvh) {
