@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type CSSProperties, type ReactNode } from "react"
 import Image from "next/image"
+import { isThemePreset, SALON_THEME_PALETTES } from "@shared/constants/themePresets"
 
 export interface TenantNotFoundBrand {
 	readonly slug: string
@@ -14,18 +15,6 @@ export interface TenantNotFoundBrand {
 }
 
 const TenantNotFoundContext = createContext<TenantNotFoundBrand | null>(null)
-
-const themeColors: Record<string, string> = {
-	gold: "#c8963e",
-	champagne: "#d6b16a",
-	"rose-gold": "#b76e79",
-	emerald: "#2f9b7e",
-	"plum-gold": "#d4a94f",
-	terracotta: "#c76b45",
-	teal: "#2bb3a3",
-	blush: "#e8a7b6",
-	lavender: "#a78bfa",
-}
 
 export function TenantNotFoundProvider({
 	brand,
@@ -55,7 +44,10 @@ export function NotFoundMarkup(): ReactNode {
 	const brand = useContext(TenantNotFoundContext)
 	const isAvailable = brand !== null
 	const isLight = brand?.theme.mode === "light"
-	const primary = themeColors[brand?.theme.preset ?? ""] ?? "#c8963e"
+	const preset = brand?.theme.preset ?? ""
+	const primary = isThemePreset(preset)
+		? SALON_THEME_PALETTES[preset].primary
+		: SALON_THEME_PALETTES.gold.primary
 	const brandHome = isAvailable ? `/${brand.slug}#home` : "/stores"
 	const brandLink = (section: string) => `/${brand?.slug}#${section}`
 	const themeStyle = {
