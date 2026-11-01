@@ -9,6 +9,7 @@ import {
 } from "@backend/services/merchantWaitlistService"
 
 import { updateWaitlistStatus } from "./actions"
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 
 interface WaitlistPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -102,9 +103,7 @@ export default async function MerchantWaitlistPage({
 										<input type="hidden" name="tenantSlug" value={tenantSlug} />
 										<input type="hidden" name="entryId" value={entry.id} />
 										<input type="hidden" name="status" value="CANCELLED" />
-										<button className="admin-action-btn" type="submit">
-											Cancel
-										</button>
+						<ConfirmSubmitButton className="admin-action-btn" title="Cancel this waitlist request?" message="Cancel this request and remove it from the active waitlist?" confirmLabel="Cancel request" pendingLabel="Cancelling…">Cancel</ConfirmSubmitButton>
 									</form>
 								)}
 							</div>

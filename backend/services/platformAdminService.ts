@@ -61,6 +61,40 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 	const currentPrivacy = asRecord(current.privacyPolicy)
 	const currentTerms = asRecord(current.termsPolicy)
 	const currentCookies = asRecord(current.cookiePolicy)
+	const defaultTermsSections = DEFAULT_PLATFORM_STOREFRONT.termsPolicy.sections
+	const savedTermsSections = Array.isArray(currentTerms.sections)
+		? currentTerms.sections.filter((section): section is { heading: string; body: string } =>
+				Boolean(
+					section &&
+					typeof section === "object" &&
+					!Array.isArray(section) &&
+					typeof (section as Record<string, unknown>).heading === "string" &&
+					typeof (section as Record<string, unknown>).body === "string",
+				),
+			)
+		: []
+	const savedTermsHeadings = new Set(
+		savedTermsSections.map((section) =>
+			typeof section.heading === "string" ? section.heading.trim().toLowerCase() : "",
+		),
+	)
+	const billingTermsHeadings = new Set([
+		"plans and displayed prices",
+		"setup fee and complimentary usage",
+		"monthly billing and overdue payments",
+		"price changes and cancellation",
+		"refunds, credits, and payment review",
+	])
+	const termsSections = savedTermsSections.length
+		? [
+				...savedTermsSections,
+				...defaultTermsSections.filter(
+					(section) =>
+						billingTermsHeadings.has(section.heading.toLowerCase()) &&
+						!savedTermsHeadings.has(section.heading.toLowerCase()),
+				),
+			]
+		: defaultTermsSections
 	const supportEmail = process.env.PLATFORM_SUPPORT_EMAIL?.trim() || DEFAULT_PLATFORM_STOREFRONT.contact.supportEmail
 	return normalizePlatformClientCopy({
 		...DEFAULT_PLATFORM_STOREFRONT,
@@ -109,7 +143,11 @@ function mergePlatformStorefrontConfig(value: unknown): PlatformStorefrontDesign
 				enterprise: { ...DEFAULT_PLATFORM_STOREFRONT.plans.enterprise, ...asRecord(currentPlans.enterprise) },
 		},
 		privacyPolicy: { ...DEFAULT_PLATFORM_STOREFRONT.privacyPolicy, ...currentPrivacy },
-		termsPolicy: { ...DEFAULT_PLATFORM_STOREFRONT.termsPolicy, ...currentTerms },
+		termsPolicy: {
+			...DEFAULT_PLATFORM_STOREFRONT.termsPolicy,
+			...currentTerms,
+			sections: termsSections,
+		},
 		cookiePolicy: { ...DEFAULT_PLATFORM_STOREFRONT.cookiePolicy, ...currentCookies },
 		content: { ...DEFAULT_PLATFORM_STOREFRONT.content, ...currentContent },
 	})

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react"
 import Link from "next/link"
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 import { inferSalonAccessProfileLabel, type SalonSectionPermissions } from "@shared/constants/salonAccessProfiles"
 
 type Invitation = {
@@ -171,14 +172,15 @@ export function TeamInvitationPanel({
 							>
 								{busyAction?.type === "update" && busyAction.invitationId === invitation.id && busyAction.action === "resend" ? "Resending…" : "Resend"}
 							</button>
-							<button
+							<ConfirmActionButton
 								className="button button--outline button--small"
-								type="button"
+								label={busyAction?.type === "update" && busyAction.invitationId === invitation.id && busyAction.action === "cancel" ? "Cancelling…" : "Cancel"}
+								title="Cancel team invitation?"
+								message={`Cancel the pending invitation for ${invitation.inviteeEmail}? The invitation code will stop working.`}
+								confirmLabel="Cancel invitation"
 								disabled={busyAction !== null}
-								onClick={() => void updateInvitation("cancel", invitation.id)}
-							>
-								{busyAction?.type === "update" && busyAction.invitationId === invitation.id && busyAction.action === "cancel" ? "Cancelling…" : "Cancel"}
-							</button>
+								onConfirm={() => updateInvitation("cancel", invitation.id)}
+							/>
 						</div>
 					)}
 				</article>

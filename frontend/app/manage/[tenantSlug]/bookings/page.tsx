@@ -9,6 +9,7 @@ import {
 } from "@backend/services/merchantBookingService"
 
 import { updateBookingStatus } from "./actions"
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 
 interface BookingsPageProps {
 	readonly params: Promise<{ tenantSlug: string }>
@@ -123,15 +124,13 @@ export default async function MerchantBookingsPage({
 												value={booking.id}
 											/>
 											<input type="hidden" name="status" value={status} />
-											<button className="admin-action-btn" type="submit">
-												{status === "CANCELLED"
-													? "Cancel + Release"
-													: status === "CONFIRMED"
-														? "Confirm"
-														: status === "COMPLETED"
-															? "Complete"
-															: "Move to Waitlist"}
-											</button>
+							{status === "CANCELLED" ? (
+								<ConfirmSubmitButton className="admin-action-btn" title="Cancel this booking?" message="Cancel this appointment and release its time slot? The client may need to book again." confirmLabel="Cancel booking" pendingLabel="Cancelling…">Cancel + Release</ConfirmSubmitButton>
+							) : (
+								<button className="admin-action-btn" type="submit">
+									{status === "CONFIRMED" ? "Confirm" : status === "COMPLETED" ? "Complete" : "Move to Waitlist"}
+								</button>
+							)}
 										</form>
 									))}
 								</div>
