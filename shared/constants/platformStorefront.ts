@@ -104,8 +104,9 @@ export interface PlatformPlanDisplay {
 export interface PlatformBillingDisplay {
 	readonly currency: string
 	readonly freeUsageMonths: number
-	readonly paymentMode: "paybill-stk" | "till-stk"
+	readonly paymentMode: "paybill-stk" | "till-stk" | "registered-phone"
 	readonly businessShortCode: string
+	readonly registeredPhoneNumber: string
 	readonly accountReferencePrefix: string
 	readonly paymentInstructions: string
 	readonly receiptInstructions: string
@@ -231,7 +232,7 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 			{ question: "How do I create a salon workspace?", answer: "Create or sign in to your Beauty Sphia account, choose Start Your Salon, complete the salon details, and select a plan. The workspace is created for your account and is not visible to other salon owners." },
 			{ question: "When can clients see my salon storefront?", answer: "After the setup payment is confirmed, open your merchant workspace and publish your salon. You can then share its public storefront link with clients." },
 			{ question: "How do clients book an appointment?", answer: "Clients can open a salon storefront, choose a service and an available time, then submit the booking form. The salon team can review and manage bookings from its own workspace." },
-			{ question: "How do I pay a setup fee or subscription invoice?", answer: "Open the salon billing page, enter the M-Pesa phone number that should receive the STK prompt, and approve the payment on that phone. The current Paybill or Till instructions are shown with the invoice." },
+			{ question: "How do I pay a setup fee or subscription invoice?", answer: "Open the salon billing page and follow the payment method shown. For an STK Push, enter the M-Pesa phone number and approve the prompt. For a manual transfer, send the exact invoice amount to the registered number and submit the receipt reference. A manual transfer is recorded only after the Beauty Sphia platform owner verifies it." },
 			{ question: "Where can I update salon details and services?", answer: "Sign in with an active salon team account, open that salon's management workspace, and use its settings and content areas to update branding, contact details, services, hours, gallery, and other storefront information." },
 			{ question: "I cannot sign in or find the answer I need. What should I do?", answer: "Use the Log in option to return to your account. If you still need help with account access, billing, bookings, or setup, contact the Beauty Sphia support team using the email or WhatsApp details on this page." },
 		],
@@ -288,8 +289,9 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 		paymentMode: "paybill-stk",
 		businessShortCode: "",
 		accountReferencePrefix: "BS",
-		paymentInstructions: "Enter your M-Pesa phone number and approve the STK Push prompt to pay your setup fee or monthly invoice.",
-		receiptInstructions: "Your M-Pesa receipt is added to your billing record after payment is confirmed.",
+		paymentInstructions: "For STK Push, enter your M-Pesa phone number and approve the prompt. For manual transfer, pay the exact amount to the registered phone number and submit your receipt for platform-owner review.",
+		receiptInstructions: "STK payments are recorded after provider confirmation. Manual transfers remain pending until the Beauty Sphia platform owner verifies and approves the receipt.",
+		registeredPhoneNumber: "",
 		priceVersion: "2026-08-28",
 	},
 	privacyPolicy: {
@@ -311,7 +313,7 @@ export const DEFAULT_PLATFORM_STOREFRONT: PlatformStorefrontDesign = {
 			{ heading: "Platform use", body: "Do not misuse the platform, attempt unauthorized access, upload harmful content, or use client information outside the purposes disclosed to clients." },
 			{ heading: "Plans and displayed prices", body: "Available plans, their features, monthly subscription prices, and one-time setup fees are shown in the Beauty Sphia pricing and salon setup pages. Prices are stated in whole Kenyan shillings (KES). The plan and amounts shown to you when you submit salon setup are the amounts used for that purchase, subject to the price-change notice described below." },
 			{ heading: "Setup fee and complimentary usage", body: "A plan may require a one-time setup fee, which must be successfully paid before the salon workspace is activated. After setup payment is confirmed, the selected plan includes the complimentary usage period shown during setup (currently six months by default). Monthly subscription billing begins after that period ends. A plan configured with no setup fee does not require a setup payment." },
-			{ heading: "Monthly billing and overdue payments", body: "Subscription invoices are collected through the M-Pesa payment method displayed in the billing page, using an STK Push that the account holder must approve. A payment is treated as received only after provider confirmation; initiating or approving a prompt alone is not proof that an invoice was paid. The person initiating a payment bears any transaction fee charged by their payment provider. An overdue monthly invoice has a three-day grace period, during which the system may make up to two payment attempts. If it remains unpaid after the grace period, the subscription and storefront may be suspended until payment is resolved." },
+			{ heading: "Monthly billing and overdue payments", body: "Subscription invoices are collected through the M-Pesa method displayed in the billing page. For an STK Push, the account holder must approve the prompt and payment is recorded only after provider confirmation. For a manual transfer, send the exact invoice amount to the platform's registered M-Pesa phone number and submit the receipt reference; the invoice remains pending until a Beauty Sphia platform owner verifies and approves it. A submitted receipt is not proof of payment, and the platform may decline an unverified or mismatched transfer. The person initiating payment bears any transaction fee charged by their payment provider. An overdue monthly invoice has a three-day grace period, during which the system may make up to two STK payment attempts when STK collection is configured. If it remains unpaid after the grace period, the subscription and storefront may be suspended until payment is resolved." },
 			{ heading: "Price changes and cancellation", body: "When a plan price changes, an existing subscription keeps its agreed rate until the new rate takes effect after at least 30 days' notice. The salon owner may schedule cancellation from the billing page; cancellation takes effect at the end of the current paid period, and no further monthly renewal is created after that period. The salon workspace is then archived. The current system records a 90-day retention window for archived workspace data, subject to any legal or security obligations that require longer retention." },
 			{ heading: "Refunds, credits, and payment review", body: "Refunds are not issued automatically. If you believe a payment was duplicated, incorrectly applied, or otherwise requires review, contact Beauty Sphia support with the invoice and M-Pesa receipt details. The platform may verify the transaction and record an outcome as a verified payment, credit, or refund. A request is not approval: any refund or credit is subject to transaction verification, platform review, payment-provider processing, and applicable law. The platform will communicate the review outcome through the available support channel." },
 			{ heading: "Agreement", body: "By creating a salon workspace, you confirm that you have read and agree to these terms." },
@@ -465,8 +467,9 @@ export const platformStorefrontDesignSchema = z.object({
 	billing: z.object({
 		currency: z.literal("KES"),
 		freeUsageMonths: z.number().int().min(0).max(60),
-		paymentMode: z.enum(["paybill-stk", "till-stk"]),
+		paymentMode: z.enum(["paybill-stk", "till-stk", "registered-phone"]),
 		businessShortCode: z.string().trim().max(20).regex(/^[0-9]*$/),
+		registeredPhoneNumber: z.string().trim().max(24).regex(/^[0-9+() -]*$/),
 		accountReferencePrefix: text(12),
 		paymentInstructions: text(800),
 		receiptInstructions: text(800),
@@ -477,5 +480,15 @@ export const platformStorefrontDesignSchema = z.object({
 	cookiePolicy: z.object({ eyebrow: text(160), title: text(200), introduction: text(1200), sections: z.array(sectionCopySchema).min(1).max(12) }),
 	content: contentSchema,
 })
+	.refine(
+		(value) => {
+			if (value.billing.paymentMode !== "registered-phone") return true
+			const digits = value.billing.registeredPhoneNumber.replace(/\D/g, "")
+			return (digits.startsWith("254") && digits.length === 12 && /^[17]/.test(digits.slice(3))) ||
+				(digits.startsWith("0") && digits.length === 10 && /^[17]/.test(digits.slice(1))) ||
+				((digits.startsWith("1") || digits.startsWith("7")) && digits.length === 9)
+		},
+		{ path: ["billing", "registeredPhoneNumber"], message: "A registered M-Pesa phone number is required for manual transfers." },
+	)
 
 export type PlatformStorefrontDesignInput = z.infer<typeof platformStorefrontDesignSchema>

@@ -316,6 +316,18 @@
 	flex: 0 0 auto;
 }
 
+.platform-admin-payment-review-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: .55rem;
+	max-width: 100%;
+}
+
+.platform-admin-payment-review-actions .platform-admin-action-wrap {
+	max-width: 100%;
+}
+
 .platform-admin-action-error {
 	max-width: 16rem;
 	color: #ffaaa3;
@@ -719,6 +731,10 @@
 	.platform-admin-action-error {
 		max-width: 100%;
 		text-align: left;
+	}
+
+	.platform-admin-payment-review-actions {
+		justify-content: flex-start;
 	}
 
 	.platform-admin-form .button,

@@ -5172,6 +5172,30 @@ html.splash-active .splash-handwriting-letter {
 	justify-self: start;
 }
 
+.merchant-manual-transfer-form {
+	gap: .9rem;
+}
+
+.merchant-billing-transfer-details {
+	display: grid;
+	gap: .5rem;
+	padding: .9rem 1rem;
+	border: 1px solid var(--line);
+	border-radius: .9rem;
+	background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.merchant-billing-transfer-details p {
+	margin: 0;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+
+.merchant-billing-transfer-details strong,
+.merchant-billing-transfer-details span {
+	color: var(--foreground);
+}
+
 .merchant-billing-page .manage-header__actions .button--outline,
 .merchant-billing-page .manage-header__actions .button--ghost {
 	border-color: color-mix(in srgb, var(--gold-soft) 48%, transparent);

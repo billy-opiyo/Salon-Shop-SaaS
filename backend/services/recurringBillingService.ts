@@ -124,6 +124,7 @@ export async function createDueRenewalInvoices(now = new Date()) {
 			status: "pending",
 			dueAt: { lte: now },
 			subscription: { status: "payment_due" },
+			paymentAttempts: { none: { status: "manual_review", resolutionType: "manual_transfer" } },
 		},
 		select: {
 			id: true,
@@ -160,6 +161,7 @@ export async function createDueRenewalInvoices(now = new Date()) {
 			suspended += 1
 			continue
 		}
+		if (platformDesign.billing.paymentMode === "registered-phone") continue
 		if (
 			!invoice.subscription.billingPhoneNumber ||
 			invoice.retryCount >= BILLING_POLICY.failedPaymentRetryCount

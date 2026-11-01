@@ -441,6 +441,147 @@ export async function resolvePaymentAttempt(
 	])
 }
 
+export async function approveManualTransferPayment(
+	actorUserId: string,
+	attemptId: string,
+): Promise<void> {
+	const attempt = await prisma.paymentAttempt.findUnique({
+		where: { id: attemptId },
+		select: {
+			id: true,
+			status: true,
+			resolutionType: true,
+			mpesaReceiptNumber: true,
+			invoice: {
+				select: {
+					id: true,
+					kind: true,
+					status: true,
+					tenantId: true,
+					invoiceNumber: true,
+					amountMinor: true,
+					subscriptionId: true,
+				},
+			},
+		},
+	})
+	if (!attempt) throw new PlatformAdminActionError("Payment receipt not found.")
+	if (attempt.status !== "manual_review" || attempt.resolutionType !== "manual_transfer")
+		throw new PlatformAdminActionError("Only submitted manual transfers can be approved here.")
+	if (!attempt.mpesaReceiptNumber || attempt.invoice.status !== "pending")
+		throw new PlatformAdminActionError("The receipt or pending invoice is no longer available for approval.")
+	const now = new Date()
+	const platformDesign = await getPlatformStorefrontDesign()
+	await prisma.$transaction(async (transaction) => {
+		const claimed = await transaction.paymentAttempt.updateMany({
+			where: { id: attempt.id, status: "manual_review", resolutionType: "manual_transfer" },
+			data: {
+				status: "succeeded",
+				completedAt: now,
+				resolutionType: "manual_transfer_approved",
+				resolutionReference: attempt.mpesaReceiptNumber,
+				resultDescription: `Manual M-Pesa transfer verified by Beauty Sphia platform owner for invoice ${attempt.invoice.invoiceNumber}.`,
+			},
+		})
+		if (claimed.count !== 1)
+			throw new PlatformAdminActionError("This transfer was already reviewed.")
+		const invoiceUpdated = await transaction.billingInvoice.updateMany({
+			where: { id: attempt.invoice.id, status: "pending" },
+			data: {
+				status: "paid",
+				paidAt: now,
+				receiptNumber: attempt.mpesaReceiptNumber,
+			},
+		})
+		if (invoiceUpdated.count !== 1)
+			throw new PlatformAdminActionError("The invoice is no longer pending.")
+		if (attempt.invoice.kind === "setup") {
+			const setupActivated = await transaction.subscription.updateMany({
+				where: { tenantId: attempt.invoice.tenantId, status: "setup_payment_required" },
+				data: { status: "setup_paid_pending_activation", lastPaymentAt: now },
+			})
+			if (setupActivated.count !== 1)
+				throw new PlatformAdminActionError("The salon setup payment is no longer awaiting confirmation.")
+		} else {
+			const subscription = await transaction.subscription.findUnique({
+				where: { tenantId: attempt.invoice.tenantId },
+				select: { pendingPlanTier: true },
+			})
+			const pendingPlan = subscription?.pendingPlanTier
+				? await transaction.plan.findUnique({
+						where: { tier: subscription.pendingPlanTier },
+						select: { id: true, tier: true },
+					})
+				: null
+			await transaction.subscription.update({
+				where: { tenantId: attempt.invoice.tenantId },
+				data: {
+					status: "active",
+					currentPeriodEnd: new Date(now.getTime() + 30 * 86400000),
+					failedPaymentAttempts: 0,
+					gracePeriodEndsAt: null,
+					lastPaymentAt: now,
+					...(pendingPlan ? {
+						planId: pendingPlan.id,
+						pendingPlanTier: null,
+						agreedMonthlyAmountMinor: platformDesign.plans[pendingPlan.tier.toLowerCase() as "starter" | "business" | "enterprise"].monthlyAmountMinor,
+						priceVersion: platformDesign.billing.priceVersion,
+						priceChangeEffectiveAt: null,
+					} : {}),
+				},
+			})
+			await transaction.tenant.updateMany({
+				where: { id: attempt.invoice.tenantId, status: "SUSPENDED" },
+				data: { status: "ACTIVE" },
+			})
+		}
+		await transaction.adminAuditLog.create({
+			data: {
+				tenantId: attempt.invoice.tenantId,
+				actorUserId,
+				action: "platform.manual-transfer.approved",
+				resourceType: "payment-attempt",
+				resourceId: attempt.id,
+			},
+		})
+	})
+}
+
+export async function rejectManualTransferPayment(
+	actorUserId: string,
+	attemptId: string,
+): Promise<void> {
+	const attempt = await prisma.paymentAttempt.findUnique({
+		where: { id: attemptId },
+		select: { id: true, status: true, resolutionType: true, invoice: { select: { tenantId: true, invoiceNumber: true } } },
+	})
+	if (!attempt) throw new PlatformAdminActionError("Payment receipt not found.")
+	if (attempt.status !== "manual_review" || attempt.resolutionType !== "manual_transfer")
+		throw new PlatformAdminActionError("Only submitted manual transfers can be rejected here.")
+	await prisma.$transaction(async (transaction) => {
+		const rejected = await transaction.paymentAttempt.updateMany({
+			where: { id: attempt.id, status: "manual_review", resolutionType: "manual_transfer" },
+			data: {
+				status: "failed",
+				completedAt: new Date(),
+				resolutionType: "manual_transfer_rejected",
+				resultDescription: `Manual M-Pesa transfer was not approved by Beauty Sphia platform owner for invoice ${attempt.invoice.invoiceNumber}. The invoice remains unpaid.`,
+			},
+		})
+		if (rejected.count !== 1)
+			throw new PlatformAdminActionError("This transfer was already reviewed.")
+		await transaction.adminAuditLog.create({
+			data: {
+				tenantId: attempt.invoice.tenantId,
+				actorUserId,
+				action: "platform.manual-transfer.rejected",
+				resourceType: "payment-attempt",
+				resourceId: attempt.id,
+			},
+		})
+	})
+}
+
 export async function resolvePlatformSecurityAlert(
 	actorUserId: string,
 	alertId: string,
@@ -569,11 +710,16 @@ export async function getPlatformAdminSnapshot() {
 			select: {
 				id: true,
 				phoneNumber: true,
+				mpesaReceiptNumber: true,
+				resolutionType: true,
 				resultDescription: true,
 				requestedAt: true,
 				invoice: {
 					select: {
 						invoiceNumber: true,
+						kind: true,
+						amountMinor: true,
+						currency: true,
 						tenant: { select: { businessName: true } },
 					},
 				},
