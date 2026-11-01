@@ -35,6 +35,9 @@ export function ActionNotificationViewport() {
 			const message = source.textContent?.replace(/\s+/g, " ").trim()
 			if (!message || source.getAttribute("aria-hidden") === "true") return
 			if (source instanceof HTMLElement && (source.hidden || source.classList.contains("hidden"))) return
+			// Inline status nodes also carry transient progress copy. Keep the toast
+			// focused on completed outcomes, while the inline status remains visible.
+			if (/^(saving|sending|loading|processing|uploading|deleting|changing|removing|publishing|inviting)\b.*(?:…|\.\.\.)?$/i.test(message)) return
 			const now = Date.now()
 			const lastShown = recentlyShown.get(message) ?? 0
 			if (now - lastShown < 900) return
@@ -53,7 +56,10 @@ export function ActionNotificationViewport() {
 			for (const record of records) {
 				const target = record.target instanceof Element ? record.target : record.target.parentElement
 				const candidates: Element[] = []
-				const selector = ".form-message, [class*='form-message--']"
+				// New React forms use form-message. The legacy storefront/admin flows
+				// use success/error classes on their own status elements; include those
+				// so their action outcomes reach the same viewport notification.
+				const selector = ".form-message, [class*='form-message--'], .success, .error, .is-error"
 				const status = target?.closest<HTMLElement>(selector)
 				if (status) candidates.push(status)
 				for (const added of record.addedNodes) {
