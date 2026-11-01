@@ -119,6 +119,7 @@ export interface PublicTenantCard {
 	readonly imageUrl: string
 	readonly href: string
 	readonly createdAt: Date
+	readonly isPreviewOnly?: boolean
 }
 
 const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[]> => {
@@ -130,7 +131,7 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 			tagline: fixtureTenant.shortDescription,
 			rating: null,
 			reviewCount: 0,
-			imageUrl: "/platform/Royal Braids logo.webp",
+			imageUrl: DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
 			href: `/${fixtureTenant.slug}`,
 			createdAt: new Date(0),
 		}]
@@ -138,12 +139,18 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 
 	try {
 		const tenants = await prisma.tenant.findMany({
-			where: { status: "ACTIVE" },
+			where: {
+				OR: [
+					{ status: "ACTIVE" },
+					{ status: "DRAFT", slug: "royal-braids" },
+				],
+			},
 			orderBy: { createdAt: "desc" },
 			select: {
 				id: true,
 				slug: true,
 				businessName: true,
+				status: true,
 				city: true,
 				country: true,
 				createdAt: true,
@@ -190,10 +197,13 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 					tagline: description,
 					rating: stats?._avg.rating ?? null,
 					reviewCount: stats?._count._all ?? 0,
+					isPreviewOnly: tenant.status !== "ACTIVE",
 					imageUrl:
-						tenant.settings?.heroImageUrl ??
-						tenant.settings?.logoUrl ??
-						"/platform/Beauty Sphia logo.webp",
+						(typeof storefrontConfig?.heroCardImageUrl === "string" &&
+							storefrontConfig.heroCardImageUrl.trim()) ||
+						tenant.settings?.heroImageUrl ||
+						tenant.settings?.logoUrl ||
+						DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
 					href: `/${tenant.slug}`,
 					createdAt: tenant.createdAt,
 				}

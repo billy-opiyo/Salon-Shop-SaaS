@@ -1,5 +1,6 @@
 import { headers } from "next/headers"
 import { listPublicTenantCards, type PublicTenantCard } from "@backend/services/tenantDirectory"
+import { DEFAULT_STOREFRONT_DESIGN } from "@shared/constants/storefrontDesign"
 
 export type PlatformStore = PublicTenantCard & { readonly isDemo?: boolean }
 
@@ -10,7 +11,7 @@ const royalBraidsReference: PlatformStore = {
 	tagline: "Explore signature braids, beauty services, and a live salon storefront.",
 	rating: null,
 	reviewCount: 0,
-	imageUrl: "/platform/Royal Braids logo.webp",
+	imageUrl: DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
 	href: "/royal-braids",
 	createdAt: new Date(0),
 }
@@ -54,12 +55,13 @@ async function includeDemoStores() {
 
 async function withDemoStores(stores: PublicTenantCard[]): Promise<PlatformStore[]> {
 	const showDemos = await includeDemoStores()
-	const existingSlugs = new Set(stores.map((store) => store.slug))
-	const royalBraids = stores.find((store) => store.slug === royalBraidsReference.slug)
+	const visibleStores = stores.filter((store) => !store.isPreviewOnly || showDemos)
+	const existingSlugs = new Set(visibleStores.map((store) => store.slug))
+	const royalBraids = visibleStores.find((store) => store.slug === royalBraidsReference.slug)
 	const featuredRoyalBraids = royalBraids ?? (showDemos ? royalBraidsReference : undefined)
 	const orderedStores = [
 		...(featuredRoyalBraids ? [featuredRoyalBraids] : []),
-		...stores.filter((store) => store.slug !== royalBraidsReference.slug),
+		...visibleStores.filter((store) => store.slug !== royalBraidsReference.slug),
 	]
 	if (!showDemos) return orderedStores
 	return [
