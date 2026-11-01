@@ -5195,21 +5195,16 @@ function resetTurnstile(form: HTMLFormElement): void {
 }
 
 function ensureTurnstile(form: HTMLFormElement, siteKey: string): void {
-	if (!siteKey || form.querySelector("[data-saas-turnstile]")) return
-
-	const container = document.createElement("div")
-	container.dataset.saasTurnstile = "true"
-	container.className = "form-group full turnstile-widget"
-	container.setAttribute("aria-live", "polite")
-	const input = document.createElement("input")
-	input.type = "hidden"
-	input.name = "turnstileToken"
-	container.appendChild(input)
-	const submitControl = form.querySelector<HTMLElement>(
-		'button[type="submit"], input[type="submit"]',
+	if (!siteKey) return
+	const container = form.querySelector<HTMLElement>("[data-saas-turnstile]")
+	const input = container?.querySelector<HTMLInputElement>(
+		'input[name="turnstileToken"]',
 	)
-	if (submitControl) form.insertBefore(container, submitControl)
-	else form.appendChild(container)
+	// The slot and token input are rendered with the form. Never insert new
+	// children beside React-managed controls while the page is hydrating.
+	if (!container || !input || container.dataset.saasTurnstileBound === "true")
+		return
+	container.dataset.saasTurnstileBound = "true"
 
 	const render = () => {
 		if (!window.turnstile || container.dataset.saasTurnstileRendered === "true")
@@ -8463,6 +8458,7 @@ export function SalonStorefrontRuntime({
 			/>
 			<SalonStorefrontMarkup
 				showSplash={false}
+				hasTurnstile={Boolean(turnstileSiteKey)}
 				verifyEmailHref={`/verify-email?tenant=${encodeURIComponent(tenantSlug ?? "royal-braids")}`}
 				galleryContent={<SalonGallery items={gallery} />}
 				servicesContent={<SalonServices items={services} />}
