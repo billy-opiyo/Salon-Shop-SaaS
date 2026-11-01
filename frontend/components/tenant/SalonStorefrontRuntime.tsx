@@ -2445,8 +2445,14 @@ function bindStorefrontDesignEditor(
 	)
 	if (saveButtons.length === 0)
 		return () => fileUploads.forEach((remove) => remove())
+	const saveButtonLabels = saveButtons.map(
+		(button) => button.textContent?.trim() || "Save Salon Design",
+	)
 	const saveHandler = async () => {
-		saveButtons.forEach((button) => (button.disabled = true))
+		saveButtons.forEach((button) => {
+			button.disabled = true
+			button.textContent = "Saving..."
+		})
 		setDesignMessage("Saving Salon Design…")
 		const sectionCopy = Object.fromEntries(
 			Object.entries(copyMap).map(([key, id]) => [key, getDesignControl(id)]),
@@ -2515,7 +2521,10 @@ function bindStorefrontDesignEditor(
 					: "Salon Design could not be saved.",
 				"error",
 			)
-			saveButtons.forEach((button) => (button.disabled = false))
+			saveButtons.forEach((button, index) => {
+				button.disabled = false
+				button.textContent = saveButtonLabels[index]
+			})
 		}
 	}
 	saveButtons.forEach((button) => button.addEventListener("click", saveHandler))
