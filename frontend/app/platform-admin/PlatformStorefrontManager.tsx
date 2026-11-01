@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from "react"
 
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 import type { PlatformPolicyContent, PlatformStorefrontDesign } from "@shared/constants/platformStorefront"
 import {
 	PLATFORM_THEME_PALETTES,
@@ -363,7 +364,7 @@ export function PlatformStorefrontManager({ initialDesign, role }: { readonly in
 						<div className="platform-storefront-step" key={`support-faq-${index}`}>
 							{textField(`Question ${index + 1}`, faq.question, (value) => setSupportFaq(index, "question", value))}
 							{textField(`Answer ${index + 1}`, faq.answer, (value) => setSupportFaq(index, "answer", value), true)}
-							<button className="button button--ghost button--small" type="button" onClick={() => removeSupportFaq(index)} disabled={design.support.faqs.length <= 3}>Remove question</button>
+							<ConfirmActionButton className="button button--ghost button--small" label="Remove question" title="Remove this FAQ?" message="Remove this question and answer from the public Support page? Save the Support section to publish this change." confirmLabel="Remove question" onConfirm={() => removeSupportFaq(index)} disabled={design.support.faqs.length <= 3} />
 						</div>
 					))}
 					<button className="button button--outline button--small" type="button" onClick={addSupportFaq} disabled={design.support.faqs.length >= 12}>Add FAQ</button>

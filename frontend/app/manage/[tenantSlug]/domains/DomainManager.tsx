@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 
 type Domain = {
 	readonly id: string
@@ -170,17 +171,15 @@ export function DomainManager({
 									</button>
 								)}
 								{domain.status !== "REMOVED" && (
-									<button
-										className="button button--outline button--small"
-										type="button"
-										disabled={busyAction !== null}
-										aria-busy={busyAction === `remove:${domain.id}`}
-										onClick={() => void request("DELETE", undefined, domain.id)}
-									>
-										{busyAction === `remove:${domain.id}`
-											? "Removing…"
-											: "Remove"}
-									</button>
+					<ConfirmActionButton
+						className="button button--outline button--small"
+						label={busyAction === `remove:${domain.id}` ? "Removing…" : "Remove"}
+						title="Remove custom domain?"
+						message={`Remove ${domain.host} from this salon? Its storefront will no longer use this custom domain.`}
+						confirmLabel="Remove domain"
+						disabled={busyAction !== null}
+						onConfirm={() => request("DELETE", undefined, domain.id)}
+					/>
 								)}
 							</div>
 						</article>

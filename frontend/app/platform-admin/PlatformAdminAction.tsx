@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 
 interface PlatformAdminActionProps {
 	readonly action: string
@@ -21,7 +22,6 @@ export function PlatformAdminAction({
 	const [error, setError] = useState("")
 
 	async function runAction() {
-		if (!window.confirm(confirmation)) return
 		setBusy(true)
 		setError("")
 		try {
@@ -47,14 +47,15 @@ export function PlatformAdminAction({
 
 	return (
 		<span className="platform-admin-action-wrap">
-			<button
+			<ConfirmActionButton
 				className="button button--outline button--small"
-				type="button"
-				onClick={runAction}
+				label={busy ? "Working..." : label}
+				title="Confirm platform action"
+				message={confirmation}
+				confirmLabel={label}
 				disabled={busy}
-			>
-				{busy ? "Working..." : label}
-			</button>
+				onConfirm={runAction}
+			/>
 			{error && (
 				<span className="platform-admin-action-error" role="alert">
 					{error}

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react"
 
-import { ManageSubmitButton } from "@/components/tenant/ManageSubmitButton"
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 import { cancelSubscription, type ChangePlanResult } from "./actions"
 
 const initialState: ChangePlanResult = { ok: false, message: "" }
@@ -25,12 +25,15 @@ export function CancelSubscriptionForm({
 				/>
 				I understand the cancellation effective date shown above.
 			</label>
-			<ManageSubmitButton
+			<ConfirmSubmitButton
 				className="button button--outline"
+				title="Cancel this subscription?"
+				message="Schedule subscription cancellation for the end of the current paid period? The storefront will be archived when that period ends."
+				confirmLabel="Schedule cancellation"
 				pendingLabel="Cancelling…"
 			>
 				Confirm cancellation
-			</ManageSubmitButton>
+			</ConfirmSubmitButton>
 			{state.message && (
 				<p
 					className={`form-message form-message--${state.ok ? "success" : "error"}`}

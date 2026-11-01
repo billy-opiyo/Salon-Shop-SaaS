@@ -1,7 +1,8 @@
 "use client"
 
-import { useActionState, type FormEvent, type ReactNode } from "react"
+import { useActionState, type ReactNode } from "react"
 
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 import type { ServiceMutationResult } from "./actions"
 import { ServiceSubmitButton } from "./ServiceSubmitButton"
 
@@ -30,18 +31,27 @@ export function ServiceMutationForm({
 	readonly confirmMessage?: string
 }) {
 	const [state, formAction] = useActionState(action, initialState)
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		if (confirmMessage && !window.confirm(confirmMessage)) event.preventDefault()
-	}
 	return (
-		<form className={className} action={formAction} onSubmit={handleSubmit}>
+		<form className={className} action={formAction}>
 			{children}
-			<ServiceSubmitButton
-				className={buttonClassName ?? (className === "onboarding-form" ? "button button--primary" : undefined)}
-				pendingLabel={pendingLabel}
-			>
-				{buttonLabel}
-			</ServiceSubmitButton>
+			{confirmMessage ? (
+				<ConfirmSubmitButton
+					className={buttonClassName ?? (className === "onboarding-form" ? "button button--primary" : undefined)}
+					message={confirmMessage}
+					title="Delete this service?"
+					confirmLabel="Delete service"
+					pendingLabel={pendingLabel}
+				>
+					{buttonLabel}
+				</ConfirmSubmitButton>
+			) : (
+				<ServiceSubmitButton
+					className={buttonClassName ?? (className === "onboarding-form" ? "button button--primary" : undefined)}
+					pendingLabel={pendingLabel}
+				>
+					{buttonLabel}
+				</ServiceSubmitButton>
+			)}
 			{state.message && (
 				<p
 					className={`form-message form-message--${state.ok ? "success" : "error"}`}

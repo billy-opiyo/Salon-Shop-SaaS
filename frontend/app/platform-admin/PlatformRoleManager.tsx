@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 
 type RoleAssignment = {
 	readonly id: string
@@ -93,9 +94,15 @@ export function PlatformRoleManager({
 				{assignments.map((assignment) => (
 					<article className="platform-admin-row" key={assignment.id}>
 						<div><strong>{assignment.email}</strong><span>{assignment.role === "STORE_EDITOR" ? "Store Editor · site content and team profiles" : "Store Support · support page and FAQs"}</span></div>
-						<button className="button button--ghost button--small" type="button" disabled={busy} onClick={() => void remove(assignment)}>
-							{removingAssignmentId === assignment.id ? "Removing…" : "Remove access"}
-						</button>
+						<ConfirmActionButton
+							className="button button--ghost button--small"
+							label={removingAssignmentId === assignment.id ? "Removing…" : "Remove access"}
+							title="Remove platform access?"
+							message={`Remove ${assignment.email}'s delegated access to Platform Admin? They will lose access to their assigned sections immediately.`}
+							confirmLabel="Remove access"
+							disabled={busy}
+							onConfirm={() => remove(assignment)}
+						/>
 					</article>
 				))}
 				{assignments.length === 0 && <p className="manage-empty">No delegated platform roles yet.</p>}

@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react"
 
+import { ConfirmActionButton } from "@/components/shared/ConfirmActionButton"
 import type { PlatformTeamMemberView } from "@shared/types/platformTeam"
 import { getImageUploadError } from "@shared/validation/media"
 
@@ -153,7 +154,6 @@ export function PlatformTeamManager({
 	}
 
 	async function remove(member: PlatformTeamMemberView) {
-		if (!window.confirm(`Remove ${member.name} from the platform team?`)) return
 		setBusy(true)
 		setRemovingId(member.id)
 		setError("")
@@ -224,7 +224,7 @@ export function PlatformTeamManager({
 					<article className="platform-team-card" key={member.id}>
 						{safeAvatarUrl(member.avatarUrl) ? <img className="platform-team-card__avatar" src={safeAvatarUrl(member.avatarUrl) ?? undefined} alt={`${member.name} profile`} loading="lazy" decoding="async" /> : <div className="platform-team-card__avatar platform-team-card__avatar--empty" aria-hidden="true">{member.name.slice(0, 1).toUpperCase()}</div>}
 						<div className="platform-team-card__body"><p className="eyebrow">{member.published ? "Published" : "Hidden"}</p><h3>{member.name}</h3><strong>{member.role}</strong><p>{member.bio}</p></div>
-						<div className="platform-team-card__actions"><button className="button button--outline button--small" type="button" onClick={() => startEdit(member)} disabled={busy}>Edit</button><button className="button button--ghost button--small" type="button" onClick={() => remove(member)} disabled={busy}>{removingId === member.id ? "Removing…" : "Remove"}</button></div>
+						<div className="platform-team-card__actions"><button className="button button--outline button--small" type="button" onClick={() => startEdit(member)} disabled={busy}>Edit</button><ConfirmActionButton className="button button--ghost button--small" label={removingId === member.id ? "Removing…" : "Remove"} title="Remove platform team profile?" message={`Remove ${member.name}'s profile from the public Beauty Sphia team page?`} confirmLabel="Remove profile" disabled={busy} onConfirm={() => remove(member)} /></div>
 					</article>
 				))}
 				{members.length === 0 && <p className="manage-empty">No platform team profiles have been added.</p>}

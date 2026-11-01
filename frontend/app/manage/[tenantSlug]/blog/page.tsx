@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
@@ -154,12 +155,7 @@ export default async function MerchantBlogPage({ params }: BlogPageProps) {
 								<form action={removeBlog}>
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="blogId" value={post.id} />
-									<button
-										className="button button--outline button--small button--danger"
-										type="submit"
-									>
-										Delete
-									</button>
+					<ConfirmSubmitButton className="button button--outline button--small button--danger" title="Delete blog post?" message={`Permanently delete “${post.title}” from the salon blog?`} confirmLabel="Delete post">Delete</ConfirmSubmitButton>
 								</form>
 							</div>
 						</article>

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+import { ConfirmSubmitButton } from "@/components/shared/ConfirmActionButton"
 import { auth } from "@/auth"
 import { getLoginUrlForPath } from "@shared/authCallback"
 import { TenantImageUploadField } from "@/components/tenant/TenantImageUploadField"
@@ -141,12 +142,7 @@ export default async function MerchantGalleryPage({
 								<form action={removeGalleryStyle}>
 									<input type="hidden" name="tenantSlug" value={tenantSlug} />
 									<input type="hidden" name="galleryStyleId" value={style.id} />
-									<button
-										className="button button--outline button--small button--danger"
-										type="submit"
-									>
-										Delete
-									</button>
+					<ConfirmSubmitButton className="button button--outline button--small button--danger" title="Delete gallery style?" message={`Permanently delete ${style.styleName}? This removes it from the storefront gallery.`} confirmLabel="Delete style">Delete</ConfirmSubmitButton>
 								</form>
 							</div>
 						</article>

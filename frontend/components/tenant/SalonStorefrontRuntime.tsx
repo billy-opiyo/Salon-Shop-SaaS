@@ -2829,19 +2829,31 @@ export function bindAdminSnapshotAdapter(
 			"security-force-password-reset": "Force this user to reset their password and end current sessions?",
 			"security-clear-restriction": "Clear all restrictions for this user?",
 		}
+		const cancellingBooking = action === "booking-status" && button.dataset.status === "CANCELLED"
+		const cancellingWaitlist = action === "waitlist-status" && button.dataset.status === "CANCELLED"
 		const requiresConfirmation =
 			action.endsWith("-delete") ||
 			action === "team-member-remove" ||
+			cancellingBooking ||
+			cancellingWaitlist ||
 			action in securityConfirmText
 		if (requiresConfirmation && confirmedActionButton !== button) {
 			pendingConfirmationButton = button
 			const title = document.getElementById("adminConfirmTitle")
 			const message = document.getElementById("adminConfirmMessage")
-			if (title) title.textContent = securityConfirmText[action] ? "Confirm security action" : "Confirm removal"
+			if (title) title.textContent = securityConfirmText[action]
+				? "Confirm security action"
+				: action.endsWith("-delete") || action === "team-member-remove"
+					? "Confirm removal"
+					: "Confirm cancellation"
 			if (message)
 				message.textContent = securityConfirmText[action] ?? (
 					action === "team-member-remove"
 						? "Remove this team member’s access to the salon?"
+						: cancellingBooking
+							? "Cancel this appointment and release its time slot? The client may need to book again."
+							: cancellingWaitlist
+								? "Cancel this request and remove it from the active waitlist?"
 						: "Delete this item? This action cannot be undone."
 				)
 			confirmationModal?.classList.add("active")
