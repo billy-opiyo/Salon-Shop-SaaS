@@ -7253,6 +7253,20 @@ function applyNativeClientConfig(config: SalonClientConfig): void {
 				}
 			}
 		})
+	const storefrontLogo = document.getElementById("logoCubeImage")
+	const logoFallback = document.getElementById("logoFallbackIcon")
+	const logoSrc = config.brand?.logoSrc?.trim() ?? ""
+	if (storefrontLogo instanceof HTMLImageElement && logoFallback instanceof HTMLElement) {
+		if (logoSrc) {
+			storefrontLogo.src = logoSrc
+			storefrontLogo.hidden = false
+			logoFallback.hidden = true
+		} else {
+			storefrontLogo.removeAttribute("src")
+			storefrontLogo.hidden = true
+			logoFallback.hidden = false
+		}
+	}
 
 	const appearance = config.appearance ?? {}
 	let mode: "dark" | "light" = appearance.mode === "light" ? "light" : "dark"

@@ -128,6 +128,9 @@ export function SalonStorefrontMarkup({
 						data-client-attr="aria-label:brand.logoAlt"
 					>
 						<span className="logo-cube-track" id="logoCubeTrack">
+							<span className="logo-fallback-icon" id="logoFallbackIcon" aria-hidden="true">
+								<Scissors size={32} strokeWidth={1.7} />
+							</span>
 							<img
 								id="logoCubeImage"
 								src="/assets/salon/RoyalBraidsnewlogo.png"
@@ -136,6 +139,12 @@ export function SalonStorefrontMarkup({
 								decoding="async"
 								width="72"
 								height="72"
+								hidden
+								onError={(event) => {
+									event.currentTarget.hidden = true
+									const fallback = document.getElementById("logoFallbackIcon")
+									if (fallback) fallback.hidden = false
+								}}
 								data-client-attr="src:brand.logoSrc; alt:brand.logoAlt"
 							/>
 						</span>
