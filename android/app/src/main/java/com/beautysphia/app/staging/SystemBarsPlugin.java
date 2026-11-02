@@ -2,14 +2,6 @@ package com.beautysphia.app.staging;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.os.Build;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowInsets;
-import android.view.WindowInsetsController;
-import android.widget.FrameLayout;
-
-import androidx.core.view.WindowCompat;
 
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -18,10 +10,6 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "BeautySphiaSystemBars")
 public class SystemBarsPlugin extends Plugin {
-    private FrameLayout edgeToEdgeBands;
-    private View statusBand;
-    private View navigationBand;
-
     @PluginMethod
     public void setColors(PluginCall call) {
         String backgroundValue = call.getString("background");
@@ -49,38 +37,11 @@ public class SystemBarsPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             if (getActivity() instanceof MainActivity) {
                 ((MainActivity) getActivity()).applyLaunchTheme(
-                    background, Color.parseColor(surfaceValue), Color.parseColor(primaryValue)
+                    background,
+                    Color.parseColor(surfaceValue),
+                    Color.parseColor(primaryValue),
+                    lightIcons
                 );
-            }
-            Window window = getActivity().getWindow();
-            View decor = window.getDecorView();
-            decor.setBackgroundColor(background);
-            if (Build.VERSION.SDK_INT >= 35) {
-                WindowCompat.setDecorFitsSystemWindows(window, false);
-                window.setStatusBarColor(Color.TRANSPARENT);
-                window.setNavigationBarColor(Color.TRANSPARENT);
-            } else {
-                window.setStatusBarColor(background);
-                window.setNavigationBarColor(background);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                window.setStatusBarContrastEnforced(false);
-                window.setNavigationBarContrastEnforced(false);
-            }
-            int bars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = window.getInsetsController();
-                if (controller != null) controller.setSystemBarsAppearance(lightIcons ? 0 : bars, bars);
-            } else {
-                int flags = decor.getSystemUiVisibility();
-                int legacyBars = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-                decor.setSystemUiVisibility(lightIcons ? flags & ~legacyBars : flags | legacyBars);
-            }
-            if (Build.VERSION.SDK_INT >= 35) {
-                ensureEdgeToEdgeBands((FrameLayout) decor);
-                statusBand.setBackgroundColor(background);
-                navigationBand.setBackgroundColor(background);
             }
         });
         call.resolve();
@@ -90,38 +51,4 @@ public class SystemBarsPlugin extends Plugin {
         return value != null && value.matches("#[0-9a-fA-F]{6}");
     }
 
-    private void ensureEdgeToEdgeBands(FrameLayout decor) {
-        if (edgeToEdgeBands != null) return;
-        FrameLayout bands = new FrameLayout(getActivity());
-        bands.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        bands.setClickable(false);
-        bands.setFocusable(false);
-        statusBand = new View(getActivity());
-        navigationBand = new View(getActivity());
-        bands.addView(statusBand, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, 0, android.view.Gravity.TOP));
-        bands.addView(navigationBand, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, 0, android.view.Gravity.BOTTOM));
-        bands.setOnApplyWindowInsetsListener((view, insets) -> {
-            int topInset;
-            int bottomInset;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                android.graphics.Insets bars = insets.getInsets(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                topInset = bars.top;
-                bottomInset = bars.bottom;
-            } else {
-                topInset = insets.getSystemWindowInsetTop();
-                bottomInset = insets.getSystemWindowInsetBottom();
-            }
-            FrameLayout.LayoutParams top = (FrameLayout.LayoutParams) statusBand.getLayoutParams();
-            top.height = topInset;
-            statusBand.setLayoutParams(top);
-            FrameLayout.LayoutParams bottom = (FrameLayout.LayoutParams) navigationBand.getLayoutParams();
-            bottom.height = bottomInset;
-            navigationBand.setLayoutParams(bottom);
-            return insets;
-        });
-        decor.addView(bands, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-        bands.bringToFront();
-        decor.requestApplyInsets();
-        edgeToEdgeBands = bands;
-    }
 }

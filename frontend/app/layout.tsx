@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export async function generateViewport(): Promise<Viewport> {
 	const design = await getPlatformStorefrontDesign()
 	return {
-		colorScheme: "dark",
+		colorScheme: "light dark",
 		themeColor: design.theme.background,
 	}
 }
