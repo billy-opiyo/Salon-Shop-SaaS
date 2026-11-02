@@ -2,9 +2,9 @@
   "enabled": true,
   "channel": "staging",
   "applicationId": "com.beautysphia.app.staging",
-  "versionCode": 7,
-  "versionName": "1.0.6",
+  "versionCode": 8,
+  "versionName": "1.0.7",
   "apkUrl": "/downloads/beauty-sphia-staging.apk",
   "signingCertificateSha256": "dd3399211eed1a03a3270e3df943fba6eb7fcceee2935231c4f7372f209b1498",
-  "releaseNotes": "System bars now follow the active page theme, including light storefront mode and Android gesture navigation."
+  "releaseNotes": "The Beauty Sphia launcher icon now uses balanced artwork sizing and adaptive-icon safe-area padding."
 }

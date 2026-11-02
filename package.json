@@ -17,6 +17,7 @@
 		"android:add": "node scripts/android-build.mjs staging add",
 		"android:sync": "node scripts/android-build.mjs staging sync",
 		"android:sync:production": "node scripts/android-build.mjs production sync",
+		"android:icons": "node scripts/generate-android-launcher-icons.mjs",
 		"android:debug": "node scripts/android-build.mjs staging debug",
 		"android:release:apk": "node scripts/android-build.mjs production release-apk",
 		"android:release:aab": "node scripts/android-build.mjs production release-aab",
@@ -51,6 +52,7 @@
 		"@types/react-dom": "19.2.5",
 		"eslint": "9.39.5",
 		"eslint-config-next": "16.3.2",
+		"sharp": "^0.35.3",
 		"typescript": "5.9.3",
 		"vitest": "^4.1.11"
 	}
