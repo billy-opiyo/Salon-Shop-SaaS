@@ -10,7 +10,11 @@ import {
 import { verifyTurnstileToken } from "@backend/services/turnstile"
 import { dispatchNotification } from "@backend/services/notificationService"
 import { tenantAllowsPublicActions } from "@backend/services/publicTenantAccess"
-import { resolveBookingPaymentPlan } from "@shared/constants/bookingPayments"
+import {
+	SALON_BOOKING_COLLECTION_METHODS,
+	isSalonBookingCollectionConfigured,
+	resolveBookingPaymentPlan,
+} from "@shared/constants/bookingPayments"
 import {
 	uploadPublicBookingInspiration,
 	verifyPublicBookingInspiration,
@@ -115,12 +119,21 @@ export async function createPublicBooking(
 	if (input.stylistId && tenant.stylists.length !== 1) {
 		throw new BookingRequestError("That stylist is not available for booking.")
 	}
+	const configuredCollectionMethod = tenant.settings?.bookingCollectionMethod
+	const collectionMethod = SALON_BOOKING_COLLECTION_METHODS.find(
+		(method) => method === configuredCollectionMethod,
+	) ?? "paybill"
+	const collectionNumber = tenant.settings?.bookingCollectionNumber?.trim() || null
+	const salonCollectionReady = isSalonBookingCollectionConfigured(
+		configuredCollectionMethod,
+		collectionNumber,
+	)
 	let paymentPlan
 	try {
 		paymentPlan = input.waitlistId
 			? null
 			: resolveBookingPaymentPlan({
-					enabled: tenant.settings?.bookingPaymentsEnabled === true,
+					enabled: tenant.settings?.bookingPaymentsEnabled === true && salonCollectionReady,
 					configuredModes: tenant.settings?.bookingPaymentModes,
 					depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
 					servicePriceMinor: service?.priceMinor,
@@ -359,12 +372,11 @@ export async function createPublicBooking(
 								currency: tenant.currency,
 								status: paymentPlan.status,
 								expiresAt:
-									paymentPlan.mode !== "after_service" &&
-									tenant.settings?.bookingCollectionMethod !== "platform-stk"
-										? new Date(Date.now() + MANUAL_BOOKING_PAYMENT_EXPIRY_MS)
-										: paymentPlan.expiresAt,
-								collectionMethod: tenant.settings?.bookingCollectionMethod ?? "platform-stk",
-								collectionNumber: tenant.settings?.bookingCollectionNumber ?? null,
+								paymentPlan.mode !== "after_service"
+									? new Date(Date.now() + MANUAL_BOOKING_PAYMENT_EXPIRY_MS)
+									: paymentPlan.expiresAt,
+								collectionMethod,
+								collectionNumber,
 							},
 							select: {
 								id: true,

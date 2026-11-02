@@ -2,7 +2,6 @@ import "server-only"
 
 import { prisma } from "@backend/db/prisma"
 import {
-	requestDarajaStkPush,
 	verifyDarajaPayment,
 } from "@backend/services/darajaPaymentService"
 import { notifyBookingCustomer } from "@backend/services/notificationService"
@@ -11,8 +10,6 @@ import {
 	type ResolvedBookingPaymentPlan,
 } from "@shared/constants/bookingPayments"
 import { normalizeKenyanMpesaPhone } from "@shared/validation/mpesa"
-
-const PAYMENT_EXPIRY_MS = 15 * 60 * 1000
 
 export class BookingPaymentError extends Error {
 	readonly code = "BOOKING_PAYMENT_ERROR" as const
@@ -124,9 +121,7 @@ export async function submitManualBookingPaymentReceipt({
 export async function requestBookingPayment(
 	tenantSlug: string,
 	paymentId: string,
-	phoneInput: string,
 ) {
-	const phoneNumber = normalizeKenyanMpesaPhone(phoneInput)
 	const payment = await prisma.bookingPayment.findFirst({
 		where: {
 			id: paymentId,
@@ -152,78 +147,20 @@ export async function requestBookingPayment(
 	if (!payment) throw new BookingPaymentError("Booking payment not found.")
 	if (payment.paymentMode === "after_service")
 		return { status: "deferred" as const, paymentId: payment.id }
-	if (payment.collectionMethod !== "platform-stk")
-		return {
-			status: "manual" as const,
-			paymentId: payment.id,
-			collectionMethod: payment.collectionMethod,
-			collectionNumber: payment.collectionNumber,
-		}
-	if (payment.booking.status === "CANCELLED" || payment.booking.status === "EXPIRED")
-		throw new BookingPaymentError("This booking is no longer payable.")
-	if (payment.expiresAt && payment.expiresAt <= new Date()) {
-		await expireBookingPayment(payment.id)
-		throw new BookingPaymentError("This payment request has expired.")
-	}
-	if (payment.status === "succeeded")
-		return { status: "succeeded" as const, paymentId: payment.id }
-	if (payment.status === "failed" || payment.status === "expired") {
-		const replacement = await prisma.$transaction(async (transaction) => {
-			const active = await transaction.bookingPayment.findFirst({
-				where: { bookingId: payment.bookingId, status: "pending" },
-				select: { id: true },
-			})
-			if (active) return active
-			return transaction.bookingPayment.create({
-				data: {
-					tenantId: payment.tenantId,
-					bookingId: payment.bookingId,
-					paymentMode: payment.paymentMode,
-					amountMinor: payment.amountMinor,
-					serviceTotalMinor: payment.serviceTotalMinor,
-					currency: payment.currency,
-					collectionMethod: payment.collectionMethod,
-					collectionNumber: payment.collectionNumber,
-					status: "pending",
-					expiresAt: new Date(Date.now() + PAYMENT_EXPIRY_MS),
-				},
-				select: { id: true },
-			})
-		})
-		return requestBookingPayment(tenantSlug, replacement.id, phoneInput)
-	}
-	if (payment.status !== "pending")
-		throw new BookingPaymentError("This payment request is no longer active.")
-	if (payment.checkoutRequestId)
-		return { status: "pending" as const, paymentId: payment.id }
-	if (normalizeKenyanMpesaPhone(payment.booking.phone) !== phoneNumber)
+	if (payment.collectionMethod === "platform-stk") {
+		if (payment.status === "succeeded")
+			return { status: "succeeded" as const, paymentId: payment.id }
+		if (payment.status === "pending" && payment.checkoutRequestId)
+			return { status: "pending" as const, paymentId: payment.id }
 		throw new BookingPaymentError(
-			"Use the same phone number entered for this booking.",
+			"This booking used an old platform payment setting. Please contact the salon to arrange payment to its own M-Pesa destination.",
 		)
-
-	try {
-		const result = await requestDarajaStkPush(
-			phoneNumber,
-			payment.amountMinor,
-			`BOOKING-${payment.id}`,
-			"Salon service booking payment",
-		)
-		await prisma.bookingPayment.update({
-			where: { id: payment.id },
-			data: {
-				phoneNumber: result.phoneNumber,
-				merchantRequestId: result.merchantRequestId,
-				checkoutRequestId: result.checkoutRequestId,
-			},
-		})
-		return { status: "pending" as const, paymentId: payment.id }
-	} catch (error) {
-		await expireBookingPayment(payment.id, error instanceof Error ? error.message : "M-Pesa request failed.")
-		throw new BookingPaymentError(
-			error instanceof Error
-				? error.message
-				: "The M-Pesa payment request could not be started.",
-		)
+	}
+	return {
+		status: "manual" as const,
+		paymentId: payment.id,
+		collectionMethod: payment.collectionMethod,
+		collectionNumber: payment.collectionNumber,
 	}
 }
 

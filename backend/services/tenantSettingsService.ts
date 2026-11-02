@@ -102,6 +102,11 @@ export async function updateTenantSettingsForUser(
 			whatsappUrl: input.whatsappUrl || null,
 			emailPrimary: input.emailPrimary || null,
 			emailBookings: input.emailBookings || null,
+			bookingPaymentsEnabled: false,
+			bookingPaymentModes: ["partial", "full", "after_service"],
+			bookingDepositPercent: 50,
+			bookingCollectionMethod: "paybill",
+			bookingCollectionNumber: null,
 			...paymentSettings,
 		},
 		update: {
@@ -181,6 +186,11 @@ export async function updateTenantDesignForUser(
 			whatsappUrl: input.whatsappUrl || null,
 			emailPrimary: input.emailPrimary || null,
 			emailBookings: input.emailBookings || null,
+			bookingPaymentsEnabled: false,
+			bookingPaymentModes: ["partial", "full", "after_service"],
+			bookingDepositPercent: 50,
+			bookingCollectionMethod: "paybill",
+			bookingCollectionNumber: null,
 			address: input.address || null,
 			storefrontConfig: design as unknown as Prisma.InputJsonValue,
 			openingHours: {
