@@ -16,6 +16,9 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.animation.LinearInterpolator;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -25,6 +28,7 @@ import android.widget.ImageView;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
+import androidx.core.view.WindowCompat;
 
 import java.util.Locale;
 
@@ -33,6 +37,9 @@ public class MainActivity extends BridgeActivity {
     private static final long MIN_LAUNCH_OVERLAY_MS = 2_000L;
     private View nativeLaunchOverlay;
     private ImageView launchLogo;
+    private FrameLayout edgeToEdgeBands;
+    private View statusBand;
+    private View navigationBand;
     private float swipeStartX;
     private float swipeStartY;
     private boolean swipeStartedAtTop;
@@ -56,10 +63,10 @@ public class MainActivity extends BridgeActivity {
         android.content.SharedPreferences theme = getSharedPreferences("active_theme", MODE_PRIVATE);
         int background = parseThemeColor(theme.getString("background", null), Color.rgb(23, 18, 12));
         int surface = parseThemeColor(theme.getString("surface", null), Color.rgb(37, 27, 16));
+        int primary = parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79));
         getWindow().getDecorView().setBackgroundColor(background);
         showNativeLaunchOverlay();
-        int primary = parseThemeColor(theme.getString("primary", null), Color.rgb(215, 168, 79));
-        applyLaunchTheme(background, surface, primary);
+        applyLaunchTheme(background, surface, primary, theme.getBoolean("light_icons", true));
     }
 
     @Override
@@ -115,6 +122,13 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
+        android.content.SharedPreferences activeTheme = getSharedPreferences("active_theme", MODE_PRIVATE);
+        applyLaunchTheme(
+            parseThemeColor(activeTheme.getString("background", null), Color.rgb(23, 18, 12)),
+            parseThemeColor(activeTheme.getString("surface", null), Color.rgb(37, 27, 16)),
+            parseThemeColor(activeTheme.getString("primary", null), Color.rgb(215, 168, 79)),
+            activeTheme.getBoolean("light_icons", true)
+        );
         if (updateDownloadReceiver == null) {
             updateDownloadReceiver = new UpdateDownloadReceiver(this::installDownloadedUpdate);
             IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
@@ -258,7 +272,7 @@ public class MainActivity extends BridgeActivity {
         launchLogo = logo;
     }
 
-    public void applyLaunchTheme(int backgroundColor, int surfaceColor, int primaryColor) {
+    public void applyLaunchTheme(int backgroundColor, int surfaceColor, int primaryColor, boolean lightIcons) {
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
         if (nativeLaunchOverlay != null) {
             GradientDrawable launchBackground = new GradientDrawable();
@@ -267,6 +281,80 @@ public class MainActivity extends BridgeActivity {
         }
         if (launchLogo != null) launchLogo.setBackground(createLaunchLogoShape(backgroundColor));
         if (pullRefreshIndicator != null) pullRefreshIndicator.setAccentColor(primaryColor);
+
+        Window window = getWindow();
+        View decor = window.getDecorView();
+        if (android.os.Build.VERSION.SDK_INT >= 35) {
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+        } else {
+            window.setStatusBarColor(backgroundColor);
+            window.setNavigationBarColor(backgroundColor);
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.setStatusBarContrastEnforced(false);
+            window.setNavigationBarContrastEnforced(false);
+        }
+        int bars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+            | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) controller.setSystemBarsAppearance(lightIcons ? 0 : bars, bars);
+        } else {
+            int flags = decor.getSystemUiVisibility();
+            int legacyBars = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            decor.setSystemUiVisibility(lightIcons ? flags & ~legacyBars : flags | legacyBars);
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 35) {
+            ensureEdgeToEdgeBands((FrameLayout) decor);
+            statusBand.setBackgroundColor(backgroundColor);
+            navigationBand.setBackgroundColor(backgroundColor);
+        }
+    }
+
+    private void ensureEdgeToEdgeBands(FrameLayout decor) {
+        if (edgeToEdgeBands != null) return;
+        FrameLayout bands = new FrameLayout(this);
+        bands.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        bands.setClickable(false);
+        bands.setFocusable(false);
+        statusBand = new View(this);
+        navigationBand = new View(this);
+        bands.addView(statusBand, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, 0, Gravity.TOP
+        ));
+        bands.addView(navigationBand, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, 0, Gravity.BOTTOM
+        ));
+        bands.setOnApplyWindowInsetsListener((view, insets) -> {
+            int topInset;
+            int bottomInset;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                android.graphics.Insets topBars = insets.getInsets(
+                    WindowInsets.Type.statusBars() | WindowInsets.Type.displayCutout()
+                );
+                android.graphics.Insets bottomBars = insets.getInsets(WindowInsets.Type.navigationBars());
+                topInset = topBars.top;
+                bottomInset = bottomBars.bottom;
+            } else {
+                topInset = insets.getSystemWindowInsetTop();
+                bottomInset = insets.getSystemWindowInsetBottom();
+            }
+            FrameLayout.LayoutParams top = (FrameLayout.LayoutParams) statusBand.getLayoutParams();
+            top.height = topInset;
+            statusBand.setLayoutParams(top);
+            FrameLayout.LayoutParams bottom = (FrameLayout.LayoutParams) navigationBand.getLayoutParams();
+            bottom.height = bottomInset;
+            navigationBand.setLayoutParams(bottom);
+            return insets;
+        });
+        decor.addView(bands, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        bands.bringToFront();
+        decor.requestApplyInsets();
+        edgeToEdgeBands = bands;
     }
 
     private GradientDrawable createLaunchLogoShape(int surfaceColor) {

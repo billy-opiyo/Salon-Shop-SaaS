@@ -11,6 +11,7 @@ import {
 	getSafeLocalCallbackUrl,
 	PENDING_MOBILE_GOOGLE_AUTH_KEY,
 } from "@/lib/mobileGoogleAuth"
+import { isLightColor, normalizeCssColor } from "@/lib/systemBarTheme"
 
 type SystemBarsOptions = {
 	background: string
@@ -45,25 +46,34 @@ const COLOR_FALLBACKS = {
 
 function readCssColor(style: CSSStyleDeclaration, names: string[], fallback: string): string {
 	for (const name of names) {
-		const value = style.getPropertyValue(name).trim()
-		if (/^#[0-9a-f]{6}$/i.test(value)) return value
+		const value = normalizeCssColor(style.getPropertyValue(name))
+		if (value) return value
 	}
 	return fallback
 }
 
-function isLightColor(hex: string): boolean {
-	const channels = hex.slice(1).match(/.{2}/g)?.map((part) => parseInt(part, 16) / 255) ?? [0, 0, 0]
-	const linear = channels.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
-	return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2] > 0.48
-}
-
 function getThemeColors(): SystemBarsOptions {
-	const root = document.querySelector<HTMLElement>(".platform-site, .salon-storefront-root, .tenant-storefront-not-found") ?? document.documentElement
+	const themeRoot = document.querySelector<HTMLElement>(".platform-site, .salon-storefront-root, .tenant-storefront-not-found")
+	const root = themeRoot ?? document.documentElement
 	const style = getComputedStyle(root)
-	const background = readCssColor(style, ["--bg-primary", "--background", "--bg"], COLOR_FALLBACKS.background)
+	const bodyStyle = getComputedStyle(document.body)
+	const htmlStyle = getComputedStyle(document.documentElement)
+	const isLightMode = document.documentElement.dataset.colorMode === "light"
+		|| document.body.dataset.colorMode === "light"
+		|| themeRoot?.dataset.colorMode === "light"
+		|| document.documentElement.classList.contains("light-mode")
+		|| document.body.classList.contains("light-mode")
+	let background = readCssColor(style, ["--bg-primary", "--background", "--bg"], COLOR_FALLBACKS.background)
+	if (themeRoot?.classList.contains("salon-storefront-root") && isLightMode) {
+		background = normalizeCssColor(bodyStyle.backgroundColor)
+			?? normalizeCssColor(style.backgroundColor)
+			?? "#f7f2ea"
+	} else if (!themeRoot) {
+		background = readCssColor(htmlStyle, ["--bg-primary", "--background", "--bg"], background)
+	}
 	return {
 		background,
-		surface: readCssColor(style, ["--bg-card", "--surface", "--bg-secondary"], COLOR_FALLBACKS.surface),
+		surface: readCssColor(style, ["--bg-card", "--surface", "--bg-secondary"], isLightMode ? "#fffdf9" : COLOR_FALLBACKS.surface),
 		text: readCssColor(style, ["--text-primary", "--foreground"], COLOR_FALLBACKS.text),
 		muted: readCssColor(style, ["--text-secondary", "--muted"], COLOR_FALLBACKS.muted),
 		primary: readCssColor(style, ["--primary", "--gold"], COLOR_FALLBACKS.primary),
@@ -90,7 +100,9 @@ export function AndroidNativeBridge({ brandName = "Beauty Sphia" }: { readonly b
 	const [exitPrompt, setExitPrompt] = useState(false)
 	const exitPromptRef = useRef(exitPrompt)
 	const [authError, setAuthError] = useState("")
-	exitPromptRef.current = exitPrompt
+	useEffect(() => {
+		exitPromptRef.current = exitPrompt
+	}, [exitPrompt])
 
 	useEffect(() => {
 		let active = true
@@ -109,6 +121,7 @@ export function AndroidNativeBridge({ brandName = "Beauty Sphia" }: { readonly b
 			} else {
 				themeColors.forEach((themeColor) => { themeColor.content = colors.background })
 			}
+			document.documentElement.style.colorScheme = isLightColor(colors.background) ? "light" : "dark"
 			if (isAndroid) void SystemBars.setColors(colors).catch(() => undefined)
 		}
 		const scheduleTheme = () => {
@@ -120,8 +133,9 @@ export function AndroidNativeBridge({ brandName = "Beauty Sphia" }: { readonly b
 		observer.observe(document.documentElement, {
 			attributes: true,
 			childList: true,
+			characterData: true,
 			subtree: true,
-			attributeFilter: ["class", "style", "data-theme-preset"],
+			attributeFilter: ["class", "style", "data-theme-preset", "data-color-mode", "data-theme-mode"],
 		})
 
 		if (isAndroid) {
