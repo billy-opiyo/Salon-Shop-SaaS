@@ -1695,6 +1695,19 @@ h6 {
     background: #140f09;
 }
 
+#logoCubeImage[hidden] { display: none; }
+
+.logo-fallback-icon {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--primary, #d7a84f);
+    background: color-mix(in srgb, var(--primary, #d7a84f) 12%, #140f09);
+}
+
+.logo-fallback-icon[hidden] { display: none; }
+
 .nav {
     display: flex;
     align-items: center;

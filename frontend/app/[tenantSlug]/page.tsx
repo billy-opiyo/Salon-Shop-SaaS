@@ -134,7 +134,7 @@ function buildReferenceClientConfig(
 				tenant.logoUrl ??
 				(tenant.slug === "royal-braids"
 					? "/assets/salon/RoyalBraidsnewlogo.png"
-					: "/assets/salon/logo.png"),
+					: ""),
 			logoAlt: tenant.businessName + " logo",
 			heroImage,
 			heroImageAlt: tenant.businessName + " salon",
