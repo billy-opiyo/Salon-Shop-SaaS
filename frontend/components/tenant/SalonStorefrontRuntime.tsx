@@ -2223,6 +2223,8 @@ function setDesignControl(id: string, value: unknown): void {
 				? "adminDesignHeroPreview"
 				: id === "adminDesignHeroCardUrl"
 					? "adminDesignHeroCardPreview"
+					: id === "adminDesignDirectoryCardUrl"
+						? "adminDesignDirectoryCardPreview"
 				: null
 	if (previewId) {
 		const preview = document.getElementById(previewId)
@@ -2299,6 +2301,14 @@ function bindStorefrontDesignEditor(
 			"/assets/salon/1000_F_595420115_RZi6MAsq90qVRMfFz37ZKBianocAltUu.jpg",
 	)
 	setDesignControl("adminDesignHeroCardUrl", design.heroCardImageUrl)
+	setDesignControl(
+		"adminDesignDirectoryCardUrl",
+		typeof savedDesign.directoryCardImageUrl === "string" && savedDesign.directoryCardImageUrl.trim()
+			? savedDesign.directoryCardImageUrl
+			: tenantSlug === "royal-braids"
+				? "/platform/Royal Braids logo.webp"
+				: settings.logoUrl ?? "",
+	)
 	setDesignControl(
 		"adminDesignHeroTitle",
 		settings.heroTitle ??
@@ -2452,6 +2462,7 @@ function bindStorefrontDesignEditor(
 	bindUpload("adminDesignLogoFile", "adminDesignLogoUrl", "LOGO")
 	bindUpload("adminDesignHeroFile", "adminDesignHeroUrl", "HERO")
 	bindUpload("adminDesignHeroCardFile", "adminDesignHeroCardUrl", "HERO")
+	bindUpload("adminDesignDirectoryCardFile", "adminDesignDirectoryCardUrl", "HERO")
 	const saveButtons = Array.from(
 		document.querySelectorAll<HTMLButtonElement>("[data-save-store-design]"),
 	)
@@ -2496,6 +2507,7 @@ function bindStorefrontDesignEditor(
 			storefrontConfig: {
 				heroDescription: getDesignControl("adminDesignHeroDescription"),
 				heroCardImageUrl: getDesignControl("adminDesignHeroCardUrl"),
+				directoryCardImageUrl: getDesignControl("adminDesignDirectoryCardUrl"),
 				heroExperience: getDesignControl("adminDesignHeroExperience"),
 				heroRating: getDesignControl("adminDesignHeroRating"),
 				heroReviewCount: getDesignControl("adminDesignHeroReviewCount"),

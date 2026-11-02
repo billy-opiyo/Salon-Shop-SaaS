@@ -135,7 +135,7 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 			tagline: fixtureTenant.shortDescription,
 			rating: null,
 			reviewCount: 0,
-			imageUrl: DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
+			imageUrl: "/platform/Royal Braids logo.webp",
 			href: `/${fixtureTenant.slug}`,
 			createdAt: new Date(0),
 		}]
@@ -203,11 +203,12 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 					reviewCount: stats?._count._all ?? 0,
 					isPreviewOnly: tenant.status !== "ACTIVE",
 					imageUrl:
-						(typeof storefrontConfig?.heroCardImageUrl === "string" &&
-							storefrontConfig.heroCardImageUrl.trim()) ||
-						tenant.settings?.heroImageUrl ||
+						(typeof storefrontConfig?.directoryCardImageUrl === "string" &&
+							storefrontConfig.directoryCardImageUrl.trim()) ||
 						tenant.settings?.logoUrl ||
-						DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
+						(tenant.slug === "royal-braids"
+							? "/platform/Royal Braids logo.webp"
+							: "/platform/Beauty Sphia logo.webp"),
 					href: `/${tenant.slug}`,
 					createdAt: tenant.createdAt,
 				}
