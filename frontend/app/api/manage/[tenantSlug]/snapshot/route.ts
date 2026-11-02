@@ -7,7 +7,7 @@ import {
 } from "@backend/services/merchantAdminSnapshotService"
 
 export async function GET(
-	_request: NextRequest,
+	request: NextRequest,
 	props: { params: Promise<{ tenantSlug: string }> },
 ) {
 	const session = await auth()
@@ -17,7 +17,14 @@ export async function GET(
 
 	const { tenantSlug } = await props.params
 	try {
-		const snapshot = await getMerchantAdminSnapshot(session.user.id, tenantSlug)
+		const snapshot = await getMerchantAdminSnapshot(
+			session.user.id,
+			tenantSlug,
+			{
+				includeSecurity:
+					request.nextUrl.searchParams.get("includeSecurity") === "1",
+			},
+		)
 		return NextResponse.json(snapshot, {
 			headers: { "cache-control": "no-store" },
 		})

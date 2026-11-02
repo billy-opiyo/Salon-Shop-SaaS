@@ -2573,6 +2573,20 @@ export function bindAdminSnapshotAdapter(
 	let confirmedActionButton: HTMLButtonElement | null = null
 	let refreshAdminSnapshot: () => Promise<void> = async () => {}
 	const removeTabHandlers: Array<() => void> = []
+	const getAdminSnapshotUrl = (): string => {
+		const url = new URL(
+			`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`,
+			window.location.origin,
+		)
+		if (
+			document
+				.querySelector<HTMLElement>('[data-admin-section="security"]')
+				?.classList.contains("active")
+		) {
+			url.searchParams.set("includeSecurity", "1")
+		}
+		return `${url.pathname}${url.search}`
+	}
 	const blogList = document.getElementById("adminBlogsList")
 	const blogPreviousButton = document.getElementById("adminBlogsPrevBtn")
 	const blogNextButton = document.getElementById("adminBlogsNextBtn")
@@ -3461,6 +3475,7 @@ export function bindAdminSnapshotAdapter(
 						if (active)
 							item.scrollIntoView({ behavior: "instant", block: "start" })
 					})
+				if (section === "security") void refreshAdminSnapshot()
 				window.requestAnimationFrame(updateBlogScrollControls)
 				const nextUrl = new URL(window.location.href)
 				nextUrl.searchParams.set("section", section)
@@ -3877,7 +3892,7 @@ export function bindAdminSnapshotAdapter(
 	// populates lists asynchronously and must not control whether Save/Edit
 	// buttons are interactive.
 	removeTabHandlers.push(bindLegacyContentForms(tenantSlug))
-	void fetch(`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`, {
+	void fetch(getAdminSnapshotUrl(), {
 		credentials: "same-origin",
 		cache: "no-store",
 	})
@@ -4159,7 +4174,7 @@ export function bindAdminSnapshotAdapter(
 					: []
 				try {
 					const response = await fetch(
-						`/api/manage/${encodeURIComponent(tenantSlug)}/snapshot`,
+						getAdminSnapshotUrl(),
 						{ credentials: "same-origin", cache: "no-store" },
 					)
 					if (!response.ok) return
@@ -4433,17 +4448,34 @@ export function bindAdminSnapshotAdapter(
 				}
 			}
 			refreshAdminSnapshot = () => refreshSnapshot(true)
+			if (
+				!security &&
+				getAdminSnapshotUrl().includes("includeSecurity=1")
+			)
+				void refreshSnapshot()
 			const refreshTimer = window.setInterval(
 				() => void refreshSnapshot(),
-				30_000,
+				120_000,
 			)
+			let resumeRefreshTimeout: ReturnType<typeof setTimeout> | undefined
 			const refreshOnVisibility = (): void => {
-				if (document.visibilityState === "visible") void refreshSnapshot()
+				if (document.visibilityState !== "visible") return
+				if (resumeRefreshTimeout) clearTimeout(resumeRefreshTimeout)
+				resumeRefreshTimeout = setTimeout(() => {
+					resumeRefreshTimeout = undefined
+					void refreshSnapshot()
+				}, 250)
 			}
+			const refreshOnFocus = (): void => refreshOnVisibility()
 			document.addEventListener("visibilitychange", refreshOnVisibility)
+			window.addEventListener("focus", refreshOnFocus)
+			window.addEventListener("online", refreshOnFocus)
 			removeTabHandlers.push(() => {
 				window.clearInterval(refreshTimer)
+				if (resumeRefreshTimeout) clearTimeout(resumeRefreshTimeout)
 				document.removeEventListener("visibilitychange", refreshOnVisibility)
+				window.removeEventListener("focus", refreshOnFocus)
+				window.removeEventListener("online", refreshOnFocus)
 			})
 			const actionMessage = document.getElementById("adminActionMessage")
 			if (actionMessage)
@@ -5486,14 +5518,6 @@ interface ClientAccountSnapshotPayload {
 	}[]
 }
 
-interface ClientWaitlistQueuePayload {
-	readonly waitlistId: string
-	readonly position: number | null
-	readonly label: string
-	readonly size: number | null
-	readonly status: string
-}
-
 function escapeClientHtml(value: string): string {
 	return value
 		.replaceAll("&", "&amp;")
@@ -5733,7 +5757,9 @@ function renderReferenceDashboard(
 async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 	try {
 		const response = await fetch(
-			"/api/account?tenantSlug=" + encodeURIComponent(tenantSlug),
+			"/api/account?tenantSlug=" +
+				encodeURIComponent(tenantSlug) +
+				"&includeWaitlist=1",
 			{ cache: "no-store", credentials: "same-origin" },
 		)
 		if (!response.ok) {
@@ -5743,45 +5769,7 @@ async function loadReferenceDashboardData(tenantSlug: string): Promise<void> {
 			return
 		}
 		const snapshot = (await response.json()) as ClientAccountSnapshotPayload
-		const queueLookups = await Promise.all(
-			snapshot.bookings
-				.filter((booking) => booking.status === "waitlisted")
-				.map(async (booking) => {
-					try {
-						const queueResponse = await fetch(
-							"/api/account?tenantSlug=" +
-								encodeURIComponent(tenantSlug) +
-								"&bookingId=" +
-								encodeURIComponent(booking.id),
-							{ cache: "no-store", credentials: "same-origin" },
-						)
-						if (!queueResponse.ok) return [booking.id, null] as const
-						const queue =
-							(await queueResponse.json()) as ClientWaitlistQueuePayload
-						return [booking.id, queue] as const
-					} catch {
-						return [booking.id, null] as const
-					}
-				}),
-		)
-		const queueByBookingId = new Map(queueLookups)
-		const enrichedSnapshot: ClientAccountSnapshotPayload = {
-			...snapshot,
-			bookings: snapshot.bookings.map((booking) => {
-				const queue = queueByBookingId.get(booking.id)
-				return queue
-					? {
-							...booking,
-							waitlistId: queue.waitlistId,
-							waitlistPosition: queue.position,
-							waitlistLabel: queue.label,
-							waitlistQueueSize: queue.size,
-							waitlistStatus: queue.status,
-						}
-					: booking
-			}),
-		}
-		renderReferenceDashboard(enrichedSnapshot)
+		renderReferenceDashboard(snapshot)
 	} catch {
 		setDashboardMessage("Your dashboard data could not be loaded.", "error")
 	}
@@ -6450,9 +6438,11 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 	}
 	const dashboardRefreshTimer = window.setInterval(
 		refreshDashboardWhenVisible,
-		30_000,
+		120_000,
 	)
 	document.addEventListener("visibilitychange", refreshDashboardWhenVisible)
+	window.addEventListener("focus", refreshDashboardWhenVisible)
+	window.addEventListener("online", refreshDashboardWhenVisible)
 
 	return () => {
 		window.clearInterval(dashboardRefreshTimer)
@@ -6460,6 +6450,8 @@ function bindAuthAdapter(tenantSlug = "", turnstileSiteKey = ""): () => void {
 			"visibilitychange",
 			refreshDashboardWhenVisible,
 		)
+		window.removeEventListener("focus", refreshDashboardWhenVisible)
+		window.removeEventListener("online", refreshDashboardWhenVisible)
 		form.removeEventListener("submit", submit, true)
 		openButton?.removeEventListener("click", openAuth, true)
 		closeButton?.removeEventListener("click", closeAuth, true)
@@ -6778,9 +6770,10 @@ function bindBookingAdapter(
 	}
 	const availabilityRefreshTimer = window.setInterval(
 		refreshAvailabilityWhenIdle,
-		30_000,
+		60_000,
 	)
 	document.addEventListener("visibilitychange", refreshAvailabilityWhenIdle)
+	window.addEventListener("focus", refreshAvailabilityWhenIdle)
 	datePicker?.addEventListener("change", refreshAvailability)
 	stylistSelect?.addEventListener("change", refreshAvailability)
 	datePicker?.addEventListener("change", clearPendingWaitlistIfChanged)
@@ -7133,6 +7126,7 @@ function bindBookingAdapter(
 			"visibilitychange",
 			refreshAvailabilityWhenIdle,
 		)
+		window.removeEventListener("focus", refreshAvailabilityWhenIdle)
 		datePicker?.removeEventListener("change", refreshAvailability)
 		stylistSelect?.removeEventListener("change", refreshAvailability)
 		datePicker?.removeEventListener("change", clearPendingWaitlistIfChanged)

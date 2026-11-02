@@ -200,3 +200,144 @@ export async function getClientWaitlistQueueInfo(input: {
 		source: "live-waitlist-calc",
 	}
 }
+
+export async function getClientWaitlistQueueInfoForBookings(input: {
+	readonly userId: string
+	readonly tenantSlug: string
+	readonly bookingIds: readonly string[]
+}): Promise<Record<string, ClientWaitlistQueueInfo>> {
+	const bookingIds = Array.from(
+		new Set(input.bookingIds.map((id) => id.trim()).filter(Boolean)),
+	).slice(0, 70)
+	if (bookingIds.length === 0) return {}
+
+	const tenant = await prisma.tenant.findUnique({
+		where: { slug: normalizeSlug(input.tenantSlug) },
+		select: { id: true, status: true },
+	})
+	if (!tenant || !(await tenantAllowsPublicActions(input.tenantSlug, tenant.status))) {
+		throw new ClientWaitlistError("This salon is not currently available.")
+	}
+	const user = await prisma.user.findUnique({
+		where: { id: input.userId },
+		select: { email: true },
+	})
+	if (!user) throw new ClientWaitlistError("Your account could not be found.")
+
+	const bookings = await prisma.booking.findMany({
+		where: {
+			id: { in: bookingIds },
+			tenantId: tenant.id,
+			OR: [{ userId: input.userId }, { email: user.email.toLowerCase() }],
+		},
+		select: {
+			id: true,
+			waitlistEntry: { select: { id: true } },
+		},
+	})
+	const waitlistIds = bookings.flatMap((booking) =>
+		booking.waitlistEntry ? [booking.waitlistEntry.id] : [],
+	)
+	if (waitlistIds.length === 0) return {}
+
+	const entries = await prisma.waitlistEntry.findMany({
+		where: {
+			id: { in: waitlistIds },
+			tenantId: tenant.id,
+			OR: [{ userId: input.userId }, { email: user.email.toLowerCase() }],
+		},
+		select: {
+			id: true,
+			status: true,
+			preferredDate: true,
+			preferredTime: true,
+			preferredStylist: true,
+			linkedBookingId: true,
+		},
+	})
+	const entriesById = new Map(entries.map((entry) => [entry.id, entry]))
+	const validBookings = bookings.flatMap((booking) => {
+		const entryId = booking.waitlistEntry?.id
+		const entry = entryId ? entriesById.get(entryId) : undefined
+		return entry && (!entry.linkedBookingId || entry.linkedBookingId === booking.id)
+			? [{ booking, entry }]
+			: []
+	})
+	const slots = new Map<
+		string,
+		{ preferredDate: Date; preferredTime: string; preferredStylist: string | null }
+	>()
+	for (const { entry } of validBookings) {
+		if (!entry.preferredDate || !entry.preferredTime) continue
+		const slotKey = buildSlotKey(
+			entry.preferredDate,
+			entry.preferredTime,
+			entry.preferredStylist,
+		)
+		slots.set(slotKey, {
+			preferredDate: entry.preferredDate,
+			preferredTime: entry.preferredTime,
+			preferredStylist: entry.preferredStylist,
+		})
+	}
+	const queueEntries = slots.size
+		? await prisma.waitlistEntry.findMany({
+				where: {
+					tenantId: tenant.id,
+					status: { in: ACTIVE_QUEUE_STATUSES },
+					OR: Array.from(slots.values()),
+				},
+				orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+				select: {
+					id: true,
+					preferredDate: true,
+					preferredTime: true,
+					preferredStylist: true,
+				},
+			})
+		: []
+	const queuesBySlot = new Map<string, string[]>()
+	for (const queueEntry of queueEntries) {
+		const slotKey = buildSlotKey(
+			queueEntry.preferredDate,
+			queueEntry.preferredTime,
+			queueEntry.preferredStylist,
+		)
+		if (!slotKey) continue
+		const queue = queuesBySlot.get(slotKey) ?? []
+		queue.push(queueEntry.id)
+		queuesBySlot.set(slotKey, queue)
+	}
+
+	const result: Record<string, ClientWaitlistQueueInfo> = {}
+	for (const { booking, entry } of validBookings) {
+		const slotKey = buildSlotKey(
+			entry.preferredDate,
+			entry.preferredTime,
+			entry.preferredStylist,
+		)
+		if (!slotKey) {
+			result[booking.id] = emptyQueueInfo(
+				entry.status.toLowerCase(),
+				entry.id,
+				booking.id,
+			)
+			continue
+		}
+		const queue = queuesBySlot.get(slotKey) ?? []
+		const index = queue.indexOf(entry.id)
+		const position = index >= 0 ? index + 1 : null
+		result[booking.id] = {
+			active: position !== null,
+			position,
+			label: ordinal(position),
+			size: queue.length,
+			status: entry.status.toLowerCase(),
+			slotKey,
+			waitlistId: entry.id,
+			bookingId: booking.id,
+			source: "live-waitlist-calc",
+		}
+	}
+	return result
+}
