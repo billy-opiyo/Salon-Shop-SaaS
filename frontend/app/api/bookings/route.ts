@@ -66,7 +66,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 				payment = await requestBookingPayment(
 					parsed.data.tenantSlug,
 					booking.payment.id,
-					parsed.data.phone,
 				)
 			} catch (error) {
 				if (error instanceof BookingPaymentError)

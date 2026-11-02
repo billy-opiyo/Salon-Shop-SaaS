@@ -9,6 +9,7 @@ import {
 } from "@backend/services/tenantSettingsService"
 import { saveTenantSettings } from "./actions"
 import { BookingPaymentCollectionFields } from "./BookingPaymentCollectionFields"
+import { isSalonBookingCollectionConfigured } from "@shared/constants/bookingPayments"
 import {
 	DEFAULT_THEME_PRESET,
 	THEME_PRESET_OPTIONS,
@@ -40,10 +41,15 @@ export default async function MerchantSettingsPage({
 	const selectedThemePreset = isThemePreset(savedThemePreset)
 		? savedThemePreset
 		: DEFAULT_THEME_PRESET
-	const collectionMethods = ["platform-stk", "paybill", "till", "registered-phone"] as const
+	const collectionMethods = ["paybill", "till", "registered-phone"] as const
 	const bookingCollectionMethod = collectionMethods.includes(settings?.bookingCollectionMethod as typeof collectionMethods[number])
 		? settings?.bookingCollectionMethod as typeof collectionMethods[number]
-		: "platform-stk"
+		: "paybill"
+	const legacyPlatformCollection = settings?.bookingCollectionMethod === "platform-stk"
+	const salonCollectionIsReady = isSalonBookingCollectionConfigured(
+		bookingCollectionMethod,
+		settings?.bookingCollectionNumber,
+	)
 	return (
 		<main className="manage-page">
 			<header className="manage-header">
@@ -148,10 +154,11 @@ export default async function MerchantSettingsPage({
 					<input
 						name="bookingPaymentsEnabled"
 						type="checkbox"
-						defaultChecked={settings?.bookingPaymentsEnabled ?? false}
+						defaultChecked={settings?.bookingPaymentsEnabled === true && salonCollectionIsReady}
 					/>
 					Enable M-Pesa payments for normal service bookings
 				</label>
+				{(legacyPlatformCollection || (settings?.bookingPaymentsEnabled === true && !salonCollectionIsReady)) && <p className="form-help">The previous Beauty Sphia managed payment option is unavailable for salon bookings. Choose and save a valid salon-owned Paybill, Till, or registered phone number to enable booking payments.</p>}
 				<p className="form-help">
 					WhatsApp orders and WhatsApp bookings are never charged here.
 				</p>

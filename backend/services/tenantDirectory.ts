@@ -10,6 +10,10 @@ import {
 	DEFAULT_STOREFRONT_DESIGN,
 	type StorefrontDesignConfig,
 } from "@shared/constants/storefrontDesign"
+import {
+	SALON_BOOKING_COLLECTION_METHODS,
+	isSalonBookingCollectionConfigured,
+} from "@shared/constants/bookingPayments"
 import { safeMapEmbedUrl } from "@shared/safeMapEmbedUrl"
 import { DEFAULT_THEME_PRESET } from "@shared/constants/themePresets"
 import {
@@ -394,6 +398,15 @@ export const getTenantStorefront = cache(async (
 				: "starter"
 		const phone = tenant.settings?.phonePrimary ?? "+254740470381"
 		const isRoyalBraids = normalizedSlug === "royal-braids"
+		const configuredCollectionMethod = tenant.settings?.bookingCollectionMethod
+		const collectionMethod = SALON_BOOKING_COLLECTION_METHODS.find(
+			(method) => method === configuredCollectionMethod,
+		) ?? "paybill"
+		const collectionNumber = tenant.settings?.bookingCollectionNumber ?? null
+		const salonCollectionReady = isSalonBookingCollectionConfigured(
+			configuredCollectionMethod,
+			collectionNumber,
+		)
 		return {
 			id: tenant.id,
 			slug: tenant.slug,
@@ -423,7 +436,7 @@ export const getTenantStorefront = cache(async (
 				address: tenant.settings?.address ?? undefined,
 			},
 			bookingPayment: {
-				enabled: tenant.settings?.bookingPaymentsEnabled === true,
+				enabled: tenant.settings?.bookingPaymentsEnabled === true && salonCollectionReady,
 				modes: Array.isArray(tenant.settings?.bookingPaymentModes)
 					? tenant.settings.bookingPaymentModes.filter(
 							(mode): mode is "partial" | "full" | "after_service" =>
@@ -431,9 +444,8 @@ export const getTenantStorefront = cache(async (
 						)
 					: ["partial", "full", "after_service"],
 				depositPercent: tenant.settings?.bookingDepositPercent ?? 50,
-				collectionMethod: ( ["platform-stk", "paybill", "till", "registered-phone"] as const )
-					.find((method) => method === tenant.settings?.bookingCollectionMethod) ?? "platform-stk",
-				collectionNumber: tenant.settings?.bookingCollectionNumber ?? null,
+				collectionMethod,
+				collectionNumber,
 				currency: tenant.currency,
 			},
 			logoUrl: tenant.settings?.logoUrl ?? undefined,

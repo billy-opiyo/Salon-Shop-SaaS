@@ -12,6 +12,29 @@ export const DEFAULT_BOOKING_PAYMENT_MODES: readonly BookingPaymentMode[] = [
 	"after_service",
 ]
 
+export const SALON_BOOKING_COLLECTION_METHODS = [
+	"paybill",
+	"till",
+	"registered-phone",
+] as const
+
+export type SalonBookingCollectionMethod =
+	(typeof SALON_BOOKING_COLLECTION_METHODS)[number]
+
+export function isSalonBookingCollectionConfigured(
+	method: unknown,
+	destination: string | null | undefined,
+): method is SalonBookingCollectionMethod {
+	if (!SALON_BOOKING_COLLECTION_METHODS.includes(method as SalonBookingCollectionMethod))
+		return false
+	const digits = (destination ?? "").replace(/\D/g, "")
+	if (method === "registered-phone")
+		return (digits.startsWith("254") && digits.length === 12 && /^[17]/.test(digits.slice(3))) ||
+			(digits.startsWith("0") && digits.length === 10 && /^[17]/.test(digits.slice(1))) ||
+			((digits.startsWith("1") || digits.startsWith("7")) && digits.length === 9)
+	return digits.length >= 5 && digits.length <= 8
+}
+
 export interface BookingPaymentPolicy {
 	readonly enabled: boolean
 	readonly modes: readonly BookingPaymentMode[]
