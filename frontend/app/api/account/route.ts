@@ -15,6 +15,7 @@ import {
 } from "@backend/services/clientAccountService"
 import {
 	ClientWaitlistError,
+	getClientWaitlistQueueInfoForBookings,
 	getClientWaitlistQueueInfo,
 } from "@backend/services/clientWaitlistService"
 import { clientWaitlistQueueSchema } from "@shared/validation/clientWaitlist"
@@ -79,6 +80,41 @@ export async function GET(request: Request): Promise<NextResponse> {
 		if ((query.has("bookingId") || query.has("waitlistId")) && !tenantSlug)
 			return NextResponse.json({ error: "A salon is required for waitlist details." }, { status: 400 })
 		const snapshot = await getClientAccountSnapshot(userId, tenantSlug || undefined)
+		if (query.get("includeWaitlist") === "1" && tenantSlug) {
+			let waitlistByBookingId: Awaited<
+				ReturnType<typeof getClientWaitlistQueueInfoForBookings>
+			> = {}
+			try {
+				waitlistByBookingId = await getClientWaitlistQueueInfoForBookings({
+					userId,
+					tenantSlug,
+					bookingIds: snapshot.bookings
+						.filter((booking) => booking.status === "waitlisted")
+						.map((booking) => booking.id),
+				})
+			} catch (error) {
+				console.error("Client waitlist batch lookup failed:", error)
+			}
+			return NextResponse.json(
+				{
+					...snapshot,
+					bookings: snapshot.bookings.map((booking) => {
+						const queue = waitlistByBookingId[booking.id]
+						return queue
+							? {
+									...booking,
+									waitlistId: queue.waitlistId,
+									waitlistPosition: queue.position,
+									waitlistLabel: queue.label,
+									waitlistQueueSize: queue.size,
+									waitlistStatus: queue.status,
+								}
+							: booking
+					}),
+				},
+				{ status: 200 },
+			)
+		}
 		return NextResponse.json(snapshot, { status: 200 })
 	} catch (error) {
 		if (error instanceof ClientAccountError || error instanceof ClientWaitlistError) {

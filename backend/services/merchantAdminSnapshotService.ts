@@ -118,6 +118,7 @@ async function getTenantIdForAdmin(userId: string, tenantSlug: string) {
 export async function getMerchantAdminSnapshot(
 	userId: string,
 	tenantSlug: string,
+	options: { includeSecurity?: boolean } = {},
 ) {
 	const tenantId = await getTenantIdForAdmin(userId, tenantSlug)
 	const membership = await prisma.membership.findUnique({
@@ -231,7 +232,10 @@ export async function getMerchantAdminSnapshot(
 			}),
 		)
 	}
-	if (membership.canManageSecurity || membership.role === "OWNER") {
+	if (
+		options.includeSecurity &&
+		(membership.canManageSecurity || membership.role === "OWNER")
+	) {
 		tasks.push(
 			getSecuritySnapshot(userId, tenantSlug).then((value) => {
 				result.security = value
