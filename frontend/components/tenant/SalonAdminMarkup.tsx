@@ -177,16 +177,12 @@ export function SalonAdminMarkup({
 										<label htmlFor="adminDesignLogoFile">Logo upload</label>
 										<input id="adminDesignLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
 										<small className="admin-field-help">Maximum 1 MB. The upload will be rejected with a compression message when it is larger.</small>
+										<input id="adminDesignLogoUrl" type="hidden" />
+										<img id="adminDesignLogoPreview" className="admin-design-image-preview" alt="Current salon logo" hidden />
 									</div>
 									<div className="form-group">
 										<label htmlFor="adminDesignHeroFile">Hero image upload</label>
 										<input id="adminDesignHeroFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-									</div>
-									<div className="form-group full">
-										<input id="adminDesignLogoUrl" type="hidden" />
-										<img id="adminDesignLogoPreview" className="admin-design-image-preview" alt="Current salon logo" hidden />
-									</div>
-									<div className="form-group full">
 										<input id="adminDesignHeroUrl" type="hidden" />
 										<img id="adminDesignHeroPreview" className="admin-design-image-preview" alt="Current salon hero image" hidden />
 									</div>
@@ -196,6 +192,13 @@ export function SalonAdminMarkup({
 										<small className="admin-field-help">This is the image displayed beside the years-of-experience and rating cards. Maximum 1 MB.</small>
 										<input id="adminDesignHeroCardUrl" type="hidden" />
 										<img id="adminDesignHeroCardPreview" className="admin-design-image-preview" alt="Current hero feature card image" hidden />
+									</div>
+									<div className="form-group full">
+										<label htmlFor="adminDesignDirectoryCardFile">Directory salon card image</label>
+										<input id="adminDesignDirectoryCardFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+										<small className="admin-field-help">Shown on Beauty Sphia salon directory cards. This image is independent of the storefront hero image. Maximum 1 MB.</small>
+										<input id="adminDesignDirectoryCardUrl" type="hidden" />
+										<img id="adminDesignDirectoryCardPreview" className="admin-design-image-preview" alt="Current directory salon card image" hidden />
 									</div>
 									<div className="form-group full">
 										<label htmlFor="adminDesignHeroTitle">Hero title</label>

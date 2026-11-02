@@ -1,6 +1,5 @@
 import { headers } from "next/headers"
 import { listPublicTenantCards, type PublicTenantCard } from "@backend/services/tenantDirectory"
-import { DEFAULT_STOREFRONT_DESIGN } from "@shared/constants/storefrontDesign"
 
 export type PlatformStore = PublicTenantCard & { readonly isDemo?: boolean }
 
@@ -11,7 +10,7 @@ const royalBraidsReference: PlatformStore = {
 	tagline: "Explore signature braids, beauty services, and a live salon storefront.",
 	rating: null,
 	reviewCount: 0,
-	imageUrl: DEFAULT_STOREFRONT_DESIGN.heroCardImageUrl,
+	imageUrl: "/platform/Royal Braids logo.webp",
 	href: "/royal-braids",
 	createdAt: new Date(0),
 }
