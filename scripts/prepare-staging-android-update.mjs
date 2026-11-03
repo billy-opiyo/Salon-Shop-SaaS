@@ -26,7 +26,7 @@ const manifest = {
   versionName: verified.versionName,
   apkUrl: "/downloads/beauty-sphia-staging.apk",
   signingCertificateSha256: verified.certificateSha256,
-  releaseNotes: "The Beauty Sphia launcher icon now uses balanced artwork sizing and adaptive-icon safe-area padding.",
+  releaseNotes: "The offline screen now matches the Beauty Sphia website dialog and active theme.",
 }
 
 copyFileSync(path.resolve(artifact), apkPath)

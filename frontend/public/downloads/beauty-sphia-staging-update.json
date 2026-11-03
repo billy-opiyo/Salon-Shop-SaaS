@@ -2,9 +2,9 @@
   "enabled": true,
   "channel": "staging",
   "applicationId": "com.beautysphia.app.staging",
-  "versionCode": 8,
-  "versionName": "1.0.7",
+  "versionCode": 9,
+  "versionName": "1.0.8",
   "apkUrl": "/downloads/beauty-sphia-staging.apk",
   "signingCertificateSha256": "dd3399211eed1a03a3270e3df943fba6eb7fcceee2935231c4f7372f209b1498",
-  "releaseNotes": "The Beauty Sphia launcher icon now uses balanced artwork sizing and adaptive-icon safe-area padding."
+  "releaseNotes": "The offline screen now matches the Beauty Sphia website dialog and active theme."
 }
