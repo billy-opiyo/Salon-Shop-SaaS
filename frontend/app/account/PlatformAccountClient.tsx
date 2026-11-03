@@ -107,18 +107,13 @@ export function PlatformAccountClient({
 
 	useEffect(() => {
 		const booking = snapshot.bookings.find((item) => item.id === editingBooking)
-		if (!booking || !newDate) {
-			setAvailableTimes([])
-			setAvailabilityLoading(false)
-			setAvailabilityError("")
-			return
-		}
+		if (!booking || !newDate) return
 
 		const controller = new AbortController()
 		let isCurrentRequest = true
-		setAvailabilityLoading(true)
-		setAvailabilityError("")
 		const timer = window.setTimeout(() => {
+			setAvailabilityLoading(true)
+			setAvailabilityError("")
 			const query = new URLSearchParams({ tenantSlug: booking.tenantSlug, date: newDate })
 			if (booking.stylistId) query.set("stylistId", booking.stylistId)
 			void fetch(`/api/bookings/availability?${query.toString()}`, {
@@ -460,6 +455,9 @@ export function PlatformAccountClient({
 													setEditingBooking(closing ? null : booking.id)
 													setNewDate(closing ? "" : booking.appointmentDate)
 													setNewTime("")
+					setAvailableTimes([])
+					setAvailabilityLoading(!closing && Boolean(booking.appointmentDate))
+					setAvailabilityError("")
 												}}>
 													{editingBooking === booking.id ? "Close rescheduling" : "Reschedule"}
 												</button>
@@ -469,7 +467,7 @@ export function PlatformAccountClient({
 											<form className="platform-account-reschedule" aria-busy={availabilityLoading || pendingAction === `reschedule:${booking.id}`} onSubmit={(event) => { event.preventDefault(); void rescheduleBooking(booking) }}>
 												<label>
 													New date
-													<input type="date" min={today} value={newDate} onChange={(event) => { setNewDate(event.target.value); setNewTime("") }} required />
+								<input type="date" min={today} value={newDate} onChange={(event) => { setNewDate(event.target.value); setNewTime(""); setAvailableTimes([]); setAvailabilityLoading(Boolean(event.target.value)); setAvailabilityError("") }} required />
 												</label>
 												<label>
 													Available time
@@ -482,7 +480,7 @@ export function PlatformAccountClient({
 									<p className="form-message form-message--error platform-account-reschedule__availability" role="alert">
 														{availabilityError}
 														{availableTimes.length === 0 && (
-															<button className="button button--outline button--small" type="button" onClick={() => setAvailabilityRetry((value) => value + 1)} disabled={availabilityLoading}>Retry availability</button>
+										<button className="button button--outline button--small" type="button" onClick={() => { setAvailabilityLoading(true); setAvailabilityError(""); setAvailabilityRetry((value) => value + 1) }} disabled={availabilityLoading}>Retry availability</button>
 														)}
 													</p>
 												)}

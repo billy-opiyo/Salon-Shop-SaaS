@@ -22,6 +22,6 @@ describe("safe authentication callbacks", () => {
 		"/login",
 		"/manage-other/path",
 	])("falls back instead of accepting unsafe callback %s", (candidate) => {
-		expect(getSafeAuthCallbackUrl(candidate)).toBe("/manage")
+		expect(getSafeAuthCallbackUrl(candidate)).toBe("/account")
 	})
 })

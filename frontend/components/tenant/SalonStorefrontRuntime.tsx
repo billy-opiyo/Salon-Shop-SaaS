@@ -2306,7 +2306,7 @@ function bindStorefrontDesignEditor(
 		typeof savedDesign.directoryCardImageUrl === "string" && savedDesign.directoryCardImageUrl.trim()
 			? savedDesign.directoryCardImageUrl
 			: tenantSlug === "royal-braids"
-				? "/platform/Royal Braids logo.webp"
+				? "/platform/Royal Braids logo.png"
 				: settings.logoUrl ?? "",
 	)
 	setDesignControl(

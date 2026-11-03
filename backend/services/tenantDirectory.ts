@@ -135,7 +135,7 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 			tagline: fixtureTenant.shortDescription,
 			rating: null,
 			reviewCount: 0,
-			imageUrl: "/platform/Royal Braids logo.webp",
+			imageUrl: "/platform/Royal Braids logo.png",
 			href: `/${fixtureTenant.slug}`,
 			createdAt: new Date(0),
 		}]
@@ -207,7 +207,7 @@ const loadPublicTenantCards = unstable_cache(async (): Promise<PublicTenantCard[
 							storefrontConfig.directoryCardImageUrl.trim()) ||
 						tenant.settings?.logoUrl ||
 						(tenant.slug === "royal-braids"
-							? "/platform/Royal Braids logo.webp"
+							? "/platform/Royal Braids logo.png"
 							: "/platform/Beauty Sphia logo.webp"),
 					href: `/${tenant.slug}`,
 					createdAt: tenant.createdAt,
