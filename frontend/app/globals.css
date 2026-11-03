@@ -3830,7 +3830,8 @@ html.splash-active .splash-handwriting-letter {
 }
 
 .platform-nav a:hover,
-.platform-nav a:focus-visible {
+.platform-nav a:focus-visible,
+.platform-nav a[aria-current="page"] {
   color: var(--platform-gold-light, #edcc83);
   border-bottom-color: var(--platform-gold, #d5a54e);
 }
@@ -4408,7 +4409,8 @@ html.splash-active .splash-handwriting-letter {
 	white-space: nowrap;
 	transition: background .2s ease, color .2s ease, transform .2s ease;
 }
-.platform-nav a:hover, .platform-nav a:focus-visible {
+.platform-nav a:hover, .platform-nav a:focus-visible,
+.platform-nav a[aria-current="page"] {
 	background: rgba(215,168,79,.14);
 	color: #ffe7ad;
 }

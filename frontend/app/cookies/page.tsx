@@ -14,7 +14,7 @@ export default async function CookiesPage() {
 	const policy = design.cookiePolicy
 	return (
 		<div className="platform-site platform-site--with-mobile-actions" style={platformThemeStyle(design.theme)}>
-			<PlatformHeader page="about" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
+			<PlatformHeader page="none" logoUrl={design.logoUrl} brandName={design.branding.name} brandTagline={design.branding.tagline} />
 			<main className="policy-page">
 				<p className="eyebrow">{policy.eyebrow}</p>
 				<h1>{policy.title}</h1>

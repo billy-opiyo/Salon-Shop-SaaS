@@ -10,7 +10,7 @@ import { PlatformBrandMark } from "@/components/shared/PlatformBrandMark"
 import { SiteSearch, type SiteSearchEntry } from "@/components/shared/SiteSearch"
 
 interface PlatformHeaderClientProps {
-	readonly page: "home" | "stores" | "about" | "support" | "account" | "onboarding"
+	readonly page: "home" | "stores" | "about" | "support" | "account" | "onboarding" | "none"
 	readonly logoUrl: string
 	readonly brandName: string
 	readonly brandTagline: string
@@ -91,11 +91,11 @@ export function PlatformHeaderClient({ page, logoUrl, brandName, brandTagline, i
 	return <header className="platform-header">
 		{isHome ? <PlatformBrandMark brandName={brandName}>{brand}</PlatformBrandMark> : <Link className="brand-mark" href="/" aria-label={`${brandName} homepage`}>{brand}</Link>}
 		<nav id="platform-navigation" className={"platform-nav" + (menuOpen ? " is-open" : "")} aria-label="Platform navigation">
-			<Link href={homeHref} prefetch={!isHome} onClick={() => setMenuOpen(false)}>Home</Link>
-			<Link href="/stores" prefetch onClick={() => setMenuOpen(false)}>Salons</Link>
+			<Link href={homeHref} prefetch={!isHome} aria-current={page === "home" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Home</Link>
+			<Link href="/stores" prefetch aria-current={page === "stores" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Salons</Link>
 			<Link href={plansHref} prefetch={!isHome} onClick={() => setMenuOpen(false)}>Pricings</Link>
-			<Link href="/about" prefetch onClick={() => setMenuOpen(false)}>About</Link>
-			<Link href="/support" prefetch onClick={() => setMenuOpen(false)}>Support</Link>
+			<Link href="/about" prefetch aria-current={page === "about" ? "page" : undefined} onClick={() => setMenuOpen(false)}>About</Link>
+			<Link href="/support" prefetch aria-current={page === "support" ? "page" : undefined} onClick={() => setMenuOpen(false)}>Support</Link>
 		</nav>
 		<div className="platform-header__actions">
 			<SiteSearch

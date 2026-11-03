@@ -3,7 +3,7 @@ import { PlatformHeaderClient } from "@/components/shared/PlatformHeaderClient"
 import { isPlatformAdminForNavigation } from "@backend/services/platformAuthorization"
 
 interface PlatformHeaderProps {
-	readonly page?: "home" | "stores" | "about" | "support" | "account" | "onboarding"
+	readonly page?: "home" | "stores" | "about" | "support" | "account" | "onboarding" | "none"
 	readonly logoUrl?: string
 	readonly brandName?: string
 	readonly brandTagline?: string
